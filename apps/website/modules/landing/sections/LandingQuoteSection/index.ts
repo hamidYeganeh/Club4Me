@@ -1,0 +1,1 @@
+export { LandingQuoteSection } from "./LandingQuoteSection";

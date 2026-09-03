@@ -1,0 +1,27 @@
+export type DashboardWorkspaceSectionProps = {
+  workouts: string;
+  metrics: string;
+  nutrition: string;
+  coaches: string;
+  featuredTitle: string;
+  featuredSubtitle: string;
+  occupancyTitle: string;
+  occupancyValue: string;
+  checkinsTitle: string;
+  checkinsValue: string;
+  scoreTitle: string;
+  scoreValue: string;
+  scoreUnit: string;
+  downtrend: string;
+  present: string;
+  prediction: string;
+  aiMessages: string;
+  aiName: string;
+  mixTitle: string;
+  mixValue: string;
+  mixUnit: string;
+  mixStrength: string;
+  mixCardio: string;
+  mixRecovery: string;
+  ranges: { id: string; label: string }[];
+};

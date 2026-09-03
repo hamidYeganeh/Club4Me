@@ -1,0 +1,21 @@
+export type CoachThreadSectionProps = {
+  name: string;
+  tokensLeft: string;
+  title: string;
+  main: string;
+  settings: string;
+  subscription: string;
+  canvas: string;
+  metrics: string;
+  appointment: string;
+  recent: string;
+  chats: string[];
+  aiReply: string;
+  userReply: string;
+  linkTitle: string;
+  linkBody: string;
+  placeholder: string;
+  send: string;
+  attach: string;
+  voice: string;
+};

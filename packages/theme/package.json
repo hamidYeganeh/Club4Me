@@ -1,0 +1,40 @@
+{
+  "name": "@repo/theme",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./heroui.css": "./src/heroui.css",
+    "./globals.css": "./src/globals.css",
+    "./fonts.css": "./src/fonts.css",
+    "./icons.css": "./src/icons.css",
+    "./theme-transition.css": "./src/theme-transition.css",
+    "./fonts/*": "./fonts/*",
+    "./icons/duotone/*": "./icons/duotone/*",
+    "./icon": "./src/icon.tsx",
+    "./provider": "./src/theme-provider.tsx",
+    "./theme-toggle": "./src/theme-toggle.tsx",
+    "./animated-theme-toggler": "./src/animated-theme-toggler.tsx"
+  },
+  "scripts": {
+    "build": "npm run build:icons",
+    "build:icons": "node scripts/build-icons.mjs",
+    "lint": "echo 'No lint configured'",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next-themes": "^0.4.6"
+  },
+  "peerDependencies": {
+    "@heroui/styles": "^3.0.0",
+    "react": ">=19",
+    "react-dom": ">=19"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "*",
+    "@types/react": "^19",
+    "fantasticon": "^3.0.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "typescript": "^5"
+  }
+}

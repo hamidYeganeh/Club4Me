@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"],
+      "@modules/*": ["./modules/*"],
+      "@ui/*": ["../../packages/ui/src/*"],
+      "@api": ["../../packages/api/src/index.ts"],
+      "@api/provider": ["../../packages/api/src/query/provider.tsx"],
+      "@api/account": ["../../packages/api/src/domains/account/index.ts"],
+      "@api/discovery": ["../../packages/api/src/domains/discovery/index.ts"],
+      "@api/*": ["../../packages/api/src/*"],
+      "@theme/provider": ["../../packages/theme/src/theme-provider.tsx"],
+      "@theme/*": ["../../packages/theme/src/*"],
+      "@i18n": ["../../packages/i18n/src/index.ts"],
+      "@i18n/messages": ["../../packages/i18n/src/locales/fa/messages.ts"],
+      "@i18n/*": ["../../packages/i18n/src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@repo/api",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./provider": "./src/query/provider.tsx",
+    "./account": "./src/domains/account/index.ts",
+    "./discovery": "./src/domains/discovery/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.2",
+    "axios": "^1.12.2"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "*",
+    "@repo/typescript-config": "*",
+    "@types/react": "^19",
+    "eslint": "^9",
+    "react": "19.2.8",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "react": ">=19"
+  }
+}

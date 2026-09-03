@@ -1,0 +1,29 @@
+{
+  "name": "@repo/i18n",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./request": "./src/request.ts",
+    "./provider": "./src/provider.tsx",
+    "./config": "./src/config.ts",
+    "./messages": "./src/locales/fa/messages.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next-intl": "^4.3.4"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "*",
+    "@types/react": "^19",
+    "react": "19.2.8",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "next": ">=15",
+    "react": ">=19"
+  }
+}

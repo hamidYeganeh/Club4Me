@@ -1,0 +1,1 @@
+export { LandingFooterSection } from "./LandingFooterSection";
