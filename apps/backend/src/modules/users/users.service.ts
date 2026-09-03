@@ -1,0 +1,48 @@
+import { Injectable } from "@nestjs/common";
+
+import { AppError } from "../../common/errors/app.exception";
+import { toPublicUser, type PublicUser } from "./mappers/user.mapper";
+import { UsersRepository } from "./users.repository";
+
+@Injectable()
+export class UsersService {
+  constructor(private readonly usersRepository: UsersRepository) {}
+
+  findById(id: string): Promise<PublicUser> {
+    return this.usersRepository.findById(id);
+  }
+
+  findOrCreateByPhone(phone: string): Promise<PublicUser> {
+    return this.usersRepository.findOrCreateByPhone(phone);
+  }
+
+  findDocumentByPhone(phone: string) {
+    return this.usersRepository.findDocumentByPhone(phone);
+  }
+
+  async requireByPhone(phone: string): Promise<PublicUser> {
+    const user = await this.usersRepository.findDocumentByPhone(phone);
+
+    if (!user) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
+
+    return toPublicUser(user);
+  }
+
+  setPassword(
+    userId: string,
+    password: string,
+    currentPassword?: string,
+  ): Promise<PublicUser> {
+    return this.usersRepository.setPassword(userId, password, currentPassword);
+  }
+
+  resetPassword(phone: string, password: string): Promise<PublicUser> {
+    return this.usersRepository.resetPassword(phone, password);
+  }
+
+  authenticate(phone: string, password: string): Promise<PublicUser> {
+    return this.usersRepository.authenticate(phone, password);
+  }
+}

@@ -1,24 +1,36 @@
 "use client";
 
-import { Button } from "@heroui/react";
-import type { ButtonProps } from "@heroui/react";
+import { buttonVariants, type ButtonVariants } from "@heroui/styles";
+import { cn } from "@theme/cn";
 import Link from "next/link";
-import type { ComponentPropsWithoutRef } from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
-type ButtonLinkProps = Omit<ButtonProps, "render"> & {
-  href: string;
-};
+type ButtonLinkProps = ButtonVariants &
+  Omit<ComponentPropsWithoutRef<typeof Link>, "className"> & {
+    className?: string;
+    children?: ReactNode;
+  };
 
-export function ButtonLink({ href, ...props }: ButtonLinkProps) {
+export function ButtonLink({
+  href,
+  className,
+  variant,
+  size,
+  isIconOnly,
+  fullWidth,
+  children,
+  ...props
+}: ButtonLinkProps) {
   return (
-    <Button
+    <Link
       {...props}
-      render={(buttonProps: ComponentPropsWithoutRef<"button">) => {
-        const { type: _type, ...rest } = buttonProps;
-        return (
-          <Link {...(rest as ComponentPropsWithoutRef<"a">)} href={href} />
-        );
-      }}
-    />
+      className={cn(
+        buttonVariants({ fullWidth, isIconOnly, size, variant }),
+        className,
+      )}
+      href={href}
+    >
+      {children}
+    </Link>
   );
 }

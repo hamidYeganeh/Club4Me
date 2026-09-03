@@ -34,6 +34,21 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
               label: t("panel.clubs"),
             },
             {
+              href: "/articles",
+              icon: "book-open",
+              label: t("panel.articles"),
+            },
+            {
+              href: "/resources",
+              icon: "database",
+              label: t("panel.resources"),
+            },
+            {
+              href: "/role-requests",
+              icon: "clipboard",
+              label: t("panel.roleRequests"),
+            },
+            {
               href: "/coach",
               icon: "chat",
               label: t("panel.coach"),

@@ -16,7 +16,7 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
     <PanelFrame
       rail={
         <PanelRailSection
-          addHref="/"
+          addHref="/clubs/new"
           addLabel={t("panel.add")}
           avatarSrc="https://picsum.photos/seed/club4me-business/160/160"
           avatarAlt={t("businessDashboard.profileName")}
@@ -27,6 +27,11 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
               icon: "grid-four",
               label: t("panel.dashboard"),
               exact: true,
+            },
+            {
+              href: "/clubs",
+              icon: "building-2",
+              label: t("panel.clubs"),
             },
             {
               href: "/#calendar",

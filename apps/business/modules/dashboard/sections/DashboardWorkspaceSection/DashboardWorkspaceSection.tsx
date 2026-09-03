@@ -1,6 +1,12 @@
 "use client";
 
-import { Button } from "@heroui/react";
+import {
+  Button,
+  Card,
+  Tabs,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { cn } from "@theme/cn";
 import { Grid, Line, LineChart, RingChart, XAxis } from "@ui/charts";
@@ -73,16 +79,30 @@ export function DashboardWorkspaceSection({
 
   return (
     <section className={styles.root()}>
-      <div className={styles.tabs()}>
-        <div className="flex gap-5">
-          <span className={cn(styles.tab(), styles.tabActive())}>{workouts}</span>
-          <span className={styles.tab()}>{metrics}</span>
-          <span className={styles.tab()}>{nutrition}</span>
-          <span className={styles.tab()}>{coaches}</span>
-        </div>
-      </div>
+      <Tabs className={styles.tabs()} defaultSelectedKey="workouts">
+        <Tabs.ListContainer className="rounded-none bg-transparent">
+          <Tabs.List aria-label={workouts}>
+            <Tabs.Tab className="text-muted data-[selected=true]:text-foreground" id="workouts">
+              {workouts}
+              <Tabs.Indicator className="bg-accent" />
+            </Tabs.Tab>
+            <Tabs.Tab className="text-muted data-[selected=true]:text-foreground" id="metrics">
+              {metrics}
+              <Tabs.Indicator className="bg-accent" />
+            </Tabs.Tab>
+            <Tabs.Tab className="text-muted data-[selected=true]:text-foreground" id="nutrition">
+              {nutrition}
+              <Tabs.Indicator className="bg-accent" />
+            </Tabs.Tab>
+            <Tabs.Tab className="text-muted data-[selected=true]:text-foreground" id="coaches">
+              {coaches}
+              <Tabs.Indicator className="bg-accent" />
+            </Tabs.Tab>
+          </Tabs.List>
+        </Tabs.ListContainer>
+      </Tabs>
 
-      <article className={styles.featured()}>
+      <Card variant="transparent" className={styles.featured()}>
         <img
           alt={featuredTitle}
           src="https://picsum.photos/seed/club4me-muay/900/1200"
@@ -93,20 +113,20 @@ export function DashboardWorkspaceSection({
           <h2 className={styles.featuredTitle()}>{featuredTitle}</h2>
           <p className={styles.featuredMeta()}>{featuredSubtitle}</p>
           <div className={styles.featuredActions()}>
-            <Button isIconOnly variant="secondary" className="rounded-full">
+            <Button isIconOnly className="rounded-full" variant="secondary">
               <Icon name="gear-1" />
             </Button>
-            <Button isIconOnly variant="secondary" className="rounded-full">
+            <Button isIconOnly className="rounded-full" variant="secondary">
               <Icon name="calendar-1" />
             </Button>
-            <Button isIconOnly variant="primary" className="rounded-full">
+            <Button isIconOnly className="rounded-full" variant="primary">
               <Icon name="plus-fat" />
             </Button>
           </div>
         </div>
-      </article>
+      </Card>
 
-      <article className={cn(styles.card(), styles.occupancy())}>
+      <Card variant="transparent" className={cn(styles.card(), styles.occupancy())}>
         <p className={styles.cardTitle()}>{occupancyTitle}</p>
         <p className={styles.cardValue()}>{occupancyValue}</p>
         <div className="mt-2 h-20">
@@ -114,9 +134,9 @@ export function DashboardWorkspaceSection({
             <Line dataKey="value" stroke="var(--chart-2)" fill />
           </LineChart>
         </div>
-      </article>
+      </Card>
 
-      <article className={cn(styles.card(), styles.checkins())}>
+      <Card variant="transparent" className={cn(styles.card(), styles.checkins())}>
         <p className={styles.cardTitle()}>{checkinsTitle}</p>
         <p className={styles.cardValue()}>{checkinsValue}</p>
         <div className="mt-2 h-20">
@@ -124,9 +144,9 @@ export function DashboardWorkspaceSection({
             <Line dataKey="value" stroke="var(--chart-1)" fill />
           </LineChart>
         </div>
-      </article>
+      </Card>
 
-      <article className={cn(styles.card(), styles.score())}>
+      <Card variant="transparent" className={cn(styles.card(), styles.score())}>
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className={styles.cardTitle()}>{scoreTitle}</p>
@@ -136,21 +156,30 @@ export function DashboardWorkspaceSection({
             </p>
             <p className="mt-1 text-xs text-danger">{downtrend}</p>
           </div>
-          <div className="flex flex-wrap gap-1">
+          <ToggleButtonGroup
+            disallowEmptySelection
+            selectedKeys={new Set([range])}
+            selectionMode="single"
+            size="sm"
+            onSelectionChange={(keys) => {
+              const next = [...keys][0];
+              if (typeof next === "string") setRange(next);
+            }}
+          >
             {ranges.map((item) => (
-              <button
+              <ToggleButton
                 key={item.id}
-                type="button"
-                onClick={() => setRange(item.id)}
                 className={cn(
                   "rounded-full px-3 py-1 text-xs text-muted",
                   range === item.id && "bg-accent text-accent-foreground",
                 )}
+                id={item.id}
+                size="sm"
               >
                 {item.label}
-              </button>
+              </ToggleButton>
             ))}
-          </div>
+          </ToggleButtonGroup>
         </div>
         <div className="mt-3 h-40">
           <LineChart data={scoreData}>
@@ -164,9 +193,9 @@ export function DashboardWorkspaceSection({
           <span>{present}</span>
           <span>{prediction}</span>
         </div>
-      </article>
+      </Card>
 
-      <article className={cn(styles.card(), styles.mix())}>
+      <Card variant="transparent" className={cn(styles.card(), styles.mix())}>
         <p className={styles.cardTitle()}>{mixTitle}</p>
         <div className="mt-2 h-40">
           <RingChart
@@ -194,12 +223,9 @@ export function DashboardWorkspaceSection({
             ]}
           />
         </div>
-      </article>
+      </Card>
 
-      <ButtonLink
-        href="/coach"
-        className={cn(styles.card(), styles.ai())}
-      >
+      <ButtonLink href="/coach" className={cn(styles.card(), styles.ai())}>
         <div>
           <p className="text-sm opacity-80">{aiMessages}</p>
           <p className="text-lg font-semibold">{aiName}</p>

@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 
+import { AppError } from "../../lib/errors.js";
 import { ok } from "../../lib/http.js";
 import { parse } from "../../lib/validate.js";
 import { getAuthUser, requireAuth } from "../../middleware/auth.js";
@@ -19,6 +20,8 @@ import type { AppEnv } from "../../types.js";
 const listClubsQuery = z.object({
   city: z.string().min(1).optional(),
   q: z.string().min(1).optional(),
+  latitude: z.coerce.number().min(-90).max(90).optional(),
+  longitude: z.coerce.number().min(-180).max(180).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
@@ -59,6 +62,9 @@ export function createDiscoveryRouter() {
 
   clubs.post("/", requireAuth, async (c) => {
     const authUser = getAuthUser(c);
+    if (!authUser.roles.includes("owner")) {
+      throw new AppError(403, "FORBIDDEN", "Owner access required");
+    }
     const body = parse(createClubBody, await c.req.json());
     const club = await createClub({
       ...body,
@@ -81,10 +87,14 @@ export function createDiscoveryRouter() {
   });
 
   clubs.post("/:clubId/classes", requireAuth, async (c) => {
-    getAuthUser(c);
+    const authUser = getAuthUser(c);
+    if (!authUser.roles.includes("owner")) {
+      throw new AppError(403, "FORBIDDEN", "Owner access required");
+    }
     const body = parse(createClassBody, await c.req.json());
     const item = await createClass({
       clubId: c.req.param("clubId"),
+      ownerId: authUser.sub,
       ...body,
     });
 
@@ -98,10 +108,14 @@ export function createDiscoveryRouter() {
   });
 
   clubs.post("/:clubId/slots", requireAuth, async (c) => {
-    getAuthUser(c);
+    const authUser = getAuthUser(c);
+    if (!authUser.roles.includes("owner")) {
+      throw new AppError(403, "FORBIDDEN", "Owner access required");
+    }
     const body = parse(createSlotBody, await c.req.json());
     const slot = await createSlot({
       clubId: c.req.param("clubId"),
+      ownerId: authUser.sub,
       ...body,
     });
 

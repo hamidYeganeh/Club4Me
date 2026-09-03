@@ -116,7 +116,6 @@ export function BarChart({
                             radius={primary.radius ?? 10}
                             all
                             fill={fill}
-                            style={{ filter: `drop-shadow(0 0 10px ${fill})` }}
                           />
                         ) : (
                           <motion.g
@@ -137,9 +136,6 @@ export function BarChart({
                               radius={primary.radius ?? 10}
                               all
                               fill={fill}
-                              style={{
-                                filter: `drop-shadow(0 0 10px ${fill})`,
-                              }}
                             />
                           </motion.g>
                         )}
@@ -189,7 +185,6 @@ export function BarChart({
                           radius={primary.radius ?? 14}
                           top
                           fill={fill}
-                          style={{ filter: `drop-shadow(0 0 12px ${fill})` }}
                         />
                       ) : (
                         <motion.g
@@ -210,9 +205,6 @@ export function BarChart({
                             radius={primary.radius ?? 14}
                             top
                             fill={fill}
-                            style={{
-                              filter: `drop-shadow(0 0 12px ${fill})`,
-                            }}
                           />
                         </motion.g>
                       )}

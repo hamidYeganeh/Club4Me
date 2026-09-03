@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Button } from "@heroui/react";
+import { Button, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
 import { FreeMode, Thumbs } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { NeshanMap } from "@/components/maps/neshan-map";
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -18,6 +19,7 @@ import type { DiscoveryClubsDetailBodySectionProps } from "./DiscoveryClubsDetai
 export function DiscoveryClubsDetailBodySection({
   images,
   about,
+  location,
   stats,
   onThumbsSwiper,
   onThumbClick,
@@ -72,6 +74,7 @@ export function DiscoveryClubsDetailBodySection({
                 src={src}
                 alt=""
                 fill
+                unoptimized
                 sizes="33vw"
                 className={styles.image()}
               />
@@ -87,18 +90,18 @@ export function DiscoveryClubsDetailBodySection({
               <Icon name={stat.icon} size="sm" />
             </span>
             <div className={styles.statText()}>
-              <p className={styles.statValue()}>{stat.value}</p>
-              <p className={styles.statLabel()}>{stat.label}</p>
+              <Typography type="body-sm" weight="semibold" truncate className={styles.statValue()}>{stat.value}</Typography>
+              <Typography type="body-xs" color="muted" truncate className={styles.statLabel()}>{stat.label}</Typography>
             </div>
           </div>
         ))}
       </div>
 
       <div className={styles.about()}>
-        <h2 className={styles.aboutTitle()}>{t("aboutTitle")}</h2>
-        <p ref={aboutRef} className={styles.aboutBody()}>
+        <Typography type="h5" className={styles.aboutTitle()}>{t("aboutTitle")}</Typography>
+        <Typography type="body-sm" color="muted" render={({ children, ...p }) => <p ref={aboutRef} {...p}>{children}</p>} className={styles.aboutBody()}>
           {about}
-        </p>
+        </Typography>
         {(canExpand || expanded) && (
           <Button
             variant="ghost"
@@ -108,6 +111,28 @@ export function DiscoveryClubsDetailBodySection({
             {expanded ? t("seeLess") : t("seeMore")}
           </Button>
         )}
+      </div>
+
+      <div className={styles.location()}>
+        <div className={styles.locationHeader()}>
+          <div>
+            <Typography type="h5" className={styles.locationTitle()}>{t("locationTitle")}</Typography>
+            <Typography type="body-sm" color="muted" className={styles.locationAddress()}>{location.address}</Typography>
+          </div>
+          <a
+            href={`https://nshn.ir/?lat=${location.latitude}&lng=${location.longitude}`}
+            target="_blank"
+            rel="noreferrer"
+            className={styles.locationLink()}
+          >
+            {t("openInNeshan")}
+          </a>
+        </div>
+        <NeshanMap
+          center={location}
+          marker={location}
+          markerLabel={location.address}
+        />
       </div>
     </section>
   );

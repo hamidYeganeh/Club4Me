@@ -23,27 +23,44 @@ type NavConfig = {
   actionLabelKey: "add";
 };
 
-const athleteNav: NavConfig = {
-  items: [
-    { href: "/athlete", labelKey: "home", icon: "house-1", exact: true },
-    { href: "/discovery", labelKey: "discover", icon: "compass" },
-    {
-      href: "/athlete/reservations",
-      labelKey: "reservations",
-      icon: "calendar-1",
-    },
-    { href: "/athlete/profile", labelKey: "profile", icon: "user" },
-  ],
-  actionLabelKey: "add",
-};
+function createRoleNav(role: "athlete" | "coach"): NavConfig {
+  return {
+    items: [
+      { href: `/${role}`, labelKey: "home", icon: "house-1", exact: true },
+      { href: "/discovery", labelKey: "discover", icon: "compass" },
+      {
+        href: `/${role}/reservations`,
+        labelKey: "reservations",
+        icon: "calendar-1",
+      },
+      { href: `/${role}/profile`, labelKey: "profile", icon: "user" },
+    ],
+    actionLabelKey: "add",
+  };
+}
+
+const athleteNav = createRoleNav("athlete");
+const coachNav = createRoleNav("coach");
 
 function isDiscoveryClubDetail(pathname: string): boolean {
   return /^\/discovery\/clubs\/[^/]+/.test(pathname);
 }
 
+function isNestedProfileRoute(pathname: string): boolean {
+  return /^\/(athlete|coach)\/profile\/(edit|image)/.test(pathname);
+}
+
 function getNavConfig(pathname: string): NavConfig | null {
+  if (isNestedProfileRoute(pathname)) {
+    return null;
+  }
+
   if (pathname.startsWith("/athlete")) {
     return athleteNav;
+  }
+
+  if (pathname.startsWith("/coach")) {
+    return coachNav;
   }
 
   if (pathname.startsWith("/discovery") && !isDiscoveryClubDetail(pathname)) {
@@ -144,8 +161,18 @@ function NavLink({
         active ? "text-accent" : "text-foreground/80",
       )}
       render={(props) => {
-        const { type: _type, ...rest } = props;
-        return <Link {...rest} href={item.href} />;
+        const { type: _type, children, className, style } = props;
+        return (
+          <Link
+            href={item.href}
+            scroll={false}
+            className={className}
+            style={style}
+            aria-current={active ? "page" : undefined}
+          >
+            {children}
+          </Link>
+        );
       }}
     >
       <Icon name={item.icon} size={28} />

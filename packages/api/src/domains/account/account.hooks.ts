@@ -10,7 +10,9 @@ import type {
   ForgotPasswordPayload,
   LoginPayload,
   RefreshSessionPayload,
+  RequestableRole,
   RequestOtpPayload,
+  ReviewRoleRequestPayload,
   SetPasswordPayload,
 } from "./account.dto";
 import { accountQueries } from "./account.queries";
@@ -25,7 +27,8 @@ export function useAccountMe(enabled = true) {
 
 export function useRequestOtp() {
   return useMutation({
-    mutationFn: (payload: RequestOtpPayload) => accountClient.requestOtp(payload),
+    mutationFn: (payload: RequestOtpPayload) =>
+      accountClient.requestOtp(payload),
   });
 }
 
@@ -33,7 +36,8 @@ export function useConfirmOtp() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: ConfirmOtpPayload) => accountClient.confirmOtp(payload),
+    mutationFn: (payload: ConfirmOtpPayload) =>
+      accountClient.confirmOtp(payload),
     onSuccess: async (data) => {
       tokenStore.setSession(data.accessToken, data.refreshToken);
       await queryClient.invalidateQueries({ queryKey: accountQueries.me() });
@@ -41,13 +45,22 @@ export function useConfirmOtp() {
   });
 }
 
+export type LoginVariables = LoginPayload & {
+  remember?: boolean;
+};
+
 export function useLogin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: LoginPayload) => accountClient.login(payload),
-    onSuccess: async (data) => {
-      tokenStore.setSession(data.accessToken, data.refreshToken);
+    mutationFn: ({ remember: _remember, ...payload }: LoginVariables) =>
+      accountClient.login(payload),
+    onSuccess: async (data, variables) => {
+      tokenStore.setSession(
+        data.accessToken,
+        data.refreshToken,
+        variables.remember !== false,
+      );
       await queryClient.invalidateQueries({ queryKey: accountQueries.me() });
     },
   });
@@ -108,6 +121,37 @@ export function useLogout() {
     onSettled: () => {
       tokenStore.clear();
       queryClient.removeQueries({ queryKey: accountQueries.all() });
+    },
+  });
+}
+
+export function useRequestRole() {
+  return useMutation({
+    mutationFn: (role: RequestableRole) => accountClient.requestRole(role),
+  });
+}
+
+export function useAdminRoleRequests(enabled = true) {
+  return useQuery({
+    queryKey: accountQueries.roleRequests(),
+    queryFn: () => accountClient.listRoleRequests(),
+    enabled,
+  });
+}
+
+export function useReviewRoleRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      requestId,
+      status,
+    }: ReviewRoleRequestPayload & { requestId: string }) =>
+      accountClient.reviewRoleRequest(requestId, { status }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: accountQueries.roleRequests(),
+      });
     },
   });
 }

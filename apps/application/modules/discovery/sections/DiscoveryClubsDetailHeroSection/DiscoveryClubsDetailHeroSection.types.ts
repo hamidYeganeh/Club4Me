@@ -2,6 +2,7 @@ import type { Ref } from "react";
 import type { Swiper as SwiperType } from "swiper";
 
 export type DiscoveryClubsDetailHeroSectionProps = {
+  clubId: string;
   name: string;
   location: string;
   price: number;

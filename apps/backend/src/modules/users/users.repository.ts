@@ -1,0 +1,191 @@
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model, Types } from "mongoose";
+
+import { AppError } from "../../common/errors/app.exception";
+import { hashPassword, verifyPassword } from "../../common/utils/password.util";
+import { toLocalIranianPhone } from "../../common/utils/phone.util";
+import type { UserRole } from "../../lib/roles";
+import { toPublicUser, type PublicUser } from "./mappers/user.mapper";
+import { User, type UserDocument } from "./schemas/user.schema";
+
+const PASSWORD_HASH_SELECT = "+passwordHash";
+
+@Injectable()
+export class UsersRepository {
+  constructor(
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+  ) {}
+
+  async findDocumentById(id: string): Promise<UserDocument> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
+
+    const user = await this.userModel
+      .findById(id)
+      .select(PASSWORD_HASH_SELECT)
+      .exec();
+
+    if (!user) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
+
+    return user;
+  }
+
+  async findById(id: string): Promise<PublicUser> {
+    return toPublicUser(await this.findDocumentById(id));
+  }
+
+  async grantRole(userId: string, role: UserRole): Promise<PublicUser> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
+
+    const user = await this.userModel
+      .findByIdAndUpdate(userId, { $addToSet: { roles: role } }, { new: true })
+      .exec();
+
+    if (!user) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
+
+    return toPublicUser(user);
+  }
+
+  async findDocumentByPhone(phone: string): Promise<UserDocument | null> {
+    const existing = await this.userModel
+      .findOne({
+        $or: [{ phone }, { phone: toLocalIranianPhone(phone) }],
+      })
+      .select(PASSWORD_HASH_SELECT)
+      .exec();
+
+    if (!existing) {
+      return null;
+    }
+
+    if (existing.phone !== phone) {
+      existing.phone = phone;
+      await existing.save();
+    }
+
+    return existing;
+  }
+
+  async findOrCreateByPhone(phone: string): Promise<PublicUser> {
+    const existing = await this.findDocumentByPhone(phone);
+
+    if (existing) {
+      return toPublicUser(existing);
+    }
+
+    try {
+      const created = await this.userModel.create({
+        phone,
+        roles: ["athlete"],
+        status: "active",
+      });
+      created.passwordHash = undefined;
+      return toPublicUser(created);
+    } catch (error) {
+      if (!isDuplicateKey(error)) {
+        throw error;
+      }
+
+      const raced = await this.findDocumentByPhone(phone);
+
+      if (!raced) {
+        throw new AppError(500, "USER_CREATE_FAILED", "Failed to create user");
+      }
+
+      return toPublicUser(raced);
+    }
+  }
+
+  async setPassword(
+    userId: string,
+    password: string,
+    currentPassword?: string,
+  ): Promise<PublicUser> {
+    const user = await this.findDocumentById(userId);
+
+    if (user.passwordHash) {
+      if (!currentPassword) {
+        throw new AppError(
+          400,
+          "CURRENT_PASSWORD_REQUIRED",
+          "Current password is required",
+        );
+      }
+
+      const matches = await verifyPassword(currentPassword, user.passwordHash);
+
+      if (!matches) {
+        throw new AppError(
+          400,
+          "INVALID_PASSWORD",
+          "Current password is incorrect",
+        );
+      }
+    }
+
+    user.passwordHash = await hashPassword(password);
+    await user.save();
+    return toPublicUser(user);
+  }
+
+  async resetPassword(phone: string, password: string): Promise<PublicUser> {
+    const user = await this.findDocumentByPhone(phone);
+
+    if (!user) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
+
+    user.passwordHash = await hashPassword(password);
+    await user.save();
+    return toPublicUser(user);
+  }
+
+  async authenticate(phone: string, password: string): Promise<PublicUser> {
+    const user = await this.findDocumentByPhone(phone);
+
+    if (!user) {
+      throw new AppError(
+        401,
+        "INVALID_CREDENTIALS",
+        "Invalid phone number or password",
+      );
+    }
+
+    if (!user.passwordHash) {
+      throw new AppError(
+        400,
+        "PASSWORD_NOT_SET",
+        "Password is not set. Sign in with OTP first.",
+      );
+    }
+
+    const matches = await verifyPassword(password, user.passwordHash);
+
+    if (!matches) {
+      throw new AppError(
+        401,
+        "INVALID_CREDENTIALS",
+        "Invalid phone number or password",
+      );
+    }
+
+    return toPublicUser(user);
+  }
+}
+
+function isDuplicateKey(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === 11000
+  );
+}

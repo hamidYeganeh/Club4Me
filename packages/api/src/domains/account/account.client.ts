@@ -2,6 +2,11 @@ import { http } from "../../http/client";
 import { accountEndpoints } from "./account.endpoints";
 import type {
   AccountMeResponse,
+  ListRoleRequestsResponse,
+  RequestableRole,
+  RequestRoleResponse,
+  ReviewRoleRequestPayload,
+  ReviewRoleRequestResponse,
   ConfirmForgotPasswordPayload,
   ConfirmForgotPasswordResponse,
   ConfirmOtpPayload,
@@ -47,4 +52,16 @@ export const accountClient = {
   logout: () => http.post<LogoutResponse>(accountEndpoints.logout),
 
   me: () => http.get<AccountMeResponse>(accountEndpoints.me),
+
+  requestRole: (role: RequestableRole) =>
+    http.post<RequestRoleResponse>(accountEndpoints.role(role)),
+
+  listRoleRequests: () =>
+    http.get<ListRoleRequestsResponse>(accountEndpoints.adminRoleRequests),
+
+  reviewRoleRequest: (requestId: string, payload: ReviewRoleRequestPayload) =>
+    http.patch<ReviewRoleRequestResponse>(
+      accountEndpoints.adminRoleRequest(requestId),
+      payload,
+    ),
 };

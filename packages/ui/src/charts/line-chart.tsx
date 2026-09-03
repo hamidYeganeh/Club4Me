@@ -198,9 +198,6 @@ export function LineChart({
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       fill="none"
-                      style={{
-                        filter: `drop-shadow(0 0 8px ${stroke})`,
-                      }}
                     />
                   );
 

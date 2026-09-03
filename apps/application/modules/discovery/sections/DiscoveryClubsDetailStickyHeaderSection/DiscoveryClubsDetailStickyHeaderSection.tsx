@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Button } from "@heroui/react";
+import { Button, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
 
@@ -28,10 +28,10 @@ export function DiscoveryClubsDetailStickyHeaderSection({
           size="lg"
           onPress={() => router.back()}
         >
-          <Icon name="arrow-left" size="lg" />
+          <Icon name="chevron-right" size="lg" />
         </Button>
 
-        <h1 className={styles.title()}>{name}</h1>
+        <Typography type="h6" truncate className={styles.title()}>{name}</Typography>
 
         <Button
           isIconOnly

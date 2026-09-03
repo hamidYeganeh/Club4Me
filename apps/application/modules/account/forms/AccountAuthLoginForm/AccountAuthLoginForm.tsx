@@ -1,0 +1,217 @@
+"use client";
+
+import { useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Button,
+  Checkbox,
+  InputGroup,
+  Label,
+  toast,
+} from "@heroui/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useLogin } from "@api/account";
+import { Icon } from "@theme/icon";
+import { useTranslations } from "next-intl";
+import { Controller, useForm } from "react-hook-form";
+
+import { Form, FormFieldset, FormTextField } from "@/components/form";
+import { getAccountApiErrorMessage } from "@/lib/account-api-error";
+import { formatIranianPhoneDisplay, toE164IranianPhone } from "@/lib/phone";
+
+import { createAccountAuthLoginFormSchema } from "./AccountAuthLoginForm.schema";
+import { accountAuthLoginFormStyles } from "./AccountAuthLoginForm.styles";
+import type {
+  AccountAuthLoginFormProps,
+  AccountAuthLoginFormValues,
+} from "./AccountAuthLoginForm.types";
+
+export function AccountAuthLoginForm({
+  formId,
+  phoneLabel,
+  phonePlaceholder,
+  passwordLabel,
+  passwordPlaceholder,
+  showPassword,
+  hidePassword,
+  rememberLabel,
+  forgotLabel,
+  legend,
+  phoneRequired,
+  phoneInvalid,
+  passwordRequired,
+  passwordMin,
+  onSuccess,
+  onSubmitStateChange,
+}: AccountAuthLoginFormProps) {
+  const styles = accountAuthLoginFormStyles();
+  const router = useRouter();
+  const t = useTranslations("auth");
+  const login = useLogin();
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [isSucceeded, setIsSucceeded] = useState(false);
+
+  const schema = useMemo(
+    () =>
+      createAccountAuthLoginFormSchema({
+        phoneRequired,
+        phoneInvalid,
+        passwordRequired,
+        passwordMin,
+      }),
+    [passwordMin, passwordRequired, phoneInvalid, phoneRequired],
+  );
+
+  const form = useForm<AccountAuthLoginFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      phone: "",
+      password: "",
+      remember: true,
+    },
+    mode: "onSubmit",
+  });
+
+  const onSubmit = async (values: AccountAuthLoginFormValues) => {
+    if (isSucceeded) {
+      return;
+    }
+
+    try {
+      await login.mutateAsync({
+        phone: toE164IranianPhone(values.phone),
+        password: values.password,
+        remember: values.remember,
+      });
+      setIsSucceeded(true);
+      onSuccess();
+    } catch (error) {
+      toast.danger(t("loginErrorTitle"), {
+        description: getAccountApiErrorMessage(error, t),
+      });
+    }
+  };
+
+  const isBusy = isSucceeded || login.isPending;
+
+  useEffect(() => {
+    onSubmitStateChange?.({
+      isBusy,
+      isPending: login.isPending,
+    });
+  }, [isBusy, login.isPending, onSubmitStateChange]);
+
+  return (
+    <Form
+      id={formId}
+      form={form}
+      className={styles.root()}
+      aria-labelledby="account-auth-login-title"
+      onSubmit={onSubmit}
+    >
+      <FormFieldset className={styles.fieldset()}>
+        <FormFieldset.Legend className="sr-only">{legend}</FormFieldset.Legend>
+        <FormFieldset.Group className={styles.group()}>
+          <FormTextField<AccountAuthLoginFormValues>
+            name="phone"
+            fullWidth
+            isDisabled={isBusy}
+            className={styles.field()}
+            transform={formatIranianPhoneDisplay}
+          >
+            <Label className={styles.label()}>{phoneLabel}</Label>
+            <InputGroup
+              variant="secondary"
+              className={styles.inputGroup()}
+              dir="ltr"
+            >
+              <InputGroup.Prefix className={styles.prefix()}>
+                <Icon name="telephone-1" size={18} />
+              </InputGroup.Prefix>
+              <InputGroup.Input
+                className={styles.input()}
+                inputMode="tel"
+                autoComplete="tel"
+                enterKeyHint="next"
+                placeholder={phonePlaceholder}
+              />
+            </InputGroup>
+          </FormTextField>
+
+          <FormTextField<AccountAuthLoginFormValues>
+            name="password"
+            fullWidth
+            isDisabled={isBusy}
+            className={styles.field()}
+          >
+            <Label className={styles.label()}>{passwordLabel}</Label>
+            <InputGroup
+              variant="secondary"
+              className={styles.inputGroup()}
+              dir="ltr"
+            >
+              <InputGroup.Prefix className={styles.prefix()}>
+                <Icon name="lock-1" size={18} />
+              </InputGroup.Prefix>
+              <InputGroup.Input
+                className={styles.input()}
+                type={passwordVisible ? "text" : "password"}
+                autoComplete="current-password"
+                enterKeyHint="done"
+                placeholder={passwordPlaceholder}
+              />
+              <InputGroup.Suffix className={styles.suffix()}>
+                <Button
+                  type="button"
+                  isIconOnly
+                  variant="ghost"
+                  size="sm"
+                  aria-label={passwordVisible ? hidePassword : showPassword}
+                  isDisabled={isBusy}
+                  onPress={() => setPasswordVisible((value) => !value)}
+                >
+                  <Icon
+                    name={passwordVisible ? "eye-slash" : "eye"}
+                    size={18}
+                    className="text-muted"
+                  />
+                </Button>
+              </InputGroup.Suffix>
+            </InputGroup>
+          </FormTextField>
+
+          <div className={styles.meta()}>
+            <Controller
+              name="remember"
+              control={form.control}
+              render={({ field }) => (
+                <Checkbox
+                  isDisabled={isBusy}
+                  isSelected={field.value}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                >
+                  <Checkbox.Content className={styles.remember()}>
+                    <Checkbox.Control>
+                      <Checkbox.Indicator />
+                    </Checkbox.Control>
+                    {rememberLabel}
+                  </Checkbox.Content>
+                </Checkbox>
+              )}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className={styles.forgot()}
+              onPress={() => router.push("/auth/forgot-password")}
+            >
+              {forgotLabel}
+            </Button>
+          </div>
+        </FormFieldset.Group>
+      </FormFieldset>
+    </Form>
+  );
+}

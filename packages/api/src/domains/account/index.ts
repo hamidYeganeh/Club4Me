@@ -1,6 +1,7 @@
 export { accountClient } from "./account.client";
 export type {
   AccountMeResponse,
+  AccountRoleRequest,
   AccountUser,
   AuthSessionResponse,
   ConfirmForgotPasswordPayload,
@@ -9,13 +10,19 @@ export type {
   ConfirmOtpResponse,
   ForgotPasswordPayload,
   ForgotPasswordResponse,
+  ListRoleRequestsResponse,
   LoginPayload,
   LoginResponse,
   LogoutResponse,
   RefreshSessionPayload,
   RefreshSessionResponse,
+  RequestableRole,
   RequestOtpPayload,
   RequestOtpResponse,
+  RequestRoleResponse,
+  ReviewRoleRequestPayload,
+  ReviewRoleRequestResponse,
+  RoleRequestStatus,
   SetPasswordPayload,
   SetPasswordResponse,
   UserRole,
@@ -23,6 +30,7 @@ export type {
 export { accountEndpoints } from "./account.endpoints";
 export {
   useAccountMe,
+  useAdminRoleRequests,
   useConfirmForgotPassword,
   useConfirmOtp,
   useForgotPassword,
@@ -30,6 +38,8 @@ export {
   useLogout,
   useRefreshSession,
   useRequestOtp,
+  useRequestRole,
+  useReviewRoleRequest,
   useSetPassword,
 } from "./account.hooks";
 export { accountQueries } from "./account.queries";

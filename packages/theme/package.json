@@ -11,6 +11,7 @@
     "./fonts/*": "./fonts/*",
     "./icons/duotone/*": "./icons/duotone/*",
     "./icon": "./src/icon.tsx",
+    "./logo": "./src/logo.tsx",
     "./provider": "./src/theme-provider.tsx",
     "./theme-toggle": "./src/theme-toggle.tsx",
     "./animated-theme-toggler": "./src/animated-theme-toggler.tsx"

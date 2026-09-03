@@ -4,6 +4,8 @@ import { ThemeProvider } from "@theme/provider";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTimeZone } from "next-intl/server";
 
+import { AppToastProvider } from "@/components/toast-provider";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,7 +24,7 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} dir="rtl" className="h-full" suppressHydrationWarning>
-      <body className="min-h-full flex flex-col bg-background text-foreground font-sans antialiased">
+      <body className="flex h-full min-h-full flex-col bg-background text-foreground font-sans antialiased">
         <ThemeProvider>
           <NextIntlClientProvider
             locale={locale}
@@ -34,6 +36,7 @@ export default async function RootLayout({
                 process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:7088/api/v1"
               }
             >
+              <AppToastProvider />
               {children}
             </ApiProvider>
           </NextIntlClientProvider>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, Button, Chip, Input, Switch } from "@heroui/react";
+import { Avatar, Button, Card, Chip, Input, Switch } from "@heroui/react";
 import { Icon } from "@theme/icon";
 
 import { settingsContentSectionStyles } from "./SettingsContentSection.styles";
@@ -36,7 +36,12 @@ export function SettingsContentSection({
           src="https://picsum.photos/seed/club4me-cover/1400/420"
           className={styles.coverImage()}
         />
-        <Button isIconOnly aria-label={changeAvatar} className={styles.edit()}>
+        <Button
+          isIconOnly
+          aria-label={changeAvatar}
+          className={styles.edit()}
+          variant="secondary"
+        >
           <Icon name="pencil-1" />
         </Button>
       </div>
@@ -72,7 +77,7 @@ export function SettingsContentSection({
         </div>
       </div>
 
-      <section className={styles.card()}>
+      <Card variant="transparent" className={styles.card()}>
         <h2 className="text-lg font-semibold">{personalTitle}</h2>
         <p className="mt-1 text-sm text-muted">{personalHint}</p>
         <div className={styles.grid()}>
@@ -122,16 +127,16 @@ export function SettingsContentSection({
             <span>{uploadHint}</span>
           </div>
         </div>
-      </section>
+      </Card>
 
-      <section className={styles.card()}>
+      <Card variant="transparent" className={styles.card()}>
         <h2 className="text-lg font-semibold">{paymentsTitle}</h2>
         <p className="mt-1 text-sm text-muted">{paymentsHint}</p>
         <div className={styles.payout()}>
           <span>{autoPayout}</span>
           <Switch defaultSelected aria-label={autoPayout} />
         </div>
-      </section>
+      </Card>
     </main>
   );
 }

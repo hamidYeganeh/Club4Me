@@ -1,6 +1,11 @@
 "use client";
 
-import { Button } from "@heroui/react";
+import {
+  Button,
+  Card,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { cn } from "@theme/cn";
 import { Bar, BarChart, Grid, Line, LineChart, XAxis } from "@ui/charts";
@@ -71,7 +76,7 @@ export function DashboardWorkspaceSection({
 
   return (
     <section className={styles.root()}>
-      <article className={cn(styles.card(), styles.score())}>
+      <Card variant="transparent" className={cn(styles.card(), styles.score())}>
         <p className={styles.cardTitle()}>{scoreTitle}</p>
         <p className={styles.cardValue()}>
           {scoreValue}{" "}
@@ -81,55 +86,67 @@ export function DashboardWorkspaceSection({
           <LineChart data={scoreData}>
             <Grid />
             <Line dataKey="predicted" stroke="var(--chart-3)" curve="step" />
-            <Line
-              dataKey="score"
-              stroke="var(--chart-1)"
-              curve="step"
-              fill
-            />
+            <Line dataKey="score" stroke="var(--chart-1)" curve="step" fill />
             <XAxis />
           </LineChart>
         </div>
-        <div className={styles.range()}>
+        <ToggleButtonGroup
+          className={styles.range()}
+          disallowEmptySelection
+          selectedKeys={new Set([range])}
+          selectionMode="single"
+          size="sm"
+          onSelectionChange={(keys) => {
+            const next = [...keys][0];
+            if (typeof next === "string") setRange(next);
+          }}
+        >
           {ranges.map((item) => (
-            <button
+            <ToggleButton
               key={item.id}
-              type="button"
-              onClick={() => setRange(item.id)}
               className={cn(
                 styles.rangeBtn(),
                 range === item.id && styles.rangeActive(),
               )}
+              id={item.id}
+              size="sm"
             >
               {item.label}
-            </button>
+            </ToggleButton>
           ))}
-        </div>
-      </article>
+        </ToggleButtonGroup>
+      </Card>
 
-      <article className={cn(styles.card(), styles.activity())}>
+      <Card variant="transparent" className={cn(styles.card(), styles.activity())}>
         <div className="flex items-center justify-between">
           <p className={styles.cardTitle()}>{activityTitle}</p>
-          <span className="text-xs text-accent">{seeAll}</span>
+          <Button size="sm" variant="ghost" className="text-accent">
+            {seeAll}
+          </Button>
         </div>
         <div className="mt-4 h-52">
           <BarChart data={activityData}>
             <Bar dataKey="value" />
           </BarChart>
         </div>
-      </article>
+      </Card>
 
-      <article className={cn(styles.card(), styles.suggestion())}>
+      <Card variant="transparent" className={cn(styles.card(), styles.suggestion())}>
         <div>
           <p className={styles.cardValue()}>{suggestionValue}</p>
           <p className={styles.cardTitle()}>{suggestionLabel}</p>
         </div>
-        <Button isIconOnly aria-label={suggestionLabel} className={styles.suggestionBtn()}>
+        <Button
+          isIconOnly
+          aria-label={suggestionLabel}
+          className={styles.suggestionBtn()}
+          variant="secondary"
+        >
           <Icon name="arrow-left" />
         </Button>
-      </article>
+      </Card>
 
-      <article className={cn(styles.card(), styles.hours())}>
+      <Card variant="transparent" className={cn(styles.card(), styles.hours())}>
         <p className={styles.cardTitle()}>{hoursTitle}</p>
         <p className={styles.cardValue()}>{hoursValue}</p>
         <div className="mt-3 h-24">
@@ -137,9 +154,9 @@ export function DashboardWorkspaceSection({
             <Line dataKey="hours" stroke="var(--chart-2)" fill />
           </LineChart>
         </div>
-      </article>
+      </Card>
 
-      <article className={cn(styles.card(), styles.checkins())}>
+      <Card variant="transparent" className={cn(styles.card(), styles.checkins())}>
         <p className={styles.cardTitle()}>{checkinsTitle}</p>
         <p className={styles.cardValue()}>{checkinsValue}</p>
         <div className={styles.dots()}>
@@ -150,9 +167,9 @@ export function DashboardWorkspaceSection({
             />
           ))}
         </div>
-      </article>
+      </Card>
 
-      <article className={cn(styles.card(), styles.bookings())}>
+      <Card variant="transparent" className={cn(styles.card(), styles.bookings())}>
         <p className={styles.cardTitle()}>{bookingsTitle}</p>
         <p className={styles.cardValue()}>{bookingsValue}</p>
         <div className="mt-3 h-24">
@@ -160,7 +177,7 @@ export function DashboardWorkspaceSection({
             <Bar dataKey="value" fill="var(--chart-2)" radius={6} />
           </BarChart>
         </div>
-      </article>
+      </Card>
     </section>
   );
 }

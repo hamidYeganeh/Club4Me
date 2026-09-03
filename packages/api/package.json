@@ -6,6 +6,10 @@
     ".": "./src/index.ts",
     "./provider": "./src/query/provider.tsx",
     "./account": "./src/domains/account/index.ts",
+    "./admin": "./src/domains/admin/index.ts",
+    "./articles": "./src/domains/articles/index.ts",
+    "./resources": "./src/domains/resources/index.ts",
+    "./business": "./src/domains/business/index.ts",
     "./discovery": "./src/domains/discovery/index.ts"
   },
   "scripts": {

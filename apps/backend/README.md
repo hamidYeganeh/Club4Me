@@ -1,6 +1,6 @@
 # Club4Me Backend
 
-Hono API server with MongoDB, Redis, and JWT.
+NestJS modular API with MongoDB, Redis, and JWT. Discovery routes remain on the existing Hono adapter.
 
 ## Env
 
@@ -26,6 +26,7 @@ Create a Kavenegar lookup template (for example `verify`) whose `%token` placeho
 npm run dev     # http://localhost:7088
 npm run build
 npm run start
+npm run test
 ```
 
 ## Versioning

@@ -2,11 +2,19 @@
   "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "noEmit": false
+    "rootDir": ".",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "noEmit": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "strictPropertyInitialization": false,
+    "incremental": true,
+    "sourceMap": true,
+    "declaration": false,
+    "declarationMap": false,
+    "types": ["node", "jest"]
   },
-  "include": ["src"],
+  "include": ["src", "test"],
   "exclude": ["node_modules", "dist"]
 }

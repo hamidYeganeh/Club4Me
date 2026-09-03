@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { ThemeToggle } from "@theme/theme-toggle";

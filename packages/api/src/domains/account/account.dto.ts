@@ -1,5 +1,31 @@
 export type UserRole = "athlete" | "coach" | "admin" | "owner";
 
+export type RequestableRole = "coach" | "owner";
+
+export type RoleRequestStatus = "pending" | "approved" | "rejected";
+
+export type AccountRoleRequest = {
+  id: string;
+  userId: string;
+  phone: string;
+  role: RequestableRole;
+  status: RoleRequestStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RequestRoleResponse = AccountRoleRequest;
+
+export type ListRoleRequestsResponse = {
+  items: AccountRoleRequest[];
+};
+
+export type ReviewRoleRequestPayload = {
+  status: Exclude<RoleRequestStatus, "pending">;
+};
+
+export type ReviewRoleRequestResponse = AccountRoleRequest;
+
 export type AccountUser = {
   id: string;
   phone: string;

@@ -3,7 +3,6 @@
 import { Avatar, Badge, Button } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { cn } from "@theme/cn";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { ButtonLink } from "@/components/button-link";
@@ -34,6 +33,7 @@ export function PanelRailSection({
         isIconOnly
         aria-label={addLabel}
         className={styles.add()}
+        variant="primary"
       >
         <Icon name="plus-fat" size="lg" />
       </ButtonLink>
@@ -41,15 +41,16 @@ export function PanelRailSection({
         {items.map((item) => {
           const active = isActive(pathname, item.href, item.exact);
           return (
-            <Link
+            <ButtonLink
               key={`${item.icon}-${item.href}`}
               href={item.href}
+              isIconOnly
               aria-label={item.label}
-              aria-current={active ? "page" : undefined}
+              variant="ghost"
               className={cn(styles.item(), active && styles.itemActive())}
             >
               <Icon name={item.icon} size="lg" />
-            </Link>
+            </ButtonLink>
           );
         })}
       </nav>

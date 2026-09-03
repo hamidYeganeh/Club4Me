@@ -10,7 +10,10 @@ export type ClubRecord = {
   slug: string;
   city?: string;
   description?: string;
-  ownerId: string;
+  ownerId: string | ObjectId;
+  reviewStatus?: "draft" | "pending" | "approved" | "rejected";
+  visibility?: "hidden" | "public";
+  location?: { type: "Point"; coordinates: [number, number] };
   createdAt: Date;
   updatedAt: Date;
 };
@@ -101,6 +104,7 @@ function reservations() {
 export async function ensureDiscoveryIndexes(): Promise<void> {
   await clubs().createIndex({ slug: 1 }, { unique: true });
   await clubs().createIndex({ city: 1, createdAt: -1 });
+  await clubs().createIndex({ location: "2dsphere" });
   await classes().createIndex({ clubId: 1, createdAt: -1 });
   await slots().createIndex({ clubId: 1, startsAt: 1 });
   await reservations().createIndex({ slotId: 1, userId: 1 });
@@ -122,7 +126,9 @@ function serializeClub(club: WithId<ClubRecord>): PublicClub {
     name: club.name,
     slug: club.slug,
     ...(club.city === undefined ? {} : { city: club.city }),
-    ...(club.description === undefined ? {} : { description: club.description }),
+    ...(club.description === undefined
+      ? {}
+      : { description: club.description }),
     createdAt: iso(club.createdAt),
     updatedAt: iso(club.updatedAt),
   };
@@ -168,10 +174,20 @@ function serializeReservation(
 export async function listClubs(input: {
   city?: string;
   q?: string;
+  latitude?: number;
+  longitude?: number;
   page: number;
   limit: number;
-}): Promise<{ items: PublicClub[]; page: number; limit: number; total: number }> {
-  const filter: Filter<ClubRecord> = {};
+}): Promise<{
+  items: PublicClub[];
+  page: number;
+  limit: number;
+  total: number;
+}> {
+  const filter: Filter<ClubRecord> = {
+    reviewStatus: "approved",
+    visibility: "public",
+  };
 
   if (input.city) {
     filter.city = input.city;
@@ -179,6 +195,20 @@ export async function listClubs(input: {
 
   if (input.q) {
     filter.name = { $regex: input.q, $options: "i" };
+  }
+
+  const countFilter: Filter<ClubRecord> = { ...filter };
+
+  if (input.latitude !== undefined && input.longitude !== undefined) {
+    countFilter.location = { $exists: true };
+    filter.location = {
+      $near: {
+        $geometry: {
+          type: "Point",
+          coordinates: [input.longitude, input.latitude],
+        },
+      },
+    };
   }
 
   const skip = (input.page - 1) * input.limit;
@@ -189,7 +219,7 @@ export async function listClubs(input: {
       .skip(skip)
       .limit(input.limit)
       .toArray(),
-    clubs().countDocuments(filter),
+    clubs().countDocuments(countFilter),
   ]);
 
   return {
@@ -201,7 +231,11 @@ export async function listClubs(input: {
 }
 
 export async function getClub(clubId: string): Promise<PublicClub> {
-  const club = await clubs().findOne({ _id: toObjectId(clubId, "clubId") });
+  const club = await clubs().findOne({
+    _id: toObjectId(clubId, "clubId"),
+    reviewStatus: "approved",
+    visibility: "public",
+  });
 
   if (!club) {
     throw new AppError(404, "CLUB_NOT_FOUND", "Club not found");
@@ -222,8 +256,12 @@ export async function createClub(input: {
     name: input.name,
     slug: `${slugBase(input.name)}-${tempId.toHexString().slice(-6)}`,
     ...(input.city === undefined ? {} : { city: input.city }),
-    ...(input.description === undefined ? {} : { description: input.description }),
+    ...(input.description === undefined
+      ? {}
+      : { description: input.description }),
     ownerId: input.ownerId,
+    reviewStatus: "draft",
+    visibility: "hidden",
     createdAt: now,
     updatedAt: now,
   };
@@ -248,10 +286,11 @@ export async function listClasses(clubId: string): Promise<PublicClass[]> {
 
 export async function createClass(input: {
   clubId: string;
+  ownerId: string;
   name: string;
   sport?: string;
 }): Promise<PublicClass> {
-  await getClub(input.clubId);
+  await assertClubOwner(input.clubId, input.ownerId);
 
   const now = new Date();
   const record: ClassRecord = {
@@ -280,12 +319,13 @@ export async function listSlots(clubId: string): Promise<PublicSlot[]> {
 
 export async function createSlot(input: {
   clubId: string;
+  ownerId: string;
   classId?: string;
   startsAt: string;
   endsAt: string;
   capacity: number;
 }): Promise<PublicSlot> {
-  await getClub(input.clubId);
+  await assertClubOwner(input.clubId, input.ownerId);
 
   const startsAt = new Date(input.startsAt);
   const endsAt = new Date(input.endsAt);
@@ -322,6 +362,18 @@ export async function createSlot(input: {
   const result = await slots().insertOne(record as SlotRecord & Document);
 
   return serializeSlot({ _id: result.insertedId, ...record });
+}
+
+async function assertClubOwner(clubId: string, ownerId: string): Promise<void> {
+  const ownerValues: Array<string | ObjectId> = [ownerId];
+  if (ObjectId.isValid(ownerId)) ownerValues.push(new ObjectId(ownerId));
+  const club = await clubs().findOne({
+    _id: toObjectId(clubId, "clubId"),
+    ownerId: { $in: ownerValues },
+  });
+  if (!club) {
+    throw new AppError(404, "CLUB_NOT_FOUND", "Club not found");
+  }
 }
 
 export async function reserveSlot(input: {

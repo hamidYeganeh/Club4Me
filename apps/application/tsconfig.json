@@ -26,6 +26,7 @@
       "@api/provider": ["../../packages/api/src/query/provider.tsx"],
       "@api/account": ["../../packages/api/src/domains/account/index.ts"],
       "@api/discovery": ["../../packages/api/src/domains/discovery/index.ts"],
+      "@api/locations": ["../../packages/api/src/domains/locations/index.ts"],
       "@api/*": ["../../packages/api/src/*"],
       "@theme/provider": ["../../packages/theme/src/theme-provider.tsx"],
       "@theme/*": ["../../packages/theme/src/*"],
@@ -42,5 +43,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "android", "ios", "out"]
 }

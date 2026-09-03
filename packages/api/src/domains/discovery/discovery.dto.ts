@@ -40,6 +40,8 @@ export type Reservation = {
 export type ListClubsParams = {
   city?: string;
   q?: string;
+  latitude?: number;
+  longitude?: number;
   page?: number;
   limit?: number;
 };

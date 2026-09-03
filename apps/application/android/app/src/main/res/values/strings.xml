@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Club4Me</string>
+    <string name="title_activity_main">Club4Me</string>
+    <string name="package_name">com.club4me.application</string>
+    <string name="custom_url_scheme">com.club4me.application</string>
+</resources>

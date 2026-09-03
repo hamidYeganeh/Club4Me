@@ -1,4 +1,4 @@
-import { Avatar } from "@heroui/react";
+import { Avatar, Card } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { cn } from "@theme/cn";
 
@@ -25,7 +25,7 @@ export function DashboardAsideSection({
 
   return (
     <aside className={styles.root()}>
-      <div className={styles.profile()}>
+      <Card variant="transparent" className={styles.profile()}>
         <Avatar className="size-14">
           <Avatar.Image
             alt={name}
@@ -35,9 +35,9 @@ export function DashboardAsideSection({
         </Avatar>
         <p className={styles.hello()}>{greeting}</p>
         <h2 className={styles.name()}>{name}</h2>
-      </div>
+      </Card>
 
-      <div className={styles.promo()}>
+      <Card variant="transparent" className={styles.promo()}>
         <p className="font-semibold">{goProTitle}</p>
         <ul className={styles.promoList()}>
           <li className="flex items-center gap-2">
@@ -53,9 +53,9 @@ export function DashboardAsideSection({
             {goProThree}
           </li>
         </ul>
-      </div>
+      </Card>
 
-      <div id="calendar" className={styles.calendar()}>
+      <Card variant="transparent" id="calendar" className={styles.calendar()}>
         <p className="font-medium">{calendarTitle}</p>
         <div className={styles.week()}>
           {weekday.map((day) => (
@@ -77,7 +77,7 @@ export function DashboardAsideSection({
           <span>{skipped}</span>
           <span>{challenge}</span>
         </div>
-      </div>
+      </Card>
     </aside>
   );
 }

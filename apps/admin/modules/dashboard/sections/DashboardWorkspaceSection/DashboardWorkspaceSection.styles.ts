@@ -3,7 +3,7 @@ import { tv } from "tailwind-variants";
 export const dashboardWorkspaceSectionStyles = tv({
   slots: {
     root: "grid flex-1 gap-4 lg:grid-cols-12",
-    card: "rounded-[1.75rem] border border-border bg-surface p-5 shadow-[0_0_40px_color-mix(in_oklch,var(--accent)_6%,transparent)]",
+    card: "rounded-[1.75rem] border border-border bg-surface p-5",
     cardTitle: "text-sm text-muted",
     cardValue: "mt-1 text-3xl font-semibold tabular-nums tracking-tight",
     score: "lg:col-span-7 min-h-[17rem]",
@@ -19,7 +19,7 @@ export const dashboardWorkspaceSectionStyles = tv({
     rangeActive: "bg-accent text-accent-foreground",
     dots: "mt-6 grid grid-cols-10 gap-2",
     dot: "size-2.5 rounded-full bg-default",
-    dotOn: "bg-accent shadow-[0_0_10px_color-mix(in_oklch,var(--accent)_70%,transparent)]",
+    dotOn: "bg-accent",
     suggestionBtn:
       "size-12 shrink-0 rounded-full bg-foreground text-background",
   },

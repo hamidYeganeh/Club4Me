@@ -1,4 +1,6 @@
-import { Avatar, Button } from "@heroui/react";
+"use client";
+
+import { Avatar, Button, Card } from "@heroui/react";
 import { Icon } from "@theme/icon";
 
 import { dashboardAsideSectionStyles } from "./DashboardAsideSection.styles";
@@ -17,7 +19,7 @@ export function DashboardAsideSection({
   const styles = dashboardAsideSectionStyles();
 
   return (
-    <aside className={styles.root()}>
+    <Card variant="transparent" className={styles.root()}>
       <div className={styles.profile()}>
         <Avatar className="size-20">
           <Avatar.Image
@@ -54,6 +56,6 @@ export function DashboardAsideSection({
         <Icon name="plus" />
         {addLabel}
       </Button>
-    </aside>
+    </Card>
   );
 }

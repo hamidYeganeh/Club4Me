@@ -25,6 +25,8 @@
       "@api": ["../../packages/api/src/index.ts"],
       "@api/provider": ["../../packages/api/src/query/provider.tsx"],
       "@api/account": ["../../packages/api/src/domains/account/index.ts"],
+      "@api/admin": ["../../packages/api/src/domains/admin/index.ts"],
+      "@api/business": ["../../packages/api/src/domains/business/index.ts"],
       "@api/discovery": ["../../packages/api/src/domains/discovery/index.ts"],
       "@api/*": ["../../packages/api/src/*"],
       "@theme/provider": ["../../packages/theme/src/theme-provider.tsx"],

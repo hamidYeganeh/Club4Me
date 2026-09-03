@@ -1,0 +1,55 @@
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { HydratedDocument, Types } from "mongoose";
+import { SessionCancellationPolicy } from "./reservable-session.schema";
+
+@Schema({ _id: false })
+export class ReservedOption {
+  @Prop({ type: Types.ObjectId, required: true }) optionId: Types.ObjectId;
+  @Prop({ type: String, enum: ["equipment", "amenity"], required: true }) type:
+    "equipment" | "amenity";
+  @Prop({ type: Types.ObjectId, required: true }) resourceId: Types.ObjectId;
+  @Prop({ type: Number, required: true, min: 1 }) quantity: number;
+  @Prop({ type: Number, required: true, min: 0 }) unitPrice: number;
+}
+
+@Schema({ collection: "session_reservations", timestamps: true })
+export class Reservation {
+  @Prop({ type: Types.ObjectId, ref: "Club", required: true, index: true })
+  clubId: Types.ObjectId;
+  @Prop({
+    type: Types.ObjectId,
+    ref: "ReservableSession",
+    required: true,
+    index: true,
+  })
+  sessionId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
+  userId: Types.ObjectId;
+  @Prop({ type: String, required: true, trim: true, maxlength: 120 })
+  sessionTitle: string;
+  @Prop({ type: Date, required: true }) sessionStartsAt: Date;
+  @Prop({ type: Date, required: true }) sessionEndsAt: Date;
+  @Prop({ type: Number, required: true, min: 1 }) participantCount: number;
+  @Prop({ type: [ReservedOption], default: [] })
+  selectedOptions: ReservedOption[];
+  @Prop({ type: Number, required: true, min: 0 }) totalPrice: number;
+  @Prop({ type: SessionCancellationPolicy, required: true })
+  cancellationPolicy: SessionCancellationPolicy;
+  @Prop({ type: Number, default: null }) refundPercent: number | null;
+  @Prop({ type: Number, default: null }) refundAmount: number | null;
+  @Prop({
+    type: String,
+    enum: ["reserved", "cancelled", "completed", "no_show"],
+    default: "reserved",
+  })
+  status: "reserved" | "cancelled" | "completed" | "no_show";
+  @Prop({ type: Date, default: null }) cancelledAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+export type ReservationDocument = HydratedDocument<Reservation>;
+export const ReservationSchema = SchemaFactory.createForClass(Reservation);
+ReservationSchema.index(
+  { sessionId: 1, userId: 1 },
+  { unique: true, partialFilterExpression: { status: "reserved" } },
+);

@@ -1,8 +1,9 @@
 "use client";
 
-import { Avatar, Button, Input } from "@heroui/react";
+import { Avatar, Button, Card, Input, Tabs } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { cn } from "@theme/cn";
+import { useState } from "react";
 
 import { coachThreadSectionStyles } from "./CoachThreadSection.styles";
 import type { CoachThreadSectionProps } from "./CoachThreadSection.types";
@@ -29,6 +30,7 @@ export function CoachThreadSection({
   voice,
 }: CoachThreadSectionProps) {
   const styles = coachThreadSectionStyles();
+  const [activeChat, setActiveChat] = useState(0);
 
   return (
     <main className={styles.root()}>
@@ -46,35 +48,65 @@ export function CoachThreadSection({
             <p className="text-xs text-muted">{tokensLeft}</p>
           </div>
         </div>
-        <div className={styles.tabs()}>
-          <span className={styles.tabActive()}>{main}</span>
-          <span>{settings}</span>
-          <span>{subscription}</span>
-        </div>
+        <Tabs className={styles.tabs()} defaultSelectedKey="main">
+          <Tabs.ListContainer className="rounded-none bg-transparent">
+            <Tabs.List aria-label={title}>
+              <Tabs.Tab className="text-muted data-[selected=true]:text-accent" id="main">
+                {main}
+                <Tabs.Indicator className="bg-accent" />
+              </Tabs.Tab>
+              <Tabs.Tab className="text-muted data-[selected=true]:text-accent" id="settings">
+                {settings}
+                <Tabs.Indicator className="bg-accent" />
+              </Tabs.Tab>
+              <Tabs.Tab
+                className="text-muted data-[selected=true]:text-accent"
+                id="subscription"
+              >
+                {subscription}
+                <Tabs.Indicator className="bg-accent" />
+              </Tabs.Tab>
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </Tabs>
         <nav className={styles.nav()}>
-          <span className={styles.navItem()}>{title}</span>
-          <span className={styles.navItem()}>{canvas}</span>
-          <span className={cn(styles.navItem(), styles.navItemActive())}>
+          <Button className={styles.navItem()} variant="ghost">
+            {title}
+          </Button>
+          <Button className={styles.navItem()} variant="ghost">
+            {canvas}
+          </Button>
+          <Button
+            className={cn(styles.navItem(), styles.navItemActive())}
+            variant="ghost"
+          >
             <Icon name="chart-trend-up" />
             {metrics}
-          </span>
-          <span className={styles.navItem()}>{appointment}</span>
+          </Button>
+          <Button className={styles.navItem()} variant="ghost">
+            {appointment}
+          </Button>
         </nav>
         <p className="mt-6 text-xs text-muted">{recent}</p>
         <div className={styles.chats()}>
           {chats.map((chat, index) => (
-            <div
+            <Button
               key={chat}
-              className={cn(styles.chatItem(), index === 0 && styles.chatActive())}
+              className={cn(
+                styles.chatItem(),
+                index === activeChat && styles.chatActive(),
+              )}
+              variant="ghost"
+              onPress={() => setActiveChat(index)}
             >
               <span className="truncate">{chat}</span>
-              {index === 0 ? (
+              {index === activeChat ? (
                 <span className="flex gap-1 text-muted">
                   <Icon name="pencil-1" size="sm" />
                   <Icon name="trash-1" size="sm" />
                 </span>
               ) : null}
-            </div>
+            </Button>
           ))}
         </div>
       </aside>
@@ -83,39 +115,52 @@ export function CoachThreadSection({
         <div className={styles.head()}>
           <h1 className="text-lg font-semibold">{title}</h1>
           <div className="flex items-center gap-2">
-            <Icon name="magnifying-glass" className="text-muted" />
-            <Icon name="gear-1" className="text-muted" />
+            <Button isIconOnly aria-label={placeholder} variant="ghost">
+              <Icon name="magnifying-glass" />
+            </Button>
+            <Button isIconOnly aria-label={settings} variant="ghost">
+              <Icon name="gear-1" />
+            </Button>
           </div>
         </div>
         <div className={styles.messages()}>
-          <div className={styles.aiBubble()}>
+          <Card variant="transparent" className={styles.aiBubble()}>
             <p>{aiReply}</p>
-            <div className={styles.linkCard()}>
+            <Card variant="transparent" className={styles.linkCard()}>
               <p className="font-medium">{linkTitle}</p>
               <p className="mt-1 text-muted">{linkBody}</p>
+            </Card>
+            <div className="mt-3 flex gap-1 text-muted">
+              <Button isIconOnly size="sm" variant="ghost">
+                <Icon name="volume-high" size="sm" />
+              </Button>
+              <Button isIconOnly size="sm" variant="ghost">
+                <Icon name="copy-1" size="sm" />
+              </Button>
+              <Button isIconOnly size="sm" variant="ghost">
+                <Icon name="arrow-repeat-clockwise-1" size="sm" />
+              </Button>
             </div>
-            <div className="mt-3 flex gap-3 text-muted">
-              <Icon name="volume-high" size="sm" />
-              <Icon name="copy-1" size="sm" />
-              <Icon name="arrow-repeat-clockwise-1" size="sm" />
-            </div>
-          </div>
+          </Card>
           <div className={styles.userBubble()}>{userReply}</div>
         </div>
-        <form className={styles.composer()} onSubmit={(event) => event.preventDefault()}>
-          <Button isIconOnly variant="tertiary" aria-label={attach}>
+        <form
+          className={styles.composer()}
+          onSubmit={(event) => event.preventDefault()}
+        >
+          <Button isIconOnly aria-label={attach} variant="tertiary">
             <Icon name="paper-clip-1" />
           </Button>
           <Input
             aria-label={placeholder}
+            className="flex-1"
             placeholder={placeholder}
             variant="secondary"
-            className="flex-1"
           />
-          <Button isIconOnly variant="tertiary" aria-label={voice}>
+          <Button isIconOnly aria-label={voice} variant="tertiary">
             <Icon name="microphone" />
           </Button>
-          <Button variant="primary" aria-label={send} className="rounded-full">
+          <Button aria-label={send} className="rounded-full" variant="primary">
             <Icon name="paper-plane-horizontal" />
           </Button>
         </form>

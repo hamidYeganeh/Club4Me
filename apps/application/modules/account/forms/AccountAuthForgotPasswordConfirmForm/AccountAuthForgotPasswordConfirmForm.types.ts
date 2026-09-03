@@ -1,0 +1,26 @@
+import type { AccountAuthForgotPasswordConfirmFormValues } from "./AccountAuthForgotPasswordConfirmForm.schema";
+
+export type AccountAuthForgotPasswordConfirmFormProps = {
+  phone: string;
+  codeLabel: string;
+  legend: string;
+  passwordLabel: string;
+  passwordPlaceholder: string;
+  passwordConfirmLabel: string;
+  passwordConfirmPlaceholder: string;
+  showPassword: string;
+  hidePassword: string;
+  submitLabel: string;
+  resendLabel: string;
+  resendInPrefix: string;
+  resendInSuffix: string;
+  codeRequired: string;
+  codeInvalid: string;
+  passwordRequired: string;
+  passwordMin: string;
+  passwordMismatch: string;
+  sent: string;
+  onSuccess: () => void;
+};
+
+export type { AccountAuthForgotPasswordConfirmFormValues };

@@ -62,9 +62,6 @@ export function RingChart({
                         <path
                           d={d}
                           fill={color}
-                          style={{
-                            filter: `drop-shadow(0 0 8px ${color})`,
-                          }}
                         />
                       );
 

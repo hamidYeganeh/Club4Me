@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import NumberFlow from "@number-flow/react";
-import { Button } from "@heroui/react";
+import { Button, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
 import { Autoplay, FreeMode, Thumbs } from "swiper/modules";
@@ -18,6 +18,7 @@ import { discoveryClubsDetailHeroSectionStyles } from "./DiscoveryClubsDetailHer
 import type { DiscoveryClubsDetailHeroSectionProps } from "./DiscoveryClubsDetailHeroSection.types";
 
 export function DiscoveryClubsDetailHeroSection({
+  clubId,
   name,
   location,
   price,
@@ -49,15 +50,17 @@ export function DiscoveryClubsDetailHeroSection({
         watchOverflow
         className={styles.mainSwiper()}
       >
-        {images.map((src) => (
+        {images.map((src, index) => (
           <SwiperSlide key={src} className={styles.slide()}>
             <Image
               src={src}
               alt={name}
               fill
-              priority
+              unoptimized
+              priority={index === 0}
               sizes="100vw"
               className={styles.image()}
+              data-zoom-enter-key={index === 0 ? clubId : undefined}
             />
           </SwiperSlide>
         ))}
@@ -73,7 +76,7 @@ export function DiscoveryClubsDetailHeroSection({
           size="lg"
           onPress={() => router.back()}
         >
-          <Icon name="arrow-left" size="lg" />
+          <Icon name="chevron-right" size="lg" />
         </Button>
 
         <Button
@@ -89,8 +92,8 @@ export function DiscoveryClubsDetailHeroSection({
 
       <div className={styles.metaRow()} dir="rtl">
         <div className={styles.meta()}>
-          <p className={styles.location()}>{location}</p>
-          <h1 className={styles.name()}>{name}</h1>
+          <Typography type="body-sm" className={styles.location()}>{location}</Typography>
+          <Typography type="h2" truncate className={styles.name()}>{name}</Typography>
         </div>
 
         <NumberFlow

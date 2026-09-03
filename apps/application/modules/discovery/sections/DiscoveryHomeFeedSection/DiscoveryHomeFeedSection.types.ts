@@ -1,3 +1,5 @@
+import type { DiscoveryClub } from "../../discovery.types";
+
 export type DiscoveryHomeFeedSectionProps = {
-  count?: number;
+  clubs?: DiscoveryClub[];
 };

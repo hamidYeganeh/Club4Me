@@ -2,7 +2,7 @@ import { tv } from "tailwind-variants";
 
 export const discoveryClubsDetailHeroSectionStyles = tv({
   slots: {
-    root: "relative isolate h-[58dvh] w-full overflow-hidden bg-background",
+    root: "relative isolate h-[58dvh] min-h-[58dvh] w-full overflow-hidden bg-background",
     mainSwiper:
       "absolute inset-0 h-full w-full [&_.swiper-wrapper]:h-full [&_.swiper-slide]:h-full [&_.swiper-slide]:w-full",
     slide: "relative h-full overflow-hidden",
@@ -15,8 +15,8 @@ export const discoveryClubsDetailHeroSectionStyles = tv({
     metaRow:
       "absolute inset-x-0 bottom-10 z-10 flex items-end justify-between gap-4 px-5",
     meta: "min-w-0",
-    location: "text-sm font-medium text-white/85",
-    name: "mt-0.5 truncate text-3xl font-bold tracking-tight text-white",
+    location: "font-medium text-white/85",
+    name: "mt-0.5 text-white",
     price: "shrink-0 text-3xl font-bold text-accent",
   },
 });

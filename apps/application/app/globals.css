@@ -4,10 +4,23 @@
 @import "@repo/theme/fonts.css";
 @import "@repo/theme/icons.css";
 @import "@repo/theme/theme-transition.css";
+@import "@neshan-maps-platform/maplibre-sdk/style.css";
 
 @layer base {
+  html {
+    --keyboard-inset: 0px;
+  }
+
   body {
-    @apply bg-background text-foreground min-h-full;
+    @apply h-full bg-background text-foreground;
+  }
+
+  input,
+  textarea,
+  select,
+  .input-otp {
+    scroll-margin-bottom: calc(var(--keyboard-inset, 0px) + 1.5rem);
+    scroll-margin-top: calc(env(safe-area-inset-top) + 1rem);
   }
 }
 

@@ -1,5 +1,10 @@
 export * from "./domains/account";
+export * from "./domains/articles";
+export * from "./domains/clubs";
 export * from "./domains/discovery";
+export * from "./domains/resources";
+export * from "./domains/locations";
+export * from "./domains/reservations";
 export {
   ApiError,
   configureApi,
