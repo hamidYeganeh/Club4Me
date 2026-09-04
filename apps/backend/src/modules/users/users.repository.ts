@@ -90,6 +90,22 @@ export class UsersRepository {
     return toPublicUser(user);
   }
 
+  async updateProfile(
+    userId: string,
+    profile: { firstName: string; lastName: string },
+  ): Promise<PublicUser> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { $set: profile },
+      { new: true },
+    );
+    if (!user) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    return toPublicUser(user);
+  }
+
   async deleteAccount(userId: string): Promise<void> {
     if (!Types.ObjectId.isValid(userId)) {
       throw new AppError(404, "USER_NOT_FOUND", "User not found");

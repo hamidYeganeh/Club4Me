@@ -25,7 +25,7 @@ export function GuestGate({ children }: GuestGateProps) {
   }, []);
 
   useEffect(() => {
-    if (me.isError) {
+    if (me.isError && !me.isFetching) {
       tokenStore.clear();
       return;
     }
@@ -33,7 +33,7 @@ export function GuestGate({ children }: GuestGateProps) {
     if (me.data) {
       router.replace("/");
     }
-  }, [me.data, me.isError, router]);
+  }, [me.data, me.isError, me.isFetching, router]);
 
   if (hasToken === null || (hasToken && me.isLoading && !me.isError)) {
     return (

@@ -34,6 +34,7 @@ import type {
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function AccountAuthOtpConfirmForm({
+  formId,
   phone,
   resendLabel,
   resendInPrefix,
@@ -125,6 +126,7 @@ export function AccountAuthOtpConfirmForm({
 
   return (
     <Form
+      id={formId}
       form={form}
       className={styles.root()}
       aria-labelledby="account-auth-otp-confirm-title"
@@ -190,6 +192,7 @@ export function AccountAuthOtpConfirmForm({
                   variant="ghost"
                   size="sm"
                   isDisabled={cooldown > 0 || isBusy}
+                  data-ready={cooldown <= 0 && !isBusy}
                   className={styles.resend()}
                   onPress={() => {
                     void handleResend();
@@ -229,7 +232,7 @@ export function AccountAuthOtpConfirmForm({
           >
             {confirmOtp.isPending ? <Spinner size="sm" /> : null}
             {continueLabel}
-            <Icon name="chevron-right" size={18} />
+            <Icon name="chevron-left" size={18} />
           </Button>
         </FormFieldset.Actions>
       </FormFieldset>

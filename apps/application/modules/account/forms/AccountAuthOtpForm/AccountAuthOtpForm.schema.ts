@@ -11,7 +11,6 @@ export function createAccountAuthOtpFormSchema(
   messages: AccountAuthOtpFormMessages,
 ) {
   return z.object({
-    country: z.literal("IR"),
     phone: z
       .string()
       .trim()

@@ -209,13 +209,9 @@ export function DiscoveryClubsDetailScreen({
       <ClubReservationsAndReviewsSection clubId={clubId} />
 
       <DiscoveryClubsDetailActionsSection
-        primaryLabel={t("openInNeshan")}
+        primaryLabel={t("bookNow")}
         onBook={() => {
-          window.open(
-            `https://nshn.ir/?lat=${club.map.latitude}&lng=${club.map.longitude}`,
-            "_blank",
-            "noopener,noreferrer",
-          );
+          router.push(`/discovery/clubs/${clubId}/slots`);
         }}
         onShare={() => {
           if (navigator.share) {

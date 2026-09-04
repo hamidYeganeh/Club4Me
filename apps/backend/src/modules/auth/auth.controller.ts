@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   UseGuards,
 } from "@nestjs/common";
@@ -18,6 +19,7 @@ import { LoginDto } from "./dto/login.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { RequestOtpDto } from "./dto/request-otp.dto";
 import { SetPasswordDto } from "./dto/set-password.dto";
+import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { DeleteAccountDto } from "./dto/delete-account.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { AuthService } from "./auth.service";
@@ -96,6 +98,15 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: AuthTokenPayload) {
     return this.authService.getMe(user.sub);
+  }
+
+  @Patch("me")
+  @UseGuards(JwtAuthGuard)
+  updateProfile(
+    @CurrentUser() user: AuthTokenPayload,
+    @Body() body: UpdateProfileDto,
+  ) {
+    return this.authService.updateProfile(user.sub, body);
   }
 
   @Delete()

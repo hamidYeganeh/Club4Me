@@ -3,9 +3,9 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AccountAuthLoginForm } from "@modules/account/forms/AccountAuthLoginForm";
-import { AccountAuthLoginBrandSection } from "@modules/account/sections/AccountAuthLoginBrandSection";
 import { AccountAuthMethodActionsSection } from "@modules/account/sections/AccountAuthMethodActionsSection";
-import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
+import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
+import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
 import { useTranslations } from "next-intl";
 
 import { AuthScreen } from "@/components/auth-screen";
@@ -17,7 +17,6 @@ export function AccountAuthLoginScreen() {
   const router = useRouter();
   const t = useTranslations("auth.login");
   const tHome = useTranslations("auth.home");
-  const tCommon = useTranslations("common");
   const isKeyboardOpen = useKeyboardOpen();
   const [submitState, setSubmitState] = useState({
     isBusy: false,
@@ -33,16 +32,14 @@ export function AccountAuthLoginScreen() {
 
   return (
     <AuthScreen>
-      <AccountAuthOtpHeaderSection
-        backLabel={tCommon("back")}
-        href="/auth"
-        transparent
+      <AccountAuthOtpHeroSection
+        alt={t("illustrationAlt")}
+        size={isKeyboardOpen ? "compact" : "default"}
       />
-      <AccountAuthLoginBrandSection
-        name={tCommon("appName")}
-        tagline={t("tagline")}
-        illustrationAlt={t("illustrationAlt")}
-        compact={isKeyboardOpen}
+      <AccountAuthOtpCopySection
+        title={t("title")}
+        subtitle={t("subtitle")}
+        titleId="account-auth-login-title"
       />
       <AccountAuthLoginForm
         formId={ACCOUNT_AUTH_LOGIN_FORM_ID}

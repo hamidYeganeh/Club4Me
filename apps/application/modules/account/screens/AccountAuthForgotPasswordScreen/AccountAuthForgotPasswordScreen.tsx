@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { AccountAuthForgotPasswordForm } from "@modules/account/forms/AccountAuthForgotPasswordForm";
 import { AccountAuthForgotPasswordSupportSection } from "@modules/account/sections/AccountAuthForgotPasswordSupportSection";
 import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
-import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
 import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
 import { useTranslations } from "next-intl";
 
@@ -14,16 +13,10 @@ import { useKeyboardOpen } from "@/hooks/use-keyboard-inset";
 export function AccountAuthForgotPasswordScreen() {
   const router = useRouter();
   const t = useTranslations("auth.forgot");
-  const tCommon = useTranslations("common");
   const isKeyboardOpen = useKeyboardOpen();
 
   return (
     <AuthScreen>
-      <AccountAuthOtpHeaderSection
-        backLabel={tCommon("back")}
-        href="/auth/login"
-        transparent
-      />
       <AccountAuthOtpHeroSection
         alt={t("illustrationAlt")}
         src="/auth/forgot-password-illustration.png"

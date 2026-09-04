@@ -193,6 +193,13 @@ export class AuthService {
     return this.usersService.findById(userId);
   }
 
+  updateProfile(
+    userId: string,
+    profile: { firstName: string; lastName: string },
+  ): Promise<PublicUser> {
+    return this.usersService.updateProfile(userId, profile);
+  }
+
   private async requirePortalUser(
     phone: string,
     role: UserRole,

@@ -9,18 +9,19 @@ export function AccountAuthOtpCopySection({
   title,
   subtitle,
   titleId = "account-auth-otp-title",
+  cue = true,
 }: AccountAuthOtpCopySectionProps) {
-  const styles = accountAuthOtpCopySectionStyles();
+  const styles = accountAuthOtpCopySectionStyles({ cue: Boolean(subtitle) && cue });
 
   return (
     <section className={styles.root()}>
-      <Typography type="h2" id={titleId} className={styles.title()}>
-        {title}
-      </Typography>
-      {subtitle ? (
-        <Typography type="body-sm" color="muted" className={styles.subtitle()}>
-          {subtitle}
+      {title ? (
+        <Typography type="h2" id={titleId} className={styles.title()}>
+          {title}
         </Typography>
+      ) : null}
+      {subtitle ? (
+        <p className={styles.subtitle()}>{subtitle}</p>
       ) : null}
     </section>
   );

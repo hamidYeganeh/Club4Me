@@ -24,6 +24,13 @@ export class UsersService {
     return this.usersRepository.updateStatus(userId, status);
   }
 
+  updateProfile(
+    userId: string,
+    profile: { firstName: string; lastName: string },
+  ): Promise<PublicUser> {
+    return this.usersRepository.updateProfile(userId, profile);
+  }
+
   deleteAccount(userId: string) {
     return this.usersRepository.deleteAccount(userId);
   }

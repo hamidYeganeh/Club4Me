@@ -4,8 +4,6 @@ export type AccountAuthOtpFormProps = {
   formId: string;
   phoneLabel: string;
   phonePlaceholder: string;
-  countryLabel: string;
-  iranLabel: string;
   legend: string;
   phoneRequired: string;
   phoneInvalid: string;

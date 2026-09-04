@@ -58,7 +58,7 @@
 
   /* Border Radius */
   --radius: 0.5rem;
-  --field-radius: 0.75rem;
+  --field-radius: 1rem;
 
   /* Font Family */
   --font-sans: "IRANSansX", Tahoma, ui-sans-serif, system-ui, sans-serif;

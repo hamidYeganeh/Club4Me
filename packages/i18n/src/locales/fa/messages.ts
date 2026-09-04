@@ -1,6 +1,6 @@
 export const faMessages = {
   common: {
-    appName: "جیم فور می",
+    appName: "Gym4Me",
     loading: "در حال بارگذاری...",
     error: "خطایی رخ داد",
     save: "ذخیره",
@@ -244,11 +244,10 @@ export const faMessages = {
     },
     otp: {
       title: "ورود با پیامک",
-      subtitle:
-        "یک پیامک یک‌بارمصرف برایتان می‌فرستیم. هزینه پیامک ممکن است بر اساس موقعیت شما اعمال شود.",
+      subtitle: "شماره تلفن خود را اینجا وارد کنید",
       illustrationAlt: "تأیید امن شماره موبایل",
       phoneLabel: "شماره موبایل",
-      phonePlaceholder: "0938 3729 627",
+      phonePlaceholder: "0912 0000 000",
       countryLabel: "کشور",
       iran: "ایران",
       continue: "ادامه",
@@ -258,7 +257,9 @@ export const faMessages = {
       sent: "کد تأیید ارسال شد",
       confirm: {
         title: "کد تأیید را وارد کنید",
+        subtitle: "کد پیامک‌شده را اینجا وارد کنید",
         sentTo: "کد را به {phone} فرستادیم. برای تأیید هویت اینجا وارد کنید.",
+        editPhone: "ویرایش",
         resend: "دریافت نکردید؟ ارسال دوباره",
         resendInPrefix: "ارسال دوباره تا",
         resendInSuffix: "ثانیه",
@@ -270,10 +271,11 @@ export const faMessages = {
     },
     login: {
       title: "ورود",
+      subtitle: "شماره تلفن و رمز عبور خود را اینجا وارد کنید",
       tagline: "برای دسترسی به باشگاه هوشمند وارد شوید.",
       illustrationAlt: "ورود امن به حساب",
       phoneLabel: "شماره موبایل",
-      phonePlaceholder: "0938 3729 627",
+      phonePlaceholder: "0912 0000 000",
       passwordLabel: "رمز عبور",
       passwordPlaceholder: "رمز عبور را وارد کنید",
       showPassword: "نمایش رمز عبور",
@@ -300,7 +302,7 @@ export const faMessages = {
         "شماره موبایل خود را وارد کنید تا کد بازیابی برایتان پیامک شود.",
       illustrationAlt: "قفل امن حساب کاربری",
       phoneLabel: "شماره موبایل",
-      phonePlaceholder: "0938 3729 627",
+      phonePlaceholder: "0912 0000 000",
       submit: "بازیابی رمز عبور",
       legend: "بازیابی رمز عبور",
       phoneRequired: "شماره موبایل را وارد کنید",
@@ -409,6 +411,23 @@ export const faMessages = {
       reviewSent: "نظر شما ثبت شد.",
       reviewError:
         "ثبت نظر انجام نشد؛ شاید قبلاً برای این باشگاه نظر داده‌اید.",
+    },
+    clubSlots: {
+      eyebrow: "رزرو",
+      title: "زمین‌ها",
+      selectDate: "تاریخ رزرو را انتخاب کنید",
+      selectTime: "ساعت رزرو را انتخاب کنید",
+      price: "قیمت",
+      bookNow: "رزرو کنید",
+      depositNotice:
+        "با تأیید رزرو، ۵۰٪ مبلغ به‌عنوان بیعانه دریافت می‌شود. باقی‌مانده پس از جلسه پرداخت خواهد شد.",
+      noSessions: "فعلاً سانس فعالی برای این باشگاه ثبت نشده است.",
+      noTimes: "برای این تاریخ سانس آزادی وجود ندارد.",
+      reserved: "رزرو با موفقیت ثبت شد.",
+      reserveError: "رزرو انجام نشد؛ ظرفیت یا ورود به حساب را بررسی کنید.",
+      paymentApproved: "پرداخت آزمایشی موفق بود و رزرو قطعی شد",
+      paymentRejected: "پرداخت ناموفق بود و ظرفیت رزرو آزاد شد",
+      paymentError: "ثبت نتیجه پرداخت انجام نشد",
     },
   },
   panel: {

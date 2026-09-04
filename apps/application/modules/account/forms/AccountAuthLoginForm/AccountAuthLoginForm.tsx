@@ -16,6 +16,7 @@ import { useTranslations } from "next-intl";
 import { Controller, useForm } from "react-hook-form";
 
 import { Form, FormFieldset, FormTextField } from "@/components/form";
+import { SmoothInputGroupInput } from "@/components/smooth-input";
 import { getAccountApiErrorMessage } from "@/lib/account-api-error";
 import { formatIranianPhoneDisplay, toE164IranianPhone } from "@/lib/phone";
 
@@ -118,17 +119,15 @@ export function AccountAuthLoginForm({
             isDisabled={isBusy}
             className={styles.field()}
             transform={formatIranianPhoneDisplay}
+            variant="secondary"
           >
-            <Label className={styles.label()}>{phoneLabel}</Label>
+            <Label className="sr-only">{phoneLabel}</Label>
             <InputGroup
               variant="secondary"
               className={styles.inputGroup()}
               dir="ltr"
             >
-              <InputGroup.Prefix className={styles.prefix()}>
-                <Icon name="telephone-1" size={18} />
-              </InputGroup.Prefix>
-              <InputGroup.Input
+              <SmoothInputGroupInput
                 className={styles.input()}
                 inputMode="tel"
                 autoComplete="tel"
@@ -143,17 +142,15 @@ export function AccountAuthLoginForm({
             fullWidth
             isDisabled={isBusy}
             className={styles.field()}
+            variant="secondary"
           >
-            <Label className={styles.label()}>{passwordLabel}</Label>
+            <Label className="sr-only">{passwordLabel}</Label>
             <InputGroup
               variant="secondary"
               className={styles.inputGroup()}
               dir="ltr"
             >
-              <InputGroup.Prefix className={styles.prefix()}>
-                <Icon name="lock-1" size={18} />
-              </InputGroup.Prefix>
-              <InputGroup.Input
+              <SmoothInputGroupInput
                 className={styles.input()}
                 type={passwordVisible ? "text" : "password"}
                 autoComplete="current-password"

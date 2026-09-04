@@ -13,6 +13,7 @@
     "./coach-card": "./src/coach-card/index.ts",
     "./club-card": "./src/club-card/index.ts",
     "./uploader": "./src/uploader/index.ts",
+    "./availability-scheduler": "./src/availability-scheduler/index.tsx",
     "./*": "./src/*.tsx"
   },
   "scripts": {
@@ -32,15 +33,18 @@
   "dependencies": {
     "@heroui/react": "^3.0.0",
     "@repo/theme": "*",
-    "react-dropzone": "^14.3.8",
-    "tailwind-variants": "^3.3.1",
     "@visx/curve": "^4.0.0",
     "@visx/group": "^4.0.0",
     "@visx/responsive": "^4.0.0",
     "@visx/scale": "^4.0.0",
     "@visx/shape": "^4.0.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.544.0",
     "motion": "^13.2.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "react-dropzone": "^14.3.8",
+    "tailwind-merge": "^3.6.0",
+    "tailwind-variants": "^3.3.1"
   }
 }

@@ -3,7 +3,6 @@
 import { AccountAuthHomeActionsSection } from "@modules/account/sections/AccountAuthHomeActionsSection";
 import { AccountAuthHomeHeroSection } from "@modules/account/sections/AccountAuthHomeHeroSection";
 import { AccountAuthLoginBrandSection } from "@modules/account/sections/AccountAuthLoginBrandSection";
-import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
 import { useTranslations } from "next-intl";
 
 import { ProgressiveBlur } from "@/components/progressive-blur";
@@ -30,12 +29,6 @@ export function AccountAuthHomeScreen() {
       </div>
 
       <div className="relative z-20 flex min-h-full flex-1 flex-col px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-        <AccountAuthOtpHeaderSection
-          backLabel={tCommon("back")}
-          href="/welcome"
-          overlay
-        />
-
         <div className="relative mt-auto w-full">
           <div className="relative z-10 flex w-full flex-col items-center gap-8 pt-16">
             <AccountAuthLoginBrandSection

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { AccountAuthOtpForm } from "@modules/account/forms/AccountAuthOtpForm";
 import { AccountAuthMethodActionsSection } from "@modules/account/sections/AccountAuthMethodActionsSection";
 import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
-import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
 import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
 import { useTranslations } from "next-intl";
 
@@ -18,7 +17,6 @@ export function AccountAuthOtpScreen() {
   const router = useRouter();
   const t = useTranslations("auth.otp");
   const tHome = useTranslations("auth.home");
-  const tCommon = useTranslations("common");
   const isKeyboardOpen = useKeyboardOpen();
   const [submitState, setSubmitState] = useState({
     isBusy: false,
@@ -34,22 +32,19 @@ export function AccountAuthOtpScreen() {
 
   return (
     <AuthScreen>
-      <AccountAuthOtpHeaderSection
-        backLabel={tCommon("back")}
-        href="/auth"
-        transparent
-      />
-      <AccountAuthOtpCopySection title={t("title")} subtitle={t("subtitle")} />
       <AccountAuthOtpHeroSection
         alt={t("illustrationAlt")}
         size={isKeyboardOpen ? "compact" : "default"}
+      />
+      <AccountAuthOtpCopySection
+        title={t("title")}
+        subtitle={t("subtitle")}
+        titleId="account-auth-otp-title"
       />
       <AccountAuthOtpForm
         formId={ACCOUNT_AUTH_OTP_FORM_ID}
         phoneLabel={t("phoneLabel")}
         phonePlaceholder={t("phonePlaceholder")}
-        countryLabel={t("countryLabel")}
-        iranLabel={t("iran")}
         legend={t("legend")}
         phoneRequired={t("phoneRequired")}
         phoneInvalid={t("phoneInvalid")}

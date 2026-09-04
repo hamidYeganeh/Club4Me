@@ -25,11 +25,11 @@ export function AuthGate({ children }: AuthGateProps) {
   }, []);
 
   useEffect(() => {
-    if (hasToken === false || me.isError) {
+    if (hasToken === false || (me.isError && !me.isFetching)) {
       tokenStore.clear();
       router.replace("/auth");
     }
-  }, [hasToken, me.isError, router]);
+  }, [hasToken, me.isError, me.isFetching, router]);
 
   if (hasToken === null || hasToken === false || me.isError) {
     return (

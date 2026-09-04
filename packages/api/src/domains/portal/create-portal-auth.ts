@@ -65,7 +65,8 @@ export function createPortalAuth(scope: PortalScope) {
 
     logout: () => http.post<LogoutResponse>(endpoints.logout),
 
-    me: () => http.get<AccountMeResponse>(endpoints.me),
+    me: (signal?: AbortSignal) =>
+      http.get<AccountMeResponse>(endpoints.me, undefined, signal),
   };
 
   const queries = {
@@ -76,7 +77,7 @@ export function createPortalAuth(scope: PortalScope) {
   function useMe(enabled = true) {
     return useQuery({
       queryKey: queries.me(),
-      queryFn: () => client.me(),
+      queryFn: ({ signal }) => client.me(signal),
       enabled: enabled && Boolean(tokenStore.get()),
     });
   }
@@ -93,8 +94,9 @@ export function createPortalAuth(scope: PortalScope) {
     return useMutation({
       mutationFn: (payload: ConfirmOtpPayload) => client.confirmOtp(payload),
       onSuccess: async (data) => {
+        await queryClient.cancelQueries({ queryKey: queries.me() });
         tokenStore.setSession(data.accessToken, data.refreshToken);
-        await queryClient.invalidateQueries({ queryKey: queries.me() });
+        queryClient.removeQueries({ queryKey: queries.me() });
       },
     });
   }
@@ -113,12 +115,13 @@ export function createPortalAuth(scope: PortalScope) {
         return client.login(payload);
       },
       onSuccess: async (data, variables) => {
+        await queryClient.cancelQueries({ queryKey: queries.me() });
         tokenStore.setSession(
           data.accessToken,
           data.refreshToken,
           variables.remember !== false,
         );
-        await queryClient.invalidateQueries({ queryKey: queries.me() });
+        queryClient.removeQueries({ queryKey: queries.me() });
       },
     });
   }
@@ -148,8 +151,9 @@ export function createPortalAuth(scope: PortalScope) {
       mutationFn: (payload: ConfirmForgotPasswordPayload) =>
         client.confirmForgotPassword(payload),
       onSuccess: async (data) => {
+        await queryClient.cancelQueries({ queryKey: queries.me() });
         tokenStore.setSession(data.accessToken, data.refreshToken);
-        await queryClient.invalidateQueries({ queryKey: queries.me() });
+        queryClient.removeQueries({ queryKey: queries.me() });
       },
     });
   }
@@ -163,8 +167,9 @@ export function createPortalAuth(scope: PortalScope) {
           refreshToken: payload?.refreshToken ?? tokenStore.getRefresh() ?? "",
         }),
       onSuccess: async (data) => {
+        await queryClient.cancelQueries({ queryKey: queries.me() });
         tokenStore.setSession(data.accessToken, data.refreshToken);
-        await queryClient.invalidateQueries({ queryKey: queries.me() });
+        queryClient.removeQueries({ queryKey: queries.me() });
       },
     });
   }

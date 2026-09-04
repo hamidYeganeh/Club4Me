@@ -31,7 +31,7 @@ export function AccountAuthMethodActionsSection({
       >
         {isPending ? <Spinner size="sm" /> : null}
         {submitLabel}
-        <Icon name="chevron-right" size={18} />
+        <Icon name="chevron-left" size={18} />
       </Button>
 
       {showAlternate ? (

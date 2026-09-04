@@ -78,8 +78,15 @@ export function getApiConfig(): ApiConfig {
 }
 
 export const http = {
-  get: async <T>(url: string, params?: Record<string, unknown>): Promise<T> => {
-    const response = await getHttpClient().get<ApiSuccess<T>>(url, { params });
+  get: async <T>(
+    url: string,
+    params?: Record<string, unknown>,
+    signal?: AbortSignal,
+  ): Promise<T> => {
+    const response = await getHttpClient().get<ApiSuccess<T>>(url, {
+      params,
+      signal,
+    });
     return response.data.data;
   },
   post: async <T>(url: string, data?: unknown): Promise<T> => {

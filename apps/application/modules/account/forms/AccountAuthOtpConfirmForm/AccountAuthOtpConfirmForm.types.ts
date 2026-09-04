@@ -1,6 +1,7 @@
 import type { AccountAuthOtpConfirmFormValues } from "./AccountAuthOtpConfirmForm.schema";
 
 export type AccountAuthOtpConfirmFormProps = {
+  formId?: string;
   phone: string;
   codeLabel: string;
   legend: string;

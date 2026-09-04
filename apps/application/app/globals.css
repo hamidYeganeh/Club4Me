@@ -8,6 +8,20 @@
 
 @source "../../../packages/ui/src";
 
+@theme inline {
+  --animate-line-shadow: line-shadow 15s linear infinite;
+}
+
+@keyframes line-shadow {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 100% -100%;
+  }
+}
+
 @layer base {
   * {
     @apply select-none;
@@ -43,6 +57,16 @@
 }
 
 @layer components {
+  /* App-wide HeroUI button height (icon-only + ghost text actions keep their own size) */
+  .button:not(.button--icon-only):not(.button--ghost) {
+    @apply h-16 md:h-16;
+  }
+
+  .button--sm:not(.button--icon-only):not(.button--ghost),
+  .button--lg:not(.button--icon-only):not(.button--ghost) {
+    @apply h-16 md:h-16;
+  }
+
   .app-page {
     @apply relative isolate flex min-h-dvh w-full max-w-full flex-1 flex-col overflow-x-hidden px-5 pb-[calc(7rem+env(safe-area-inset-bottom))];
   }

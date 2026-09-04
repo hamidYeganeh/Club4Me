@@ -18,6 +18,13 @@ import {
   Uploader,
   type UploaderLabels,
 } from "@ui/uploader";
+import {
+  AvailabilityScheduler,
+  defaultWeek,
+  weekAvailabilityToWeeklyHours,
+  weeklyHoursToWeekAvailability,
+  type WeekAvailability,
+} from "@ui/availability-scheduler";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -105,13 +112,9 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const [operationalStatus, setOperationalStatus] = useState<
     "active" | "temporarily_closed" | "permanently_closed" | "under_maintenance"
   >("active");
-  const [weeklyHours, setWeeklyHours] = useState<
-    Array<{
-      dayOfWeek: number;
-      periods: Array<{ opensAt: string; closesAt: string }>;
-      isClosed: boolean;
-    }>
-  >([]);
+  const [weeklyHours, setWeeklyHours] = useState(() =>
+    weekAvailabilityToWeeklyHours(defaultWeek()),
+  );
   const [cancellationRules, setCancellationRules] = useState<
     ClubCancellationRule[]
   >(defaultCancellationRules);
@@ -210,7 +213,11 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
     setCurrency(value.currency);
     setTaxPercent(value.taxPercent);
     setOperationalStatus(value.operationalStatus);
-    setWeeklyHours(value.weeklyHours);
+    setWeeklyHours(
+      value.weeklyHours.length
+        ? value.weeklyHours
+        : weekAvailabilityToWeeklyHours(defaultWeek()),
+    );
     if (value.location) {
       setCountryId(value.location.countryId);
       setProvinceId(value.location.provinceId);
@@ -223,6 +230,11 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
       setLocationNotes(value.location.locationNotes ?? "");
     }
   }, [club.data]);
+
+  const weekAvailability = useMemo(
+    () => weeklyHoursToWeekAvailability(weeklyHours),
+    [weeklyHours],
+  );
 
   const busy = create.isPending || update.isPending || createMedia.isPending;
   const toggleCounted = (
@@ -845,110 +857,15 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
               </div>
             </Field>
             <Field label={t("weeklyHours")} wide>
-              <div className="space-y-2">
-                {weeklyHours.map((day, index) => (
-                  <div
-                    key={day.dayOfWeek}
-                    className="grid gap-2 sm:grid-cols-[120px_1fr_1fr_auto]"
-                  >
-                    <span className="self-center text-sm">
-                      {t(`days.${day.dayOfWeek}`)}
-                    </span>
-                    <input
-                      type="time"
-                      value={day.periods[0]?.opensAt ?? "08:00"}
-                      disabled={day.isClosed}
-                      onChange={(e) =>
-                        setWeeklyHours((items) =>
-                          items.map((item, i) =>
-                            i === index
-                              ? {
-                                  ...item,
-                                  periods: [
-                                    {
-                                      opensAt: e.target.value,
-                                      closesAt:
-                                        item.periods[0]?.closesAt ?? "22:00",
-                                    },
-                                  ],
-                                }
-                              : item,
-                          ),
-                        )
-                      }
-                      className={inputClass}
-                    />
-                    <input
-                      type="time"
-                      value={day.periods[0]?.closesAt ?? "22:00"}
-                      disabled={day.isClosed}
-                      onChange={(e) =>
-                        setWeeklyHours((items) =>
-                          items.map((item, i) =>
-                            i === index
-                              ? {
-                                  ...item,
-                                  periods: [
-                                    {
-                                      opensAt:
-                                        item.periods[0]?.opensAt ?? "08:00",
-                                      closesAt: e.target.value,
-                                    },
-                                  ],
-                                }
-                              : item,
-                          ),
-                        )
-                      }
-                      className={inputClass}
-                    />
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={day.isClosed}
-                        onChange={(e) =>
-                          setWeeklyHours((items) =>
-                            items.map((item, i) =>
-                              i === index
-                                ? {
-                                    ...item,
-                                    isClosed: e.target.checked,
-                                    periods: e.target.checked
-                                      ? []
-                                      : [
-                                          {
-                                            opensAt: "08:00",
-                                            closesAt: "22:00",
-                                          },
-                                        ],
-                                  }
-                                : item,
-                            ),
-                          )
-                        }
-                      />
-                      {t("closed")}
-                    </label>
-                  </div>
-                ))}
-                {!weeklyHours.length && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onPress={() =>
-                      setWeeklyHours(
-                        Array.from({ length: 7 }, (_, dayOfWeek) => ({
-                          dayOfWeek,
-                          periods: [{ opensAt: "08:00", closesAt: "22:00" }],
-                          isClosed: false,
-                        })),
-                      )
-                    }
-                  >
-                    {t("addWeeklyHours")}
-                  </Button>
-                )}
-              </div>
+              <AvailabilityScheduler
+                className="max-w-none"
+                value={weekAvailability}
+                onChange={(week: WeekAvailability) =>
+                  setWeeklyHours(weekAvailabilityToWeeklyHours(week))
+                }
+                step={30}
+                maxRanges={4}
+              />
             </Field>
           </Section>
 

@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AccountAuthForgotPasswordConfirmForm } from "@modules/account/forms/AccountAuthForgotPasswordConfirmForm";
 import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
-import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
 import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
 import { useTranslations } from "next-intl";
 
@@ -21,7 +20,6 @@ export function AccountAuthForgotPasswordConfirmScreen() {
   const searchParams = useSearchParams();
   const t = useTranslations("auth.forgot");
   const tConfirm = useTranslations("auth.forgot.confirm");
-  const tCommon = useTranslations("common");
   const isKeyboardOpen = useKeyboardOpen();
 
   const phoneParam = searchParams.get("phone") ?? "";
@@ -41,11 +39,6 @@ export function AccountAuthForgotPasswordConfirmScreen() {
 
   return (
     <AuthScreen>
-      <AccountAuthOtpHeaderSection
-        backLabel={tCommon("back")}
-        href="/auth/forgot-password"
-        transparent
-      />
       <AccountAuthOtpHeroSection
         alt={t("illustrationAlt")}
         src="/auth/forgot-password-illustration.png"

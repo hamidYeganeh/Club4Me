@@ -216,6 +216,34 @@ describe("Auth e2e", () => {
       .expect(401);
   });
 
+  it("updates the authenticated user's profile", async () => {
+    const session = await signup("09120000009");
+
+    await request(http)
+      .patch("/api/v1/account/me")
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .send({ firstName: "حمیدرضا", lastName: "یگانه" })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.data).toMatchObject({
+          firstName: "حمیدرضا",
+          lastName: "یگانه",
+          phone: "+989120000009",
+        });
+      });
+
+    await request(http)
+      .get("/api/v1/account/me")
+      .set("Authorization", `Bearer ${session.accessToken}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.data).toMatchObject({
+          firstName: "حمیدرضا",
+          lastName: "یگانه",
+        });
+      });
+  });
+
   it("returns the stable error envelope for validation failures", async () => {
     const response = await request(http)
       .post("/api/v1/account/auth/login")

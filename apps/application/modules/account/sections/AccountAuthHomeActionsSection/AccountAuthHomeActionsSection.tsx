@@ -23,8 +23,9 @@ export function AccountAuthHomeActionsSection({
         className={styles.primary()}
         onPress={() => router.push("/auth/otp")}
       >
+        <Icon name="mobile" size={20} />
         {otpLabel}
-        <Icon name="chevron-right" size={18} />
+        <Icon name="chevron-left" size={18} />
       </Button>
       <Button
         variant="secondary"
@@ -33,8 +34,9 @@ export function AccountAuthHomeActionsSection({
         className={styles.secondary()}
         onPress={() => router.push("/auth/login")}
       >
+        <Icon name="lock-2" size={20} />
         {passwordLabel}
-        <Icon name="chevron-right" size={18} />
+        <Icon name="chevron-left" size={18} />
       </Button>
     </section>
   );
