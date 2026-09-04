@@ -199,7 +199,7 @@ export function AccountAuthLoginForm({
             />
             <Button
               type="button"
-              variant="ghost"
+              variant="tertiary"
               size="sm"
               className={styles.forgot()}
               onPress={() => router.push("/auth/forgot-password")}

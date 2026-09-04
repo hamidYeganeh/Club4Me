@@ -15,7 +15,9 @@ export async function LandingFooterSection() {
             <span className={styles.brandMark()}>
               <Icon name="kettlebell" size="md" />
             </span>
-            <span className={styles.brandName()}>{t("common.appName")}</span>
+            <span className={styles.brandName()} dir="ltr">
+              {t("common.appName")}
+            </span>
           </div>
           <p className={styles.tagline()}>{t("landing.footer.tagline")}</p>
         </div>

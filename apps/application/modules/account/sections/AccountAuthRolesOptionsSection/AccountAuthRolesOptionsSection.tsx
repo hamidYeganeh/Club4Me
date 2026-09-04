@@ -83,7 +83,7 @@ export function AccountAuthRolesOptionsSection({
         return (
           <Button
             key={option.id}
-            variant="secondary"
+            variant="tertiary"
             fullWidth
             isDisabled={isBusy}
             className={styles.item()}

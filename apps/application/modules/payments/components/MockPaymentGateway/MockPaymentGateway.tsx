@@ -14,7 +14,7 @@ export function MockPaymentGateway({
   onResult: (result: "approve" | "reject") => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 p-5 backdrop-blur-lg">
+    <div className="fixed inset-y-0 inset-x-0 z-[100] mx-auto flex w-full max-w-xl items-center justify-center bg-background/80 p-5 backdrop-blur-lg">
       <Card className="w-full max-w-md rounded-3xl border border-white/10 bg-surface p-6 shadow-2xl">
         <span className="w-fit rounded-full bg-warning/15 px-3 py-1 text-xs font-bold text-warning">
           درگاه پرداخت آزمایشی

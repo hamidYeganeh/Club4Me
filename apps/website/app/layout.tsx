@@ -2,9 +2,17 @@ import type { Metadata } from "next";
 import { ApiProvider } from "@api/provider";
 import { ThemeProvider } from "@theme/provider";
 import { NextIntlClientProvider } from "next-intl";
+import { Monoton } from "next/font/google";
 import { getLocale, getMessages, getTimeZone } from "next-intl/server";
 
 import "./globals.css";
+
+const monoton = Monoton({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-monoton",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "جیم فور می | باشگاه شهری",
@@ -22,7 +30,12 @@ export default async function RootLayout({
   const timeZone = await getTimeZone();
 
   return (
-    <html lang={locale} dir="rtl" className="dark h-full" suppressHydrationWarning>
+    <html
+      lang={locale}
+      dir="rtl"
+      className={`dark h-full ${monoton.variable}`}
+      suppressHydrationWarning
+    >
       <body
         id="top"
         className="flex min-h-full flex-col overflow-x-hidden bg-background font-sans text-foreground antialiased"

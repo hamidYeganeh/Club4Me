@@ -22,6 +22,7 @@ import { useTranslations } from "next-intl";
 import { Controller, useForm } from "react-hook-form";
 
 import { Form, FormFieldset, FormTextField } from "@/components/form";
+import { SmoothInputGroupInput } from "@/components/smooth-input";
 import { useSmsOtp } from "@/hooks/use-sms-otp";
 import { getAccountApiErrorMessage } from "@/lib/account-api-error";
 
@@ -38,6 +39,7 @@ import type {
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function AccountAuthForgotPasswordConfirmForm({
+  formId,
   phone,
   codeLabel,
   legend,
@@ -165,6 +167,7 @@ export function AccountAuthForgotPasswordConfirmForm({
 
   return (
     <Form
+      id={formId}
       form={form}
       className={styles.root()}
       aria-labelledby="account-auth-forgot-confirm-title"
@@ -227,6 +230,7 @@ export function AccountAuthForgotPasswordConfirmForm({
                   variant="ghost"
                   size="sm"
                   isDisabled={cooldown > 0 || isBusy}
+                  data-ready={cooldown <= 0 && !isBusy}
                   className={styles.resend()}
                   onPress={() => {
                     void handleResend();
@@ -260,13 +264,15 @@ export function AccountAuthForgotPasswordConfirmForm({
             fullWidth
             isDisabled={isBusy}
             className={styles.field()}
+            variant="secondary"
           >
-            <Label className={styles.label()}>{passwordLabel}</Label>
-            <InputGroup variant="secondary" className={styles.inputGroup()}>
-              <InputGroup.Prefix className={styles.prefix()}>
-                <Icon name="lock-1" size={18} />
-              </InputGroup.Prefix>
-              <InputGroup.Input
+            <Label className="sr-only">{passwordLabel}</Label>
+            <InputGroup
+              variant="secondary"
+              className={styles.inputGroup()}
+              dir="ltr"
+            >
+              <SmoothInputGroupInput
                 className={styles.input()}
                 type={passwordVisible ? "text" : "password"}
                 autoComplete="new-password"
@@ -298,13 +304,15 @@ export function AccountAuthForgotPasswordConfirmForm({
             fullWidth
             isDisabled={isBusy}
             className={styles.field()}
+            variant="secondary"
           >
-            <Label className={styles.label()}>{passwordConfirmLabel}</Label>
-            <InputGroup variant="secondary" className={styles.inputGroup()}>
-              <InputGroup.Prefix className={styles.prefix()}>
-                <Icon name="lock-1" size={18} />
-              </InputGroup.Prefix>
-              <InputGroup.Input
+            <Label className="sr-only">{passwordConfirmLabel}</Label>
+            <InputGroup
+              variant="secondary"
+              className={styles.inputGroup()}
+              dir="ltr"
+            >
+              <SmoothInputGroupInput
                 className={styles.input()}
                 type={passwordConfirmVisible ? "text" : "password"}
                 autoComplete="new-password"
@@ -344,7 +352,7 @@ export function AccountAuthForgotPasswordConfirmForm({
           >
             {confirmForgotPassword.isPending ? <Spinner size="sm" /> : null}
             {submitLabel}
-            <Icon name="key-1" size={18} />
+            <Icon name="chevron-left" size={18} />
           </Button>
         </FormFieldset.Actions>
       </FormFieldset>

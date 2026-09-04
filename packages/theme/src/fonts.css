@@ -11,10 +11,12 @@
 
 @theme inline {
   --font-sans: "IRANSansX", Tahoma, ui-sans-serif, system-ui, sans-serif;
+  --font-brand: var(--font-monoton), "Monoton", cursive;
 }
 
 :root {
   --font-sans: "IRANSansX", Tahoma, ui-sans-serif, system-ui, sans-serif;
+  --font-brand: var(--font-monoton), "Monoton", cursive;
 }
 
 html {

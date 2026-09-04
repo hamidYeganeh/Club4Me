@@ -36,7 +36,9 @@ export function LandingHeaderSection() {
           <span className={styles.brandMark()}>
             <Icon name="kettlebell" size="md" />
           </span>
-          <span className={styles.brandName()}>{t("common.appName")}</span>
+          <span className={styles.brandName()} dir="ltr">
+            {t("common.appName")}
+          </span>
         </a>
 
         <nav className={styles.desktopNav()} aria-label="اصلی">

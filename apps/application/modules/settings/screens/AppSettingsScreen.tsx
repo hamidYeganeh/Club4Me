@@ -210,7 +210,7 @@ export function AppSettingsScreen({ role }: Props) {
         </div>
       </SettingsSection>
 
-      <p className="pb-5 text-center text-xs text-muted" dir="ltr">
+      <p className="font-brand pb-5 text-center text-xs text-muted" dir="ltr">
         Gym4Me {version}
       </p>
     </main>

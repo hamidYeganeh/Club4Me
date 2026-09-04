@@ -59,10 +59,11 @@ export const discoveryClubSlotsScreenStyles = tv({
     dateWeekday:
       "text-base font-medium text-muted transition-colors group-data-[selected=true]:text-foreground/75",
     timeRadio: "group",
-    timeArea: "min-h-28",
+    timeArea: "min-h-36",
     timeScroller: "w-full pb-1",
     timeEmpty:
-      "grid h-28 w-full place-items-center rounded-2xl border border-dashed border-foreground/20 bg-surface-tertiary/50 text-sm text-muted",
+      "flex min-h-36 w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-foreground/20 bg-surface-tertiary/50 px-4 py-5 text-center text-sm text-muted",
+    timeEmptyImage: "size-16 object-contain",
     timeContent:
       "w-full rounded-2xl border border-transparent bg-surface-tertiary px-4 py-3 text-center text-base font-semibold tracking-tight text-foreground/55 transition-[transform,border-color,background-color,color] duration-300 ease-out group-data-[hovered=true]:scale-[1.02]",
     timeContentSelected: "border-foreground/80 bg-surface text-foreground",
@@ -74,7 +75,10 @@ export const discoveryClubSlotsScreenStyles = tv({
       "mt-1 text-[1.65rem] font-black tracking-tight text-foreground tabular-nums",
     bookButton: "h-14 w-1/2",
     disclaimer: "mt-3 px-3 text-center text-[0.64rem] leading-5 text-muted/90",
-    empty: "py-10 text-center text-sm text-muted",
+    empty:
+      "flex flex-1 flex-col items-center justify-center gap-4 py-8 text-center",
+    emptyImage: "size-36 object-contain drop-shadow-lg sm:size-40",
+    emptyText: "max-w-[28ch] text-sm leading-6 text-muted",
     controlHidden: "sr-only",
   },
 });

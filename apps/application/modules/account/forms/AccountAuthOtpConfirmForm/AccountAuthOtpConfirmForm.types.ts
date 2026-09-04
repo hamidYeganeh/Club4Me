@@ -1,3 +1,5 @@
+import type { AccountUser } from "@api/account";
+
 import type { AccountAuthOtpConfirmFormValues } from "./AccountAuthOtpConfirmForm.schema";
 
 export type AccountAuthOtpConfirmFormProps = {
@@ -12,7 +14,7 @@ export type AccountAuthOtpConfirmFormProps = {
   codeRequired: string;
   codeInvalid: string;
   sent: string;
-  onSuccess: () => void;
+  onSuccess: (user: AccountUser) => void;
 };
 
 export type { AccountAuthOtpConfirmFormValues };

@@ -19,16 +19,38 @@ export function AuthScreen({ children, title, subtitle }: AuthScreenProps) {
       <aside className="relative hidden overflow-hidden border-e border-border bg-surface-secondary lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-14">
         <Logo size={72} label={t("appName")} />
         <div className="max-w-sm">
-          <Typography type="body-sm" weight="semibold" className="text-accent">{t("appName")}</Typography>
+          <Typography
+            type="body-sm"
+            weight="normal"
+            dir="ltr"
+            className="font-brand text-accent"
+          >
+            {t("appName")}
+          </Typography>
           <Typography type="h1" className="mt-4">{title}</Typography>
           <Typography type="body" color="muted" className="mt-4">{subtitle}</Typography>
         </div>
-        <Typography type="body-sm" color="muted">{t("appName")}</Typography>
+        <Typography
+          type="body-sm"
+          weight="normal"
+          color="muted"
+          dir="ltr"
+          className="font-brand"
+        >
+          {t("appName")}
+        </Typography>
       </aside>
       <section className="flex flex-1 flex-col items-center px-6 py-8 sm:justify-center sm:py-12">
         <div className="mb-8 flex w-full max-w-md items-center gap-3 lg:hidden">
           <Logo size={40} label={t("appName")} />
-          <Typography type="body-sm" weight="semibold">{t("appName")}</Typography>
+          <Typography
+            type="body-sm"
+            weight="normal"
+            dir="ltr"
+            className="font-brand"
+          >
+            {t("appName")}
+          </Typography>
         </div>
         <div className="flex w-full max-w-md flex-1 flex-col sm:flex-none">
           {children}

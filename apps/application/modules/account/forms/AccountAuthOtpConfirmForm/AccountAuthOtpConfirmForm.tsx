@@ -84,9 +84,12 @@ export function AccountAuthOtpConfirmForm({
     }
 
     try {
-      await confirmOtp.mutateAsync({ phone, code: values.code });
+      const session = await confirmOtp.mutateAsync({
+        phone,
+        code: values.code,
+      });
       setIsSucceeded(true);
-      onSuccess();
+      onSuccess(session.user);
     } catch (error) {
       toast.danger(t("confirmErrorTitle"), {
         description: getAccountApiErrorMessage(error, t),

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@theme/provider";
 import { NextIntlClientProvider } from "next-intl";
+import { Monoton } from "next/font/google";
 import { getLocale, getMessages, getTimeZone } from "next-intl/server";
 
 import { AppApiProvider } from "@/components/app-api-provider";
@@ -22,6 +23,13 @@ import { AppToastProvider } from "@/components/toast-provider";
 import { ActiveLocationProvider } from "@modules/locations/active-location";
 
 import "./globals.css";
+
+const monoton = Monoton({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-monoton",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Gym4Me Application",
@@ -49,7 +57,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir="rtl"
-      className="dark h-full"
+      className={`dark h-full ${monoton.variable}`}
       suppressHydrationWarning
     >
       <body className="flex h-full flex-col overflow-x-hidden bg-background text-foreground font-sans antialiased">

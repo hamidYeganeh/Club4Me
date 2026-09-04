@@ -9,7 +9,7 @@ export function WelcomeHeroSection({ alt }: WelcomeHeroSectionProps) {
   return (
     <section className={styles.root()}>
       <Image
-        src="/welcome/hero.jpg"
+        src="/welcome/hero-iran-v2.png"
         alt={alt}
         fill
         priority

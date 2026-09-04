@@ -2,7 +2,7 @@ import { tv } from "tailwind-variants";
 
 export const splashScreenStyles = tv({
   slots: {
-    root: "fixed inset-0 z-[200] flex h-dvh w-full items-center justify-center bg-accent transition-opacity duration-500 ease-out motion-reduce:transition-none",
+    root: "fixed inset-y-0 inset-x-0 z-[200] mx-auto flex h-dvh w-full max-w-xl items-center justify-center bg-accent transition-opacity duration-500 ease-out motion-reduce:transition-none",
   },
   variants: {
     visible: {

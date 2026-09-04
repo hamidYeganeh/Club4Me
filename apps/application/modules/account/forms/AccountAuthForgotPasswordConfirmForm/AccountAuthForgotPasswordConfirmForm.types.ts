@@ -1,6 +1,7 @@
 import type { AccountAuthForgotPasswordConfirmFormValues } from "./AccountAuthForgotPasswordConfirmForm.schema";
 
 export type AccountAuthForgotPasswordConfirmFormProps = {
+  formId?: string;
   phone: string;
   codeLabel: string;
   legend: string;

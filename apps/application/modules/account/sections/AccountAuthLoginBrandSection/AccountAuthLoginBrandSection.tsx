@@ -23,10 +23,10 @@ export function AccountAuthLoginBrandSection({
     <section className={styles.root()}>
       {showIllustration ? (
         <Image
-          src="/auth/login-illustration.png"
+          src="/auth/club-access-iran-v2.png"
           alt={illustrationAlt}
-          width={288}
-          height={464}
+          width={1086}
+          height={1448}
           priority
           className={styles.image()}
         />
@@ -38,7 +38,8 @@ export function AccountAuthLoginBrandSection({
       >
         <LineShadowText
           shadowColor="var(--accent)"
-          className="text-5xl font-black tracking-tight sm:text-6xl"
+          dir="ltr"
+          className="font-brand text-5xl font-normal tracking-normal sm:text-6xl"
         >
           {name}
         </LineShadowText>

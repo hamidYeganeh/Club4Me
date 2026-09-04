@@ -94,7 +94,7 @@ export function MainBottomNavigation() {
   return (
     <nav
       aria-label={t("main")}
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-50"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-xl"
     >
       <div className="relative h-35">
         <div className="absolute inset-0 overflow-hidden">
@@ -109,7 +109,7 @@ export function MainBottomNavigation() {
             className="absolute inset-0 bg-linear-to-t from-background from-40% via-background/75 to-transparent"
           />
         </div>
-        <div className="pointer-events-auto absolute inset-x-0 bottom-0 mx-auto flex max-w-xl items-end px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-3">
+        <div className="pointer-events-auto absolute inset-x-0 bottom-0 flex items-end px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-3">
           {leading.map((item) => (
             <NavLink
               key={item.href}

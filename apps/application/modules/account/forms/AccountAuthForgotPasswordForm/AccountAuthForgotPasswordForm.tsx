@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 
 import { Form, FormFieldset, FormTextField } from "@/components/form";
+import { SmoothInputGroupInput } from "@/components/smooth-input";
 import { getAccountApiErrorMessage } from "@/lib/account-api-error";
 import { formatIranianPhoneDisplay, toE164IranianPhone } from "@/lib/phone";
 
@@ -20,6 +21,7 @@ import type {
 } from "./AccountAuthForgotPasswordForm.types";
 
 export function AccountAuthForgotPasswordForm({
+  formId,
   phoneLabel,
   phonePlaceholder,
   submitLabel,
@@ -70,6 +72,7 @@ export function AccountAuthForgotPasswordForm({
 
   return (
     <Form
+      id={formId}
       form={form}
       className={styles.root()}
       aria-labelledby="account-auth-forgot-title"
@@ -84,17 +87,15 @@ export function AccountAuthForgotPasswordForm({
             isDisabled={isBusy}
             className={styles.field()}
             transform={formatIranianPhoneDisplay}
+            variant="secondary"
           >
-            <Label className={styles.label()}>{phoneLabel}</Label>
+            <Label className="sr-only">{phoneLabel}</Label>
             <InputGroup
               variant="secondary"
               className={styles.inputGroup()}
               dir="ltr"
             >
-              <InputGroup.Prefix className={styles.prefix()}>
-                <Icon name="mobile" size={18} />
-              </InputGroup.Prefix>
-              <InputGroup.Input
+              <SmoothInputGroupInput
                 className={styles.input()}
                 inputMode="tel"
                 autoComplete="tel"
@@ -115,7 +116,7 @@ export function AccountAuthForgotPasswordForm({
           >
             {forgotPassword.isPending ? <Spinner size="sm" /> : null}
             {submitLabel}
-            <Icon name="key-1" size={18} />
+            <Icon name="chevron-left" size={18} />
           </Button>
         </FormFieldset.Actions>
       </FormFieldset>

@@ -7,6 +7,7 @@ import { tokenStore } from "@api";
 import { useAccountMe } from "@api/account";
 import { useTranslations } from "next-intl";
 
+import { SET_PASSWORD_PATH } from "@/lib/post-auth-path";
 import { AUTH_PATH, markWelcomeSeen } from "@/lib/welcome-onboarding";
 
 type AuthGateProps = {
@@ -39,6 +40,12 @@ export function AuthGate({ children }: AuthGateProps) {
     }
   }, [me.data]);
 
+  useEffect(() => {
+    if (me.data && !me.data.hasPassword) {
+      router.replace(SET_PASSWORD_PATH);
+    }
+  }, [me.data, router]);
+
   if (hasToken === null || hasToken === false || me.isError) {
     return (
       <div className="flex min-h-full flex-1 items-center justify-center">
@@ -47,7 +54,7 @@ export function AuthGate({ children }: AuthGateProps) {
     );
   }
 
-  if (me.isLoading || !me.data) {
+  if (me.isLoading || !me.data || !me.data.hasPassword) {
     return (
       <div className="flex min-h-full flex-1 items-center justify-center">
         <Spinner size="lg" aria-label={t("loading")} />

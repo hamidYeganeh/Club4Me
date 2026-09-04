@@ -8,7 +8,7 @@ export const landingFooterSectionStyles = tv({
     brandRow: "flex items-center gap-2",
     brandMark:
       "flex size-9 items-center justify-center rounded-full bg-accent text-accent-foreground",
-    brandName: "font-semibold text-foreground",
+    brandName: "font-brand font-normal text-foreground",
     tagline: "mt-4 max-w-[36ch] text-sm leading-relaxed text-muted",
     nav: "flex flex-col gap-3 text-sm md:col-span-3",
     navLink:

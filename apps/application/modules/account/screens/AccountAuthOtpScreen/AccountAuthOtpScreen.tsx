@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AccountAuthOtpForm } from "@modules/account/forms/AccountAuthOtpForm";
 import { AccountAuthMethodActionsSection } from "@modules/account/sections/AccountAuthMethodActionsSection";
 import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
+import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
 import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
 import { useTranslations } from "next-intl";
 
@@ -17,6 +18,7 @@ export function AccountAuthOtpScreen() {
   const router = useRouter();
   const t = useTranslations("auth.otp");
   const tHome = useTranslations("auth.home");
+  const tCommon = useTranslations("common");
   const isKeyboardOpen = useKeyboardOpen();
   const [submitState, setSubmitState] = useState({
     isBusy: false,
@@ -32,6 +34,12 @@ export function AccountAuthOtpScreen() {
 
   return (
     <AuthScreen>
+      <AccountAuthOtpHeaderSection
+        backLabel={tCommon("back")}
+        href="/auth"
+        overlay
+        transparent
+      />
       <AccountAuthOtpHeroSection
         alt={t("illustrationAlt")}
         size={isKeyboardOpen ? "compact" : "default"}

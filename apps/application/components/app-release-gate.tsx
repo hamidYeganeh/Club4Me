@@ -68,7 +68,7 @@ export function AppReleaseGate() {
 
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/70 p-3 backdrop-blur-sm sm:items-center"
+      className="fixed inset-y-0 inset-x-0 z-[1000] mx-auto flex w-full max-w-xl items-end justify-center bg-black/70 p-3 backdrop-blur-sm sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-labelledby="app-release-title"

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@heroui/react";
 import { AccountAuthOtpConfirmForm } from "@modules/account/forms/AccountAuthOtpConfirmForm";
 import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
+import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
 import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
@@ -17,6 +18,7 @@ import {
   normalizeIranianPhone,
   toE164IranianPhone,
 } from "@/lib/phone";
+import { getPostAuthPath } from "@/lib/post-auth-path";
 
 const ACCOUNT_AUTH_OTP_CONFIRM_FORM_ID = "account-auth-otp-confirm-form";
 
@@ -25,6 +27,7 @@ export function AccountAuthOtpConfirmScreen() {
   const searchParams = useSearchParams();
   const t = useTranslations("auth.otp");
   const tConfirm = useTranslations("auth.otp.confirm");
+  const tCommon = useTranslations("common");
   const isKeyboardOpen = useKeyboardOpen();
 
   const phoneParam = searchParams.get("phone") ?? "";
@@ -48,6 +51,12 @@ export function AccountAuthOtpConfirmScreen() {
 
   return (
     <AuthScreen>
+      <AccountAuthOtpHeaderSection
+        backLabel={tCommon("back")}
+        href="/auth/otp"
+        overlay
+        transparent
+      />
       <AccountAuthOtpHeroSection
         alt={t("illustrationAlt")}
         size={isKeyboardOpen ? "compact" : "default"}
@@ -90,8 +99,8 @@ export function AccountAuthOtpConfirmScreen() {
         codeRequired={tConfirm("codeRequired")}
         codeInvalid={tConfirm("codeInvalid")}
         sent={t("sent")}
-        onSuccess={() => {
-          router.replace("/auth/roles");
+        onSuccess={(user) => {
+          router.replace(getPostAuthPath(user));
         }}
       />
     </AuthScreen>

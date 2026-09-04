@@ -4,10 +4,10 @@ import { getTranslations } from "next-intl/server";
 const SLIDE_KEYS = ["discover", "score", "book", "progress"] as const;
 
 const SLIDE_IMAGES = {
-  discover: "/welcome/introduce/discover.jpg",
-  score: "/welcome/introduce/score.jpg",
-  book: "/welcome/introduce/book.jpg",
-  progress: "/welcome/introduce/progress.jpg",
+  discover: "/welcome/introduce/discover-iran-v2.png",
+  score: "/welcome/introduce/score-iran-v2.png",
+  book: "/welcome/introduce/book-iran-v2.png",
+  progress: "/welcome/introduce/progress-iran-v2.png",
 } as const;
 
 export async function WelcomeIntroduceScreen() {

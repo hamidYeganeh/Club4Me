@@ -11,7 +11,7 @@ export function AccountAuthHomeHeroSection({
   return (
     <div className={styles.root()}>
       <Image
-        src="/welcome/hero.jpg"
+        src="/welcome/hero-iran-v2.png"
         alt={alt}
         fill
         priority

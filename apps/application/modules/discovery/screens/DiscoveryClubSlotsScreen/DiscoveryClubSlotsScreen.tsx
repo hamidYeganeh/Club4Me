@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Button,
@@ -429,9 +430,19 @@ export function DiscoveryClubSlotsScreen({
 
       <section data-slots-panel className={styles.panel()}>
         {sessions.length === 0 ? (
-          <Typography type="body-sm" className={styles.empty()}>
-            {t("noSessions")}
-          </Typography>
+          <div className={styles.empty()}>
+            <Image
+              src="/discovery/no-slots.png"
+              alt={t("emptyIllustrationAlt")}
+              width={320}
+              height={320}
+              className={styles.emptyImage()}
+              priority
+            />
+            <Typography type="body-sm" className={styles.emptyText()}>
+              {t("noSessions")}
+            </Typography>
+          </div>
         ) : (
           <div className={styles.panelBody()}>
             <div className={styles.panelContent()}>
@@ -485,7 +496,16 @@ export function DiscoveryClubSlotsScreen({
                 </Label>
                 <div className={styles.timeArea()}>
                   {timeSlots.length === 0 ? (
-                    <div className={styles.timeEmpty()}>{t("noTimes")}</div>
+                    <div className={styles.timeEmpty()}>
+                      <Image
+                        src="/discovery/no-slots.png"
+                        alt={t("emptyIllustrationAlt")}
+                        width={128}
+                        height={128}
+                        className={styles.timeEmptyImage()}
+                      />
+                      <span>{t("noTimes")}</span>
+                    </div>
                   ) : (
                     <ScrollShadow
                       orientation="horizontal"

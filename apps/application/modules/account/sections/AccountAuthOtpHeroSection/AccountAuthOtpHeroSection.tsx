@@ -6,9 +6,9 @@ import type { AccountAuthOtpHeroSectionProps } from "./AccountAuthOtpHeroSection
 export function AccountAuthOtpHeroSection({
   alt,
   size = "default",
-  src = "/auth/login-illustration.png",
-  width = 288,
-  height = 464,
+  src = "/auth/club-access-iran-v2.png",
+  width = 1086,
+  height = 1448,
 }: AccountAuthOtpHeroSectionProps) {
   const styles = accountAuthOtpHeroSectionStyles({ size });
 

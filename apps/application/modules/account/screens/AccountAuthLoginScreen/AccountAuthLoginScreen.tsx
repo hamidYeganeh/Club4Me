@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { AccountAuthLoginForm } from "@modules/account/forms/AccountAuthLoginForm";
 import { AccountAuthMethodActionsSection } from "@modules/account/sections/AccountAuthMethodActionsSection";
 import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
+import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
 import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
 import { useTranslations } from "next-intl";
 
 import { AuthScreen } from "@/components/auth-screen";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-inset";
+import { ROLES_PATH } from "@/lib/post-auth-path";
 
 const ACCOUNT_AUTH_LOGIN_FORM_ID = "account-auth-login-form";
 
@@ -17,6 +19,7 @@ export function AccountAuthLoginScreen() {
   const router = useRouter();
   const t = useTranslations("auth.login");
   const tHome = useTranslations("auth.home");
+  const tCommon = useTranslations("common");
   const isKeyboardOpen = useKeyboardOpen();
   const [submitState, setSubmitState] = useState({
     isBusy: false,
@@ -32,6 +35,12 @@ export function AccountAuthLoginScreen() {
 
   return (
     <AuthScreen>
+      <AccountAuthOtpHeaderSection
+        backLabel={tCommon("back")}
+        href="/auth"
+        overlay
+        transparent
+      />
       <AccountAuthOtpHeroSection
         alt={t("illustrationAlt")}
         size={isKeyboardOpen ? "compact" : "default"}
@@ -58,7 +67,7 @@ export function AccountAuthLoginScreen() {
         passwordMin={t("passwordMin")}
         onSubmitStateChange={handleSubmitStateChange}
         onSuccess={() => {
-          router.replace("/auth/roles");
+          router.replace(ROLES_PATH);
         }}
       />
       <AccountAuthMethodActionsSection

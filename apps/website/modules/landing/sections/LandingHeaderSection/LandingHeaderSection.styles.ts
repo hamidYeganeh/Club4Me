@@ -7,7 +7,7 @@ export const landingHeaderSectionStyles = tv({
     brand: "flex shrink-0 items-center gap-2 rounded-full pe-2",
     brandMark:
       "flex size-9 items-center justify-center rounded-full bg-accent text-accent-foreground",
-    brandName: "text-sm font-semibold tracking-tight text-foreground",
+    brandName: "font-brand text-sm font-normal tracking-normal text-foreground",
     desktopNav: "hidden items-center gap-1 lg:flex",
     desktopLink:
       "rounded-full px-3 py-2 text-sm text-muted transition-colors duration-300 landing-ease hover:text-foreground",
