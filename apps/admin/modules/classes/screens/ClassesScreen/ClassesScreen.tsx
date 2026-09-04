@@ -1,7 +1,18 @@
 "use client";
 
 import { useDeferredValue, useState } from "react";
-import { Button, Card, Chip, Spinner, Table, toast } from "@heroui/react";
+import {
+  Button,
+  Card,
+  Chip,
+  Input,
+  Label,
+  ListBox,
+  Select,
+  Spinner,
+  Table,
+  toast,
+} from "@heroui/react";
 import { useAdminClasses, useDisableAdminClass } from "@api/admin";
 
 const statuses = {
@@ -35,25 +46,40 @@ export function ClassesScreen() {
     <main className="flex-1 overflow-auto p-4 lg:p-6">
       <h1 className="text-2xl font-semibold">مدیریت کلاس‌ها</h1>
       <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_14rem]">
-        <input
+        <Input
           type="search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="جست‌وجوی نام کلاس"
-          className="h-11 rounded-xl border border-border bg-surface px-4 text-sm outline-none focus:border-accent"
+          className="h-11 rounded-xl"
+          variant="secondary"
         />
-        <select
+        <Select
           value={status}
-          onChange={(event) => setStatus(event.target.value)}
-          className="h-11 rounded-xl border border-border bg-surface px-4 text-sm outline-none focus:border-accent"
+          onChange={(next) => {
+            if (typeof next === "string") setStatus(next);
+          }}
         >
-          <option value="">همه وضعیت‌ها</option>
-          {Object.entries(statuses).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+          <Label className="sr-only">وضعیت</Label>
+          <Select.Trigger className="h-11 rounded-xl border border-border bg-surface px-4 text-sm">
+            <Select.Value placeholder="همه وضعیت‌ها" />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              <ListBox.Item id="" textValue="همه وضعیت‌ها">
+                همه وضعیت‌ها
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+              {Object.entries(statuses).map(([value, label]) => (
+                <ListBox.Item key={value} id={value} textValue={label}>
+                  {label}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          </Select.Popover>
+        </Select>
       </div>
       <Card
         variant="transparent"

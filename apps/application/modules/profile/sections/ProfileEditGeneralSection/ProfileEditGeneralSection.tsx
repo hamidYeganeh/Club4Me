@@ -29,6 +29,13 @@ export function ProfileEditGeneralSection({
 
   const name = getProfileFullName(me.data);
   const birthdate = formatProfileBirthdate(me.data?.birthdate);
+  const gender =
+    me.data?.gender === "female"
+      ? t("genderFemale")
+      : me.data?.gender === "male"
+        ? t("genderMale")
+        : null;
+  const idCard = me.data?.idCard ?? null;
   const phone = me.data?.phone
     ? formatIranianPhoneDisplay(me.data.phone)
     : "";
@@ -58,7 +65,7 @@ export function ProfileEditGeneralSection({
           field="gender"
           href={getProfileEditHref(role, "gender")}
           label={t("editGender")}
-          value={null}
+          value={gender}
           emptyLabel={t("editSelect")}
           prefixIcon="gender-female"
           suffix={<Icon name="chevron-down" size={16} />}
@@ -68,7 +75,7 @@ export function ProfileEditGeneralSection({
           field="id-card"
           href={getProfileEditHref(role, "id-card")}
           label={t("editIdCard")}
-          value={null}
+          value={idCard}
           emptyLabel={t("editEmpty")}
           prefixIcon="identity-card-1"
           suffix={

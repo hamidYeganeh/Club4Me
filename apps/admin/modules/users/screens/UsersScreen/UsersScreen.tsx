@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useState } from "react";
-import { Button, Card, Chip, Spinner, Table, toast } from "@heroui/react";
+import { Button, Card, Chip, Input, Spinner, Table, toast } from "@heroui/react";
 import { useAdminUsers, useUpdateAdminUserStatus } from "@api/admin";
 
 export function UsersScreen() {
@@ -23,7 +23,14 @@ export function UsersScreen() {
     <main className="flex-1 overflow-auto p-4 lg:p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">مدیریت کاربران</h1>
-        <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="نام یا شماره موبایل" className="h-11 rounded-xl border border-border bg-surface px-4 text-sm outline-none focus:border-accent" />
+        <Input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="نام یا شماره موبایل"
+          className="h-11 rounded-xl"
+          variant="secondary"
+        />
       </div>
       <Card variant="transparent" className="mt-5 overflow-hidden rounded-[1.75rem] border border-border bg-surface">
         {users.isLoading ? <div className="flex justify-center py-16"><Spinner /></div> : users.isError ? <Button className="m-8" onPress={() => users.refetch()}>تلاش دوباره</Button> : items.length === 0 ? <p className="p-12 text-center text-muted">کاربری پیدا نشد.</p> : (

@@ -14,6 +14,7 @@ import type {
   RequestOtpPayload,
   ReviewRoleRequestPayload,
   SetPasswordPayload,
+  UpdateAccountMePayload,
 } from "./account.dto";
 import { accountQueries } from "./account.queries";
 import {
@@ -152,6 +153,18 @@ export function useDeleteAccount() {
       resetTelemetryIdentity();
       tokenStore.clear();
       queryClient.clear();
+    },
+  });
+}
+
+export function useUpdateAccountMe() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateAccountMePayload) =>
+      accountClient.updateMe(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: accountQueries.me() });
     },
   });
 }

@@ -1,6 +1,19 @@
 "use client";
 
-import { Button, Modal, Spinner, Switch, toast } from "@heroui/react";
+import {
+  Button,
+  Checkbox,
+  Input,
+  Label,
+  ListBox,
+  Modal,
+  Select,
+  Spinner,
+  Switch,
+  TextArea,
+  TextField,
+  toast,
+} from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type {
   ResourceDefinition,
@@ -138,48 +151,75 @@ function RelationInput({
   );
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">
-        {field.label}
-        {field.required ? " *" : ""}
-      </label>
-      <input
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        placeholder={t("relationSearch")}
-        className="h-9 w-full rounded-lg border border-border bg-surface-secondary px-3 text-sm outline-none focus:border-accent"
-      />
+      <TextField value={search} onChange={setSearch}>
+        <Label className="text-sm font-medium">{t("relationSearch")}</Label>
+        <Input variant="secondary" />
+      </TextField>
       {resources.isPending ? (
         <Spinner size="sm" />
+      ) : multiple ? (
+        <div className="max-h-48 space-y-2 overflow-auto rounded-xl border border-border p-3">
+          {(resources.data?.items ?? []).map((item) => {
+            const text = String(
+              item.name ??
+                item.title ??
+                item.canonicalTerm ??
+                item.phrase ??
+                item.code ??
+                item.id,
+            );
+            return (
+              <Checkbox
+                key={item.id}
+                isSelected={selected.has(item.id)}
+                onChange={(isSelected) => {
+                  const next = new Set(selected);
+                  if (isSelected) next.add(item.id);
+                  else next.delete(item.id);
+                  onChange(Array.from(next).join(","));
+                }}
+              >
+                {text}
+              </Checkbox>
+            );
+          })}
+        </div>
       ) : (
-        <select
-          multiple={multiple}
-          value={multiple ? [...selected] : value}
-          onChange={(event) =>
-            onChange(
-              multiple
-                ? Array.from(
-                    event.currentTarget.selectedOptions,
-                    (option) => option.value,
-                  ).join(",")
-                : event.currentTarget.value,
-            )
-          }
-          className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
+        <Select
+          value={value || null}
+          onChange={(key) => {
+            if (typeof key === "string") onChange(key);
+          }}
         >
-          {!multiple && <option value="">{t("selectOption")}</option>}
-          {(resources.data?.items ?? []).map((item) => (
-            <option key={item.id} value={item.id}>
-              {String(
-                item.name ??
-                  item.title ??
-                  item.canonicalTerm ??
-                  item.phrase ??
-                  item.code ??
-                  item.id,
-              )}
-            </option>
-          ))}
-        </select>
+          <Label className="text-sm font-medium">
+            {field.label}
+            {field.required ? " *" : ""}
+          </Label>
+          <Select.Trigger className="h-11 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
+            <Select.Value placeholder={t("selectOption")} />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              {(resources.data?.items ?? []).map((item) => {
+                const text = String(
+                  item.name ??
+                    item.title ??
+                    item.canonicalTerm ??
+                    item.phrase ??
+                    item.code ??
+                    item.id,
+                );
+                return (
+                  <ListBox.Item key={item.id} id={item.id} textValue={text}>
+                    {text}
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                );
+              })}
+            </ListBox>
+          </Select.Popover>
+        </Select>
       )}
     </div>
   );
@@ -203,12 +243,10 @@ export function ResourceForm({
   const update = useUpdateResource();
   const mutationPending = create.isPending || update.isPending;
   const {
-    register,
     control,
     handleSubmit,
     reset,
     setValue,
-    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema) as Resolver<FormValues>,
     defaultValues: defaultValues(fields, record),
@@ -284,85 +322,145 @@ export function ResourceForm({
               onSubmit={handleSubmit(submit)}
               className="grid gap-4 sm:grid-cols-2"
             >
-              {fields.map((field) => {
-                const error = errors[field.name]?.message;
-                if (field.kind === "relation" || field.kind === "relation-list")
-                  return (
-                    <Controller
-                      key={field.name}
-                      name={field.name}
-                      control={control}
-                      render={({ field: controlled }) => (
-                        <RelationInput
-                          field={field}
-                          value={String(controlled.value ?? "")}
-                          onChange={controlled.onChange}
-                        />
-                      )}
-                    />
-                  );
-                const multiline =
-                  field.kind === "textarea" || field.kind === "string-list";
-                return (
-                  <label
-                    key={field.name}
-                    className={`space-y-1.5 ${multiline ? "sm:col-span-2" : ""}`}
-                  >
-                    <span className="text-sm font-medium">
-                      {field.label}
-                      {field.required ? " *" : ""}
-                    </span>
-                    {multiline ? (
-                      <textarea
-                        {...register(field.name)}
-                        rows={field.kind === "textarea" ? 3 : 2}
-                        disabled={field.immutable && Boolean(record)}
-                        className="w-full rounded-xl border border-border bg-surface-secondary px-3 py-2 text-sm outline-none focus:border-accent"
-                      />
-                    ) : field.kind === "enum" ? (
-                      <select
-                        {...register(field.name)}
-                        className="h-11 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm outline-none focus:border-accent"
+              {fields.map((field) => (
+                <Controller
+                  key={field.name}
+                  name={field.name}
+                  control={control}
+                  render={({ field: controlled, fieldState }) => {
+                    const multiline =
+                      field.kind === "textarea" || field.kind === "string-list";
+
+                    if (field.kind === "relation" || field.kind === "relation-list")
+                      return (
+                        <div
+                          className={multiline ? "space-y-1.5 sm:col-span-2" : "space-y-1.5"}
+                        >
+                          <RelationInput
+                            field={field}
+                            value={String(controlled.value ?? "")}
+                            onChange={controlled.onChange}
+                          />
+                          {fieldState.error?.message ? (
+                            <span className="block text-xs text-danger">
+                              {String(fieldState.error.message)}
+                            </span>
+                          ) : null}
+                        </div>
+                      );
+
+                    if (field.kind === "enum")
+                      return (
+                        <div
+                          className={multiline ? "space-y-1.5 sm:col-span-2" : "space-y-1.5"}
+                        >
+                          <Select
+                            value={String(controlled.value ?? "") || null}
+                            onChange={(key) => {
+                              if (typeof key === "string") controlled.onChange(key);
+                            }}
+                          >
+                            <Label className="text-sm font-medium">
+                              {field.label}
+                              {field.required ? " *" : ""}
+                            </Label>
+                            <Select.Trigger className="h-11 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
+                              <Select.Value placeholder={t("selectOption")} />
+                              <Select.Indicator />
+                            </Select.Trigger>
+                            <Select.Popover>
+                              <ListBox>
+                                {field.options?.map((option) => (
+                                  <ListBox.Item
+                                    key={option}
+                                    id={option}
+                                    textValue={option}
+                                  >
+                                    {option}
+                                    <ListBox.ItemIndicator />
+                                  </ListBox.Item>
+                                ))}
+                              </ListBox>
+                            </Select.Popover>
+                          </Select>
+                          {fieldState.error?.message ? (
+                            <span className="block text-xs text-danger">
+                              {String(fieldState.error.message)}
+                            </span>
+                          ) : null}
+                        </div>
+                      );
+
+                    if (multiline)
+                      return (
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className="text-sm font-medium">
+                            {field.label}
+                            {field.required ? " *" : ""}
+                          </Label>
+                          <TextArea
+                            value={String(controlled.value ?? "")}
+                            rows={field.kind === "textarea" ? 3 : 2}
+                            disabled={field.immutable && Boolean(record)}
+                            onBlur={controlled.onBlur}
+                            onChange={(event) =>
+                              controlled.onChange(event.target.value)
+                            }
+                            className="rounded-xl border border-border bg-surface-secondary px-3 py-2 text-sm"
+                          />
+                          {fieldState.error?.message ? (
+                            <span className="block text-xs text-danger">
+                              {String(fieldState.error.message)}
+                            </span>
+                          ) : null}
+                        </div>
+                      );
+
+                    return (
+                      <TextField
+                        name={controlled.name}
+                        value={String(controlled.value ?? "")}
+                        isDisabled={field.immutable && Boolean(record)}
+                        isInvalid={fieldState.invalid}
+                        className="space-y-1.5"
+                        onBlur={controlled.onBlur}
+                        onChange={controlled.onChange}
                       >
-                        <option value="">{t("selectOption")}</option>
-                        {field.options?.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        {...register(field.name)}
-                        type={
-                          field.kind === "number"
-                            ? "number"
-                            : field.kind === "date"
-                              ? "datetime-local"
-                              : field.kind === "url"
-                                ? "url"
-                                : "text"
-                        }
-                        min={field.kind === "number" ? 0 : undefined}
-                        disabled={field.immutable && Boolean(record)}
-                        dir={
-                          field.name === "code" ||
-                          field.name === "slug" ||
-                          field.kind === "url"
-                            ? "ltr"
-                            : undefined
-                        }
-                        className="h-11 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm outline-none focus:border-accent disabled:opacity-60"
-                      />
-                    )}
-                    {error && (
-                      <span className="block text-xs text-danger">
-                        {String(error)}
-                      </span>
-                    )}
-                  </label>
-                );
-              })}
+                        <Label className="text-sm font-medium">
+                          {field.label}
+                          {field.required ? " *" : ""}
+                        </Label>
+                        <Input
+                          type={
+                            field.kind === "number"
+                              ? "number"
+                              : field.kind === "date"
+                                ? "datetime-local"
+                                : field.kind === "url"
+                                  ? "url"
+                                  : "text"
+                          }
+                          min={field.kind === "number" ? 0 : undefined}
+                          dir={
+                            field.name === "code" ||
+                            field.name === "slug" ||
+                            field.kind === "url"
+                              ? "ltr"
+                              : undefined
+                          }
+                          variant="secondary"
+                          className="h-11 rounded-xl"
+                        />
+                        {fieldState.error?.message ? (
+                          <span className="block text-xs text-danger">
+                            {String(fieldState.error.message)}
+                          </span>
+                        ) : null}
+                      </TextField>
+                    );
+                  }}
+                />
+              ))}
               <Controller
                 name="isActive"
                 control={control}

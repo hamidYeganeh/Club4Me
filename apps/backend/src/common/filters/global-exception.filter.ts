@@ -27,6 +27,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       return;
     }
 
+    if (isPayloadTooLarge(exception)) {
+      response
+        .status(HttpStatus.PAYLOAD_TOO_LARGE)
+        .json(errorBody("PAYLOAD_TOO_LARGE", "Request body is too large"));
+      return;
+    }
+
     if (exception instanceof SyntaxError || isInvalidJson(exception, request)) {
       response.status(400).json(errorBody("INVALID_JSON", "Invalid JSON body"));
       return;
@@ -72,6 +79,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       .status(500)
       .json(errorBody("INTERNAL_ERROR", "Internal server error"));
   }
+}
+
+function isPayloadTooLarge(exception: unknown): boolean {
+  if (typeof exception !== "object" || exception === null) {
+    return false;
+  }
+
+  const error = exception as { type?: unknown; status?: unknown };
+  return error.type === "entity.too.large" || error.status === 413;
 }
 
 function isInvalidJson(exception: unknown, request: Request): boolean {

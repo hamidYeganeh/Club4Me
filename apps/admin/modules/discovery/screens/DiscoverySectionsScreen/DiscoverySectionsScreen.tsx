@@ -1,6 +1,17 @@
 "use client";
 
-import { Button, Card, Spinner, toast } from "@heroui/react";
+import {
+  Button,
+  Card,
+  Checkbox,
+  Input,
+  Label,
+  ListBox,
+  Select,
+  Spinner,
+  TextArea,
+  toast,
+} from "@heroui/react";
 import {
   type DiscoverySectionConfiguration,
   type DiscoverySectionType,
@@ -33,8 +44,7 @@ const empty: SaveDiscoverySection = {
   },
   banners: [],
 };
-const input =
-  "h-11 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm outline-none focus:border-accent";
+const input = "h-11 rounded-xl border border-border bg-surface-secondary px-3 text-sm";
 
 export function DiscoverySectionsScreen() {
   const list = useAdminDiscoverySections();
@@ -206,63 +216,102 @@ function SectionEditor({
         </div>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <Field label="عنوان">
-            <input
+            <Input
               className={input}
+              variant="secondary"
               value={value.title}
               onChange={(e) => set("title", e.target.value)}
             />
           </Field>
           <Field label="کلید">
-            <input
+            <Input
               dir="ltr"
               className={input}
+              variant="secondary"
               value={value.key}
               onChange={(e) => set("key", e.target.value)}
             />
           </Field>
           <Field label="نوع">
-            <select
-              className={input}
+            <Select
               value={value.type}
               onChange={(e) =>
-                set("type", e.target.value as DiscoverySectionType)
+                set("type", e as DiscoverySectionType)
               }
             >
-              <option value="banners">بنرها</option>
-              <option value="clubs">باشگاه‌ها</option>
-              <option value="coaches">مربی‌ها</option>
-              <option value="articles">مقالات</option>
-            </select>
+              <Label className="text-sm">نوع</Label>
+              <Select.Trigger className={input}>
+                <Select.Value />
+                <Select.Indicator />
+              </Select.Trigger>
+              <Select.Popover>
+                <ListBox>
+                  <ListBox.Item id="banners" textValue="بنرها">
+                    بنرها
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="clubs" textValue="باشگاه‌ها">
+                    باشگاه‌ها
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="coaches" textValue="مربی‌ها">
+                    مربی‌ها
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="articles" textValue="مقالات">
+                    مقالات
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                </ListBox>
+              </Select.Popover>
+            </Select>
           </Field>
           <Field label="چیدمان">
-            <select
-              className={input}
+            <Select
               value={value.layout}
-              onChange={(e) => set("layout", e.target.value)}
+              onChange={(selected) => set("layout", selected)}
             >
-              <option value="carousel">اسلایدر</option>
-              <option value="grid">گرید</option>
-            </select>
+              <Label className="text-sm">چیدمان</Label>
+              <Select.Trigger className={input}>
+                <Select.Value />
+                <Select.Indicator />
+              </Select.Trigger>
+              <Select.Popover>
+                <ListBox>
+                  <ListBox.Item id="carousel" textValue="اسلایدر">
+                    اسلایدر
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="grid" textValue="گرید">
+                    گرید
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                </ListBox>
+              </Select.Popover>
+            </Select>
           </Field>
           <Field label="زیرعنوان" wide>
-            <input
+            <Input
               className={input}
+              variant="secondary"
               value={value.subtitle}
               onChange={(e) => set("subtitle", e.target.value)}
             />
           </Field>
           <Field label="متن دکمه مشاهده همه">
-            <input
+            <Input
               className={input}
+              variant="secondary"
               placeholder="خالی = بدون دکمه"
               value={value.viewAllLabel}
               onChange={(e) => set("viewAllLabel", e.target.value)}
             />
           </Field>
           <Field label="لینک مشاهده همه">
-            <input
+            <Input
               dir="ltr"
               className={input}
+              variant="secondary"
               placeholder="/discovery/clubs"
               value={value.viewAllUrl}
               onChange={(e) => set("viewAllUrl", e.target.value)}
@@ -271,43 +320,78 @@ function SectionEditor({
           {value.type !== "banners" ? (
             <>
               <Field label="روش انتخاب">
-                <select
-                  className={input}
+                <Select
                   value={value.selection.mode}
-                  onChange={(e) =>
+                  onChange={(selected) =>
                     set("selection", {
                       ...value.selection,
-                      mode: e.target.value as "manual" | "query",
+                      mode: selected as "manual" | "query",
                     })
                   }
                 >
-                  <option value="query">خودکار با فیلتر</option>
-                  <option value="manual">انتخاب دستی</option>
-                </select>
+                  <Label className="text-sm">روش انتخاب</Label>
+                  <Select.Trigger className={input}>
+                    <Select.Value />
+                    <Select.Indicator />
+                  </Select.Trigger>
+                  <Select.Popover>
+                    <ListBox>
+                      <ListBox.Item id="query" textValue="خودکار با فیلتر">
+                        خودکار با فیلتر
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                      <ListBox.Item id="manual" textValue="انتخاب دستی">
+                        انتخاب دستی
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                    </ListBox>
+                  </Select.Popover>
+                </Select>
               </Field>
               <Field label="مرتب‌سازی">
-                <select
-                  className={input}
+                <Select
                   value={value.selection.sort}
-                  onChange={(e) =>
+                  onChange={(selected) =>
                     set("selection", {
                       ...value.selection,
-                      sort: e.target.value as DiscoverySectionSort,
+                      sort: selected as DiscoverySectionSort,
                     })
                   }
                 >
-                  <option value="newest">جدیدترین</option>
-                  <option value="rating">بالاترین امتیاز</option>
-                  <option value="name">نام</option>
-                  <option value="manual">ترتیب انتخاب</option>
-                </select>
+                  <Label className="text-sm">مرتب‌سازی</Label>
+                  <Select.Trigger className={input}>
+                    <Select.Value />
+                    <Select.Indicator />
+                  </Select.Trigger>
+                  <Select.Popover>
+                    <ListBox>
+                      <ListBox.Item id="newest" textValue="جدیدترین">
+                        جدیدترین
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                      <ListBox.Item id="rating" textValue="بالاترین امتیاز">
+                        بالاترین امتیاز
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                      <ListBox.Item id="name" textValue="نام">
+                        نام
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                      <ListBox.Item id="manual" textValue="ترتیب انتخاب">
+                        ترتیب انتخاب
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                    </ListBox>
+                  </Select.Popover>
+                </Select>
               </Field>
               <Field label="تعداد">
-                <input
+                <Input
                   type="number"
                   min={1}
                   max={50}
                   className={input}
+                  variant="secondary"
                   value={value.selection.limit}
                   onChange={(e) =>
                     set("selection", {
@@ -328,15 +412,14 @@ function SectionEditor({
                           key={option.id}
                           className="flex cursor-pointer items-center gap-3 rounded-lg p-2 hover:bg-surface-secondary"
                         >
-                          <input
-                            type="checkbox"
-                            checked={value.selection.itemIds.includes(
+                          <Checkbox
+                            isSelected={value.selection.itemIds.includes(
                               option.id,
                             )}
-                            onChange={(e) =>
+                            onChange={(isSelected) =>
                               set("selection", {
                                 ...value.selection,
-                                itemIds: e.target.checked
+                                itemIds: isSelected
                                   ? [...value.selection.itemIds, option.id]
                                   : value.selection.itemIds.filter(
                                       (id) => id !== option.id,
@@ -353,9 +436,9 @@ function SectionEditor({
                 </Field>
               ) : (
                 <Field label="فیلترها (JSON)" wide>
-                  <textarea
+                  <TextArea
                     dir="ltr"
-                    className={`${input} h-28 py-3 font-mono`}
+                    className="h-28 rounded-xl border border-border bg-surface-secondary px-3 py-3 font-mono text-sm"
                     value={JSON.stringify(value.selection.filters, null, 2)}
                     onChange={(e) => {
                       try {
@@ -372,14 +455,12 @@ function SectionEditor({
           ) : (
             <BannerFields value={value} setValue={setValue} />
           )}
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={value.enabled}
-              onChange={(e) => set("enabled", e.target.checked)}
-            />
+          <Checkbox
+            isSelected={value.enabled}
+            onChange={(isSelected) => set("enabled", isSelected)}
+          >
             نمایش در اپ
-          </label>
+          </Checkbox>
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="secondary" onPress={onClose}>
@@ -428,38 +509,43 @@ function BannerFields({
   return (
     <>
       <Field label="عنوان بنر">
-        <input
+        <Input
           className={input}
+          variant="secondary"
           value={banner.title}
           onChange={(e) => change("title", e.target.value)}
         />
       </Field>
       <Field label="تصویر بنر">
-        <input
+        <Input
           dir="ltr"
           className={input}
+          variant="secondary"
           value={banner.imageUrl}
           onChange={(e) => change("imageUrl", e.target.value)}
         />
       </Field>
       <Field label="توضیح بنر" wide>
-        <input
+        <Input
           className={input}
+          variant="secondary"
           value={banner.subtitle}
           onChange={(e) => change("subtitle", e.target.value)}
         />
       </Field>
       <Field label="متن دکمه بنر">
-        <input
+        <Input
           className={input}
+          variant="secondary"
           value={banner.actionLabel}
           onChange={(e) => change("actionLabel", e.target.value)}
         />
       </Field>
       <Field label="لینک دکمه بنر">
-        <input
+        <Input
           dir="ltr"
           className={input}
+          variant="secondary"
           value={banner.actionUrl}
           onChange={(e) => change("actionUrl", e.target.value)}
         />

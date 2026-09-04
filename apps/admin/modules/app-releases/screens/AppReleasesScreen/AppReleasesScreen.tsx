@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import { Button, Card, Chip, Spinner, Switch, toast } from "@heroui/react";
+import { Button, Card, Chip, Input, Spinner, Switch, TextArea, toast } from "@heroui/react";
 import {
   useAdminAppReleases,
   useSaveAdminAppRelease,
@@ -147,7 +147,7 @@ export function AppReleasesScreen() {
             >
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="آخرین نسخه منتشرشده" hint="مثلاً 2.4.0">
-                  <input
+                  <Input
                     required
                     dir="ltr"
                     inputMode="decimal"
@@ -156,14 +156,15 @@ export function AppReleasesScreen() {
                     onChange={(event) =>
                       updateField("latestVersion", event.target.value)
                     }
-                    className="release-input"
+                    className="release-input h-11 rounded-xl"
+                    variant="secondary"
                   />
                 </Field>
                 <Field
                   label="حداقل نسخه مجاز"
                   hint="نسخه‌های پایین‌تر فورس آپدیت می‌گیرند"
                 >
-                  <input
+                  <Input
                     required
                     dir="ltr"
                     inputMode="decimal"
@@ -172,18 +173,20 @@ export function AppReleasesScreen() {
                     onChange={(event) =>
                       updateField("minimumSupportedVersion", event.target.value)
                     }
-                    className="release-input"
+                    className="release-input h-11 rounded-xl"
+                    variant="secondary"
                   />
                 </Field>
                 <Field label="عنوان پیام" className="sm:col-span-2">
-                  <input
+                  <Input
                     required
                     maxLength={160}
                     value={form.title}
                     onChange={(event) =>
                       updateField("title", event.target.value)
                     }
-                    className="release-input"
+                    className="release-input h-11 rounded-xl"
+                    variant="secondary"
                   />
                 </Field>
                 <Field
@@ -191,12 +194,12 @@ export function AppReleasesScreen() {
                   hint="هر مورد را در یک خط بنویسید"
                   className="sm:col-span-2"
                 >
-                  <textarea
+                  <TextArea
                     rows={7}
                     maxLength={4000}
                     value={notes}
                     onChange={(event) => setNotes(event.target.value)}
-                    className="release-input min-h-40 resize-y py-3"
+                    className="release-input min-h-40 resize-y rounded-xl py-3"
                   />
                 </Field>
                 <Field
@@ -204,7 +207,7 @@ export function AppReleasesScreen() {
                   hint="Google Play، بازار، مایکت یا App Store"
                   className="sm:col-span-2"
                 >
-                  <input
+                  <Input
                     required
                     dir="ltr"
                     type="url"
@@ -213,7 +216,8 @@ export function AppReleasesScreen() {
                     onChange={(event) =>
                       updateField("storeUrl", event.target.value)
                     }
-                    className="release-input"
+                    className="release-input h-11 rounded-xl"
+                    variant="secondary"
                   />
                 </Field>
               </div>
@@ -249,18 +253,19 @@ export function AppReleasesScreen() {
                 {form.maintenanceEnabled ? (
                   <div className="grid gap-4">
                     <Field label="عنوان حالت تعمیرات">
-                      <input
+                      <Input
                         required
                         maxLength={160}
                         value={form.maintenanceTitle}
                         onChange={(event) =>
                           updateField("maintenanceTitle", event.target.value)
                         }
-                        className="release-input"
+                        className="release-input h-11 rounded-xl"
+                        variant="secondary"
                       />
                     </Field>
                     <Field label="پیام حالت تعمیرات">
-                      <textarea
+                      <TextArea
                         required
                         rows={3}
                         maxLength={1000}
@@ -268,7 +273,7 @@ export function AppReleasesScreen() {
                         onChange={(event) =>
                           updateField("maintenanceMessage", event.target.value)
                         }
-                        className="release-input resize-y py-3"
+                        className="release-input resize-y rounded-xl py-3"
                       />
                     </Field>
                   </div>

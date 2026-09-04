@@ -25,6 +25,7 @@ export type {
   RoleRequestStatus,
   SetPasswordPayload,
   SetPasswordResponse,
+  UpdateAccountMePayload,
   UserRole,
 } from "./account.dto";
 export { accountEndpoints } from "./account.endpoints";
@@ -42,5 +43,6 @@ export {
   useRequestRole,
   useReviewRoleRequest,
   useSetPassword,
+  useUpdateAccountMe,
 } from "./account.hooks";
 export { accountQueries } from "./account.queries";

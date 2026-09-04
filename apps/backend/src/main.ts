@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { config as loadDotenv } from "dotenv";
 import { NestFactory } from "@nestjs/core";
 import { Logger } from "@nestjs/common";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import * as Sentry from "@sentry/node";
 import helmet from "helmet";
 
@@ -20,9 +21,10 @@ async function bootstrap() {
       sendDefaultPii: false,
     });
   }
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get(AppConfigService);
 
+  app.useBodyParser("json", { limit: "15mb" });
   app.use(helmet());
   if (config.env.TRUST_PROXY) {
     app.getHttpAdapter().getInstance().set("trust proxy", 1);

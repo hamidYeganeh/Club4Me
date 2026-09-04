@@ -18,7 +18,7 @@ export function AccountAuthOtpHeaderSection({
     <header className={styles.root()}>
       <Button
         isIconOnly
-        variant="secondary"
+        variant="ghost"
         size="lg"
         aria-label={backLabel}
         className={styles.back()}

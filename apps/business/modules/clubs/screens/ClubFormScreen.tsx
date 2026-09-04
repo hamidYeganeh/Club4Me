@@ -13,6 +13,11 @@ import {
   type ClubCancellationRule,
   type SocialPlatform,
 } from "@api/business";
+import {
+  imageUploaderAccept,
+  Uploader,
+  type UploaderLabels,
+} from "@ui/uploader";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -45,8 +50,20 @@ type GalleryDraft = {
 };
 type SocialDraft = { platform: SocialPlatform; link: string };
 
+const defaultCancellationRules: ClubCancellationRule[] = [
+  {
+    title: "روزهای عادی",
+    tiers: [
+      { hoursBefore: 72, refundPercent: 40 },
+      { hoursBefore: 24, refundPercent: 20 },
+      { hoursBefore: 0, refundPercent: 0 },
+    ],
+  },
+];
+
 export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const t = useTranslations("businessClubs");
+  const tu = useTranslations("uploader");
   const router = useRouter();
   const club = useBusinessClub(clubId ?? "", Boolean(clubId));
   const media = useBusinessMedia();
@@ -78,7 +95,6 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const [address, setAddress] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
-  const [postalCode, setPostalCode] = useState("");
   const [timezone, setTimezone] = useState("Asia/Tehran");
   const [locationNotes, setLocationNotes] = useState("");
   const [audience, setAudience] = useState<string[]>(["mixed"]);
@@ -98,16 +114,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   >([]);
   const [cancellationRules, setCancellationRules] = useState<
     ClubCancellationRule[]
-  >([
-    {
-      title: "روزهای عادی",
-      tiers: [
-        { hoursBefore: 72, refundPercent: 40 },
-        { hoursBefore: 24, refundPercent: 20 },
-        { hoursBefore: 0, refundPercent: 0 },
-      ],
-    },
-  ]);
+  >(defaultCancellationRules);
 
   const provinces = useBusinessCatalog(
     "location",
@@ -131,6 +138,20 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const mediaById = useMemo(
     () => new Map((media.data?.items ?? []).map((item) => [item.id, item])),
     [media.data?.items],
+  );
+  const uploaderLabels: UploaderLabels = useMemo(
+    () => ({
+      clickToUpload: tu("clickToUpload"),
+      dropHint: tu("dropHint"),
+      formats: tu("formats"),
+      progress: tu("progress"),
+      success: tu("success"),
+      error: tu("error"),
+      retry: tu("retry"),
+      remove: tu("remove"),
+      dropzoneAria: tu("dropzoneAria"),
+    }),
+    [tu],
   );
 
   useEffect(() => {
@@ -170,7 +191,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
     setGallery(
       value.gallery.map((item) => ({
         mediaId: item.mediaId,
-        url: mediaById.get(item.mediaId)?.url ?? "",
+        url: "",
         title: item.title ?? "",
         altText: item.altText ?? "",
         kind: item.kind,
@@ -181,7 +202,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
     setCancellationRules(
       value.cancellationRules.length
         ? value.cancellationRules
-        : cancellationRules,
+        : defaultCancellationRules,
     );
     setAudience(value.audience);
     setMinAge(value.minAge === undefined ? "" : String(value.minAge));
@@ -198,11 +219,10 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
       setAddress(value.location.address);
       setLatitude(String(value.location.latitude));
       setLongitude(String(value.location.longitude));
-      setPostalCode(value.location.postalCode ?? "");
       setTimezone(value.location.timezone ?? "Asia/Tehran");
       setLocationNotes(value.location.locationNotes ?? "");
     }
-  }, [cancellationRules, club.data, mediaById]);
+  }, [club.data]);
 
   const busy = create.isPending || update.isPending || createMedia.isPending;
   const toggleCounted = (
@@ -308,7 +328,6 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 address: address.trim(),
                 latitude: Number(latitude),
                 longitude: Number(longitude),
-                postalCode: postalCode.trim(),
                 timezone,
                 locationNotes: locationNotes.trim(),
               },
@@ -429,103 +448,142 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
           </Section>
 
           <Section title={t("gallery")}>
-            {gallery.map((item, index) => (
-              <div
-                key={`${item.mediaId ?? "new"}-${index}`}
-                className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-2"
-              >
-                <input
-                  dir="ltr"
-                  value={item.url}
-                  disabled={Boolean(item.mediaId)}
-                  onChange={(e) =>
-                    setGallery((current) =>
-                      current.map((value, i) =>
-                        i === index ? { ...value, url: e.target.value } : value,
-                      ),
-                    )
-                  }
-                  className={inputClass}
-                  placeholder={t("mediaUrl")}
-                />
-                <input
-                  value={item.title}
-                  onChange={(e) =>
-                    setGallery((current) =>
-                      current.map((value, i) =>
-                        i === index
-                          ? { ...value, title: e.target.value }
-                          : value,
-                      ),
-                    )
-                  }
-                  className={inputClass}
-                  placeholder={t("mediaTitle")}
-                />
-                <input
-                  value={item.altText}
-                  onChange={(e) =>
-                    setGallery((current) =>
-                      current.map((value, i) =>
-                        i === index
-                          ? { ...value, altText: e.target.value }
-                          : value,
-                      ),
-                    )
-                  }
-                  className={inputClass}
-                  placeholder={t("mediaAlt")}
-                />
-                <div className="flex items-center justify-between gap-2">
-                  <select
-                    className={inputClass}
-                    value={item.kind}
+            {gallery.map((item, index) => {
+              const previewUrl =
+                item.url ||
+                (item.mediaId ? mediaById.get(item.mediaId)?.url : undefined);
+
+              return (
+                <div
+                  key={`${item.mediaId ?? "new"}-${index}`}
+                  className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-2"
+                >
+                  <div className="sm:col-span-2">
+                    <Uploader
+                      multiple={false}
+                      accept={imageUploaderAccept}
+                      labels={uploaderLabels}
+                      onUpload={async (file) => {
+                        const dataUrl = await fileToDataUrl(file);
+                        const created = await createMedia.mutateAsync({
+                          url: dataUrl,
+                          mimeType: file.type || "image/jpeg",
+                        });
+                        setGallery((current) =>
+                          current.map((value, i) =>
+                            i === index
+                              ? {
+                                  ...value,
+                                  mediaId: created.id,
+                                  url: created.url,
+                                  kind: "image",
+                                }
+                              : value,
+                          ),
+                        );
+                      }}
+                      onDrop={() => {
+                        setGallery((current) =>
+                          current.map((value, i) =>
+                            i === index
+                              ? {
+                                  ...value,
+                                  mediaId: undefined,
+                                  url: "",
+                                  kind: "image",
+                                }
+                              : value,
+                          ),
+                        );
+                      }}
+                    />
+                    {previewUrl ? (
+                      <img
+                        src={previewUrl}
+                        alt={item.altText || item.title || "gallery"}
+                        className="mt-3 h-40 w-full rounded-xl border border-border object-cover"
+                      />
+                    ) : null}
+                  </div>
+                  <input
+                    value={item.title}
                     onChange={(e) =>
                       setGallery((current) =>
                         current.map((value, i) =>
                           i === index
-                            ? {
-                                ...value,
-                                kind: e.target.value as "image" | "video",
-                              }
+                            ? { ...value, title: e.target.value }
                             : value,
                         ),
                       )
                     }
-                  >
-                    <option value="image">{t("image")}</option>
-                    <option value="video">{t("video")}</option>
-                  </select>
-                  <label className="flex items-center gap-2 whitespace-nowrap text-sm">
-                    <input
-                      type="radio"
-                      name="cover-media"
-                      checked={item.isCover}
-                      onChange={() =>
-                        setGallery((current) =>
-                          current.map((value, i) => ({
-                            ...value,
-                            isCover: i === index,
-                          })),
-                        )
-                      }
-                    />
-                    {t("cover")}
-                  </label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onPress={() =>
+                    className={inputClass}
+                    placeholder={t("mediaTitle")}
+                  />
+                  <input
+                    value={item.altText}
+                    onChange={(e) =>
                       setGallery((current) =>
-                        current.filter((_, i) => i !== index),
+                        current.map((value, i) =>
+                          i === index
+                            ? { ...value, altText: e.target.value }
+                            : value,
+                        ),
                       )
                     }
-                  >
-                    {t("remove")}
-                  </Button>
+                    className={inputClass}
+                    placeholder={t("mediaAlt")}
+                  />
+                  <div className="flex items-center justify-between gap-2">
+                    <select
+                      className={inputClass}
+                      value={item.kind}
+                      onChange={(e) =>
+                        setGallery((current) =>
+                          current.map((value, i) =>
+                            i === index
+                              ? {
+                                  ...value,
+                                  kind: e.target.value as "image" | "video",
+                                }
+                              : value,
+                          ),
+                        )
+                      }
+                    >
+                      <option value="image">{t("image")}</option>
+                      <option value="video">{t("video")}</option>
+                    </select>
+                    <label className="flex items-center gap-2 whitespace-nowrap text-sm">
+                      <input
+                        type="radio"
+                        name="cover-media"
+                        checked={item.isCover}
+                        onChange={() =>
+                          setGallery((current) =>
+                            current.map((value, i) => ({
+                              ...value,
+                              isCover: i === index,
+                            })),
+                          )
+                        }
+                      />
+                      {t("cover")}
+                    </label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onPress={() =>
+                        setGallery((current) =>
+                          current.filter((_, i) => i !== index),
+                        )
+                      }
+                    >
+                      {t("remove")}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             <Button
               type="button"
               variant="secondary"
@@ -676,13 +734,6 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 step="any"
                 value={longitude}
                 onChange={(e) => setLongitude(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label={t("postalCode")}>
-              <input
-                value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value)}
                 className={inputClass}
               />
             </Field>
@@ -1299,4 +1350,19 @@ function updateTier(
         : rule,
     ),
   );
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+      reject(new Error("FILE_READ_FAILED"));
+    };
+    reader.onerror = () => reject(new Error("FILE_READ_FAILED"));
+    reader.readAsDataURL(file);
+  });
 }

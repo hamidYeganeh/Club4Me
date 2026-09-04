@@ -1,6 +1,7 @@
 "use client";
 
 import { resourceGroups, resourcePagePath } from "@api/resources";
+import { Input } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -42,13 +43,14 @@ export function ResourceNavigation() {
         <span className="sr-only">{t("navSearch")}</span>
         <Icon
           name="magnifying-glass"
-          className="absolute end-3 top-1/2 -translate-y-1/2 text-muted"
+          className="absolute inset-e-3 top-1/2 -translate-y-1/2 text-muted"
         />
-        <input
+        <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder={t("navSearch")}
-          className="h-10 w-full rounded-xl border border-border bg-surface-secondary px-3 pe-10 text-sm outline-none focus:border-accent"
+          variant="secondary"
+          className="h-10 w-full rounded-xl pe-10 text-sm"
         />
       </label>
       <nav aria-label={t("navigation")} className="mt-3 space-y-2">

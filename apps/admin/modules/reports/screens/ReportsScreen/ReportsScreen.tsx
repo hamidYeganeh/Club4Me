@@ -1,7 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, Chip, Spinner, Table, toast } from "@heroui/react";
+import {
+  Button,
+  Card,
+  Chip,
+  Label,
+  ListBox,
+  Select,
+  Spinner,
+  Table,
+  toast,
+} from "@heroui/react";
 import { useAdminReports, useResolveReport } from "@api/admin";
 
 const targetLabels = { club: "باشگاه", coach: "مربی", class: "کلاس" } as const;
@@ -29,17 +39,42 @@ export function ReportsScreen() {
     <main className="flex-1 overflow-auto p-4 lg:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">گزارش‌های کاربران</h1>
-        <select
+        <Select
           value={status}
-          onChange={(event) => setStatus(event.target.value)}
-          className="h-11 rounded-xl border border-border bg-surface px-4 text-sm"
+          onChange={(next) => {
+            if (typeof next === "string") setStatus(next);
+          }}
         >
-          <option value="">همه گزارش‌ها</option>
-          <option value="pending">در انتظار بررسی</option>
-          <option value="resolved">اصلاح‌شده</option>
-          <option value="rejected">ردشده</option>
-          <option value="closed">بسته‌شده</option>
-        </select>
+          <Label className="sr-only">وضعیت</Label>
+          <Select.Trigger className="h-11 rounded-xl border border-border bg-surface px-4 text-sm">
+            <Select.Value placeholder="همه گزارش‌ها" />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              <ListBox.Item id="" textValue="همه گزارش‌ها">
+                همه گزارش‌ها
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+              <ListBox.Item id="pending" textValue="در انتظار بررسی">
+                در انتظار بررسی
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+              <ListBox.Item id="resolved" textValue="اصلاح‌شده">
+                اصلاح‌شده
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+              <ListBox.Item id="rejected" textValue="ردشده">
+                ردشده
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+              <ListBox.Item id="closed" textValue="بسته‌شده">
+                بسته‌شده
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            </ListBox>
+          </Select.Popover>
+        </Select>
       </div>
       <Card
         variant="transparent"

@@ -1,0 +1,1 @@
+export const MAX_INLINE_IMAGE_URL_LENGTH = 14 * 1024 * 1024;

@@ -1,12 +1,14 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
 
+import { MAX_INLINE_IMAGE_URL_LENGTH } from "../media.constants";
+
 @Schema({ collection: "media", timestamps: true })
 export class Media {
   @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
   ownerId: Types.ObjectId;
 
-  @Prop({ required: true, trim: true, maxlength: 2000 })
+  @Prop({ required: true, trim: true, maxlength: MAX_INLINE_IMAGE_URL_LENGTH })
   url: string;
 
   @Prop({ required: true, trim: true })

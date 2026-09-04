@@ -6,6 +6,7 @@ const withNextIntl = createNextIntlPlugin("../../packages/i18n/src/request.ts");
 const isCapacitor = process.env.CAPACITOR === "1";
 
 const nextConfig: NextConfig = {
+  ...(!isCapacitor ? { output: "standalone" as const } : {}),
   transpilePackages: ["@repo/api", "@repo/i18n", "@repo/theme", "@repo/ui"],
   ...(isCapacitor
     ? {

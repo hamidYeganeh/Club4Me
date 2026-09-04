@@ -88,14 +88,28 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
       toast.danger(t("policyRequired"));
       return;
     }
+
+    const start = new Date(startsAt);
+    const end = new Date(endsAt);
+    if (
+      !startsAt ||
+      !endsAt ||
+      Number.isNaN(start.getTime()) ||
+      Number.isNaN(end.getTime()) ||
+      end <= start
+    ) {
+      toast.danger(t("invalidSessionTime"));
+      return;
+    }
+
     try {
       await createSession.mutateAsync({
         title,
         courtId: courtId || undefined,
         coachId: coachId || undefined,
         classId: classId || undefined,
-        startsAt: new Date(startsAt).toISOString(),
-        endsAt: new Date(endsAt).toISOString(),
+        startsAt: start.toISOString(),
+        endsAt: end.toISOString(),
         capacity,
         basePrice,
         options: options
@@ -242,20 +256,29 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
                 ))}
               </select>
               <div className="grid grid-cols-2 gap-2">
-                <input
-                  required
-                  type="datetime-local"
-                  value={startsAt}
-                  onChange={(e) => setStartsAt(e.target.value)}
-                  className={input}
-                />
-                <input
-                  required
-                  type="datetime-local"
-                  value={endsAt}
-                  onChange={(e) => setEndsAt(e.target.value)}
-                  className={input}
-                />
+                <label className="space-y-2 text-sm">
+                  <span>{t("startsAt")}</span>
+                  <input
+                    required
+                    dir="ltr"
+                    type="datetime-local"
+                    value={startsAt}
+                    onChange={(e) => setStartsAt(e.target.value)}
+                    className={input}
+                  />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span>{t("endsAt")}</span>
+                  <input
+                    required
+                    dir="ltr"
+                    type="datetime-local"
+                    min={startsAt || undefined}
+                    value={endsAt}
+                    onChange={(e) => setEndsAt(e.target.value)}
+                    className={input}
+                  />
+                </label>
               </div>
               <div className="rounded-xl border border-border p-3">
                 <div className="flex items-center justify-between gap-2">

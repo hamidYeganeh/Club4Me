@@ -4,6 +4,8 @@ export type RequestableRole = "coach" | "owner";
 
 export type RoleRequestStatus = "pending" | "approved" | "rejected";
 
+export type AccountGender = "female" | "male";
+
 export type AccountRoleRequest = {
   id: string;
   userId: string;
@@ -32,10 +34,20 @@ export type AccountUser = {
   firstName?: string;
   lastName?: string;
   birthdate?: string;
+  gender?: AccountGender;
+  idCard?: string;
   roles: UserRole[];
   hasPassword: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+export type UpdateAccountMePayload = {
+  firstName?: string;
+  lastName?: string;
+  birthdate?: string;
+  gender?: AccountGender;
+  idCard?: string;
 };
 
 export type RequestOtpPayload = {

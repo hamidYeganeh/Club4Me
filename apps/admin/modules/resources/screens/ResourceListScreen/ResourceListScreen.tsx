@@ -5,7 +5,10 @@ import {
   Card,
   Chip,
   Dropdown,
+  Input,
   Label,
+  ListBox,
+  Select,
   Spinner,
   Table,
   toast,
@@ -79,19 +82,41 @@ function ParentFilter({
     limit: 100,
   });
   return (
-    <select
-      aria-label={definition.label}
+    <Select
       value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="h-10 rounded-xl border border-border bg-surface-secondary px-3 text-sm"
+      onChange={(next) => {
+        if (typeof next === "string") onChange(next);
+      }}
     >
-      <option value="">{t("allParents", { parent: definition.label })}</option>
-      {(options.data?.items ?? []).map((item) => (
-        <option key={item.id} value={item.id}>
-          {displayName(item)}
-        </option>
-      ))}
-    </select>
+      <Label className="sr-only">{definition.label}</Label>
+      <Select.Trigger className="h-10 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
+        <Select.Value
+          placeholder={t("allParents", { parent: definition.label })}
+        />
+        <Select.Indicator />
+      </Select.Trigger>
+      <Select.Popover>
+        <ListBox>
+          <ListBox.Item
+            id=""
+            textValue={t("allParents", { parent: definition.label })}
+          >
+            {t("allParents", { parent: definition.label })}
+            <ListBox.ItemIndicator />
+          </ListBox.Item>
+          {(options.data?.items ?? []).map((item) => (
+            <ListBox.Item
+              key={item.id}
+              id={item.id}
+              textValue={displayName(item)}
+            >
+              {displayName(item)}
+              <ListBox.ItemIndicator />
+            </ListBox.Item>
+          ))}
+        </ListBox>
+      </Select.Popover>
+    </Select>
   );
 }
 
@@ -224,29 +249,48 @@ export function ResourceListScreen({
         <div className="flex flex-wrap gap-3 border-b border-border p-4 [&>label]:min-w-60 [&>label]:flex-1">
           <label>
             <span className="sr-only">{t("search")}</span>
-            <input
+            <Input
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value);
                 setPage(1);
               }}
               placeholder={t("search")}
-              className="h-10 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm outline-none focus:border-accent"
+              variant="secondary"
+              className="h-10 w-full rounded-xl text-sm"
             />
           </label>
-          <select
-            aria-label={t("statusFilter")}
+          <Select
             value={status}
-            onChange={(event) => {
-              setStatus(event.target.value);
-              setPage(1);
+            onChange={(next) => {
+              if (typeof next === "string") {
+                setStatus(next);
+                setPage(1);
+              }
             }}
-            className="h-10 rounded-xl border border-border bg-surface-secondary px-3 text-sm"
           >
-            <option value="all">{t("all")}</option>
-            <option value="active">{t("active")}</option>
-            <option value="inactive">{t("inactive")}</option>
-          </select>
+            <Label className="sr-only">{t("statusFilter")}</Label>
+            <Select.Trigger className="h-10 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
+              <Select.Value placeholder={t("statusFilter")} />
+              <Select.Indicator />
+            </Select.Trigger>
+            <Select.Popover>
+              <ListBox>
+                <ListBox.Item id="all" textValue={t("all")}>
+                  {t("all")}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+                <ListBox.Item id="active" textValue={t("active")}>
+                  {t("active")}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+                <ListBox.Item id="inactive" textValue={t("inactive")}>
+                  {t("inactive")}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              </ListBox>
+            </Select.Popover>
+          </Select>
           {parentField && (
             <ParentFilter
               definition={parentField}
@@ -257,17 +301,45 @@ export function ResourceListScreen({
               }}
             />
           )}
-          <select
-            aria-label={t("sort")}
+          <Select
             value={sortBy}
-            onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
-            className="h-10 rounded-xl border border-border bg-surface-secondary px-3 text-sm"
+            onChange={(next) => {
+              if (
+                next === "name" ||
+                next === "code" ||
+                next === "sortOrder" ||
+                next === "createdAt"
+              ) {
+                setSortBy(next);
+              }
+            }}
           >
-            <option value="sortOrder">{t("sortOrder")}</option>
-            <option value="name">{t("name")}</option>
-            <option value="code">{t("code")}</option>
-            <option value="createdAt">{t("createdAt")}</option>
-          </select>
+            <Label className="sr-only">{t("sort")}</Label>
+            <Select.Trigger className="h-10 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
+              <Select.Value placeholder={t("sort")} />
+              <Select.Indicator />
+            </Select.Trigger>
+            <Select.Popover>
+              <ListBox>
+                <ListBox.Item id="sortOrder" textValue={t("sortOrder")}>
+                  {t("sortOrder")}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+                <ListBox.Item id="name" textValue={t("name")}>
+                  {t("name")}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+                <ListBox.Item id="code" textValue={t("code")}>
+                  {t("code")}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+                <ListBox.Item id="createdAt" textValue={t("createdAt")}>
+                  {t("createdAt")}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              </ListBox>
+            </Select.Popover>
+          </Select>
           <Button
             isIconOnly
             variant="secondary"

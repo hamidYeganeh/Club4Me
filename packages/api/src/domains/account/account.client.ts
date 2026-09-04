@@ -22,6 +22,7 @@ import type {
   RequestOtpResponse,
   SetPasswordPayload,
   SetPasswordResponse,
+  UpdateAccountMePayload,
 } from "./account.dto";
 
 export const accountClient = {
@@ -52,6 +53,9 @@ export const accountClient = {
   logout: () => http.post<LogoutResponse>(accountEndpoints.logout),
 
   me: () => http.get<AccountMeResponse>(accountEndpoints.me),
+
+  updateMe: (payload: UpdateAccountMePayload) =>
+    http.patch<AccountMeResponse>(accountEndpoints.updateMe, payload),
 
   deleteAccount: () =>
     http.delete<{ success: true }>(accountEndpoints.deleteAccount, {
