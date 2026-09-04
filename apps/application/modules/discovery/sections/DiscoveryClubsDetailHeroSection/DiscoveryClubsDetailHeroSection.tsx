@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
+import { FALLBACK_IMAGE_SRC } from "@ui/fallback-image";
 import { useLocale, useTranslations } from "next-intl";
 import { Autoplay, FreeMode, Thumbs } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { FallbackImage } from "@/components/FallbackImage";
 import { getLocaleDirection } from "@/lib/locale-direction";
 
 import "swiper/css";
@@ -32,6 +33,7 @@ export function DiscoveryClubsDetailHeroSection({
   const styles = discoveryClubsDetailHeroSectionStyles();
   const router = useRouter();
   const [favorited, setFavorited] = useState(false);
+  const slides = images.length > 0 ? images : [FALLBACK_IMAGE_SRC];
 
   return (
     <section ref={sectionRef} className={styles.root()} dir={direction}>
@@ -50,14 +52,9 @@ export function DiscoveryClubsDetailHeroSection({
         watchOverflow
         className={styles.mainSwiper()}
       >
-        {images.length === 0 ? (
-          <div className="grid h-full place-items-center bg-surface-secondary text-white/75">
-            <Icon name="building-1" size={44} />
-          </div>
-        ) : null}
-        {images.map((src, index) => (
-          <SwiperSlide key={src} className={styles.slide()}>
-            <Image
+        {slides.map((src, index) => (
+          <SwiperSlide key={`${src}-${index}`} className={styles.slide()}>
+            <FallbackImage
               src={src}
               alt={name}
               fill

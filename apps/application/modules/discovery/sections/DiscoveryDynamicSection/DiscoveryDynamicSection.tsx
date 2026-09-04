@@ -21,9 +21,6 @@ import {
 import "swiper/css";
 import "swiper/css/free-mode";
 
-const fallback =
-  "https://images.unsplash.com/photo-1534438327276-14e7789c4591?auto=format&fit=crop&w=900&q=80";
-
 export function DiscoveryDynamicSection({
   section,
 }: {
@@ -84,7 +81,6 @@ export function DiscoveryDynamicSection({
                       <ClubCard
                         variant="compact"
                         title={club.name}
-                        imageUrl={fallback}
                         rating={club.averageRating}
                         reviewsCount={club.reviewsCount}
                         href={`/discovery/clubs/${club.id}`}
@@ -99,7 +95,6 @@ export function DiscoveryDynamicSection({
                           type="normal"
                           title={coach.displayName}
                           supportingText={coach.shortBio}
-                          imageUrl={fallback}
                           rating={coach.averageRating}
                           reviewsCount={coach.reviewsCount}
                           href={`/coaches/${coach.slug}`}
@@ -118,7 +113,7 @@ export function DiscoveryDynamicSection({
                         <ArticleCard
                           title={article.title}
                           description={article.excerpt}
-                          coverImageUrl={article.coverImageUrl ?? fallback}
+                          coverImageUrl={article.coverImageUrl}
                           authorName={article.authorName}
                           readTime=""
                           tags={[]}

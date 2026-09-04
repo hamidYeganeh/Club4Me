@@ -5,6 +5,15 @@ import { http } from "../../http/client";
 
 export type DiscoverySectionType = "banners" | "clubs" | "coaches" | "articles";
 export type DiscoverySectionSort = "manual" | "newest" | "rating" | "name";
+export type DiscoverySectionAppearance = {
+  backgroundColor: string;
+  textColor: string;
+  accentColor: string;
+  showHeader: boolean;
+  showViewAll: boolean;
+  headerAlignment: "start" | "center";
+  viewAllVariant: "link" | "solid" | "outline";
+};
 
 export type DiscoverySectionConfiguration = {
   id: string;
@@ -15,6 +24,7 @@ export type DiscoverySectionConfiguration = {
   layout: string;
   viewAllLabel: string;
   viewAllUrl: string;
+  appearance: DiscoverySectionAppearance;
   enabled: boolean;
   position: number;
   selection: {

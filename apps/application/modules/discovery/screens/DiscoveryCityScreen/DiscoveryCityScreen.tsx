@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Card, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 
+import { FallbackImage } from "@/components/FallbackImage";
 import { getDiscoveryCity } from "@modules/discovery/discovery-city.constants";
 
 import { discoveryCityScreenStyles } from "./DiscoveryCityScreen.styles";
@@ -27,7 +27,7 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
   return (
     <main className={styles.root()}>
       <section className={styles.hero()} aria-labelledby="city-title">
-        <Image
+        <FallbackImage
           src={city.imageUrl}
           alt={`باشگاه‌های ${city.name}`}
           fill
@@ -83,7 +83,7 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
           {city.districts.map((district) => (
             <Card key={district.id} className={styles.card()}>
               <div className={styles.imageWrap()}>
-                <Image
+                <FallbackImage
                   src={district.imageUrl}
                   alt={district.name}
                   fill

@@ -12,11 +12,11 @@ export type ArticleCardTag = {
 export type ArticleCardProps = {
   title: string;
   description?: string;
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   coverImageAlt?: string;
   badge?: string;
   authorName: string;
-  authorAvatarUrl?: string;
+  authorAvatarUrl?: string | null;
   readTime?: string;
   tags?: ArticleCardTag[];
   tagsLabel?: string;

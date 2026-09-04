@@ -3,6 +3,7 @@
 import { Button, Card, Typography } from "@heroui/react";
 import { Icon } from "@repo/theme/icon";
 
+import { useFallbackImageSrc } from "../use-fallback-image-src";
 import { clubCardStyles } from "./club-card.styles";
 import type { ClubCardProps } from "./club-card.types";
 
@@ -33,6 +34,8 @@ export function ClubCard({
   className,
 }: ClubCardProps) {
   const styles = clubCardStyles({ variant });
+  const { src: resolvedImageUrl, onError: onImageError } =
+    useFallbackImageSrc(imageUrl);
   const safeRating =
     typeof rating === "number"
       ? Math.min(MAX_RATING, Math.max(0, rating))
@@ -49,7 +52,12 @@ export function ClubCard({
 
   return (
     <Card variant="transparent" className={styles.root({ className })}>
-      <img className={styles.image()} src={imageUrl} alt={imageAlt ?? title} />
+      <img
+        className={styles.image()}
+        src={resolvedImageUrl}
+        alt={imageAlt ?? title}
+        onError={onImageError}
+      />
       <div aria-hidden className={styles.shade()} />
 
       {href ? (

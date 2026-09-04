@@ -11,7 +11,7 @@ export type CoachCardStat = {
 export type CoachCardProps = {
   type?: CoachCardType;
   title: string;
-  imageUrl: string;
+  imageUrl?: string | null;
   imageAlt?: string;
   badge?: string;
   href?: string;
@@ -23,6 +23,6 @@ export type CoachCardProps = {
   stats?: CoachCardStat[];
   meta?: string[];
   authorName?: string;
-  authorAvatarUrl?: string;
+  authorAvatarUrl?: string | null;
   className?: string;
 };

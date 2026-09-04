@@ -17,7 +17,7 @@ export type ClubCardSport = {
 export type ClubCardProps = {
   variant?: ClubCardVariant;
   title: string;
-  imageUrl: string;
+  imageUrl?: string | null;
   imageAlt?: string;
   /** City and district only, e.g. "تهران، سعادت‌آباد" */
   location?: string;

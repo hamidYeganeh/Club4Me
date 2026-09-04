@@ -15,7 +15,6 @@ import type {
   DiscoveryClubsRailSectionProps,
 } from "./DiscoveryClubsRailSection.types";
 
-const FALLBACK_IMAGE = "/mock/clubs/01.jpg";
 const PATTERN_ICONS: IconName[] = [
   "weight",
   "pin-1",
@@ -135,7 +134,7 @@ export function DiscoveryClubsRailSection({
                   variant={cardVariant}
                   title={club.name}
                   location={location}
-                  imageUrl={club.imageUrl ?? FALLBACK_IMAGE}
+                  imageUrl={club.imageUrl}
                   rating={club.averageRating}
                   reviewsCount={club.reviewsCount}
                   sports={club.sports}

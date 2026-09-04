@@ -159,6 +159,7 @@ export function LocationFormScreen({ role, locationId }: Props) {
           <NeshanMap
             center={selectedPoint}
             marker={selectedPoint}
+            followCenter={false}
             onPointChange={setPoint}
             className="h-72 overflow-hidden rounded-[1.6rem] border border-white/7"
           />

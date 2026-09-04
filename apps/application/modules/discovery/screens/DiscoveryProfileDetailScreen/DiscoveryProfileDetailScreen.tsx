@@ -1,7 +1,6 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
-import Image from "next/image";
 import { Button, Card, Spinner, toast, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import {
@@ -23,6 +22,7 @@ import {
 } from "@api";
 
 import { ButtonLink } from "@/components/button-link";
+import { FallbackImage } from "@/components/FallbackImage";
 import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
 import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGateway";
 
@@ -120,7 +120,7 @@ function CoachDetails({ id }: { id: string }) {
       subtitle={coach.shortBio}
       meta={`${coach.averageRating.toLocaleString("fa-IR")} ★ · ${coach.experienceYears.toLocaleString("fa-IR")} سال تجربه`}
       description={coach.shortBio || "اطلاعات این مربی به‌زودی تکمیل می‌شود."}
-      imageUrl={coach.imageUrl ?? "/profile/avatar.jpg"}
+      imageUrl={coach.imageUrl}
       badge="مربی تأییدشده"
       facts={[
         "برنامه منعطف",
@@ -309,7 +309,7 @@ function ClassDetails({ id }: { id: string }) {
       subtitle={item.description}
       meta={`${remaining.toLocaleString("fa-IR")} ظرفیت باقی‌مانده`}
       description={item.description || "توضیحات این کلاس به‌زودی تکمیل می‌شود."}
-      imageUrl={item.imageUrl ?? "/mock/clubs/02.jpg"}
+      imageUrl={item.imageUrl}
       badge={item.status === "published" ? "ثبت‌نام باز" : "در حال برگزاری"}
       facts={[
         new Date(item.courseStartAt).toLocaleDateString("fa-IR"),
@@ -397,7 +397,7 @@ function DetailLayout({
   subtitle: string;
   meta: string;
   description: string;
-  imageUrl: string;
+  imageUrl?: string | null;
   badge: string;
   facts: string[];
   actionLabel: string;
@@ -411,7 +411,7 @@ function DetailLayout({
     <main className="min-h-dvh w-full max-w-full overflow-x-hidden bg-transparent pb-[calc(7rem+env(safe-area-inset-bottom))]">
       <DiscoveryPageHeader title="" overlay />
       <div className="app-scroll-media relative aspect-4/5 max-h-[62dvh] overflow-hidden">
-        <Image
+        <FallbackImage
           src={imageUrl}
           alt={title}
           fill

@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { Button, Drawer, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { useLocale, useTranslations } from "next-intl";
 import { FreeMode, Thumbs } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { FallbackImage } from "@/components/FallbackImage";
 import { NeshanMap } from "@/components/maps/neshan-map";
 import { getLocaleDirection } from "@/lib/locale-direction";
 
@@ -100,7 +100,7 @@ export function DiscoveryClubsDetailBodySection({
         >
           {images.map((src) => (
             <SwiperSlide key={src} className={styles.thumbSlide()}>
-              <Image
+              <FallbackImage
                 src={src}
                 alt=""
                 fill
@@ -328,7 +328,7 @@ export function DiscoveryClubsDetailBodySection({
             <Drawer.Body>
               {detailItem?.backgroundImage ? (
                 <div className={styles.facilityDetailImage()}>
-                  <Image
+                  <FallbackImage
                     src={detailItem.backgroundImage}
                     alt={detailItem.title}
                     fill

@@ -14,6 +14,11 @@ const config: SsgoiConfig = {
     },
     {
       priority: 20,
+      on: "/discovery/map",
+      transition: axis({ type: "y" }),
+    },
+    {
+      priority: 20,
       on: "/*/profile/edit",
       transition: sheet({ type: "static" }),
     },

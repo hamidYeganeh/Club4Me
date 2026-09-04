@@ -17,6 +17,7 @@ export type {
   DiscoveryClubItem,
   DiscoveryCoachItem,
   DiscoverySection,
+  DiscoverySectionAppearance,
   PublicCatalogClass,
   PublicCatalogClub,
   PublicCatalogCoach,

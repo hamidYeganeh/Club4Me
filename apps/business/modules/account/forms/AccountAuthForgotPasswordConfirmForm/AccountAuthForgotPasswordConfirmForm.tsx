@@ -5,17 +5,13 @@ import {
   Button,
   FieldError,
   InputGroup,
-  InputOTP,
   Label,
-  REGEXP_ONLY_DIGITS,
   Spinner,
   toast,
 } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  useConfirmForgotPassword,
-  useForgotPassword,
-} from "@api/business";
+import { useConfirmForgotPassword, useForgotPassword } from "@api/business";
+import { OTPInput } from "@repo/ui/otp-input";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
 import { Controller, useForm } from "react-hook-form";
@@ -146,9 +142,7 @@ export function AccountAuthForgotPasswordConfirmForm({
   };
 
   const isBusy =
-    isSucceeded ||
-    confirmForgotPassword.isPending ||
-    forgotPassword.isPending;
+    isSucceeded || confirmForgotPassword.isPending || forgotPassword.isPending;
 
   return (
     <Form
@@ -167,22 +161,18 @@ export function AccountAuthForgotPasswordConfirmForm({
               <div className={styles.otpField()}>
                 <Label className="sr-only">{codeLabel}</Label>
                 <div dir="ltr" lang="en" className={styles.otpWrap()}>
-                  <InputOTP
-                    maxLength={FORGOT_PASSWORD_OTP_LENGTH}
-                    pattern={REGEXP_ONLY_DIGITS}
+                  <OTPInput
+                    length={FORGOT_PASSWORD_OTP_LENGTH}
                     value={field.value}
-                    isDisabled={isBusy}
-                    isInvalid={fieldState.invalid}
-                    variant="secondary"
+                    disabled={isBusy}
+                    status={fieldState.invalid ? "error" : "idle"}
                     className={styles.otp()}
-                    dir="ltr"
+                    slotsClassName={styles.otpGroup()}
+                    slotClassName={styles.slot()}
                     autoFocus
-                    autoComplete="one-time-code"
-                    inputMode="numeric"
                     name="code"
                     enterKeyHint="next"
-                    style={{ direction: "ltr" }}
-                    pasteTransformer={(text) => text.replace(/\D/g, "")}
+                    aria-label={codeLabel}
                     onBlur={field.onBlur}
                     onChange={(value) => {
                       field.onChange(value);
@@ -190,24 +180,7 @@ export function AccountAuthForgotPasswordConfirmForm({
                         form.clearErrors("code");
                       }
                     }}
-                  >
-                    <InputOTP.Group
-                      className={styles.otpGroup()}
-                      dir="ltr"
-                      style={{ direction: "ltr" }}
-                    >
-                      {Array.from(
-                        { length: FORGOT_PASSWORD_OTP_LENGTH },
-                        (_, index) => (
-                          <InputOTP.Slot
-                            key={index}
-                            index={index}
-                            className={styles.slot()}
-                          />
-                        ),
-                      )}
-                    </InputOTP.Group>
-                  </InputOTP>
+                  />
                 </div>
                 <Button
                   type="button"

@@ -34,6 +34,15 @@ const empty: SaveDiscoverySection = {
   layout: "carousel",
   viewAllLabel: "مشاهده همه",
   viewAllUrl: "",
+  appearance: {
+    backgroundColor: "transparent",
+    textColor: "",
+    accentColor: "",
+    showHeader: true,
+    showViewAll: true,
+    headerAlignment: "start",
+    viewAllVariant: "link",
+  },
   enabled: true,
   selection: {
     mode: "query",
@@ -186,6 +195,7 @@ function SectionEditor({
           layout: initial.layout,
           viewAllLabel: initial.viewAllLabel,
           viewAllUrl: initial.viewAllUrl,
+          appearance: initial.appearance,
           enabled: initial.enabled,
           selection: initial.selection,
           banners: initial.banners,
@@ -316,6 +326,31 @@ function SectionEditor({
               value={value.viewAllUrl}
               onChange={(e) => set("viewAllUrl", e.target.value)}
             />
+          </Field>
+          <Field label="رنگ پس‌زمینه">
+            <Input
+              dir="ltr"
+              className={input}
+              variant="secondary"
+              placeholder="#ffffff یا var(--surface)"
+              value={value.appearance.backgroundColor}
+              onChange={(e) =>
+                set("appearance", {
+                  ...value.appearance,
+                  backgroundColor: e.target.value,
+                })
+              }
+            />
+          </Field>
+          <Field label="نمایش دکمه مشاهده همه">
+            <Checkbox
+              isSelected={value.appearance.showViewAll}
+              onValueChange={(showViewAll) =>
+                set("appearance", { ...value.appearance, showViewAll })
+              }
+            >
+              نمایش داده شود
+            </Checkbox>
           </Field>
           {value.type !== "banners" ? (
             <>

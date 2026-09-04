@@ -130,12 +130,24 @@ type DiscoverySectionBase<TType extends string, TItem> = {
   id: string;
   key: string;
   type: TType;
+  position: number;
   title: string;
   subtitle: string;
   layout: string;
   viewAllLabel: string;
   viewAllUrl: string;
+  appearance: DiscoverySectionAppearance;
   items: TItem[];
+};
+
+export type DiscoverySectionAppearance = {
+  backgroundColor: string;
+  textColor: string;
+  accentColor: string;
+  showHeader: boolean;
+  showViewAll: boolean;
+  headerAlignment: "start" | "center";
+  viewAllVariant: "link" | "solid" | "outline";
 };
 
 export type DiscoverySection =

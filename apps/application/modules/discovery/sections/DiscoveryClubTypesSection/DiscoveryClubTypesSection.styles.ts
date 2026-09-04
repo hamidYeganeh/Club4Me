@@ -8,7 +8,7 @@ export const discoveryClubTypesSectionStyles = tv({
     column: "flex w-[11.25rem] shrink-0 snap-start flex-col gap-5",
     item: "relative flex w-full flex-row items-center gap-3 no-underline outline-none transition-transform duration-200 ease-out active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-focus",
     iconWrap:
-      "grid size-11 shrink-0 place-items-center rounded-2xl bg-surface text-accent-foreground",
+      "grid size-12 shrink-0 place-items-center rounded-2xl bg-surface text-foreground text-xl",
     body: "flex min-w-0 flex-1 flex-col gap-0.5 py-0.5",
     name: "leading-6 text-foreground",
     count: "leading-5",

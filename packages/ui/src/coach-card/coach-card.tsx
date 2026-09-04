@@ -3,6 +3,8 @@
 import { Avatar, Button, Card, Chip, Typography } from "@heroui/react";
 import { Icon } from "@repo/theme/icon";
 
+import { FALLBACK_IMAGE_SRC, resolveImageSrc } from "../fallback-image";
+import { useFallbackImageSrc } from "../use-fallback-image-src";
 import { coachCardStyles } from "./coach-card.styles";
 import type { CoachCardProps, CoachCardStat } from "./coach-card.types";
 
@@ -16,13 +18,6 @@ const BLUR_LAYERS = [
   { blur: 16, stop: 22 },
   { blur: 28, stop: 12 },
 ] as const;
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const first = parts[0]?.[0] ?? "";
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
-  return `${first}${last}`.toUpperCase() || "?";
-}
 
 function formatRating(rating: number): string {
   return Number.isInteger(rating) ? String(rating) : rating.toFixed(1);
@@ -121,6 +116,8 @@ export function CoachCard({
   className,
 }: CoachCardProps) {
   const styles = coachCardStyles({ type });
+  const { src: resolvedImageUrl, onError: onImageError } =
+    useFallbackImageSrc(imageUrl);
   const isCompact = type === "compact";
   const visibleMeta = meta.filter((item) => item.trim().length > 0);
   const clampedRating =
@@ -130,7 +127,12 @@ export function CoachCard({
 
   return (
     <Card variant="transparent" className={styles.root({ className })}>
-      <img src={imageUrl} alt={imageAlt ?? title} className={styles.image()} />
+      <img
+        src={resolvedImageUrl}
+        alt={imageAlt ?? title}
+        className={styles.image()}
+        onError={onImageError}
+      />
 
       <div aria-hidden className={styles.blur()}>
         {BLUR_LAYERS.map((layer) => (
@@ -199,10 +201,17 @@ export function CoachCard({
               {authorName ? (
                 <div className={styles.author()}>
                   <Avatar size="sm" className={styles.avatar()}>
-                    {authorAvatarUrl ? (
-                      <Avatar.Image alt={authorName} src={authorAvatarUrl} />
-                    ) : null}
-                    <Avatar.Fallback>{getInitials(authorName)}</Avatar.Fallback>
+                    <Avatar.Image
+                      alt={authorName}
+                      src={resolveImageSrc(authorAvatarUrl)}
+                    />
+                    <Avatar.Fallback className="overflow-hidden p-0">
+                      <img
+                        src={FALLBACK_IMAGE_SRC}
+                        alt=""
+                        className="size-full object-cover"
+                      />
+                    </Avatar.Fallback>
                   </Avatar>
                   <Typography type="body-sm" className={styles.authorName()}>
                     {authorName}
@@ -235,7 +244,7 @@ export function CoachCard({
                   </Typography>
                   {reviewsCount != null ? (
                     <Typography type="body-sm" className={styles.reviews()}>
-                    {`(${reviewsCount})`}
+                      {`(${reviewsCount})`}
                     </Typography>
                   ) : null}
                 </div>

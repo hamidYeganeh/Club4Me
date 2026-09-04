@@ -1,12 +1,15 @@
+"use client";
+
 import type { ButtonHTMLAttributes } from "react";
 import { Icon, type IconName } from "@repo/theme/icon";
 
 import { cn } from "./cn";
+import { useFallbackImageSrc } from "./use-fallback-image-src";
 
 export type AmenityCardProps = {
   title: string;
   icon?: IconName;
-  backgroundImage?: string;
+  backgroundImage?: string | null;
   className?: string;
   onPress?: () => void;
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "onClick">;
@@ -20,7 +23,9 @@ export function AmenityCard({
   type = "button",
   ...buttonProps
 }: AmenityCardProps) {
-  const hasBackground = Boolean(backgroundImage);
+  const hasBackground = Boolean(backgroundImage?.trim());
+  const { src: resolvedBackground, onError } =
+    useFallbackImageSrc(backgroundImage);
 
   return (
     <button
@@ -31,17 +36,20 @@ export function AmenityCard({
         hasBackground
           ? "border-white/10 bg-surface-secondary"
           : "border-border bg-surface",
-        onPress ? "cursor-pointer transition-transform active:scale-[0.98]" : "cursor-default",
+        onPress
+          ? "cursor-pointer transition-transform active:scale-[0.98]"
+          : "cursor-default",
         className,
       )}
       {...buttonProps}
     >
-      {backgroundImage ? (
+      {hasBackground ? (
         <>
           <img
-            src={backgroundImage}
+            src={resolvedBackground}
             alt=""
             className="absolute inset-0 size-full object-cover"
+            onError={onError}
           />
           <div aria-hidden className="absolute inset-0 bg-black/40" />
         </>

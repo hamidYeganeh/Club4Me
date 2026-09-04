@@ -33,8 +33,6 @@ import type {
   DiscoveryClubsScreenProps,
 } from "./DiscoveryClubsScreen.types";
 
-const FALLBACK_IMAGE = "/mock/clubs/01.jpg";
-
 export function DiscoveryClubsScreen({
   title,
   description,
@@ -223,7 +221,7 @@ export function DiscoveryClubsScreen({
                   ""
                 }
                 meta={`${club.averageRating.toLocaleString("fa-IR")} ★`}
-                imageUrl={club.imageUrl ?? FALLBACK_IMAGE}
+                imageUrl={club.imageUrl}
                 href={`/discovery/clubs/${club.id}`}
                 badge={t("title")}
               />

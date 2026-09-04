@@ -3,4 +3,6 @@ export type DiscoveryClubsCatalogSectionsProps = {
   idPrefix?: string;
   showClubTypes?: boolean;
   showHero?: boolean;
+  /** Full-width editorial club cards after curated rails. */
+  showEditorialList?: boolean;
 };

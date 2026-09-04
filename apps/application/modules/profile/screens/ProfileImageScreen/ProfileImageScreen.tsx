@@ -33,7 +33,6 @@ export function ProfileImageScreen({ role }: ProfileImageScreenProps) {
         title={t("imageTitle")}
         avatarAlt={t("avatarAlt", { name: t("fallbackName") })}
         avatarSrc={previewSrc}
-        fallback={t("fallbackName")}
         onFile={(file) => {
           const nextSrc = URL.createObjectURL(file);
           setPreviewSrc((current) => {

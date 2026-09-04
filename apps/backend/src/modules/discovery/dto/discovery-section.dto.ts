@@ -41,6 +41,29 @@ const banner = z.object({
   actionUrl: z.string().trim().max(1000).default(""),
 });
 
+const color = z
+  .string()
+  .trim()
+  .max(80)
+  .refine(
+    (value) =>
+      value === "" ||
+      value === "transparent" ||
+      /^#[0-9a-f]{3,8}$/i.test(value) ||
+      /^var\(--[a-z0-9-]+\)$/i.test(value),
+    "Color must be a hex value, transparent, or a CSS variable",
+  );
+
+const appearance = z.object({
+  backgroundColor: color.default("transparent"),
+  textColor: color.default(""),
+  accentColor: color.default(""),
+  showHeader: z.boolean().default(true),
+  showViewAll: z.boolean().default(true),
+  headerAlignment: z.enum(["start", "center"]).default("start"),
+  viewAllVariant: z.enum(["link", "solid", "outline"]).default("link"),
+});
+
 const fields = {
   key: z
     .string()
@@ -54,6 +77,15 @@ const fields = {
   layout: z.string().trim().min(1).max(80).default("carousel"),
   viewAllLabel: z.string().trim().max(120).default(""),
   viewAllUrl: z.string().trim().max(1000).default(""),
+  appearance: appearance.default({
+    backgroundColor: "transparent",
+    textColor: "",
+    accentColor: "",
+    showHeader: true,
+    showViewAll: true,
+    headerAlignment: "start",
+    viewAllVariant: "link",
+  }),
   enabled: z.boolean().default(true),
   selection: selection.default({
     mode: "query",
@@ -74,6 +106,7 @@ export class CreateDiscoverySectionDto {
   layout: string;
   viewAllLabel: string;
   viewAllUrl: string;
+  appearance: z.infer<typeof appearance>;
   enabled: boolean;
   selection: z.infer<typeof selection>;
   banners: z.infer<typeof banner>[];
@@ -92,6 +125,7 @@ export class UpdateDiscoverySectionDto {
   layout?: string;
   viewAllLabel?: string;
   viewAllUrl?: string;
+  appearance?: z.infer<typeof appearance>;
   enabled?: boolean;
   selection?: z.infer<typeof selection>;
   banners?: z.infer<typeof banner>[];

@@ -28,10 +28,6 @@ export const reservationTimelineRowStyles = tv({
     metaItem: "flex items-center gap-1 text-xs text-muted",
     metaAccent: "text-accent",
     metaMuted: "text-muted",
-    actions: "flex shrink-0 flex-col gap-2",
-    action:
-      "size-12 min-w-12 rounded-[1rem] border border-white/8 shadow-none transition-transform duration-200 active:scale-95",
-    favorite: "bg-foreground text-background",
   },
   variants: {
     selected: {
@@ -43,17 +39,8 @@ export const reservationTimelineRowStyles = tv({
         root: "gap-3",
       },
     },
-    favorited: {
-      true: {
-        favorite: "bg-accent text-accent-foreground",
-      },
-      false: {
-        favorite: "bg-foreground text-background",
-      },
-    },
   },
   defaultVariants: {
     selected: false,
-    favorited: false,
   },
 });

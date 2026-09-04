@@ -466,11 +466,13 @@ export class DiscoveryFeedService {
       id: String(section._id),
       key: section.key,
       type: section.type,
+      position: section.position,
       title: section.title,
       subtitle: section.subtitle,
       layout: section.layout,
       viewAllLabel: section.viewAllLabel,
       viewAllUrl: section.viewAllUrl,
+      appearance: normalizeAppearance(section.appearance),
     };
     if (section.type === "banners") {
       return {
@@ -773,6 +775,7 @@ function serializeConfiguration(item: Record<string, any>) {
     layout: item.layout ?? "carousel",
     viewAllLabel: item.viewAllLabel ?? "",
     viewAllUrl: item.viewAllUrl ?? "",
+    appearance: normalizeAppearance(item.appearance),
     enabled: item.enabled ?? true,
     position: item.position ?? 0,
     selection: {
@@ -785,6 +788,17 @@ function serializeConfiguration(item: Record<string, any>) {
     banners: item.banners ?? [],
     createdAt: item.createdAt?.toISOString?.() ?? item.createdAt,
     updatedAt: item.updatedAt?.toISOString?.() ?? item.updatedAt,
+  };
+}
+function normalizeAppearance(item?: Record<string, unknown>) {
+  return {
+    backgroundColor: item?.backgroundColor ?? "transparent",
+    textColor: item?.textColor ?? "",
+    accentColor: item?.accentColor ?? "",
+    showHeader: item?.showHeader ?? true,
+    showViewAll: item?.showViewAll ?? true,
+    headerAlignment: item?.headerAlignment ?? "start",
+    viewAllVariant: item?.viewAllVariant ?? "link",
   };
 }
 function assertAdmin(roles: UserRole[]) {

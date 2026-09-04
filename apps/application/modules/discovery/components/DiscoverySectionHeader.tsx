@@ -35,10 +35,8 @@ export function DiscoverySectionHeader({
           {icon ? (
             <span
               aria-hidden
-              className={`grid size-9 shrink-0 place-items-center rounded-[0.9rem] ${
-                accent
-                  ? "bg-[#24272c]/10 text-[#24272c]"
-                  : "bg-accent/15 text-accent"
+              className={`shrink-0 ${
+                accent ? "text-[#24272c]" : "text-accent"
               }`}
             >
               <Icon name={icon} size={18} />
@@ -58,7 +56,7 @@ export function DiscoverySectionHeader({
             type="body-sm"
             color={accent ? undefined : "muted"}
             className={
-              accent ? "mt-1 text-[#66591f]" : icon ? "mt-1 ms-11" : "mt-1"
+              accent ? "mt-1 text-[#66591f]" : icon ? "mt-1 ms-7" : "mt-1"
             }
           >
             {subtitle}

@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useReducedMotion } from "motion/react";
 import { useLocale } from "next-intl";
 import { Autoplay, FreeMode, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+import { FallbackImage } from "@/components/FallbackImage";
 import { getLocaleDirection } from "@/lib/locale-direction";
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
 
@@ -90,7 +90,7 @@ export function DiscoveryBannersSection({
           const key = item.id ?? `${item.imageUrl}-${index}`;
           const card = (
             <>
-              <Image
+              <FallbackImage
                 src={item.imageUrl}
                 alt={item.title}
                 fill

@@ -8,10 +8,12 @@ import { mockDiscoveryArticles } from "@modules/discovery/discovery-articles.moc
 import { mockDiscoveryBanners } from "@modules/discovery/discovery-banners.mock";
 import { mockDiscoveryClasses } from "@modules/discovery/discovery-classes.mock";
 import { mockDiscoveryCoaches } from "@modules/discovery/discovery-coaches.mock";
+import { mockRailClubs } from "@modules/discovery/discovery-clubs-rails.mock";
 import { DiscoveryArticlesRailSection } from "@modules/discovery/sections/DiscoveryArticlesRailSection";
 import { DiscoveryBannersSection } from "@modules/discovery/sections/DiscoveryBannersSection";
 import { DiscoveryClassesRailSection } from "@modules/discovery/sections/DiscoveryClassesRailSection";
 import { DiscoveryClubsCatalogSections } from "@modules/discovery/sections/DiscoveryClubsCatalogSections";
+import { DiscoveryClubsEditorialListSection } from "@modules/discovery/sections/DiscoveryClubsEditorialListSection";
 import { DiscoveryCoachesRailSection } from "@modules/discovery/sections/DiscoveryCoachesRailSection";
 import { DiscoveryDynamicSection } from "@modules/discovery/sections/DiscoveryDynamicSection";
 import { DiscoveryHomeExploreSection } from "@modules/discovery/sections/DiscoveryHomeExploreSection";
@@ -47,7 +49,10 @@ export function DiscoveryHomeScreen() {
         items={mockDiscoveryCoaches(0, 5)}
         cardType="normal"
       />
-      <DiscoveryClubsCatalogSections idPrefix="home" />
+      <DiscoveryClubsCatalogSections
+        idPrefix="home"
+        showEditorialList={false}
+      />
       <DiscoveryClassesRailSection
         id="home-classes-open"
         title={t("classesOpenTitle")}
@@ -111,6 +116,10 @@ export function DiscoveryHomeScreen() {
       {feed.data?.map((section) => (
         <DiscoveryDynamicSection key={section.id} section={section} />
       ))}
+      <DiscoveryClubsEditorialListSection
+        id="home-editorial-list"
+        items={mockRailClubs(1, 8)}
+      />
     </main>
   );
 }

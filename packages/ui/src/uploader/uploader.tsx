@@ -2,7 +2,8 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useDropzone, type FileRejection } from "react-dropzone";
-import { Icon } from "@repo/theme/icon";
+import { UploadCloud } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { cn } from "../cn";
 import { createUploaderFileId } from "./format";
@@ -79,6 +80,7 @@ export function Uploader({
   onRetry,
   onUpload,
 }: UploaderProps) {
+  const reduceMotion = useReducedMotion() ?? false;
   const labels = useMemo(
     () => ({ ...defaultUploaderLabels, ...labelsProp }),
     [labelsProp],
@@ -87,14 +89,11 @@ export function Uploader({
   const [internalFiles, setInternalFiles] = useState<UploaderFile[]>([]);
   const items = files ?? internalFiles;
 
-  const patchFile = useCallback(
-    (id: string, next: Partial<UploaderFile>) => {
-      setInternalFiles((current) =>
-        current.map((item) => (item.id === id ? { ...item, ...next } : item)),
-      );
-    },
-    [],
-  );
+  const patchFile = useCallback((id: string, next: Partial<UploaderFile>) => {
+    setInternalFiles((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...next } : item)),
+    );
+  }, []);
 
   const handleAccepted = useCallback(
     async (accepted: File[]) => {
@@ -178,31 +177,51 @@ export function Uploader({
 
   return (
     <div dir="rtl" className={cn("flex w-full flex-col gap-3", className)}>
-      <div
+      <motion.div
         {...getRootProps({
           className: cn(
-            "flex cursor-pointer flex-col items-center justify-center rounded-[24px] border border-accent bg-surface p-4 text-center outline-none transition-colors duration-200",
+            "group relative isolate flex min-h-52 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[2rem] bg-default p-2 text-center outline-none transition-colors duration-200 hover:bg-default/80",
             isDragActive && "bg-accent/10",
-            isFocused && "ring-2 ring-accent ring-offset-2 ring-offset-background",
-            disabled && "cursor-not-allowed opacity-50",
+            isFocused &&
+              "ring-2 ring-accent ring-offset-2 ring-offset-background",
+            disabled && "pointer-events-none cursor-not-allowed opacity-50",
           ),
         })}
+        animate={reduceMotion ? undefined : { scale: isDragActive ? 1.006 : 1 }}
+        whileTap={reduceMotion || disabled ? undefined : { scale: 0.995 }}
+        transition={{ type: "spring", stiffness: 420, damping: 32 }}
         aria-label={labels.dropzoneAria}
       >
         <input {...getInputProps()} />
-        <span className="flex size-16 items-center justify-center rounded-full bg-accent/15">
-          <span className="flex size-10 items-center justify-center rounded-full border-2 border-accent text-accent">
-            <Icon name="cloud-upload-1" size="md" />
-          </span>
-        </span>
-        <p className="mt-3 text-sm text-foreground">
-          <span className="font-bold text-accent">{labels.clickToUpload}</span>
-          <span>{labels.dropHint}</span>
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute inset-2 -z-10 rounded-[1.5rem] border border-dashed border-muted/30 bg-surface transition-[border-color,background-color] duration-200 group-hover:border-muted/50",
+            isDragActive && "border-accent/70 bg-accent/5",
+          )}
+        />
+        <motion.span
+          aria-hidden="true"
+          animate={
+            reduceMotion
+              ? undefined
+              : { y: isDragActive ? -4 : 0, scale: isDragActive ? 1.08 : 1 }
+          }
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className={cn(
+            "mb-3 grid size-11 place-items-center rounded-2xl bg-default text-foreground transition-colors duration-200",
+            isDragActive && "bg-accent text-accent-foreground",
+          )}
+        >
+          <UploadCloud className="size-[18px]" />
+        </motion.span>
+        <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">
+          {labels.clickToUpload}
         </p>
-        <p className="mt-1 max-w-xs text-xs leading-6 text-muted">
-          {labels.formats}
+        <p className="mt-1 max-w-xs text-xs leading-5 text-muted">
+          {labels.dropHint.trim()} {labels.formats}
         </p>
-      </div>
+      </motion.div>
 
       {items.length > 0 ? (
         <ul className="flex flex-col gap-3" aria-live="polite">

@@ -33,7 +33,7 @@ export function DiscoveryClassesScreen() {
               (item.deliveryMode === "online" ? "آنلاین" : "حضوری")
             }
             meta={`${item.enrollmentCount.toLocaleString("fa-IR")} از ${item.capacity.toLocaleString("fa-IR")} نفر`}
-            imageUrl={item.imageUrl ?? "/mock/clubs/02.jpg"}
+            imageUrl={item.imageUrl}
             href={`/discovery/classes/${item.slug}`}
             badge="کلاس"
           />

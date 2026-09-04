@@ -1,18 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  Button,
-  FieldError,
-  InputOTP,
-  Label,
-  REGEXP_ONLY_DIGITS,
-  Spinner,
-  toast,
-} from "@heroui/react";
+import { Button, FieldError, Label, Spinner, toast } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useConfirmOtp, useRequestOtp } from "@api/account";
 import NumberFlow from "@number-flow/react";
+import { OTPInput } from "@repo/ui/otp-input";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
 import { Controller, useForm } from "react-hook-form";
@@ -145,22 +138,18 @@ export function AccountAuthOtpConfirmForm({
               <div className={styles.field()}>
                 <Label className="sr-only">{codeLabel}</Label>
                 <div dir="ltr" lang="en" className={styles.otpWrap()}>
-                  <InputOTP
-                    maxLength={OTP_CODE_LENGTH}
-                    pattern={REGEXP_ONLY_DIGITS}
+                  <OTPInput
+                    length={OTP_CODE_LENGTH}
                     value={field.value}
-                    isDisabled={isBusy}
-                    isInvalid={fieldState.invalid}
-                    variant="secondary"
+                    disabled={isBusy}
+                    status={fieldState.invalid ? "error" : "idle"}
                     className={styles.otp()}
-                    dir="ltr"
+                    slotsClassName={styles.otpGroup()}
+                    slotClassName={styles.slot()}
                     autoFocus
-                    autoComplete="one-time-code"
-                    inputMode="numeric"
                     name="code"
                     enterKeyHint="done"
-                    style={{ direction: "ltr" }}
-                    pasteTransformer={(text) => text.replace(/\D/g, "")}
+                    aria-label={codeLabel}
                     onBlur={field.onBlur}
                     onComplete={(code) => {
                       field.onChange(code);
@@ -174,21 +163,7 @@ export function AccountAuthOtpConfirmForm({
                         form.clearErrors("code");
                       }
                     }}
-                  >
-                    <InputOTP.Group
-                      className={styles.otpGroup()}
-                      dir="ltr"
-                      style={{ direction: "ltr" }}
-                    >
-                      {Array.from({ length: OTP_CODE_LENGTH }, (_, index) => (
-                        <InputOTP.Slot
-                          key={index}
-                          index={index}
-                          className={styles.slot()}
-                        />
-                      ))}
-                    </InputOTP.Group>
-                  </InputOTP>
+                  />
                 </div>
                 <Button
                   type="button"

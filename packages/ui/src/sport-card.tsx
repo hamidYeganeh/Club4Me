@@ -1,6 +1,10 @@
+"use client";
+
 import { Card, Typography } from "@heroui/react";
 import { Icon, type IconName } from "@repo/theme/icon";
 import { tv } from "tailwind-variants";
+
+import { useFallbackImageSrc } from "./use-fallback-image-src";
 
 export type SportCardProps = {
   value: string | number;
@@ -8,7 +12,7 @@ export type SportCardProps = {
   supportingText: string;
   icon?: IconName;
   iconLabel?: string;
-  backgroundImage?: string;
+  backgroundImage?: string | null;
   backgroundImageAlt?: string;
   className?: string;
 };
@@ -63,7 +67,9 @@ export function SportCard({
   backgroundImageAlt,
   className,
 }: SportCardProps) {
-  const hasBackground = Boolean(backgroundImage);
+  const hasBackground = Boolean(backgroundImage?.trim());
+  const { src: resolvedBackground, onError } =
+    useFallbackImageSrc(backgroundImage);
   const styles = sportCardStyles({ hasBackground });
   const label = unit
     ? `${value} ${unit}. ${supportingText}`
@@ -75,12 +81,13 @@ export function SportCard({
       className={styles.root({ className })}
       aria-label={label}
     >
-      {backgroundImage ? (
+      {hasBackground ? (
         <>
           <img
-            src={backgroundImage}
+            src={resolvedBackground}
             alt={backgroundImageAlt ?? ""}
             className={styles.image()}
+            onError={onError}
           />
           <div aria-hidden className={styles.overlay()} />
         </>

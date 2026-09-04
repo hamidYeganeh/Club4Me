@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { ScrollShadow, Typography } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { FallbackImage } from "@/components/FallbackImage";
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
 import {
   mockDiscoveryClasses,
@@ -77,7 +77,7 @@ export function DiscoveryClassesRailSection({
                 aria-label={item.title}
               >
                 <div className={styles.imageWrap()}>
-                  <Image
+                  <FallbackImage
                     src={item.imageUrl}
                     alt={item.title}
                     fill

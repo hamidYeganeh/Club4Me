@@ -9,6 +9,7 @@ import {
 } from "@modules/discovery/discovery-clubs-rails.mock";
 import { DiscoveryBannersSection } from "@modules/discovery/sections/DiscoveryBannersSection";
 import { DiscoveryClassesRailSection } from "@modules/discovery/sections/DiscoveryClassesRailSection";
+import { DiscoveryClubsEditorialListSection } from "@modules/discovery/sections/DiscoveryClubsEditorialListSection";
 import { DiscoveryClubsLocationsSection } from "@modules/discovery/sections/DiscoveryClubsLocationsSection";
 import { DiscoveryClubsRailSection } from "@modules/discovery/sections/DiscoveryClubsRailSection";
 import { DiscoveryClubTypesSection } from "@modules/discovery/sections/DiscoveryClubTypesSection";
@@ -18,11 +19,13 @@ import { discoveryClubsCatalogSectionsStyles } from "./DiscoveryClubsCatalogSect
 import type { DiscoveryClubsCatalogSectionsProps } from "./DiscoveryClubsCatalogSections.types";
 
 const RAIL_LIMIT = 6;
+const EDITORIAL_LIST_LIMIT = 8;
 
 export function DiscoveryClubsCatalogSections({
   idPrefix = "clubs",
   showClubTypes = true,
   showHero = false,
+  showEditorialList = true,
 }: DiscoveryClubsCatalogSectionsProps) {
   const t = useTranslations("discovery.clubs");
   const tClasses = useTranslations("discovery.classes");
@@ -131,6 +134,12 @@ export function DiscoveryClubsCatalogSections({
             cardVariant={index % 2 === 0 ? "editorial" : "compact"}
           />
         ))}
+        {showEditorialList ? (
+          <DiscoveryClubsEditorialListSection
+            id={`${idPrefix}-editorial-list`}
+            items={mockRailClubs(0, EDITORIAL_LIST_LIMIT)}
+          />
+        ) : null}
       </div>
     </div>
   );

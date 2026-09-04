@@ -12,6 +12,8 @@
     "./reminder-card": "./src/reminder-card/index.ts",
     "./coach-card": "./src/coach-card/index.ts",
     "./club-card": "./src/club-card/index.ts",
+    "./fallback-image": "./src/fallback-image.ts",
+    "./use-fallback-image-src": "./src/use-fallback-image-src.ts",
     "./uploader": "./src/uploader/index.ts",
     "./availability-scheduler": "./src/availability-scheduler/index.tsx",
     "./*": "./src/*.tsx"

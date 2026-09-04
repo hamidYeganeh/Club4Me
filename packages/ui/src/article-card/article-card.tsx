@@ -3,15 +3,10 @@
 import { Avatar, Button, Card, Chip, Typography } from "@heroui/react";
 import { Icon, type IconName } from "@repo/theme/icon";
 
+import { FALLBACK_IMAGE_SRC, resolveImageSrc } from "../fallback-image";
+import { useFallbackImageSrc } from "../use-fallback-image-src";
 import { articleCardStyles } from "./article-card.styles";
 import type { ArticleCardProps, ArticleCardTag } from "./article-card.types";
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const first = parts[0]?.[0] ?? "";
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
-  return `${first}${last}`.toUpperCase() || "?";
-}
 
 function getTagIcon(tag: ArticleCardTag): IconName {
   if (tag.icon) return tag.icon;
@@ -38,6 +33,8 @@ export function ArticleCard({
   className,
 }: ArticleCardProps) {
   const styles = articleCardStyles({ orientation, outlined });
+  const { src: resolvedCoverUrl, onError: onCoverError } =
+    useFallbackImageSrc(coverImageUrl);
   const isVertical = orientation === "vertical";
   const showOverlayBadge = isVertical && Boolean(badge);
   const showMenu = Boolean(onMenuPress);
@@ -63,13 +60,12 @@ export function ArticleCard({
       ) : null}
 
       <div className={styles.media()}>
-        {coverImageUrl ? (
-          <img
-            src={coverImageUrl}
-            alt={coverImageAlt ?? title}
-            className={styles.image()}
-          />
-        ) : null}
+        <img
+          src={resolvedCoverUrl}
+          alt={coverImageAlt ?? title}
+          className={styles.image()}
+          onError={onCoverError}
+        />
 
         {showOverlayBadge ? (
           <Chip size="sm" className={styles.badge()}>
@@ -83,10 +79,17 @@ export function ArticleCard({
       <div className={styles.body()}>
         <div className={styles.author()}>
           <Avatar size="sm" className={styles.avatar()}>
-            {authorAvatarUrl ? (
-              <Avatar.Image alt={authorName} src={authorAvatarUrl} />
-            ) : null}
-            <Avatar.Fallback>{getInitials(authorName)}</Avatar.Fallback>
+            <Avatar.Image
+              alt={authorName}
+              src={resolveImageSrc(authorAvatarUrl)}
+            />
+            <Avatar.Fallback className="overflow-hidden p-0">
+              <img
+                src={FALLBACK_IMAGE_SRC}
+                alt=""
+                className="size-full object-cover"
+              />
+            </Avatar.Fallback>
           </Avatar>
           <Typography type="body-sm" truncate className={styles.authorName()}>
             {authorName}

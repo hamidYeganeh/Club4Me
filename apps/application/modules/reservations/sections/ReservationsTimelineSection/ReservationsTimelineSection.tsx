@@ -2,6 +2,7 @@
 
 import { Button, Card, Chip, Skeleton, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
+import { SwipeableList } from "@repo/ui/swipeable-list";
 
 import {
   durationMinutes,
@@ -18,34 +19,19 @@ import type { ReservationsTimelineSectionProps } from "./ReservationsTimelineSec
 function ReservationTimelineRow({
   item,
   selected,
-  favorited,
   onSelect,
-  onToggleFavorite,
-  onCancel,
-  cancelPending,
   peopleLabel,
   durationLabel,
   statusLabel,
-  favoriteLabel,
-  unfavoriteLabel,
-  cancelLabel,
 }: {
   item: TimelineReservation;
   selected: boolean;
-  favorited: boolean;
   onSelect: (id: string) => void;
-  onToggleFavorite: (id: string) => void;
-  onCancel: (id: string) => void;
-  cancelPending: boolean;
   peopleLabel: string;
   durationLabel: string;
   statusLabel: string;
-  favoriteLabel: string;
-  unfavoriteLabel: string;
-  cancelLabel: string;
 }) {
-  const styles = reservationTimelineRowStyles({ selected, favorited });
-  const canCancel = item.status === "reserved";
+  const styles = reservationTimelineRowStyles({ selected });
   const secondMeta = item.status === "reserved" ? durationLabel : statusLabel;
 
   return (
@@ -91,42 +77,6 @@ function ReservationTimelineRow({
         </Button>
       </Card>
 
-      {selected ? (
-        <div className={styles.actions()}>
-          {canCancel ? (
-            <Button
-              isIconOnly
-              variant="primary"
-              aria-label={cancelLabel}
-              isPending={cancelPending}
-              className={styles.action()}
-              onPress={() => onCancel(item.id)}
-            >
-              <Icon name="calendar-plus" size={18} />
-            </Button>
-          ) : (
-            <Button
-              isIconOnly
-              variant="primary"
-              aria-label={statusLabel}
-              isDisabled
-              className={styles.action()}
-            >
-              <Icon name="calendar-check" size={18} />
-            </Button>
-          )}
-          <Button
-            isIconOnly
-            variant="secondary"
-            aria-label={favorited ? unfavoriteLabel : favoriteLabel}
-            aria-pressed={favorited}
-            className={`${styles.action()} ${styles.favorite()}`}
-            onPress={() => onToggleFavorite(item.id)}
-          >
-            <Icon name="bookmark" size={18} />
-          </Button>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -198,26 +148,55 @@ export function ReservationsTimelineSection({
       ) : (
         <div className={styles.list()}>
           <span aria-hidden className={styles.line()} />
-          {items.map((item) => (
-            <ReservationTimelineRow
-              key={item.id}
-              item={item}
-              selected={selectedId === item.id}
-              favorited={favoriteIds.has(item.id)}
-              onSelect={onSelect}
-              onToggleFavorite={onToggleFavorite}
-              onCancel={onCancel}
-              cancelPending={cancelPending}
-              peopleLabel={peopleLabel(item.participantCount)}
-              durationLabel={durationLabel(
-                durationMinutes(item.sessionStartsAt, item.sessionEndsAt),
-              )}
-              statusLabel={statusLabel(item.status)}
-              favoriteLabel={favoriteLabel}
-              unfavoriteLabel={unfavoriteLabel}
-              cancelLabel={cancelLabel}
-            />
-          ))}
+          <SwipeableList
+            className="gap-5"
+            itemClassName="rounded-[1.35rem] bg-surface-secondary"
+            surfaceClassName="rounded-[1.35rem] bg-background"
+            railClassName="rounded-[1.35rem] bg-surface-secondary"
+            items={items.map((item) => ({
+              id: item.id,
+              content: (
+                <ReservationTimelineRow
+                  item={item}
+                  selected={selectedId === item.id}
+                  onSelect={onSelect}
+                  peopleLabel={peopleLabel(item.participantCount)}
+                  durationLabel={durationLabel(
+                    durationMinutes(item.sessionStartsAt, item.sessionEndsAt),
+                  )}
+                  statusLabel={statusLabel(item.status)}
+                />
+              ),
+              leftActions: [
+                {
+                  id: "favorite",
+                  label: favoriteIds.has(item.id)
+                    ? unfavoriteLabel
+                    : favoriteLabel,
+                  icon: <Icon name="bookmark" size={19} />,
+                  className: favoriteIds.has(item.id)
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-foreground text-background",
+                  onClick: () => onToggleFavorite(item.id),
+                },
+              ],
+              rightActions: [
+                {
+                  id: "cancel",
+                  label: item.status === "reserved" ? cancelLabel : statusLabel(item.status),
+                  icon: (
+                    <Icon
+                      name={item.status === "reserved" ? "calendar-plus" : "calendar-check"}
+                      size={19}
+                    />
+                  ),
+                  className: "bg-danger text-danger-foreground",
+                  disabled: item.status !== "reserved" || cancelPending,
+                  onClick: () => onCancel(item.id),
+                },
+              ],
+            }))}
+          />
         </div>
       )}
     </section>

@@ -13,10 +13,7 @@ import {
   PROFILE_AVATAR_SRC,
   PROFILE_COVER_SRC,
 } from "../../profile.constants";
-import {
-  getProfileDisplayName,
-  getProfileInitials,
-} from "../../profile.utils";
+import { getProfileDisplayName } from "../../profile.utils";
 import { profileHeroSectionStyles } from "./ProfileHeroSection.styles";
 import type { ProfileHeroSectionProps } from "./ProfileHeroSection.types";
 
@@ -27,7 +24,6 @@ export function ProfileHeroSection({ role }: ProfileHeroSectionProps) {
   const me = useAccountMe();
 
   const name = getProfileDisplayName(me.data, t("fallbackName"));
-  const initials = getProfileInitials(name);
   const joinedAt = me.data?.createdAt
     ? format.dateTime(new Date(me.data.createdAt), {
         month: "short",
@@ -63,7 +59,13 @@ export function ProfileHeroSection({ role }: ProfileHeroSectionProps) {
           <Badge.Anchor>
             <Avatar className={styles.avatar()}>
               <Avatar.Image alt={t("avatarAlt", { name })} src={PROFILE_AVATAR_SRC} />
-              <Avatar.Fallback>{initials}</Avatar.Fallback>
+              <Avatar.Fallback className="overflow-hidden p-0">
+                <img
+                  src={PROFILE_AVATAR_SRC}
+                  alt=""
+                  className="size-full object-cover"
+                />
+              </Avatar.Fallback>
             </Avatar>
             <Badge
               aria-hidden

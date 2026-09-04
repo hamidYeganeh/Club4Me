@@ -1,6 +1,21 @@
 "use client";
 
-import { Icon } from "@repo/theme/icon";
+import {
+  AlertCircle,
+  CheckCircle2,
+  FileArchive,
+  FileAudio,
+  FileCode2,
+  FileIcon,
+  FileImage,
+  FileSpreadsheet,
+  FileText,
+  FileVideo,
+  Loader2,
+  RotateCcw,
+  X,
+} from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { cn } from "../cn";
 import { formatBytes, formatPercent } from "./format";
@@ -13,11 +28,32 @@ type UploaderFileItemProps = {
   onRetry?: (id: string) => void;
 };
 
-const statusIcon = {
-  uploading: "cloud-upload-1",
-  success: "check",
-  error: "exclamation-mark-triangle",
-} as const;
+function fileKind(item: UploaderFile) {
+  const extension = item.name.includes(".")
+    ? item.name.split(".").pop()?.toUpperCase()
+    : undefined;
+  return extension ?? item.file?.type.split("/").pop()?.toUpperCase() ?? "FILE";
+}
+
+function renderFileIcon(item: UploaderFile) {
+  const extension = item.name.split(".").pop()?.toLowerCase();
+  const type = item.file?.type ?? "";
+
+  if (type.startsWith("image/")) return <FileImage className="size-5" />;
+  if (type.startsWith("video/")) return <FileVideo className="size-5" />;
+  if (type.startsWith("audio/")) return <FileAudio className="size-5" />;
+  if (["zip", "rar", "7z", "tar", "gz"].includes(extension ?? ""))
+    return <FileArchive className="size-5" />;
+  if (["csv", "xls", "xlsx"].includes(extension ?? ""))
+    return <FileSpreadsheet className="size-5" />;
+  if (
+    ["js", "jsx", "ts", "tsx", "json", "html", "css"].includes(extension ?? "")
+  )
+    return <FileCode2 className="size-5" />;
+  if (["pdf", "doc", "docx", "txt", "rtf"].includes(extension ?? ""))
+    return <FileText className="size-5" />;
+  return <FileIcon className="size-5" />;
+}
 
 export function UploaderFileItem({
   item,
@@ -25,104 +61,115 @@ export function UploaderFileItem({
   onRemove,
   onRetry,
 }: UploaderFileItemProps) {
+  const reduceMotion = useReducedMotion() ?? false;
   const progress = item.status === "success" ? 100 : item.progress;
-  const showRemove = item.status !== "success";
+  const progressRatio = Math.max(0, Math.min(100, progress)) / 100;
 
   return (
-    <article
-      className={cn(
-        "flex items-start gap-3 rounded-[20px] border border-border bg-surface p-4",
-        item.status === "success" && "border-success/20",
-        item.status === "error" && "border-danger/20",
-      )}
+    <motion.article
+      layout={!reduceMotion}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
+      className="relative overflow-hidden rounded-2xl border border-border bg-surface p-3"
     >
-      <span
-        className={cn(
-          "flex size-12 shrink-0 items-center justify-center rounded-full",
-          item.status === "uploading" && "bg-accent/15 text-accent",
-          item.status === "success" && "bg-success/15 text-success",
-          item.status === "error" && "bg-danger/15 text-danger",
-        )}
-      >
-        <Icon name={statusIcon[item.status]} size="lg" />
-      </span>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-3">
-          <p className="truncate text-sm font-bold text-foreground">
-            {item.name}
-          </p>
-          {item.status === "success" ? (
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success text-success-foreground">
-              <Icon name="check" size="sm" />
-            </span>
-          ) : null}
-          {showRemove ? (
-            <button
-              type="button"
-              className="relative inline-flex size-6 shrink-0 items-center justify-center text-danger transition-transform after:absolute after:inset-[-12px] active:scale-95"
-              onClick={() => onRemove?.(item.id)}
-              aria-label={labels.remove}
+      <div className="flex items-center gap-3">
+        <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-default text-muted">
+          {renderFileIcon(item)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 text-start">
+              <p className="truncate text-sm font-medium text-foreground">
+                {item.name}
+              </p>
+              <p className="mt-0.5 text-xs text-muted">
+                {fileKind(item)} · {formatBytes(item.size)}
+                {item.status === "error" ? ` · ${labels.error}` : null}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <span
+                className={cn(
+                  "grid size-7 place-items-center",
+                  item.status === "uploading" && "text-foreground",
+                  item.status === "success" && "text-success",
+                  item.status === "error" && "text-danger",
+                )}
+                aria-label={
+                  item.status === "success"
+                    ? labels.success
+                    : item.status === "error"
+                      ? labels.error
+                      : labels.progress
+                }
+              >
+                {item.status === "uploading" ? (
+                  <Loader2
+                    className={cn("size-4", !reduceMotion && "animate-spin")}
+                  />
+                ) : null}
+                {item.status === "success" ? (
+                  <CheckCircle2 className="size-4" />
+                ) : null}
+                {item.status === "error" ? (
+                  <AlertCircle className="size-4" />
+                ) : null}
+              </span>
+              {item.status === "error" ? (
+                <button
+                  type="button"
+                  className="grid size-7 place-items-center rounded-full text-muted transition-colors hover:bg-default hover:text-foreground active:scale-95"
+                  onClick={() => onRetry?.(item.id)}
+                  aria-label={labels.retry}
+                >
+                  <RotateCcw className="size-3.5" />
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="grid size-7 place-items-center rounded-full text-muted transition-colors hover:bg-default hover:text-foreground active:scale-95"
+                onClick={() => onRemove?.(item.id)}
+                aria-label={labels.remove}
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          </div>
+          {item.status !== "error" ? (
+            <div
+              className="mt-3 h-1.5 overflow-hidden rounded-full bg-default"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(progress)}
+              aria-label={item.name}
             >
-              <Icon name="trash-1" size="md" />
-            </button>
+              <motion.div
+                className={cn(
+                  "h-full origin-right rounded-full",
+                  item.status === "uploading" ? "bg-foreground" : "bg-success",
+                )}
+                initial={false}
+                animate={{ scaleX: progressRatio }}
+                transition={{
+                  duration: reduceMotion ? 0 : 0.28,
+                  ease: "easeOut",
+                }}
+              />
+            </div>
           ) : null}
-        </div>
-
-        <div
-          className={cn(
-            "mt-2 h-2 overflow-hidden rounded-full",
-            item.status === "uploading" && "bg-default",
-            item.status === "success" && "bg-success/20",
-            item.status === "error" && "bg-danger/15",
-          )}
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(progress)}
-          aria-label={item.name}
-        >
-          <div
-            className={cn(
-              "h-full origin-right rounded-full transition-transform duration-200 ease-out motion-reduce:transition-none",
-              item.status === "uploading" && "bg-accent",
-              item.status === "success" && "bg-success",
-              item.status === "error" && "bg-danger",
-            )}
-            style={{ transform: `scaleX(${progress / 100})` }}
-          />
-        </div>
-
-        <div className="mt-2 flex items-center justify-between gap-3">
           {item.status === "uploading" ? (
-            <p className="text-xs text-muted">
-              {labels.progress}: {formatBytes(item.loaded)} /{" "}
-              {formatBytes(item.size)}
-            </p>
+            <div className="mt-2 flex justify-between text-xs text-muted">
+              <span>
+                {formatBytes(item.loaded)} / {formatBytes(item.size)}
+              </span>
+              <span>{formatPercent(progress)}</span>
+            </div>
           ) : null}
-          {item.status === "success" ? (
-            <p className="text-xs text-muted">{labels.success}</p>
-          ) : null}
-          {item.status === "error" ? (
-            <p className="text-xs text-muted">{labels.error}</p>
-          ) : null}
-
-          {item.status === "error" ? (
-            <button
-              type="button"
-              className="inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-accent transition-transform active:scale-95"
-              onClick={() => onRetry?.(item.id)}
-            >
-              <span>{labels.retry}</span>
-              <Icon name="arrow-rotate-clockwise-1" size="sm" />
-            </button>
-          ) : (
-            <p className="text-xs font-bold text-foreground">
-              {formatPercent(progress)}
-            </p>
-          )}
         </div>
       </div>
-    </article>
+    </motion.article>
   );
 }

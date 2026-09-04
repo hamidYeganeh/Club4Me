@@ -55,7 +55,7 @@ function FavoriteClub({ id }: { id: string }) {
     <DiscoveryResultCard
       title={item.data.name}
       subtitle={item.data.address || item.data.shortDescription}
-      imageUrl={item.data.imageUrl ?? "/mock/clubs/01.jpg"}
+      imageUrl={item.data.imageUrl}
       href={`/discovery/clubs/${item.data.id}`}
       badge="باشگاه"
     />
@@ -69,7 +69,7 @@ function FavoriteCoach({ id }: { id: string }) {
     <DiscoveryResultCard
       title={item.data.displayName}
       subtitle={item.data.shortBio}
-      imageUrl={item.data.imageUrl ?? "/profile/avatar.jpg"}
+      imageUrl={item.data.imageUrl}
       href={`/discovery/coaches/${item.data.id}`}
       badge="مربی"
     />
@@ -83,7 +83,7 @@ function FavoriteClass({ id }: { id: string }) {
     <DiscoveryResultCard
       title={item.data.title}
       subtitle={item.data.description}
-      imageUrl={item.data.imageUrl ?? "/mock/clubs/02.jpg"}
+      imageUrl={item.data.imageUrl}
       href={`/discovery/classes/${item.data.id}`}
       badge="کلاس"
     />

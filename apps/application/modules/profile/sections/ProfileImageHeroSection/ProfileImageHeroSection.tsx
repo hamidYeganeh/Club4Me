@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar, Typography } from "@heroui/react";
-import { Icon } from "@theme/icon";
+import { FALLBACK_IMAGE_SRC, resolveImageSrc } from "@ui/fallback-image";
 import { imageUploaderAccept, Uploader } from "@ui/uploader";
 import { useTranslations } from "next-intl";
 
@@ -12,7 +12,6 @@ export function ProfileImageHeroSection({
   title,
   avatarAlt,
   avatarSrc,
-  fallback,
   onFile,
 }: ProfileImageHeroSectionProps) {
   const styles = profileImageHeroSectionStyles();
@@ -26,11 +25,15 @@ export function ProfileImageHeroSection({
 
       <div className={styles.avatarWrap()}>
         <Avatar className={styles.avatar()}>
-          {avatarSrc ? (
-            <Avatar.Image alt={avatarAlt} src={avatarSrc} />
-          ) : null}
-          <Avatar.Fallback className={styles.avatarFallback()}>
-            {avatarSrc ? fallback : <Icon name="user" size={56} />}
+          <Avatar.Image alt={avatarAlt} src={resolveImageSrc(avatarSrc)} />
+          <Avatar.Fallback
+            className={`${styles.avatarFallback()} overflow-hidden p-0`}
+          >
+            <img
+              src={FALLBACK_IMAGE_SRC}
+              alt=""
+              className="size-full object-cover"
+            />
           </Avatar.Fallback>
         </Avatar>
       </div>

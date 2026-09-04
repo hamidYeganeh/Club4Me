@@ -75,7 +75,7 @@ export function DiscoveryPeopleScreen() {
             title={coach.displayName}
             subtitle={coach.shortBio}
             meta={`${coach.averageRating.toLocaleString("fa-IR")} ★ · ${coach.experienceYears.toLocaleString("fa-IR")} ${t("yearsExperience")}`}
-            imageUrl={coach.imageUrl ?? "/profile/avatar.jpg"}
+            imageUrl={coach.imageUrl}
             href={`/discovery/coaches/${coach.slug}`}
             badge={t("badge")}
           />

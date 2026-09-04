@@ -2,6 +2,7 @@
 
 import { Card, Typography } from "@heroui/react";
 
+import { useFallbackImageSrc } from "../use-fallback-image-src";
 import { cityCardStyles } from "./city-card.styles";
 import type { CityCardProps } from "./city-card.types";
 
@@ -25,10 +26,17 @@ export function CityCard({
   className,
 }: CityCardProps) {
   const styles = cityCardStyles();
+  const { src: resolvedImageUrl, onError: onImageError } =
+    useFallbackImageSrc(imageUrl);
 
   return (
     <Card variant="transparent" className={styles.root({ className })}>
-      <img src={imageUrl} alt={imageAlt ?? title} className={styles.image()} />
+      <img
+        src={resolvedImageUrl}
+        alt={imageAlt ?? title}
+        className={styles.image()}
+        onError={onImageError}
+      />
 
       <div aria-hidden className={styles.blur()}>
         {BLUR_LAYERS.map((layer) => (
