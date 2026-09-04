@@ -33,7 +33,11 @@ export function AccountAuthLoginScreen() {
 
   return (
     <AuthScreen>
-      <AccountAuthOtpHeaderSection backLabel={tCommon("back")} href="/auth" />
+      <AccountAuthOtpHeaderSection
+        backLabel={tCommon("back")}
+        href="/auth"
+        transparent
+      />
       <AccountAuthLoginBrandSection
         name={tCommon("appName")}
         tagline={t("tagline")}

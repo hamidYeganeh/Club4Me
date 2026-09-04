@@ -13,6 +13,7 @@ import { InMemoryRedis } from "../src/infrastructure/redis/in-memory-redis";
 import { AuthModule } from "../src/modules/auth/auth.module";
 import { SMS_PROVIDER } from "../src/modules/auth/providers/sms-provider.interface";
 import { UsersModule } from "../src/modules/users/users.module";
+import { TelemetryModule } from "../src/modules/telemetry/telemetry.module";
 import { CapturingSmsProvider } from "./capturing-sms.provider";
 
 export type AuthTestApp = {
@@ -35,6 +36,7 @@ export async function createAuthTestApp(
       MongooseModule.forRoot(mongoUri),
       UsersModule,
       AuthModule,
+      TelemetryModule,
     ],
     providers: [
       {

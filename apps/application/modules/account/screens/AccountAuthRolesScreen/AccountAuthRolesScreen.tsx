@@ -15,7 +15,11 @@ export function AccountAuthRolesScreen() {
 
   return (
     <AuthScreen>
-      <AccountAuthOtpHeaderSection backLabel={tCommon("back")} href="/auth" />
+      <AccountAuthOtpHeaderSection
+        backLabel={tCommon("back")}
+        href="/auth"
+        transparent
+      />
       <AccountAuthRolesCopySection title={t("title")} subtitle={t("subtitle")} />
       <AccountAuthRolesOptionsSection
         athleteLabel={t("athlete")}

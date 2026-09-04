@@ -1,0 +1,1 @@
+export { DiscoveryReviewsScreen } from "./DiscoveryReviewsScreen";

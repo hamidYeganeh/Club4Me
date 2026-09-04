@@ -30,10 +30,19 @@ const platforms: SocialPlatform[] = [
   "linkedin",
   "x",
   "website",
+  "email",
 ];
 
-type CountMap = Record<string, number>;
-type GalleryDraft = { mediaId?: string; url: string; title: string };
+type FacilityDraft = { quantity: number; description: string };
+type FacilityMap = Record<string, FacilityDraft>;
+type GalleryDraft = {
+  mediaId?: string;
+  url: string;
+  title: string;
+  altText: string;
+  kind: "image" | "video";
+  isCover: boolean;
+};
 type SocialDraft = { platform: SocialPlatform; link: string };
 
 export function ClubFormScreen({ clubId }: { clubId?: string }) {
@@ -46,15 +55,18 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const createMedia = useCreateBusinessMedia();
   const submitClub = useSubmitBusinessClub(clubId ?? "");
   const clubTypes = useBusinessCatalog("sports", "club-type");
+  const sports = useBusinessCatalog("sports", "sport");
   const equipmentCatalog = useBusinessCatalog("facilities", "equipment");
   const amenityCatalog = useBusinessCatalog("facilities", "amenity");
   const countries = useBusinessCatalog("location", "country");
 
   const [name, setName] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
   const [selectedClubTypes, setSelectedClubTypes] = useState<string[]>([]);
-  const [equipment, setEquipment] = useState<CountMap>({});
-  const [amenities, setAmenities] = useState<CountMap>({});
+  const [selectedSports, setSelectedSports] = useState<string[]>([]);
+  const [equipment, setEquipment] = useState<FacilityMap>({});
+  const [amenities, setAmenities] = useState<FacilityMap>({});
   const [rules, setRules] = useState("");
   const [tags, setTags] = useState("");
   const [gallery, setGallery] = useState<GalleryDraft[]>([]);
@@ -66,6 +78,24 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const [address, setAddress] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [timezone, setTimezone] = useState("Asia/Tehran");
+  const [locationNotes, setLocationNotes] = useState("");
+  const [audience, setAudience] = useState<string[]>(["mixed"]);
+  const [minAge, setMinAge] = useState("");
+  const [maxAge, setMaxAge] = useState("");
+  const [currency, setCurrency] = useState("IRR");
+  const [taxPercent, setTaxPercent] = useState(0);
+  const [operationalStatus, setOperationalStatus] = useState<
+    "active" | "temporarily_closed" | "permanently_closed" | "under_maintenance"
+  >("active");
+  const [weeklyHours, setWeeklyHours] = useState<
+    Array<{
+      dayOfWeek: number;
+      periods: Array<{ opensAt: string; closesAt: string }>;
+      isClosed: boolean;
+    }>
+  >([]);
   const [cancellationRules, setCancellationRules] = useState<
     ClubCancellationRule[]
   >([
@@ -106,17 +136,33 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   useEffect(() => {
     const value = club.data;
     if (!value) return;
+    // The fetched entity is the initial value of this edit form.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setName(value.name);
+    setShortDescription(value.shortDescription);
     setDescription(value.description);
     setSelectedClubTypes(value.clubTypeIds);
+    setSelectedSports(value.sportIds);
     setEquipment(
       Object.fromEntries(
-        value.equipment.map((item) => [item.equipmentId, item.quantity]),
+        value.equipment.map((item) => [
+          item.equipmentId,
+          {
+            quantity: item.quantity,
+            description: item.description ?? "",
+          },
+        ]),
       ),
     );
     setAmenities(
       Object.fromEntries(
-        value.amenities.map((item) => [item.amenityId, item.quantity]),
+        value.amenities.map((item) => [
+          item.amenityId,
+          {
+            quantity: item.quantity ?? 1,
+            description: item.description ?? "",
+          },
+        ]),
       ),
     );
     setRules(value.rules.join("\n"));
@@ -126,6 +172,9 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
         mediaId: item.mediaId,
         url: mediaById.get(item.mediaId)?.url ?? "",
         title: item.title ?? "",
+        altText: item.altText ?? "",
+        kind: item.kind,
+        isCover: item.isCover,
       })),
     );
     setSocialMedia(value.socialMedia);
@@ -134,6 +183,13 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
         ? value.cancellationRules
         : cancellationRules,
     );
+    setAudience(value.audience);
+    setMinAge(value.minAge === undefined ? "" : String(value.minAge));
+    setMaxAge(value.maxAge === undefined ? "" : String(value.maxAge));
+    setCurrency(value.currency);
+    setTaxPercent(value.taxPercent);
+    setOperationalStatus(value.operationalStatus);
+    setWeeklyHours(value.weeklyHours);
     if (value.location) {
       setCountryId(value.location.countryId);
       setProvinceId(value.location.provinceId);
@@ -142,18 +198,21 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
       setAddress(value.location.address);
       setLatitude(String(value.location.latitude));
       setLongitude(String(value.location.longitude));
+      setPostalCode(value.location.postalCode ?? "");
+      setTimezone(value.location.timezone ?? "Asia/Tehran");
+      setLocationNotes(value.location.locationNotes ?? "");
     }
-  }, [club.data, mediaById]);
+  }, [cancellationRules, club.data, mediaById]);
 
   const busy = create.isPending || update.isPending || createMedia.isPending;
   const toggleCounted = (
-    setter: React.Dispatch<React.SetStateAction<CountMap>>,
+    setter: React.Dispatch<React.SetStateAction<FacilityMap>>,
     id: string,
     checked: boolean,
   ) =>
     setter((current) =>
       checked
-        ? { ...current, [id]: 1 }
+        ? { ...current, [id]: { quantity: 1, description: "" } }
         : Object.fromEntries(
             Object.entries(current).filter(([key]) => key !== id),
           ),
@@ -165,11 +224,17 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
       const galleryPayload = await Promise.all(
         gallery
           .filter((item) => item.mediaId || item.url.trim())
-          .map(async (item) => {
+          .map(async (item, index) => {
             if (item.mediaId)
               return {
                 mediaId: item.mediaId,
                 ...(item.title.trim() ? { title: item.title.trim() } : {}),
+                ...(item.altText.trim()
+                  ? { altText: item.altText.trim() }
+                  : {}),
+                kind: item.kind,
+                position: index,
+                isCover: item.isCover,
               };
             const created = await createMedia.mutateAsync({
               url: item.url.trim(),
@@ -178,21 +243,36 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
             return {
               mediaId: created.id,
               ...(item.title.trim() ? { title: item.title.trim() } : {}),
+              ...(item.altText.trim() ? { altText: item.altText.trim() } : {}),
+              kind: item.kind,
+              position: index,
+              isCover: item.isCover,
             };
           }),
       );
       const payload = {
         name: name.trim(),
+        shortDescription: shortDescription.trim(),
         description: description.trim(),
         gallery: galleryPayload,
         clubTypeIds: selectedClubTypes,
-        equipment: Object.entries(equipment).map(([resourceId, quantity]) => ({
+        sportIds: selectedSports,
+        equipment: Object.entries(equipment).map(([resourceId, item]) => ({
           resourceId,
-          quantity,
+          quantity: item.quantity,
+          reservableQuantity: item.quantity,
+          status: "available" as const,
+          ...(item.description.trim()
+            ? { description: item.description.trim() }
+            : {}),
         })),
-        amenities: Object.entries(amenities).map(([resourceId, quantity]) => ({
+        amenities: Object.entries(amenities).map(([resourceId, item]) => ({
           resourceId,
-          quantity,
+          quantity: item.quantity,
+          availability: "included" as const,
+          ...(item.description.trim()
+            ? { description: item.description.trim() }
+            : {}),
         })),
         rules: rules
           .split("\n")
@@ -204,6 +284,15 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
           .filter(Boolean),
         socialMedia: socialMedia.filter((item) => item.link.trim()),
         cancellationRules,
+        audience: audience as Array<
+          "men" | "women" | "mixed" | "children" | "family"
+        >,
+        minAge: minAge ? Number(minAge) : null,
+        maxAge: maxAge ? Number(maxAge) : null,
+        currency,
+        taxPercent,
+        operationalStatus,
+        weeklyHours,
         ...(countryId &&
         provinceId &&
         cityId &&
@@ -219,6 +308,9 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 address: address.trim(),
                 latitude: Number(latitude),
                 longitude: Number(longitude),
+                postalCode: postalCode.trim(),
+                timezone,
+                locationNotes: locationNotes.trim(),
               },
             }
           : {}),
@@ -292,12 +384,33 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 className={textareaClass}
               />
             </Field>
+            <Field label={t("shortDescription")} wide>
+              <input
+                value={shortDescription}
+                maxLength={300}
+                onChange={(e) => setShortDescription(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
             <Field label={t("clubTypes")} wide>
               <CheckboxGrid
                 items={clubTypes.data?.items ?? []}
                 selected={selectedClubTypes}
                 onToggle={(id, checked) =>
                   setSelectedClubTypes((current) =>
+                    checked
+                      ? [...current, id]
+                      : current.filter((value) => value !== id),
+                  )
+                }
+              />
+            </Field>
+            <Field label={t("sports")} wide>
+              <CheckboxGrid
+                items={sports.data?.items ?? []}
+                selected={selectedSports}
+                onToggle={(id, checked) =>
+                  setSelectedSports((current) =>
                     checked
                       ? [...current, id]
                       : current.filter((value) => value !== id),
@@ -319,7 +432,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
             {gallery.map((item, index) => (
               <div
                 key={`${item.mediaId ?? "new"}-${index}`}
-                className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-[1fr_1fr_auto]"
+                className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-2"
               >
                 <input
                   dir="ltr"
@@ -349,24 +462,84 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                   className={inputClass}
                   placeholder={t("mediaTitle")}
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onPress={() =>
+                <input
+                  value={item.altText}
+                  onChange={(e) =>
                     setGallery((current) =>
-                      current.filter((_, i) => i !== index),
+                      current.map((value, i) =>
+                        i === index
+                          ? { ...value, altText: e.target.value }
+                          : value,
+                      ),
                     )
                   }
-                >
-                  {t("remove")}
-                </Button>
+                  className={inputClass}
+                  placeholder={t("mediaAlt")}
+                />
+                <div className="flex items-center justify-between gap-2">
+                  <select
+                    className={inputClass}
+                    value={item.kind}
+                    onChange={(e) =>
+                      setGallery((current) =>
+                        current.map((value, i) =>
+                          i === index
+                            ? {
+                                ...value,
+                                kind: e.target.value as "image" | "video",
+                              }
+                            : value,
+                        ),
+                      )
+                    }
+                  >
+                    <option value="image">{t("image")}</option>
+                    <option value="video">{t("video")}</option>
+                  </select>
+                  <label className="flex items-center gap-2 whitespace-nowrap text-sm">
+                    <input
+                      type="radio"
+                      name="cover-media"
+                      checked={item.isCover}
+                      onChange={() =>
+                        setGallery((current) =>
+                          current.map((value, i) => ({
+                            ...value,
+                            isCover: i === index,
+                          })),
+                        )
+                      }
+                    />
+                    {t("cover")}
+                  </label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onPress={() =>
+                      setGallery((current) =>
+                        current.filter((_, i) => i !== index),
+                      )
+                    }
+                  >
+                    {t("remove")}
+                  </Button>
+                </div>
               </div>
             ))}
             <Button
               type="button"
               variant="secondary"
               onPress={() =>
-                setGallery((current) => [...current, { url: "", title: "" }])
+                setGallery((current) => [
+                  ...current,
+                  {
+                    url: "",
+                    title: "",
+                    altText: "",
+                    kind: "image",
+                    isCover: current.length === 0,
+                  },
+                ])
               }
             >
               {t("addMedia")}
@@ -378,11 +551,28 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
               <CountedGrid
                 items={equipmentCatalog.data?.items ?? []}
                 values={equipment}
+                quantityLabel={t("quantity")}
+                descriptionLabel={t("itemDescription")}
                 onToggle={(id, checked) =>
                   toggleCounted(setEquipment, id, checked)
                 }
                 onQuantity={(id, quantity) =>
-                  setEquipment((current) => ({ ...current, [id]: quantity }))
+                  setEquipment((current) => ({
+                    ...current,
+                    [id]: {
+                      quantity,
+                      description: current[id]?.description ?? "",
+                    },
+                  }))
+                }
+                onDescription={(id, description) =>
+                  setEquipment((current) => ({
+                    ...current,
+                    [id]: {
+                      quantity: current[id]?.quantity ?? 1,
+                      description,
+                    },
+                  }))
                 }
               />
             </Field>
@@ -390,11 +580,28 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
               <CountedGrid
                 items={amenityCatalog.data?.items ?? []}
                 values={amenities}
+                quantityLabel={t("quantity")}
+                descriptionLabel={t("itemDescription")}
                 onToggle={(id, checked) =>
                   toggleCounted(setAmenities, id, checked)
                 }
                 onQuantity={(id, quantity) =>
-                  setAmenities((current) => ({ ...current, [id]: quantity }))
+                  setAmenities((current) => ({
+                    ...current,
+                    [id]: {
+                      quantity,
+                      description: current[id]?.description ?? "",
+                    },
+                  }))
+                }
+                onDescription={(id, description) =>
+                  setAmenities((current) => ({
+                    ...current,
+                    [id]: {
+                      quantity: current[id]?.quantity ?? 1,
+                      description,
+                    },
+                  }))
                 }
               />
             </Field>
@@ -472,6 +679,226 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 className={inputClass}
               />
             </Field>
+            <Field label={t("postalCode")}>
+              <input
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label={t("timezone")}>
+              <input
+                dir="ltr"
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label={t("locationNotes")} wide>
+              <input
+                value={locationNotes}
+                onChange={(e) => setLocationNotes(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </Section>
+
+          <Section title={t("operations")}>
+            <Field label={t("operationalStatus")}>
+              <select
+                className={inputClass}
+                value={operationalStatus}
+                onChange={(e) =>
+                  setOperationalStatus(
+                    e.target.value as typeof operationalStatus,
+                  )
+                }
+              >
+                {(
+                  [
+                    "active",
+                    "temporarily_closed",
+                    "permanently_closed",
+                    "under_maintenance",
+                  ] as const
+                ).map((value) => (
+                  <option key={value} value={value}>
+                    {t(`statuses.${value}`)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label={t("currency")}>
+              <input
+                dir="ltr"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+                className={inputClass}
+              />
+            </Field>
+            <Field label={t("taxPercent")}>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={taxPercent}
+                onChange={(e) => setTaxPercent(Number(e.target.value))}
+                className={inputClass}
+              />
+            </Field>
+            <Field label={t("ageRange")}>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  max={120}
+                  value={minAge}
+                  onChange={(e) => setMinAge(e.target.value)}
+                  className={inputClass}
+                  placeholder={t("minAge")}
+                />
+                <input
+                  type="number"
+                  min={0}
+                  max={120}
+                  value={maxAge}
+                  onChange={(e) => setMaxAge(e.target.value)}
+                  className={inputClass}
+                  placeholder={t("maxAge")}
+                />
+              </div>
+            </Field>
+            <Field label={t("audience")} wide>
+              <div className="flex flex-wrap gap-3">
+                {(["men", "women", "mixed", "children", "family"] as const).map(
+                  (value) => (
+                    <label
+                      key={value}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={audience.includes(value)}
+                        onChange={(e) =>
+                          setAudience((current) =>
+                            e.target.checked
+                              ? [...new Set([...current, value])]
+                              : current.filter((item) => item !== value),
+                          )
+                        }
+                      />
+                      {t(`audiences.${value}`)}
+                    </label>
+                  ),
+                )}
+              </div>
+            </Field>
+            <Field label={t("weeklyHours")} wide>
+              <div className="space-y-2">
+                {weeklyHours.map((day, index) => (
+                  <div
+                    key={day.dayOfWeek}
+                    className="grid gap-2 sm:grid-cols-[120px_1fr_1fr_auto]"
+                  >
+                    <span className="self-center text-sm">
+                      {t(`days.${day.dayOfWeek}`)}
+                    </span>
+                    <input
+                      type="time"
+                      value={day.periods[0]?.opensAt ?? "08:00"}
+                      disabled={day.isClosed}
+                      onChange={(e) =>
+                        setWeeklyHours((items) =>
+                          items.map((item, i) =>
+                            i === index
+                              ? {
+                                  ...item,
+                                  periods: [
+                                    {
+                                      opensAt: e.target.value,
+                                      closesAt:
+                                        item.periods[0]?.closesAt ?? "22:00",
+                                    },
+                                  ],
+                                }
+                              : item,
+                          ),
+                        )
+                      }
+                      className={inputClass}
+                    />
+                    <input
+                      type="time"
+                      value={day.periods[0]?.closesAt ?? "22:00"}
+                      disabled={day.isClosed}
+                      onChange={(e) =>
+                        setWeeklyHours((items) =>
+                          items.map((item, i) =>
+                            i === index
+                              ? {
+                                  ...item,
+                                  periods: [
+                                    {
+                                      opensAt:
+                                        item.periods[0]?.opensAt ?? "08:00",
+                                      closesAt: e.target.value,
+                                    },
+                                  ],
+                                }
+                              : item,
+                          ),
+                        )
+                      }
+                      className={inputClass}
+                    />
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={day.isClosed}
+                        onChange={(e) =>
+                          setWeeklyHours((items) =>
+                            items.map((item, i) =>
+                              i === index
+                                ? {
+                                    ...item,
+                                    isClosed: e.target.checked,
+                                    periods: e.target.checked
+                                      ? []
+                                      : [
+                                          {
+                                            opensAt: "08:00",
+                                            closesAt: "22:00",
+                                          },
+                                        ],
+                                  }
+                                : item,
+                            ),
+                          )
+                        }
+                      />
+                      {t("closed")}
+                    </label>
+                  </div>
+                ))}
+                {!weeklyHours.length && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onPress={() =>
+                      setWeeklyHours(
+                        Array.from({ length: 7 }, (_, dayOfWeek) => ({
+                          dayOfWeek,
+                          periods: [{ opensAt: "08:00", closesAt: "22:00" }],
+                          isClosed: false,
+                        })),
+                      )
+                    }
+                  >
+                    {t("addWeeklyHours")}
+                  </Button>
+                )}
+              </div>
+            </Field>
           </Section>
 
           <Section title={t("socialMedia")}>
@@ -504,7 +931,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 </select>
                 <input
                   dir="ltr"
-                  type="url"
+                  type={item.platform === "email" ? "email" : "url"}
                   value={item.link}
                   onChange={(e) =>
                     setSocialMedia((current) =>
@@ -765,40 +1192,63 @@ function CheckboxGrid({
 function CountedGrid({
   items,
   values,
+  quantityLabel,
+  descriptionLabel,
   onToggle,
   onQuantity,
+  onDescription,
 }: {
   items: Array<{ id: string; name: string }>;
-  values: CountMap;
+  values: FacilityMap;
+  quantityLabel: string;
+  descriptionLabel: string;
   onToggle: (id: string, checked: boolean) => void;
   onQuantity: (id: string, quantity: number) => void;
+  onDescription: (id: string, description: string) => void;
 }) {
   return (
     <div className="space-y-2">
-      {items.map((item) => (
-        <div
-          key={item.id}
-          className="flex items-center gap-2 rounded-xl border border-border p-3"
-        >
-          <input
-            type="checkbox"
-            checked={item.id in values}
-            onChange={(e) => onToggle(item.id, e.target.checked)}
-          />
-          <span className="min-w-0 flex-1 text-sm">{item.name}</span>
-          {item.id in values && (
-            <input
-              type="number"
-              min={1}
-              value={values[item.id]}
-              onChange={(e) =>
-                onQuantity(item.id, Math.max(1, Number(e.target.value)))
-              }
-              className="h-9 w-20 rounded-lg border border-border bg-surface-secondary px-2"
-            />
-          )}
-        </div>
-      ))}
+      {items.map((item) => {
+        const selected = item.id in values;
+        const draft = values[item.id];
+        return (
+          <div
+            key={item.id}
+            className="space-y-2 rounded-xl border border-border p-3"
+          >
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={(e) => onToggle(item.id, e.target.checked)}
+              />
+              <span className="min-w-0 flex-1 text-sm">{item.name}</span>
+              {selected && draft ? (
+                <label className="flex items-center gap-2 text-xs text-muted">
+                  <span>{quantityLabel}</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={draft.quantity}
+                    onChange={(e) =>
+                      onQuantity(item.id, Math.max(1, Number(e.target.value)))
+                    }
+                    className="h-9 w-20 rounded-lg border border-border bg-surface-secondary px-2"
+                  />
+                </label>
+              ) : null}
+            </div>
+            {selected && draft ? (
+              <textarea
+                value={draft.description}
+                onChange={(e) => onDescription(item.id, e.target.value)}
+                className={`${textareaClass} min-h-20`}
+                placeholder={descriptionLabel}
+              />
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -16,11 +16,11 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
   const items = locations.data?.items ?? [];
 
   return (
-    <main className="flex min-h-dvh flex-1 flex-col bg-background px-5 pb-28 pt-[max(1.25rem,env(safe-area-inset-top))]">
-      <header className="mb-6 flex items-center justify-between">
+    <main className="app-page">
+      <header className="app-header justify-between">
         <Link
           href={`/${role}/profile`}
-          className="flex size-11 items-center justify-center rounded-full bg-surface-secondary"
+          className="app-icon-button"
           aria-label="بازگشت"
         >
           <Icon name="chevron-right" size={20} />
@@ -28,9 +28,12 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
         <Typography type="h4">لوکیشن‌های من</Typography>
         <span className="size-11" />
       </header>
+      <div aria-hidden className="app-header-spacer mb-6" />
 
       {locations.isLoading ? (
-        <Typography type="body" color="muted" align="center" className="py-16">در حال بارگذاری...</Typography>
+        <Typography type="body" color="muted" align="center" className="py-16">
+          در حال بارگذاری...
+        </Typography>
       ) : locations.isError ? (
         <div className="py-16 text-center">
           <Typography type="body-sm" className="mb-4 text-danger">
@@ -49,18 +52,22 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
           <span className="flex size-14 items-center justify-center rounded-full bg-surface-secondary">
             <Icon name="map-pin-1" size="lg" />
           </span>
-          <Typography type="body" weight="bold">هنوز لوکیشنی ذخیره نکرده‌اید</Typography>
-          <Typography type="body-sm" color="muted" align="center" className="max-w-64 leading-6">
+          <Typography type="body" weight="bold">
+            هنوز لوکیشنی ذخیره نکرده‌اید
+          </Typography>
+          <Typography
+            type="body-sm"
+            color="muted"
+            align="center"
+            className="max-w-64 leading-6"
+          >
             خانه، محل کار یا باشگاه همیشگی‌تان را اضافه کنید.
           </Typography>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           {items.map((location) => (
-            <article
-              key={location.id}
-              className="rounded-2xl border border-border bg-surface p-4"
-            >
+            <article key={location.id} className="app-card app-stack-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -71,7 +78,11 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
                       </span>
                     ) : null}
                   </div>
-                  <Typography type="body-sm" color="muted" className="mt-2 line-clamp-2 leading-6">
+                  <Typography
+                    type="body-sm"
+                    color="muted"
+                    className="mt-2 line-clamp-2 leading-6"
+                  >
                     {location.address}
                   </Typography>
                 </div>
@@ -115,12 +126,17 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
       {items.length < 5 ? (
         <Link
           href={`/${role}/profile/locations/new`}
-          className="mt-6 flex h-13 items-center justify-center gap-2 rounded-2xl bg-foreground font-bold text-background"
+          className="mt-6 flex h-13 items-center justify-center gap-2 rounded-[1.15rem] bg-accent font-bold text-accent-foreground shadow-[0_12px_30px_color-mix(in_oklch,var(--accent)_22%,transparent)] transition-transform active:scale-[0.98]"
         >
           <Icon name="plus" size={18} /> افزودن لوکیشن
         </Link>
       ) : (
-        <Typography type="body-sm" color="muted" align="center" className="mt-5">
+        <Typography
+          type="body-sm"
+          color="muted"
+          align="center"
+          className="mt-5"
+        >
           حداکثر ۵ لوکیشن قابل ذخیره است.
         </Typography>
       )}

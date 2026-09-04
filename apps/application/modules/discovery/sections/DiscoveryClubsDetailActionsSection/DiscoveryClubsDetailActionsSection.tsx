@@ -10,6 +10,8 @@ import type { DiscoveryClubsDetailActionsSectionProps } from "./DiscoveryClubsDe
 export function DiscoveryClubsDetailActionsSection({
   onBook,
   onShare,
+  onReport,
+  primaryLabel,
 }: DiscoveryClubsDetailActionsSectionProps) {
   const t = useTranslations("discovery.clubDetail");
   const styles = discoveryClubsDetailActionsSectionStyles();
@@ -27,9 +29,21 @@ export function DiscoveryClubsDetailActionsSection({
           <Icon name="share-1" size="lg" />
         </Button>
 
+        {onReport ? (
+          <Button
+            isIconOnly
+            aria-label="گزارش اطلاعات نادرست"
+            variant="secondary"
+            size="lg"
+            onPress={onReport}
+          >
+            <Icon name="flag-1" size="lg" />
+          </Button>
+        ) : null}
+
         <div className={styles.bookWrap()}>
           <Button variant="primary" size="lg" fullWidth onPress={onBook}>
-            {t("bookNow")}
+            {primaryLabel ?? t("bookNow")}
           </Button>
         </div>
       </div>

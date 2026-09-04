@@ -1,4 +1,4 @@
-# Club4Me Backend
+# Gym4Me Backend
 
 NestJS modular API with MongoDB, Redis, and JWT. Discovery routes remain on the existing Hono adapter.
 
@@ -8,7 +8,7 @@ Copy `.env.example` to `.env`:
 
 ```bash
 PORT=7088
-MONGODB_URL=mongodb://localhost:27017/club4me
+MONGODB_URL=mongodb://localhost:27017/gym4me
 REDIS_URL=redis://localhost:6379
 JWT_SECRET=change-me-in-production
 JWT_EXPIRES_IN=15m

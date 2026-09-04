@@ -2,7 +2,7 @@ import { AccountAuthHomeScreen } from "@modules/account/screens/AccountAuthHomeS
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "ورود | پنل مدیریت کلاب فور می",
+  title: "ورود | پنل مدیریت جیم فور می",
 };
 
 export default function AuthPage() {

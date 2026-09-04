@@ -16,6 +16,18 @@ export class UsersService {
     return this.usersRepository.findOrCreateByPhone(phone);
   }
 
+  list(query?: string) {
+    return this.usersRepository.list(query);
+  }
+
+  updateStatus(userId: string, status: "active" | "suspended") {
+    return this.usersRepository.updateStatus(userId, status);
+  }
+
+  deleteAccount(userId: string) {
+    return this.usersRepository.deleteAccount(userId);
+  }
+
   findDocumentByPhone(phone: string) {
     return this.usersRepository.findDocumentByPhone(phone);
   }

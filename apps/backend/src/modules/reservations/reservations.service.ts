@@ -7,6 +7,8 @@ import { ClubsService } from "../clubs/clubs.service";
 import { ResourcesService } from "../resources/resources.service";
 import { CoachesService } from "../coaching/services/coaches.service";
 import { TrainingClassesService } from "../coaching/services/classes.service";
+import { SessionsService as CoachSessionsService } from "../coaching/services/sessions.service";
+import { MediaService } from "../media/media.service";
 import type {
   CreateCourtDto,
   CreateReservationDto,
@@ -22,6 +24,7 @@ import {
   type ReservableSessionDocument,
 } from "./schemas/reservable-session.schema";
 import { calculateRefund } from "./refund-policy";
+import { NotificationsService } from "../notifications/notifications.service";
 
 @Injectable()
 export class ReservationsService {
@@ -35,6 +38,9 @@ export class ReservationsService {
     private readonly resources: ResourcesService,
     private readonly coaches: CoachesService,
     private readonly trainingClasses: TrainingClassesService,
+    private readonly coachSessions: CoachSessionsService,
+    private readonly media: MediaService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async listCourts(ownerId: string, clubId: string) {
@@ -54,13 +60,40 @@ export class ReservationsService {
         "court-type",
         input.courtTypeId,
       );
+    await Promise.all(
+      input.sportIds.map((id) =>
+        this.resources.requireActive("sports", "sport", id),
+      ),
+    );
+    if (input.surfaceTypeId) {
+      await this.resources.requireActive(
+        "sports",
+        "surface-type",
+        input.surfaceTypeId,
+      );
+    }
+    await this.media.assertOwnedReady(ownerId, input.galleryMediaIds);
     const court = await this.courts.create({
       clubId: oid(clubId),
       name: input.name.trim(),
+      normalizedName: normalize(input.name),
+      code: input.code?.trim(),
       courtTypeId: input.courtTypeId ? oid(input.courtTypeId) : undefined,
+      sportIds: input.sportIds.map((id) => oid(id)),
       description: input.description?.trim() ?? "",
       capacity: input.capacity,
+      environment: input.environment,
+      surfaceTypeId: input.surfaceTypeId ? oid(input.surfaceTypeId) : undefined,
+      lengthMeters: input.lengthMeters,
+      widthMeters: input.widthMeters,
+      locationLabel: input.locationLabel?.trim(),
+      floor: input.floor?.trim(),
+      galleryMediaIds: input.galleryMediaIds.map((id) => oid(id)),
       isReservable: input.isReservable ?? true,
+      minimumReservationMinutes: input.minimumReservationMinutes,
+      maximumReservationMinutes: input.maximumReservationMinutes,
+      preparationMinutes: input.preparationMinutes,
+      cleanupMinutes: input.cleanupMinutes,
     });
     return publicCourt(court);
   }
@@ -68,6 +101,63 @@ export class ReservationsService {
   async listBusinessSessions(ownerId: string, clubId: string) {
     await this.clubs.get(ownerId, clubId);
     return this.listSessionsByClub(clubId, false);
+  }
+
+  async listClubReservations(ownerId: string, clubId: string) {
+    await this.clubs.get(ownerId, clubId);
+    const items = await this.reservations
+      .find({ clubId: oid(clubId) })
+      .sort({ sessionStartsAt: -1, createdAt: -1 })
+      .limit(2000)
+      .exec();
+    return { items: items.map(publicReservation) };
+  }
+
+  async markNoShow(ownerId: string, clubId: string, reservationId: string) {
+    await this.clubs.get(ownerId, clubId);
+    const reservation = await this.reservations
+      .findOne({
+        _id: oid(reservationId),
+        clubId: oid(clubId),
+        status: "reserved",
+        sessionStartsAt: { $lte: new Date() },
+      })
+      .exec();
+    if (!reservation) {
+      throw new AppError(
+        409,
+        "RESERVATION_NOT_MARKABLE_NO_SHOW",
+        "Only a started active reservation can be marked as no-show",
+      );
+    }
+    const refundPercent =
+      reservation.cancellationPolicy.noShowRefundPercent ?? 0;
+    const updated = await this.reservations
+      .findOneAndUpdate(
+        { _id: reservation._id, status: "reserved" },
+        {
+          $set: {
+            status: "no_show",
+            refundPercent,
+            refundAmount: Math.floor(
+              (reservation.totalPrice * refundPercent) / 100,
+            ),
+            ...(reservation.paymentStatus === "paid" && refundPercent > 0
+              ? { paymentStatus: "refunded" }
+              : {}),
+          },
+        },
+        { new: true },
+      )
+      .exec();
+    if (!updated) {
+      throw new AppError(
+        409,
+        "RESERVATION_STATUS_CHANGED",
+        "Reservation status changed before this action completed",
+      );
+    }
+    return publicReservation(updated);
   }
 
   async listPublicSessions(clubId: string) {
@@ -81,8 +171,10 @@ export class ReservationsService {
     input: CreateSessionDto,
   ) {
     const club = await this.clubs.get(ownerId, clubId);
+    assertClubScheduleAllows(club, input.startsAt, input.endsAt);
+    let court: CourtDocument | null = null;
     if (input.courtId) {
-      const court = await this.courts.findOne({
+      court = await this.courts.findOne({
         _id: oid(input.courtId),
         clubId: oid(clubId),
         status: "active",
@@ -94,6 +186,47 @@ export class ReservationsService {
           "COURT_NOT_RESERVABLE",
           "Court is not reservable",
         );
+      const durationMinutes =
+        (new Date(input.endsAt).getTime() -
+          new Date(input.startsAt).getTime()) /
+        60_000;
+      if (input.capacity > court.capacity) {
+        throw new AppError(
+          400,
+          "SESSION_EXCEEDS_COURT_CAPACITY",
+          "Session capacity exceeds court capacity",
+        );
+      }
+      if (
+        durationMinutes < court.minimumReservationMinutes ||
+        durationMinutes > court.maximumReservationMinutes
+      ) {
+        throw new AppError(
+          400,
+          "SESSION_DURATION_INVALID",
+          "Session duration is outside court limits",
+        );
+      }
+      const blockedStart = new Date(
+        new Date(input.startsAt).getTime() - court.preparationMinutes * 60_000,
+      );
+      const blockedEnd = new Date(
+        new Date(input.endsAt).getTime() + court.cleanupMinutes * 60_000,
+      );
+      const overlap = await this.sessions.exists({
+        clubId: oid(clubId),
+        courtId: court._id,
+        status: "active",
+        startsAt: { $lt: blockedEnd },
+        endsAt: { $gt: blockedStart },
+      });
+      if (overlap) {
+        throw new AppError(
+          409,
+          "COURT_SESSION_OVERLAP",
+          "Court already has an overlapping session",
+        );
+      }
     }
     if (input.coachId) {
       const coach = await this.coaches.requireCoach(input.coachId);
@@ -102,6 +235,25 @@ export class ReservationsService {
           400,
           "COACH_NOT_AVAILABLE",
           "Coach is not approved and public",
+        );
+      }
+      await this.coachSessions.assertNoConflict(
+        [coach._id],
+        new Date(input.startsAt),
+        new Date(input.endsAt),
+      );
+      const overlap = await this.sessions.exists({
+        clubId: oid(clubId),
+        coachId: coach._id,
+        status: "active",
+        startsAt: { $lt: new Date(input.endsAt) },
+        endsAt: { $gt: new Date(input.startsAt) },
+      });
+      if (overlap) {
+        throw new AppError(
+          409,
+          "COACH_SCHEDULE_CONFLICT",
+          "Coach already has another club session in this time range",
         );
       }
     }
@@ -120,19 +272,58 @@ export class ReservationsService {
       );
     }
     for (const option of options) {
-      const available =
+      const resource =
         option.type === "equipment"
-          ? club.equipment.some(
+          ? club.equipment.find(
               (item) => item.equipmentId === option.resourceId,
             )
-          : club.amenities.some((item) => item.amenityId === option.resourceId);
-      if (!available)
+          : club.amenities.find((item) => item.amenityId === option.resourceId);
+      if (!resource)
         throw new AppError(
           400,
           "SESSION_OPTION_NOT_IN_CLUB",
           "Session option is not available in this club",
         );
+      if (
+        (option.type === "equipment" &&
+          (resource as (typeof club.equipment)[number]).status !==
+            "available") ||
+        (option.type === "amenity" &&
+          (resource as (typeof club.amenities)[number]).availability ===
+            "unavailable")
+      ) {
+        throw new AppError(
+          400,
+          "SESSION_OPTION_UNAVAILABLE",
+          "Session option is currently unavailable",
+        );
+      }
+      const allowedQuantity =
+        option.type === "equipment"
+          ? (resource as (typeof club.equipment)[number]).reservableQuantity
+          : ((resource as (typeof club.amenities)[number]).quantity ?? 0);
+      if (option.availableQuantity > allowedQuantity) {
+        throw new AppError(
+          400,
+          "SESSION_OPTION_INVENTORY_EXCEEDED",
+          "Session option inventory exceeds club inventory",
+        );
+      }
     }
+    const selectedPolicy = input.cancellationPolicy.id
+      ? club.cancellationRules.find(
+          (policy) =>
+            policy.id === input.cancellationPolicy.id && policy.isActive,
+        )
+      : undefined;
+    if (input.cancellationPolicy.id && !selectedPolicy) {
+      throw new AppError(
+        400,
+        "CANCELLATION_POLICY_NOT_FOUND",
+        "Cancellation policy is not active in this club",
+      );
+    }
+    const policy = selectedPolicy ?? input.cancellationPolicy;
     const session = await this.sessions.create({
       clubId: oid(clubId),
       title: input.title.trim(),
@@ -143,16 +334,23 @@ export class ReservationsService {
       endsAt: new Date(input.endsAt),
       capacity: input.capacity,
       basePrice: input.basePrice,
+      currency: input.currency,
+      pricingUnit: input.pricingUnit,
       options: options.map((option) => ({
         ...option,
         resourceId: oid(option.resourceId),
         reservedQuantity: 0,
       })),
       cancellationPolicy: {
-        title: input.cancellationPolicy.title.trim(),
-        tiers: [...input.cancellationPolicy.tiers].sort(
-          (a, b) => b.hoursBefore - a.hoursBefore,
-        ),
+        policyId: policy.id ? oid(policy.id) : undefined,
+        title: policy.title.trim(),
+        version: policy.version ?? 1,
+        reservationCutoffMinutes: policy.reservationCutoffMinutes ?? 0,
+        rescheduleCutoffMinutes: policy.rescheduleCutoffMinutes ?? 0,
+        noShowRefundPercent: policy.noShowRefundPercent ?? 0,
+        ownerCancellationRefundPercent:
+          policy.ownerCancellationRefundPercent ?? 100,
+        tiers: [...policy.tiers].sort((a, b) => b.hoursBefore - a.hoursBefore),
       },
       status: "active",
     });
@@ -173,6 +371,25 @@ export class ReservationsService {
         "SESSION_NOT_FOUND",
         "Reservable session not found",
       );
+    const club = await this.clubs.getPublic(String(session.clubId));
+    if (club.operationalStatus !== "active") {
+      throw new AppError(
+        409,
+        "CLUB_NOT_OPERATIONAL",
+        "The club is not currently accepting reservations",
+      );
+    }
+    if (
+      session.cancellationPolicy.reservationCutoffMinutes > 0 &&
+      session.startsAt.getTime() - Date.now() <
+        session.cancellationPolicy.reservationCutoffMinutes * 60_000
+    ) {
+      throw new AppError(
+        409,
+        "RESERVATION_CUTOFF_REACHED",
+        "Reservation cutoff has been reached",
+      );
+    }
     const selections = input.options ?? [];
     if (
       new Set(selections.map((item) => item.optionId)).size !==
@@ -241,23 +458,36 @@ export class ReservationsService {
         "SESSION_CAPACITY_UNAVAILABLE",
         "Session capacity or selected option is unavailable",
       );
+    const baseTotal =
+      session.pricingUnit === "per_participant"
+        ? session.basePrice * input.participantCount
+        : session.basePrice;
     const totalPrice =
-      session.basePrice * input.participantCount +
+      baseTotal +
       selected.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
     try {
       const reservation = await this.reservations.create({
         clubId: session.clubId,
         sessionId: session._id,
         userId: oid(userId),
+        sessionType: getSessionType(session),
         sessionTitle: session.title,
         sessionStartsAt: session.startsAt,
         sessionEndsAt: session.endsAt,
         participantCount: input.participantCount,
         selectedOptions: selected,
         totalPrice,
+        paymentStatus: totalPrice > 0 ? "pending" : "not_required",
         cancellationPolicy: session.cancellationPolicy,
         status: "reserved",
       });
+      if (reservation.paymentStatus === "not_required") {
+        await this.notifications.notifyBookingConfirmed({
+          userId: reservation.userId,
+          bookingId: reservation._id,
+          title: reservation.sessionTitle,
+        });
+      }
       return publicReservation(reservation);
     } catch (error) {
       await this.releaseInventory(
@@ -273,6 +503,96 @@ export class ReservationsService {
         );
       throw error;
     }
+  }
+
+  async completeSession(ownerId: string, clubId: string, sessionId: string) {
+    await this.clubs.get(ownerId, clubId);
+    const session = await this.sessions
+      .findOneAndUpdate(
+        {
+          _id: oid(sessionId),
+          clubId: oid(clubId),
+          status: "active",
+          endsAt: { $lte: new Date() },
+        },
+        { $set: { status: "completed" } },
+        { new: true },
+      )
+      .exec();
+    if (!session) {
+      throw new AppError(
+        409,
+        "SESSION_NOT_COMPLETABLE",
+        "Only an ended active session can be completed",
+      );
+    }
+    await this.reservations.updateMany(
+      { sessionId: session._id, status: "reserved" },
+      { $set: { status: "completed" } },
+    );
+    return publicSession(session);
+  }
+
+  async cancelSessionByOwner(
+    ownerId: string,
+    clubId: string,
+    sessionId: string,
+  ) {
+    await this.clubs.get(ownerId, clubId);
+    const session = await this.sessions
+      .findOne({
+        _id: oid(sessionId),
+        clubId: oid(clubId),
+        status: { $in: ["active", "cancelled"] },
+      })
+      .exec();
+    if (!session) {
+      throw new AppError(404, "SESSION_NOT_FOUND", "Active session not found");
+    }
+    if (session.status === "active") {
+      session.status = "cancelled";
+      session.reservedCount = 0;
+      for (const option of session.options) option.reservedQuantity = 0;
+      await session.save();
+    }
+    const reservations = await this.reservations
+      .find({ sessionId: session._id, status: "reserved" })
+      .exec();
+    const refundPercent =
+      session.cancellationPolicy.ownerCancellationRefundPercent;
+    if (reservations.length) {
+      const cancelledAt = new Date();
+      await this.reservations.bulkWrite(
+        reservations.map((reservation) => ({
+          updateOne: {
+            filter: { _id: reservation._id, status: "reserved" },
+            update: {
+              $set: {
+                status: "cancelled",
+                cancelledAt,
+                refundPercent,
+                refundAmount: Math.floor(
+                  (reservation.totalPrice * refundPercent) / 100,
+                ),
+                ...(reservation.paymentStatus === "paid" && refundPercent > 0
+                  ? { paymentStatus: "refunded" }
+                  : {}),
+              },
+            },
+          },
+        })),
+      );
+      await Promise.all(
+        reservations.map((reservation) =>
+          this.notifications.notifyBookingCancelled({
+            userId: reservation.userId,
+            bookingId: reservation._id,
+            title: reservation.sessionTitle,
+          }),
+        ),
+      );
+    }
+    return publicSession(session);
   }
 
   async listMine(userId: string) {
@@ -301,6 +621,13 @@ export class ReservationsService {
     if (!session)
       throw new AppError(404, "SESSION_NOT_FOUND", "Session not found");
     const cancelledAt = new Date();
+    if (session.startsAt <= cancelledAt) {
+      throw new AppError(
+        409,
+        "SESSION_ALREADY_STARTED",
+        "A reservation cannot be cancelled after the session starts",
+      );
+    }
     const refund = calculateRefund(
       reservation.totalPrice,
       session.startsAt,
@@ -320,6 +647,9 @@ export class ReservationsService {
             cancelledAt,
             refundPercent: refund.refundPercent,
             refundAmount: refund.refundAmount,
+            ...(reservation.paymentStatus === "paid" && refund.refundAmount > 0
+              ? { paymentStatus: "refunded" }
+              : {}),
           },
         },
         { new: true },
@@ -337,7 +667,95 @@ export class ReservationsService {
       cancelled.participantCount,
       cancelled.selectedOptions,
     );
+    await this.notifications.notifyBookingCancelled({
+      userId: cancelled.userId,
+      bookingId: cancelled._id,
+      title: cancelled.sessionTitle,
+    });
     return publicReservation(cancelled);
+  }
+
+  async approveMockPayment(userId: string, reservationId: string) {
+    const filter = {
+      _id: oid(reservationId),
+      userId: oid(userId),
+      status: "reserved" as const,
+    };
+    const reservation = await this.reservations.findOne(filter).exec();
+    if (!reservation) {
+      throw new AppError(404, "RESERVATION_NOT_FOUND", "Reservation not found");
+    }
+    if (reservation.paymentStatus === "paid") {
+      return publicReservation(reservation);
+    }
+    if (reservation.paymentStatus !== "pending") {
+      throw new AppError(
+        409,
+        "PAYMENT_NOT_PENDING",
+        "Reservation does not have a pending payment",
+      );
+    }
+    const paid = await this.reservations
+      .findOneAndUpdate(
+        { ...filter, paymentStatus: "pending" },
+        { $set: { paymentStatus: "paid" } },
+        { new: true },
+      )
+      .exec();
+    if (!paid) {
+      throw new AppError(
+        409,
+        "PAYMENT_STATUS_CHANGED",
+        "Payment status changed before approval",
+      );
+    }
+    await this.notifications.notifyBookingConfirmed({
+      userId: paid.userId,
+      bookingId: paid._id,
+      title: paid.sessionTitle,
+    });
+    return publicReservation(paid);
+  }
+
+  async rejectMockPayment(userId: string, reservationId: string) {
+    const rejected = await this.reservations
+      .findOneAndUpdate(
+        {
+          _id: oid(reservationId),
+          userId: oid(userId),
+          status: "reserved",
+          paymentStatus: "pending",
+        },
+        {
+          $set: {
+            status: "cancelled",
+            paymentStatus: "failed",
+            cancelledAt: new Date(),
+            refundPercent: 0,
+            refundAmount: 0,
+          },
+        },
+        { new: true },
+      )
+      .exec();
+    if (!rejected) {
+      throw new AppError(
+        409,
+        "PAYMENT_NOT_PENDING",
+        "Reservation does not have a pending payment",
+      );
+    }
+    await this.releaseInventory(
+      rejected.sessionId,
+      rejected.participantCount,
+      rejected.selectedOptions,
+    );
+    await this.notifications.notifyPaymentFailed({
+      userId: rejected.userId,
+      paymentId: rejected._id,
+      title: rejected.sessionTitle,
+    });
+    return publicReservation(rejected);
   }
 
   private async listSessionsByClub(clubId: string, publicOnly: boolean) {
@@ -360,16 +778,15 @@ export class ReservationsService {
     selected.forEach((item, index) => {
       increments[`options.$[option${index}].reservedQuantity`] = -item.quantity;
     });
-    await this.sessions
-      .updateOne(
-        { _id: sessionId },
-        { $inc: increments },
-        {
+    const options = selected.length
+      ? {
           arrayFilters: selected.map((item, index) => ({
             [`option${index}._id`]: item.optionId,
           })),
-        },
-      )
+        }
+      : {};
+    await this.sessions
+      .updateOne({ _id: sessionId }, { $inc: increments }, options)
       .exec();
   }
 }
@@ -387,6 +804,21 @@ function publicCourt(value: CourtDocument) {
     description: value.description,
     capacity: value.capacity,
     isReservable: value.isReservable,
+    code: value.code,
+    sportIds: (value.sportIds ?? []).map(String),
+    environment: value.environment ?? "indoor",
+    surfaceTypeId: value.surfaceTypeId
+      ? String(value.surfaceTypeId)
+      : undefined,
+    lengthMeters: value.lengthMeters,
+    widthMeters: value.widthMeters,
+    locationLabel: value.locationLabel,
+    floor: value.floor,
+    galleryMediaIds: (value.galleryMediaIds ?? []).map(String),
+    minimumReservationMinutes: value.minimumReservationMinutes ?? 60,
+    maximumReservationMinutes: value.maximumReservationMinutes ?? 480,
+    preparationMinutes: value.preparationMinutes ?? 0,
+    cleanupMinutes: value.cleanupMinutes ?? 0,
     status: value.status,
     createdAt: value.createdAt.toISOString(),
     updatedAt: value.updatedAt.toISOString(),
@@ -405,6 +837,8 @@ function publicSession(value: ReservableSessionDocument) {
     capacity: value.capacity,
     reservedCount: value.reservedCount,
     basePrice: value.basePrice,
+    currency: value.currency ?? "IRR",
+    pricingUnit: value.pricingUnit ?? "per_participant",
     options: value.options.map((item) => ({
       id: String(item._id),
       type: item.type,
@@ -419,12 +853,20 @@ function publicSession(value: ReservableSessionDocument) {
     status: value.status,
   };
 }
+function normalize(value: string): string {
+  return value
+    .normalize("NFKC")
+    .trim()
+    .toLocaleLowerCase("fa")
+    .replace(/\s+/g, " ");
+}
 function publicReservation(value: ReservationDocument) {
   return {
     id: String(value._id),
     clubId: String(value.clubId),
     sessionId: String(value.sessionId),
     userId: String(value.userId),
+    sessionType: value.sessionType,
     sessionTitle: value.sessionTitle,
     sessionStartsAt: value.sessionStartsAt.toISOString(),
     sessionEndsAt: value.sessionEndsAt.toISOString(),
@@ -437,6 +879,7 @@ function publicReservation(value: ReservationDocument) {
       unitPrice: item.unitPrice,
     })),
     totalPrice: value.totalPrice,
+    paymentStatus: value.paymentStatus ?? "not_required",
     cancellationPolicy: value.cancellationPolicy,
     refundPercent: value.refundPercent,
     refundAmount: value.refundAmount,
@@ -445,6 +888,13 @@ function publicReservation(value: ReservationDocument) {
     cancelledAt: value.cancelledAt?.toISOString() ?? null,
   };
 }
+function getSessionType(
+  value: Pick<ReservableSessionDocument, "courtId" | "classId">,
+): "court" | "class" | "coached_session" {
+  if (value.courtId) return "court";
+  if (value.classId) return "class";
+  return "coached_session";
+}
 function duplicate(error: unknown): boolean {
   return (
     typeof error === "object" &&
@@ -452,4 +902,80 @@ function duplicate(error: unknown): boolean {
     "code" in error &&
     (error as { code?: unknown }).code === 11000
   );
+}
+
+function assertClubScheduleAllows(
+  club: Awaited<ReturnType<ClubsService["get"]>>,
+  startsAt: string,
+  endsAt: string,
+): void {
+  const start = new Date(startsAt);
+  const end = new Date(endsAt);
+  const closure = club.closures.find(
+    (item) => start < new Date(item.endsAt) && end > new Date(item.startsAt),
+  );
+  if (closure) {
+    throw new AppError(
+      409,
+      "CLUB_CLOSED",
+      closure.reason || "The club is closed during this period",
+    );
+  }
+  if (!club.weeklyHours.length) return;
+  const timezone = club.location?.timezone ?? "Asia/Tehran";
+  const startLocal = localTimeParts(start, timezone);
+  const endLocal = localTimeParts(end, timezone);
+  if (startLocal.date !== endLocal.date) {
+    throw new AppError(
+      400,
+      "SESSION_OUTSIDE_OPENING_HOURS",
+      "A session must fit within one club working day",
+    );
+  }
+  const hours = club.weeklyHours.find(
+    (item) => item.dayOfWeek === startLocal.dayOfWeek,
+  );
+  if (
+    !hours ||
+    hours.isClosed ||
+    !hours.periods.some(
+      (period) =>
+        period.opensAt <= startLocal.time && period.closesAt >= endLocal.time,
+    )
+  ) {
+    throw new AppError(
+      400,
+      "SESSION_OUTSIDE_OPENING_HOURS",
+      "Session is outside club opening hours",
+    );
+  }
+}
+
+function localTimeParts(date: Date, timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    weekday: "short",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  const weekdays: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  return {
+    dayOfWeek: weekdays[value("weekday")] ?? 0,
+    date: `${value("year")}-${value("month")}-${value("day")}`,
+    time: `${value("hour")}:${value("minute")}`,
+  };
 }

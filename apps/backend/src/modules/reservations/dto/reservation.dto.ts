@@ -5,7 +5,9 @@ const objectId = z
   .string()
   .refine((value) => Types.ObjectId.isValid(value), "Invalid ObjectId");
 const policy = z.object({
+  id: objectId.optional(),
   title: z.string().trim().min(2).max(80),
+  version: z.number().int().min(1).default(1),
   tiers: z
     .array(
       z.object({
@@ -31,23 +33,71 @@ const policy = z.object({
           tier.refundPercent >= ordered[index - 1]!.refundPercent,
       );
     }, "Refund cannot decrease when cancelling earlier"),
+  reservationCutoffMinutes: z.number().int().min(0).default(0),
+  rescheduleCutoffMinutes: z.number().int().min(0).default(0),
+  noShowRefundPercent: z.number().int().min(0).max(100).default(0),
+  ownerCancellationRefundPercent: z.number().int().min(0).max(100).default(100),
+  priority: z.number().int().optional(),
+  sessionTypes: z.array(z.string()).optional(),
+  daysOfWeek: z.array(z.number()).optional(),
+  courtIds: z.array(objectId).optional(),
+  isActive: z.boolean().optional(),
 });
 
 export class CreateCourtDto {
   static schema = z
     .object({
       name: z.string().trim().min(2).max(120),
+      code: z.string().trim().max(40).optional(),
       courtTypeId: objectId.optional(),
+      sportIds: z.array(objectId).max(30).default([]),
       description: z.string().trim().max(2000).optional(),
       capacity: z.number().int().min(1).max(1000),
+      environment: z.enum(["indoor", "outdoor", "covered"]).default("indoor"),
+      surfaceTypeId: objectId.optional(),
+      lengthMeters: z.number().positive().optional(),
+      widthMeters: z.number().positive().optional(),
+      locationLabel: z.string().trim().max(120).optional(),
+      floor: z.string().trim().max(40).optional(),
+      galleryMediaIds: z.array(objectId).max(30).default([]),
       isReservable: z.boolean().optional(),
+      minimumReservationMinutes: z.number().int().min(1).max(1440).default(60),
+      maximumReservationMinutes: z
+        .number()
+        .int()
+        .min(1)
+        .max(10080)
+        .default(480),
+      preparationMinutes: z.number().int().min(0).max(1440).default(0),
+      cleanupMinutes: z.number().int().min(0).max(1440).default(0),
     })
-    .strict();
+    .strict()
+    .refine(
+      (value) =>
+        value.minimumReservationMinutes <= value.maximumReservationMinutes,
+      {
+        path: ["maximumReservationMinutes"],
+        message: "Maximum reservation duration must be at least the minimum",
+      },
+    );
   name: string;
+  code?: string;
   courtTypeId?: string;
+  sportIds: string[];
   description?: string;
   capacity: number;
+  environment: "indoor" | "outdoor" | "covered";
+  surfaceTypeId?: string;
+  lengthMeters?: number;
+  widthMeters?: number;
+  locationLabel?: string;
+  floor?: string;
+  galleryMediaIds: string[];
   isReservable?: boolean;
+  minimumReservationMinutes: number;
+  maximumReservationMinutes: number;
+  preparationMinutes: number;
+  cleanupMinutes: number;
 }
 
 export class CreateSessionDto {
@@ -61,6 +111,10 @@ export class CreateSessionDto {
       endsAt: z.iso.datetime(),
       capacity: z.number().int().min(1).max(1000),
       basePrice: z.number().int().min(0),
+      currency: z.string().trim().min(3).max(8).toUpperCase().default("IRR"),
+      pricingUnit: z
+        .enum(["per_participant", "per_session", "per_court"])
+        .default("per_participant"),
       options: z
         .array(
           z.object({
@@ -110,6 +164,8 @@ export class CreateSessionDto {
   endsAt: string;
   capacity: number;
   basePrice: number;
+  currency: string;
+  pricingUnit: "per_participant" | "per_session" | "per_court";
   options?: Array<{
     type: "equipment" | "amenity";
     resourceId: string;
@@ -119,8 +175,14 @@ export class CreateSessionDto {
     unitPrice: number;
   }>;
   cancellationPolicy: {
+    id?: string;
     title: string;
+    version: number;
     tiers: Array<{ hoursBefore: number; refundPercent: number }>;
+    reservationCutoffMinutes: number;
+    rescheduleCutoffMinutes: number;
+    noShowRefundPercent: number;
+    ownerCancellationRefundPercent: number;
   };
 }
 

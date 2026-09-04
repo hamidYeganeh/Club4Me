@@ -9,6 +9,7 @@ export type PublicUser = {
   lastName?: string;
   birthdate?: string;
   roles: UserRole[];
+  status: "active" | "suspended" | "deleted";
   hasPassword: boolean;
   createdAt: string;
   updatedAt: string;
@@ -27,7 +28,8 @@ export function toPublicUser(user: UserDocument): PublicUser {
     ...(user.birthdate === undefined || user.birthdate === null
       ? {}
       : { birthdate: user.birthdate }),
-    roles: user.roles?.length ? user.roles : ["athlete"],
+    roles: user.roles ?? [],
+    status: user.status,
     hasPassword: Boolean(user.passwordHash),
     createdAt: toIso(user.createdAt),
     updatedAt: toIso(user.updatedAt),

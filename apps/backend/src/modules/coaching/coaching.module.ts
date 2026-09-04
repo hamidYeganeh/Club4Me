@@ -3,12 +3,17 @@ import { MongooseModule } from "@nestjs/mongoose";
 
 import { AuthModule } from "../auth/auth.module";
 import { MediaModule } from "../media/media.module";
+import { ClubsModule } from "../clubs/clubs.module";
 import { ResourcesModule } from "../resources/resources.module";
+import { NotificationsModule } from "../notifications/notifications.module";
+import { UsersModule } from "../users/users.module";
 import {
   AdminCoachesController,
+  AdminClassesController,
   AthleteCoachingController,
   CoachPortalController,
   PublicCoachingController,
+  ClubClassesController,
 } from "./coaching.controller";
 import {
   ClassEnrollment,
@@ -43,6 +48,11 @@ import { EnrollmentsService } from "./services/enrollments.service";
 import { OfferingsService } from "./services/offerings.service";
 import { SchedulingService } from "./services/scheduling.service";
 import { SessionsService } from "./services/sessions.service";
+import {
+  ReservableSession,
+  ReservableSessionSchema,
+} from "../reservations/schemas/reservable-session.schema";
+import { Court, CourtSchema } from "../reservations/schemas/court.schema";
 
 const schemas = [
   { name: Coach.name, schema: CoachSchema },
@@ -59,6 +69,8 @@ const schemas = [
     name: CoachAvailabilityException.name,
     schema: CoachAvailabilityExceptionSchema,
   },
+  { name: ReservableSession.name, schema: ReservableSessionSchema },
+  { name: Court.name, schema: CourtSchema },
 ];
 
 @Module({
@@ -67,12 +79,17 @@ const schemas = [
     AuthModule,
     ResourcesModule,
     MediaModule,
+    ClubsModule,
+    NotificationsModule,
+    UsersModule,
   ],
   controllers: [
     CoachPortalController,
     AthleteCoachingController,
     PublicCoachingController,
     AdminCoachesController,
+    AdminClassesController,
+    ClubClassesController,
   ],
   providers: [
     CoachesService,

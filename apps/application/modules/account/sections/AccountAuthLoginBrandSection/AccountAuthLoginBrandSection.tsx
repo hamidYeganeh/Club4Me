@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import { Typography } from "@heroui/react";
 
@@ -28,10 +30,16 @@ export function AccountAuthLoginBrandSection({
           className={styles.image()}
         />
       ) : null}
-      <Typography type="h2" id="account-auth-login-title" className={styles.title()}>
+      <Typography
+        type="h2"
+        id="account-auth-login-title"
+        className={styles.title()}
+      >
         {name}
       </Typography>
-      <Typography type="body-sm" color="muted" className={styles.tagline()}>{tagline}</Typography>
+      <Typography type="body-sm" color="muted" className={styles.tagline()}>
+        {tagline}
+      </Typography>
     </section>
   );
 }

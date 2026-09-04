@@ -47,3 +47,4 @@ export function Icon({
 }
 
 export type { IconName };
+export { iconNames } from "./icon-names";

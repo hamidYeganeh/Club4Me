@@ -64,12 +64,18 @@ export function LocationFormScreen({ role, locationId }: Props) {
   }
 
   if (locationId && locations.isLoading) {
-    return <Typography type="body" color="muted" align="center" className="p-8">در حال بارگذاری...</Typography>;
+    return (
+      <Typography type="body" color="muted" align="center" className="p-8">
+        در حال بارگذاری...
+      </Typography>
+    );
   }
   if (locationId && !existing) {
     return (
       <main className="p-8 text-center">
-        <Typography type="body" className="mb-4 text-danger">لوکیشن پیدا نشد.</Typography>
+        <Typography type="body" className="mb-4 text-danger">
+          لوکیشن پیدا نشد.
+        </Typography>
         <button type="button" onClick={() => void locations.refetch()}>
           تلاش دوباره
         </button>
@@ -78,11 +84,11 @@ export function LocationFormScreen({ role, locationId }: Props) {
   }
 
   return (
-    <main className="min-h-dvh bg-background px-5 pb-28 pt-[max(1.25rem,env(safe-area-inset-top))]">
-      <header className="mb-6 flex items-center justify-between">
+    <main className="app-page">
+      <header className="app-header justify-between">
         <Link
           href={`/${role}/profile/locations`}
-          className="flex size-11 items-center justify-center rounded-full bg-surface-secondary"
+          className="app-icon-button"
           aria-label="بازگشت"
         >
           <Icon name="chevron-right" size={20} />
@@ -92,11 +98,12 @@ export function LocationFormScreen({ role, locationId }: Props) {
         </Typography>
         <span className="size-11" />
       </header>
+      <div aria-hidden className="app-header-spacer mb-6" />
 
       <form
         key={existing?.id ?? "new"}
         onSubmit={(event) => void submit(event)}
-        className="flex flex-col gap-4"
+        className="app-reveal flex flex-col gap-4"
       >
         <Field
           label="عنوان"
@@ -146,14 +153,25 @@ export function LocationFormScreen({ role, locationId }: Props) {
         </div>
 
         <div>
-          <Typography type="body-sm" weight="bold" className="mb-2">انتخاب نقطه روی نقشه</Typography>
+          <Typography type="body-sm" weight="bold" className="mb-2">
+            انتخاب نقطه روی نقشه
+          </Typography>
           <NeshanMap
             center={selectedPoint}
             marker={selectedPoint}
             onPointChange={setPoint}
-            className="h-72"
+            className="h-72 overflow-hidden rounded-[1.6rem] border border-white/7"
           />
-          <Typography type="body-xs" color="muted" className="mt-2" render={({ children, ...p }) => <p dir="ltr" {...p}>{children}</p>}>
+          <Typography
+            type="body-xs"
+            color="muted"
+            className="mt-2"
+            render={({ children, ...p }) => (
+              <p dir="ltr" {...p}>
+                {children}
+              </p>
+            )}
+          >
             {selectedPoint.latitude.toFixed(6)},{" "}
             {selectedPoint.longitude.toFixed(6)}
           </Typography>
@@ -168,11 +186,15 @@ export function LocationFormScreen({ role, locationId }: Props) {
           انتخاب به‌عنوان لوکیشن پیش‌فرض
         </label>
 
-        {error ? <Typography type="body-sm" className="text-danger">{error}</Typography> : null}
+        {error ? (
+          <Typography type="body-sm" className="text-danger">
+            {error}
+          </Typography>
+        ) : null}
         <button
           type="submit"
           disabled={pending}
-          className="h-13 rounded-2xl bg-foreground font-bold text-background disabled:opacity-50"
+          className="h-13 rounded-[1.15rem] bg-accent font-bold text-accent-foreground shadow-[0_12px_30px_color-mix(in_oklch,var(--accent)_22%,transparent)] transition-transform active:scale-[0.98] disabled:opacity-50"
         >
           {pending ? "در حال ذخیره..." : "ذخیره لوکیشن"}
         </button>
@@ -189,11 +211,12 @@ function Field({
   label: string;
   multiline?: boolean;
 }) {
-  const classes =
-    "mt-2 w-full rounded-2xl border border-border bg-surface px-4 py-3 outline-none focus:ring-2 focus:ring-focus";
+  const classes = "app-field mt-2 w-full py-3";
   return (
     <label>
-      <Typography type="body-sm" weight="bold">{label}</Typography>
+      <Typography type="body-sm" weight="bold">
+        {label}
+      </Typography>
       {multiline ? (
         <textarea
           name={props.name}

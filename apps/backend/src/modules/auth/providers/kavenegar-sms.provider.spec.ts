@@ -66,9 +66,13 @@ describe("KavenegarSmsProvider", () => {
       provider.sendOtp("+989121234567", "12345", "otp"),
     ).rejects.toBeInstanceOf(AppError);
 
+    expect(error).toHaveBeenCalledWith(
+      'Kavenegar send failed httpStatus=500 status=400 message="failed"',
+    );
     expect(JSON.stringify(error.mock.calls)).not.toContain(
       "super-secret-api-key",
     );
+    expect(JSON.stringify(error.mock.calls)).not.toContain("12345");
   });
 
   it("throws SMS_FAILED when the request times out", async () => {
@@ -83,5 +87,31 @@ describe("KavenegarSmsProvider", () => {
       code: "SMS_FAILED",
       status: 502,
     });
+  });
+
+  it("maps workbook lookup placeholders to Kavenegar token parameters", async () => {
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ return: { status: 200 } }),
+    });
+    globalThis.fetch = fetchMock as typeof fetch;
+    const provider = createProvider({
+      KAVENEGAR_API_KEY: "super-secret-api-key",
+    });
+
+    await provider.sendTemplate("+989121234567", "gym4mebookingrescheduled", {
+      token: "a1b2c3d4",
+      token10: "۱۴۰۵/۰۶/۱۲ ۱۸:۳۰",
+    });
+
+    const requestedUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(requestedUrl.pathname).toContain("/verify/lookup.json");
+    expect(requestedUrl.searchParams.get("receptor")).toBe("09121234567");
+    expect(requestedUrl.searchParams.get("template")).toBe(
+      "gym4mebookingrescheduled",
+    );
+    expect(requestedUrl.searchParams.get("token")).toBe("a1b2c3d4");
+    expect(requestedUrl.searchParams.get("token10")).toBe("۱۴۰۵/۰۶/۱۲ ۱۸:۳۰");
   });
 });

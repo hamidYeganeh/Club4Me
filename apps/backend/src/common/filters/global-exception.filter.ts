@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from "@nestjs/common";
+import * as Sentry from "@sentry/node";
 import type { Request, Response } from "express";
 
 import { AppException, errorBody } from "../errors/app.exception";
@@ -43,7 +44,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         .status(status)
         .json(
           errorBody(
-            status === HttpStatus.UNAUTHORIZED ? "UNAUTHORIZED" : "HTTP_ERROR",
+            status === HttpStatus.UNAUTHORIZED
+              ? "UNAUTHORIZED"
+              : status === HttpStatus.TOO_MANY_REQUESTS
+                ? "RATE_LIMITED"
+                : "HTTP_ERROR",
             message,
           ),
         );
@@ -54,6 +59,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       exception instanceof Error ? exception.message : "Unknown error",
       exception instanceof Error ? exception.stack : undefined,
     );
+    Sentry.withScope((scope) => {
+      scope.setTag("http.method", request.method);
+      scope.setContext("request", {
+        method: request.method,
+        path: request.path,
+      });
+      Sentry.captureException(exception);
+    });
 
     response
       .status(500)

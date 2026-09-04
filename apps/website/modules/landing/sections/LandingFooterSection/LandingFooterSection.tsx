@@ -41,7 +41,7 @@ export async function LandingFooterSection() {
             <Icon name="telephone-1" size="sm" className="text-accent" />
             {t("landing.footer.phone")}
           </a>
-          <a href="mailto:hello@club4me.ir" className={styles.contactLink()}>
+          <a href="mailto:hello@gym4me.ir" className={styles.contactLink()}>
             <Icon name="envelope-1" size="sm" className="text-accent" />
             {t("landing.footer.email")}
           </a>

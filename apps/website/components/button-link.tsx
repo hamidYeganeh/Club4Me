@@ -13,7 +13,8 @@ export function ButtonLink({ href, ...props }: ButtonLinkProps) {
     <Button
       {...props}
       render={(buttonProps: ComponentPropsWithoutRef<"button">) => {
-        const { type: _type, ...rest } = buttonProps;
+        const rest = { ...buttonProps };
+        delete rest.type;
         return <a {...(rest as ComponentPropsWithoutRef<"a">)} href={href} />;
       }}
     />

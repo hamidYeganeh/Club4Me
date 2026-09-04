@@ -1,3 +1,5 @@
+"use client";
+
 import { Typography } from "@heroui/react";
 
 import { accountAuthRolesCopySectionStyles } from "./AccountAuthRolesCopySection.styles";
@@ -15,7 +17,11 @@ export function AccountAuthRolesCopySection({
       <Typography type="h2" id={titleId} className={styles.title()}>
         {title}
       </Typography>
-      {subtitle ? <Typography type="body-sm" color="muted" className={styles.subtitle()}>{subtitle}</Typography> : null}
+      {subtitle ? (
+        <Typography type="body-sm" color="muted" className={styles.subtitle()}>
+          {subtitle}
+        </Typography>
+      ) : null}
     </section>
   );
 }

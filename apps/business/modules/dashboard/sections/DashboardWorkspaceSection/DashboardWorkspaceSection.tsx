@@ -105,7 +105,7 @@ export function DashboardWorkspaceSection({
       <Card variant="transparent" className={styles.featured()}>
         <img
           alt={featuredTitle}
-          src="https://picsum.photos/seed/club4me-muay/900/1200"
+          src="https://picsum.photos/seed/gym4me-muay/900/1200"
           className={styles.featuredImage()}
         />
         <div className={styles.featuredScrim()} />

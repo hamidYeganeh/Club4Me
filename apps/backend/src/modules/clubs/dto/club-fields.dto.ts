@@ -12,33 +12,102 @@ const uniqueObjectIds = z
 const titledMedia = z.object({
   mediaId: objectId,
   title: z.string().trim().max(120).optional(),
+  altText: z.string().trim().max(180).optional(),
+  kind: z.enum(["image", "video"]).default("image"),
+  position: z.number().int().min(0).default(0),
+  isCover: z.boolean().default(false),
 });
-const countedResource = z.object({
-  resourceId: objectId,
-  quantity: z.number().int().min(1).max(10_000),
+const countedResource = z
+  .object({
+    resourceId: objectId,
+    quantity: z.number().int().min(1).max(10_000),
+    reservableQuantity: z.number().int().min(0).max(10_000).default(0),
+    status: z
+      .enum(["available", "maintenance", "unavailable"])
+      .default("available"),
+    description: z.string().trim().max(2000).optional(),
+  })
+  .refine((item) => item.reservableQuantity <= item.quantity, {
+    message: "Reservable quantity cannot exceed total quantity",
+  });
+const money = z.object({
+  amount: z.number().int().min(0),
+  currency: z.string().trim().min(3).max(8).toUpperCase().default("IRR"),
 });
-const socialMedia = z.object({
-  platform: z.enum([
-    "instagram",
-    "telegram",
-    "whatsapp",
-    "youtube",
-    "aparat",
-    "facebook",
-    "linkedin",
-    "x",
-    "website",
-  ]),
-  link: z.url().max(500),
-});
+const amenity = z
+  .object({
+    resourceId: objectId,
+    quantity: z.number().int().min(0).max(10_000).optional(),
+    availability: z
+      .enum(["included", "paid", "unavailable"])
+      .default("included"),
+    price: money.optional(),
+    description: z.string().trim().max(2000).optional(),
+  })
+  .superRefine((item, context) => {
+    if (item.availability === "paid" && !item.price) {
+      context.addIssue({
+        code: "custom",
+        path: ["price"],
+        message: "Paid amenity requires price",
+      });
+    }
+  });
+const socialMedia = z
+  .object({
+    platform: z.enum([
+      "instagram",
+      "telegram",
+      "whatsapp",
+      "youtube",
+      "aparat",
+      "facebook",
+      "linkedin",
+      "x",
+      "website",
+      "email",
+    ]),
+    link: z.string().trim().max(500),
+  })
+  .superRefine((item, context) => {
+    const valid =
+      item.platform === "email"
+        ? /^(mailto:)?[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(item.link)
+        : z.url().safeParse(item.link).success;
+    if (!valid)
+      context.addIssue({
+        code: "custom",
+        path: ["link"],
+        message: "Invalid social link",
+      });
+  });
 const cancellationTier = z.object({
   hoursBefore: z.number().int().min(0).max(8760),
   refundPercent: z.number().int().min(0).max(100),
 });
 const cancellationRule = z
   .object({
+    id: objectId.optional(),
     title: z.string().trim().min(2).max(80),
     tiers: z.array(cancellationTier).min(1).max(20),
+    version: z.number().int().min(1).default(1),
+    priority: z.number().int().default(0),
+    sessionTypes: z
+      .array(z.enum(["court", "class", "coached_session"]))
+      .max(3)
+      .default([]),
+    daysOfWeek: z.array(z.number().int().min(0).max(6)).max(7).default([]),
+    courtIds: uniqueObjectIds.default([]),
+    reservationCutoffMinutes: z.number().int().min(0).max(525_600).default(0),
+    rescheduleCutoffMinutes: z.number().int().min(0).max(525_600).default(0),
+    noShowRefundPercent: z.number().int().min(0).max(100).default(0),
+    ownerCancellationRefundPercent: z
+      .number()
+      .int()
+      .min(0)
+      .max(100)
+      .default(100),
+    isActive: z.boolean().default(true),
   })
   .superRefine(({ tiers }, context) => {
     const hours = tiers.map((tier) => tier.hoursBefore);
@@ -63,6 +132,33 @@ const cancellationRule = z
     }
   });
 
+const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+const weeklyHours = z.object({
+  dayOfWeek: z.number().int().min(0).max(6),
+  periods: z
+    .array(
+      z
+        .object({ opensAt: time, closesAt: time })
+        .refine(
+          (period) => period.opensAt < period.closesAt,
+          "Closing time must be after opening time",
+        ),
+    )
+    .max(4)
+    .default([]),
+  isClosed: z.boolean().default(false),
+});
+const closure = z
+  .object({
+    startsAt: z.coerce.date(),
+    endsAt: z.coerce.date(),
+    reason: z.string().trim().max(300).default(""),
+  })
+  .refine(
+    (item) => item.startsAt < item.endsAt,
+    "Closure end must be after start",
+  );
+
 const uniqueCountedResources = z
   .array(countedResource)
   .max(100)
@@ -72,13 +168,54 @@ const uniqueCountedResources = z
     "Duplicate resources",
   );
 
-export const ClubFieldsSchema = z
+type ClubFieldsRefinementValue = {
+  minAge?: number | null;
+  maxAge?: number | null;
+  gallery?: Array<{ isCover?: boolean }>;
+};
+
+export function refineClubFields(
+  value: ClubFieldsRefinementValue,
+  context: z.RefinementCtx,
+) {
+  if (
+    value.minAge != null &&
+    value.maxAge != null &&
+    value.minAge > value.maxAge
+  ) {
+    context.addIssue({
+      code: "custom",
+      path: ["maxAge"],
+      message: "Maximum age must be at least minimum age",
+    });
+  }
+  if ((value.gallery?.filter((item) => item.isCover).length ?? 0) > 1) {
+    context.addIssue({
+      code: "custom",
+      path: ["gallery"],
+      message: "Only one gallery item can be cover",
+    });
+  }
+}
+
+export const ClubFieldsObjectSchema = z
   .object({
     name: z.string().trim().min(2).max(120),
+    shortDescription: z.string().trim().max(300).optional(),
     description: z.string().trim().max(5000).optional(),
+    logoMediaId: objectId.nullish(),
+    coverMediaId: objectId.nullish(),
     gallery: z.array(titledMedia).max(30).optional(),
     equipment: uniqueCountedResources.optional(),
-    amenities: uniqueCountedResources.optional(),
+    amenities: z
+      .array(amenity)
+      .max(100)
+      .refine(
+        (items) =>
+          new Set(items.map((item) => item.resourceId)).size === items.length,
+        "Duplicate resources",
+      )
+      .optional(),
     rules: z.array(z.string().trim().min(2).max(300)).max(50).optional(),
     location: z
       .object({
@@ -90,6 +227,9 @@ export const ClubFieldsSchema = z
         address: z.string().trim().min(3).max(500),
         latitude: z.number().min(-90).max(90),
         longitude: z.number().min(-180).max(180),
+        postalCode: z.string().trim().max(20).optional(),
+        timezone: z.string().trim().min(3).max(80).default("Asia/Tehran"),
+        locationNotes: z.string().trim().max(500).optional(),
       })
       .optional(),
     socialMedia: z
@@ -102,7 +242,38 @@ export const ClubFieldsSchema = z
       )
       .optional(),
     clubTypeIds: uniqueObjectIds.optional(),
+    sportIds: uniqueObjectIds.optional(),
     tags: z.array(z.string().trim().min(1).max(50)).max(30).optional(),
+    weeklyHours: z
+      .array(weeklyHours)
+      .max(7)
+      .refine(
+        (items) =>
+          new Set(items.map((item) => item.dayOfWeek)).size === items.length,
+        "Duplicate week day",
+      )
+      .optional(),
+    closures: z.array(closure).max(100).optional(),
+    audience: z
+      .array(z.enum(["men", "women", "mixed", "children", "family"]))
+      .max(5)
+      .refine(
+        (items) => new Set(items).size === items.length,
+        "Duplicate audience",
+      )
+      .optional(),
+    minAge: z.number().int().min(0).max(120).nullish(),
+    maxAge: z.number().int().min(0).max(120).nullish(),
+    currency: z.string().trim().min(3).max(8).toUpperCase().optional(),
+    taxPercent: z.number().min(0).max(100).optional(),
+    operationalStatus: z
+      .enum([
+        "active",
+        "temporarily_closed",
+        "permanently_closed",
+        "under_maintenance",
+      ])
+      .optional(),
     cancellationRules: z
       .array(cancellationRule)
       .max(20)
@@ -117,4 +288,7 @@ export const ClubFieldsSchema = z
   })
   .strict();
 
-export type ClubFields = z.infer<typeof ClubFieldsSchema>;
+export const ClubFieldsSchema =
+  ClubFieldsObjectSchema.superRefine(refineClubFields);
+
+export type ClubFields = z.input<typeof ClubFieldsSchema>;

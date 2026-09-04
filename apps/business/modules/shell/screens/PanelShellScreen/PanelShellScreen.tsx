@@ -18,7 +18,7 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
         <PanelRailSection
           addHref="/clubs/new"
           addLabel={t("panel.add")}
-          avatarSrc="https://picsum.photos/seed/club4me-business/160/160"
+          avatarSrc="https://picsum.photos/seed/gym4me-business/160/160"
           avatarAlt={t("businessDashboard.profileName")}
           badge="2"
           items={[

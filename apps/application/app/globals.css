@@ -6,13 +6,31 @@
 @import "@repo/theme/theme-transition.css";
 @import "@neshan-maps-platform/maplibre-sdk/style.css";
 
+@source "../../../packages/ui/src";
+
 @layer base {
+  * {
+    @apply select-none;
+  }
+
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    touch-action: manipulation;
+  }
+
   html {
     --keyboard-inset: 0px;
   }
 
   body {
     @apply h-full bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at 92% 4%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 27rem),
+      radial-gradient(circle at 8% 92%, color-mix(in oklch, var(--accent) 8%, transparent), transparent 24rem);
+    background-attachment: fixed;
   }
 
   input,
@@ -21,6 +39,46 @@
   .input-otp {
     scroll-margin-bottom: calc(var(--keyboard-inset, 0px) + 1.5rem);
     scroll-margin-top: calc(env(safe-area-inset-top) + 1rem);
+  }
+}
+
+@layer components {
+  .app-page {
+    @apply relative isolate flex min-h-dvh w-full max-w-full flex-1 flex-col overflow-x-hidden px-5 pb-[calc(7rem+env(safe-area-inset-bottom))];
+  }
+
+  .app-header {
+    @apply fixed inset-x-0 top-0 z-40 mx-auto flex h-[calc(72px+env(safe-area-inset-top))] w-full max-w-xl items-center gap-3 border-b border-white/7 bg-background/72 px-5 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] shadow-[0_12px_32px_color-mix(in_oklch,var(--background)_55%,transparent)] backdrop-blur-xl;
+  }
+
+  .app-header-spacer {
+    @apply h-[calc(72px+env(safe-area-inset-top))] w-full shrink-0;
+  }
+
+  .app-surface {
+    @apply border border-white/7 bg-surface/72 backdrop-blur-xl;
+  }
+
+  .app-card {
+    @apply rounded-[1.35rem] border border-white/7 bg-surface/78 shadow-[0_14px_34px_color-mix(in_oklch,var(--background)_45%,transparent)] backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-300 ease-out hover:border-accent/30 active:scale-[0.985];
+  }
+
+  .app-icon-button {
+    @apply flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-[1rem] border border-white/8 bg-surface/72 text-foreground shadow-[0_8px_22px_color-mix(in_oklch,var(--background)_45%,transparent)] backdrop-blur-xl transition-transform duration-200 active:scale-95;
+  }
+
+  .app-field {
+    @apply h-13 rounded-[1.15rem] border border-white/10 bg-surface/80 px-4 text-foreground outline-none backdrop-blur-md transition-[border-color,box-shadow] duration-200 focus-within:border-focus focus-within:ring-3 focus-within:ring-focus/15;
+  }
+
+  .app-chip-row {
+    @apply -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(200%);
   }
 }
 

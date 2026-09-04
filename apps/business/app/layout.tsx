@@ -9,8 +9,8 @@ import { AppToastProvider } from "@/components/toast-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Club4Me Business",
-  description: "Club4Me business dashboard",
+  title: "Gym4Me Business",
+  description: "Gym4Me business dashboard",
 };
 
 export default async function RootLayout({
@@ -23,7 +23,7 @@ export default async function RootLayout({
   const timeZone = await getTimeZone();
 
   return (
-    <html lang={locale} dir="rtl" className="h-full" suppressHydrationWarning>
+    <html lang={locale} dir="rtl" className="dark h-full" suppressHydrationWarning>
       <body className="flex h-full min-h-full flex-col bg-background text-foreground font-sans antialiased">
         <ThemeProvider>
           <NextIntlClientProvider

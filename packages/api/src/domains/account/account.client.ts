@@ -53,6 +53,11 @@ export const accountClient = {
 
   me: () => http.get<AccountMeResponse>(accountEndpoints.me),
 
+  deleteAccount: () =>
+    http.delete<{ success: true }>(accountEndpoints.deleteAccount, {
+      confirmation: "DELETE",
+    }),
+
   requestRole: (role: RequestableRole) =>
     http.post<RequestRoleResponse>(accountEndpoints.role(role)),
 

@@ -2,7 +2,7 @@ import { tv } from "tailwind-variants";
 
 export const accountAuthOtpHeaderSectionStyles = tv({
   slots: {
-    root: "flex w-full items-center self-stretch pb-6",
+    root: "flex h-19.5 w-full items-center self-stretch rounded-b-3xl bg-surface p-4",
     back: "size-11 min-w-11 rounded-2xl text-foreground",
   },
 });

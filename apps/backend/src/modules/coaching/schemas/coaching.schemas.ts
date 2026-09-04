@@ -165,6 +165,7 @@ export class CoachAssignment {
 @Schema({ _id: false })
 export class SessionVenue {
   @Prop({ type: Types.ObjectId, ref: "Club" }) clubId?: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: "Court" }) courtId?: Types.ObjectId;
   @Prop({ type: String, trim: true, maxlength: 500 }) address?: string;
   @Prop({ type: String, trim: true, maxlength: 1000 }) onlineUrl?: string;
 }
@@ -176,6 +177,7 @@ export class TrainingClass {
   @Prop({ type: Types.ObjectId, ref: CoachOffering.name })
   offeringId?: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: "Club" }) clubId?: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: "Court" }) courtId?: Types.ObjectId;
   @Prop({ required: true, trim: true, maxlength: 140 }) title: string;
   @Prop({ required: true, select: false }) normalizedTitle: string;
   @Prop({ required: true, unique: true }) slug: string;
@@ -204,6 +206,21 @@ export class TrainingClass {
   })
   enrollmentMode: "automatic" | "requires_approval";
   @Prop({ type: Types.ObjectId, ref: "Media" }) coverMediaId?: Types.ObjectId;
+  @Prop({ type: [Types.ObjectId], ref: "Media", default: [] })
+  galleryMediaIds: Types.ObjectId[];
+  @Prop({ type: [String], default: [] }) tags: string[];
+  @Prop({ type: [String], default: [] }) prerequisites: string[];
+  @Prop({ type: [Types.ObjectId], default: [] })
+  requiredEquipmentIds: Types.ObjectId[];
+  @Prop({ type: [Types.ObjectId], default: [] }) amenityIds: Types.ObjectId[];
+  @Prop({ type: SchemaTypes.Mixed, default: null })
+  cancellationPolicy: Record<string, unknown> | null;
+  @Prop({
+    type: String,
+    enum: ["not_required", "pending", "approved", "rejected"],
+    default: "not_required",
+  })
+  clubApprovalStatus: "not_required" | "pending" | "approved" | "rejected";
   @Prop({ type: String, enum: CLASS_STATUSES, default: "draft" })
   status: TrainingClassStatus;
   createdAt: Date;
@@ -214,6 +231,7 @@ export const TrainingClassSchema = SchemaFactory.createForClass(TrainingClass);
 TrainingClassSchema.index({ ownerCoachId: 1, status: 1, updatedAt: -1 });
 TrainingClassSchema.index({ status: 1, sportId: 1, courseStartAt: 1 });
 TrainingClassSchema.index({ "coachAssignments.coachId": 1, status: 1 });
+TrainingClassSchema.index({ clubId: 1, clubApprovalStatus: 1, updatedAt: -1 });
 
 @Schema({ collection: "class_sessions", timestamps: true })
 export class TrainingSession {
@@ -221,6 +239,8 @@ export class TrainingSession {
   classId?: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: CoachOffering.name })
   offeringId?: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: "ReservableSession" })
+  reservableSessionId?: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: Coach.name, required: true })
   ownerCoachId: Types.ObjectId;
   @Prop({ type: [CoachAssignment], default: [] })
@@ -296,6 +316,9 @@ export class ClassEnrollment {
   @Prop({ type: MoneySnapshot, required: true }) priceSnapshot: MoneySnapshot;
   @Prop({ type: String, enum: PAYMENT_STATUSES, default: "not_required" })
   paymentStatus: PaymentStatus;
+  @Prop({ type: Number, min: 0, max: 100, default: null })
+  refundPercent: number | null;
+  @Prop({ type: Number, min: 0, default: null }) refundAmount: number | null;
   @Prop({ type: Date, default: Date.now }) registeredAt: Date;
   @Prop({ type: Date }) cancelledAt?: Date;
   @Prop({ type: Types.ObjectId, ref: "User", required: true })
@@ -322,8 +345,13 @@ export class SessionBooking {
   @Prop({ type: String, enum: BOOKING_STATUSES, default: "pending" })
   status: BookingStatus;
   @Prop({ type: MoneySnapshot, required: true }) priceSnapshot: MoneySnapshot;
+  @Prop({ type: SchemaTypes.Mixed, default: {} })
+  cancellationPolicySnapshot: Record<string, unknown>;
   @Prop({ type: String, enum: PAYMENT_STATUSES, default: "not_required" })
   paymentStatus: PaymentStatus;
+  @Prop({ type: Number, min: 0, max: 100, default: null })
+  refundPercent: number | null;
+  @Prop({ type: Number, min: 0, default: null }) refundAmount: number | null;
   @Prop({ type: Date, default: Date.now }) bookedAt: Date;
   @Prop({ type: Date }) cancelledAt?: Date;
   @Prop({ type: String, trim: true, maxlength: 1000 })

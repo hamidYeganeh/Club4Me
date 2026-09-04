@@ -1,14 +1,39 @@
-import { DiscoveryHomeFeedSection } from "@modules/discovery/sections/DiscoveryHomeFeedSection";
-import { DiscoveryHomeHeaderSection } from "@modules/discovery/sections/DiscoveryHomeHeaderSection";
-import { getTranslations } from "next-intl/server";
+"use client";
 
-export async function DiscoveryHomeScreen() {
-  const t = await getTranslations("nav");
+import { useDiscoveryFeed } from "@api/discovery";
+import { Spinner } from "@heroui/react";
+import { DiscoveryHomeHeaderSection } from "@modules/discovery/sections/DiscoveryHomeHeaderSection";
+import { DiscoveryHomeExploreSection } from "@modules/discovery/sections/DiscoveryHomeExploreSection";
+import { DiscoveryDynamicSection } from "@modules/discovery/sections/DiscoveryDynamicSection";
+import { useTranslations } from "next-intl";
+
+export function DiscoveryHomeScreen() {
+  const t = useTranslations("nav");
+  const feed = useDiscoveryFeed();
 
   return (
-    <main className="flex min-h-dvh flex-1 flex-col gap-6 px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[calc(5.75rem+env(safe-area-inset-bottom))]">
+    <main className="app-page gap-6">
       <DiscoveryHomeHeaderSection title={t("discover")} />
-      <DiscoveryHomeFeedSection />
+      <DiscoveryHomeExploreSection />
+      {feed.isPending ? (
+        <div className="grid place-items-center py-12">
+          <Spinner />
+        </div>
+      ) : null}
+      {feed.isError ? (
+        <div className="rounded-2xl bg-danger/10 p-4 text-center text-sm text-danger">
+          <p>دریافت محتوای دیسکاوری ناموفق بود.</p>
+          <button
+            className="mt-2 font-bold"
+            onClick={() => void feed.refetch()}
+          >
+            تلاش دوباره
+          </button>
+        </div>
+      ) : null}
+      {feed.data?.map((section) => (
+        <DiscoveryDynamicSection key={section.id} section={section} />
+      ))}
     </main>
   );
 }

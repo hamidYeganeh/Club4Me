@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, Spinner, toast } from "@heroui/react";
 import { useRequestRole, type RequestableRole } from "@api/account";
+import { trackOnboardingCompleted } from "@api";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
 
@@ -56,6 +57,7 @@ export function AccountAuthRolesOptionsSection({
 
     try {
       await requestRole.mutateAsync(role);
+      trackOnboardingCompleted({ selected_role: role });
       toast.success(tRoles("requestSentTitle"), {
         description: tRoles("requestSentBody"),
       });
@@ -71,7 +73,10 @@ export function AccountAuthRolesOptionsSection({
   const isBusy = requestRole.isPending;
 
   return (
-    <section className={styles.root()} aria-labelledby="account-auth-roles-title">
+    <section
+      className={styles.root()}
+      aria-labelledby="account-auth-roles-title"
+    >
       {options.map((option) => {
         const isPending = pendingRole === option.id;
 
@@ -84,6 +89,7 @@ export function AccountAuthRolesOptionsSection({
             className={styles.item()}
             onPress={() => {
               if (option.id === "athlete") {
+                trackOnboardingCompleted({ selected_role: "athlete" });
                 onAthlete();
                 return;
               }

@@ -18,13 +18,15 @@ export function GuestGate({ children }: GuestGateProps) {
   const me = useBusinessMe(hasToken === true);
 
   useEffect(() => {
-    setHasToken(Boolean(tokenStore.get()));
+    const frame = window.requestAnimationFrame(() => {
+      setHasToken(Boolean(tokenStore.get()));
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
     if (me.isError) {
       tokenStore.clear();
-      setHasToken(false);
       return;
     }
 
@@ -33,7 +35,7 @@ export function GuestGate({ children }: GuestGateProps) {
     }
   }, [me.data, me.isError, router]);
 
-  if (hasToken === null || (hasToken && me.isLoading)) {
+  if (hasToken === null || (hasToken && me.isLoading && !me.isError)) {
     return (
       <div className="flex min-h-full flex-1 items-center justify-center">
         <Spinner size="lg" aria-label={t("loading")} />

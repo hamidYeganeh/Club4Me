@@ -3,6 +3,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 
 import { AppError } from "../../../common/errors/app.exception";
+import { UsersRepository } from "../../users/users.repository";
 import type { BulkAttendanceDto } from "../dto/coaching.dto";
 import {
   ClassEnrollment,
@@ -25,15 +26,69 @@ export class AttendanceService {
     @InjectModel(SessionBooking.name)
     private readonly bookings: Model<SessionBookingDocument>,
     private readonly sessions: SessionsService,
+    private readonly users: UsersRepository,
   ) {}
 
   async list(userId: string, sessionId: string) {
     const session = await this.sessions.requireOwnedDocument(userId, sessionId);
-    const items = await this.attendance
-      .find({ sessionId: session._id })
-      .sort({ updatedAt: -1 })
-      .exec();
-    return { items: items.map(toPublicDocument) };
+    const [records, enrollments, bookings] = await Promise.all([
+      this.attendance.find({ sessionId: session._id }).exec(),
+      session.classId
+        ? this.enrollments
+            .find({
+              classId: session.classId,
+              status: { $in: ["active", "completed"] },
+            })
+            .exec()
+        : Promise.resolve([]),
+      this.bookings
+        .find({
+          sessionId: session._id,
+          status: { $in: ["confirmed", "completed", "no_show"] },
+        })
+        .exec(),
+    ]);
+    const participants = new Map<
+      string,
+      { sourceType: "enrollment" | "booking"; sourceId: Types.ObjectId }
+    >();
+    for (const enrollment of enrollments) {
+      participants.set(String(enrollment.athleteId), {
+        sourceType: "enrollment",
+        sourceId: enrollment._id,
+      });
+    }
+    for (const booking of bookings) {
+      participants.set(String(booking.athleteId), {
+        sourceType: "booking",
+        sourceId: booking._id,
+      });
+    }
+    const users = await this.users.findManyByIds([...participants.keys()]);
+    const usersById = new Map(users.map((item) => [item.id, item]));
+    const recordsByAthlete = new Map(
+      records.map((item) => [String(item.athleteId), item]),
+    );
+    return {
+      session: {
+        id: String(session._id),
+        title: session.title,
+        startAt: session.startAt.toISOString(),
+        endAt: session.endAt.toISOString(),
+      },
+      items: [...participants].map(([athleteId, source]) => {
+        const record = recordsByAthlete.get(athleteId);
+        return {
+          ...(record ? toPublicDocument(record) : {}),
+          athleteId,
+          ...source,
+          athlete: usersById.get(athleteId) ?? null,
+          status: record?.status ?? "unrecorded",
+          note: record?.note ?? null,
+          checkedInAt: record?.checkedInAt?.toISOString() ?? null,
+        };
+      }),
+    };
   }
 
   async record(

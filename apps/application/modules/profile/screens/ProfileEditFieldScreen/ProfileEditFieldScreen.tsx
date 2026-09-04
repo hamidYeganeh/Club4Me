@@ -1,5 +1,4 @@
 import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
-import { Typography } from "@heroui/react";
 import { getTranslations } from "next-intl/server";
 
 import { getProfileEditFieldLabelKey } from "../../profile.utils";
@@ -14,14 +13,14 @@ export async function ProfileEditFieldScreen({
   const label = t(getProfileEditFieldLabelKey(field));
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col bg-background px-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
+    <main className="flex min-h-0 w-full max-w-full flex-1 flex-col overflow-x-hidden bg-transparent px-5">
       <AccountAuthOtpHeaderSection
         backLabel={tCommon("back")}
         href={`/${role}/profile/edit`}
       />
-      <div className="flex flex-1 flex-col items-center px-4 pt-10 text-center">
-        <Typography type="h2">{label}</Typography>
-        <Typography type="body-sm" color="muted" className="mt-3 max-w-xs">{t("editFieldHint")}</Typography>
+      <div className="app-reveal flex flex-1 flex-col items-center px-4 pt-10 text-center">
+        <h1 className="text-2xl font-bold">{label}</h1>
+        <p className="mt-3 max-w-xs text-sm text-muted">{t("editFieldHint")}</p>
       </div>
     </main>
   );

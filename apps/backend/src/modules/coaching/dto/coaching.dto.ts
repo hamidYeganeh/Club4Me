@@ -48,6 +48,7 @@ const geoSchema = z.object({
 const venueSchema = z
   .object({
     clubId: objectIdSchema.optional(),
+    courtId: objectIdSchema.optional(),
     address: z.string().trim().min(3).max(500).optional(),
     onlineUrl: z.url().max(1000).optional(),
   })
@@ -236,6 +237,7 @@ export class UpdateOfferingStatusDto {
 const classShape = {
   offeringId: objectIdSchema.nullable(),
   clubId: objectIdSchema.nullable(),
+  courtId: objectIdSchema.nullable(),
   title: z.string().trim().min(2).max(140),
   description: z.string().trim().max(5000),
   sportId: objectIdSchema,
@@ -254,12 +256,19 @@ const classShape = {
   price: moneySchema,
   enrollmentMode: z.enum(["automatic", "requires_approval"]),
   coverMediaId: objectIdSchema.nullable(),
+  galleryMediaIds: uniqueIds(30),
+  tags: z.array(z.string().trim().min(1).max(50)).max(30),
+  prerequisites: z.array(z.string().trim().min(2).max(300)).max(50),
+  requiredEquipmentIds: uniqueIds(100),
+  amenityIds: uniqueIds(100),
+  cancellationPolicy: customAttributesSchema.nullable(),
 };
 const ClassInputSchema = z
   .object({
     ...classShape,
     offeringId: classShape.offeringId.optional(),
     clubId: classShape.clubId.optional(),
+    courtId: classShape.courtId.optional(),
     description: classShape.description.default(""),
     coachAssignments: classShape.coachAssignments.default([]),
     venue: classShape.venue.optional(),
@@ -271,6 +280,12 @@ const ClassInputSchema = z
     plannedSessionCount: classShape.plannedSessionCount.optional(),
     enrollmentMode: classShape.enrollmentMode.default("automatic"),
     coverMediaId: classShape.coverMediaId.optional(),
+    galleryMediaIds: classShape.galleryMediaIds.default([]),
+    tags: classShape.tags.default([]),
+    prerequisites: classShape.prerequisites.default([]),
+    requiredEquipmentIds: classShape.requiredEquipmentIds.default([]),
+    amenityIds: classShape.amenityIds.default([]),
+    cancellationPolicy: classShape.cancellationPolicy.optional(),
   })
   .strict()
   .superRefine((value, context) => {
@@ -319,6 +334,7 @@ export class CreateClassDto implements ClassInput {
   static schema = ClassInputSchema;
   offeringId?: string | null;
   clubId?: string | null;
+  courtId?: string | null;
   title: string;
   description: string;
   sportId: string;
@@ -337,6 +353,12 @@ export class CreateClassDto implements ClassInput {
   price: { amount: number; currency: string };
   enrollmentMode: "automatic" | "requires_approval";
   coverMediaId?: string | null;
+  galleryMediaIds: string[];
+  tags: string[];
+  prerequisites: string[];
+  requiredEquipmentIds: string[];
+  amenityIds: string[];
+  cancellationPolicy?: Record<string, unknown> | null;
 }
 const UpdateClassSchema = z
   .object(classShape)
@@ -350,6 +372,7 @@ export class UpdateClassDto implements Partial<ClassInput> {
   static schema = UpdateClassSchema;
   offeringId?: string | null;
   clubId?: string | null;
+  courtId?: string | null;
   title?: string;
   description?: string;
   sportId?: string;
@@ -368,11 +391,27 @@ export class UpdateClassDto implements Partial<ClassInput> {
   price?: { amount: number; currency: string };
   enrollmentMode?: "automatic" | "requires_approval";
   coverMediaId?: string | null;
+  galleryMediaIds?: string[];
+  tags?: string[];
+  prerequisites?: string[];
+  requiredEquipmentIds?: string[];
+  amenityIds?: string[];
+  cancellationPolicy?: Record<string, unknown> | null;
 }
 const ClassStatusSchema = z.object({ status: z.enum(CLASS_STATUSES) }).strict();
 export class UpdateClassStatusDto {
   static schema = ClassStatusSchema;
   status: (typeof CLASS_STATUSES)[number];
+}
+
+const ReviewClubClassSchema = z
+  .object({
+    status: z.enum(["approved", "rejected"]),
+  })
+  .strict();
+export class ReviewClubClassDto {
+  static schema = ReviewClubClassSchema;
+  status: "approved" | "rejected";
 }
 
 const ScheduleInputSchema = z
@@ -475,13 +514,11 @@ export class CreateEnrollmentDto {
 const EnrollmentStatusSchema = z
   .object({
     status: z.enum(ENROLLMENT_STATUSES),
-    paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
   })
   .strict();
 export class UpdateEnrollmentStatusDto {
   static schema = EnrollmentStatusSchema;
   status: (typeof ENROLLMENT_STATUSES)[number];
-  paymentStatus?: (typeof PAYMENT_STATUSES)[number];
 }
 
 const BookingStatusSchema = z

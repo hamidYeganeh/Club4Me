@@ -16,8 +16,6 @@ export const settingsContentSectionStyles = tv({
     grid: "mt-5 grid gap-4 md:grid-cols-2",
     field:
       "flex items-center gap-3 rounded-2xl bg-surface-secondary px-4 py-3",
-    upload:
-      "flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border text-sm text-muted",
     payout: "mt-4 flex items-center justify-between rounded-2xl bg-surface-secondary px-4 py-3",
   },
 });

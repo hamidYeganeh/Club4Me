@@ -107,8 +107,11 @@ export function createPortalAuth(scope: PortalScope) {
     const queryClient = useQueryClient();
 
     return useMutation({
-      mutationFn: ({ remember: _remember, ...payload }: LoginVariables) =>
-        client.login(payload),
+      mutationFn: (variables: LoginVariables) => {
+        const payload = { ...variables };
+        delete payload.remember;
+        return client.login(payload);
+      },
       onSuccess: async (data, variables) => {
         tokenStore.setSession(
           data.accessToken,

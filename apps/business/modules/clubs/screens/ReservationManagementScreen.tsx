@@ -6,6 +6,10 @@ import {
   useBusinessCatalog,
   useBusinessClub,
   useBusinessSessions,
+  useCancelBusinessSession,
+  useClubReservations,
+  useCompleteSession,
+  useMarkClubReservationNoShow,
   useReservableClubClasses,
   useClubCoaches,
   useClubCourts,
@@ -25,11 +29,20 @@ type OptionDraft = {
   unitPrice: number;
 };
 
+const paymentStatusLabels: Record<string, string> = {
+  not_required: "رایگان",
+  pending: "در انتظار پرداخت",
+  paid: "پرداخت‌شده",
+  refunded: "بازپرداخت‌شده",
+  failed: "پرداخت ناموفق",
+};
+
 export function ReservationManagementScreen({ clubId }: { clubId: string }) {
   const t = useTranslations("businessReservations");
   const club = useBusinessClub(clubId);
   const courts = useClubCourts(clubId);
   const sessions = useBusinessSessions(clubId);
+  const reservations = useClubReservations(clubId);
   const coaches = useClubCoaches(clubId);
   const classes = useReservableClubClasses(clubId);
   const courtTypes = useBusinessCatalog("sports", "court-type");
@@ -37,6 +50,9 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
   const amenitiesCatalog = useBusinessCatalog("facilities", "amenity");
   const createCourt = useCreateCourt(clubId);
   const createSession = useCreateSession(clubId);
+  const completeSession = useCompleteSession(clubId);
+  const cancelSession = useCancelBusinessSession(clubId);
+  const markNoShow = useMarkClubReservationNoShow(clubId);
   const [courtName, setCourtName] = useState("");
   const [courtTypeId, setCourtTypeId] = useState("");
   const [courtCapacity, setCourtCapacity] = useState(1);
@@ -101,7 +117,12 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
     }
   };
 
-  if (club.isPending || courts.isPending || sessions.isPending)
+  if (
+    club.isPending ||
+    courts.isPending ||
+    sessions.isPending ||
+    reservations.isPending
+  )
     return (
       <div className="flex flex-1 justify-center py-20">
         <Spinner />
@@ -398,8 +419,98 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
                     timeStyle: "short",
                   }).format(new Date(item.startsAt))}
                 </p>
+                {item.status === "active" ? (
+                  <div className="mt-3 flex gap-2">
+                    {new Date(item.endsAt) <= new Date() ? (
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        isPending={completeSession.isPending}
+                        onPress={() =>
+                          completeSession
+                            .mutateAsync(item.id)
+                            .then(() => toast.success(t("sessionCompleted")))
+                            .catch(() => toast.danger(t("sessionActionError")))
+                        }
+                      >
+                        {t("completeSession")}
+                      </Button>
+                    ) : null}
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      isPending={cancelSession.isPending}
+                      onPress={() => {
+                        if (!window.confirm(t("cancelSessionConfirm"))) return;
+                        cancelSession
+                          .mutateAsync(item.id)
+                          .then(() => toast.success(t("sessionCancelled")))
+                          .catch(() => toast.danger(t("sessionActionError")));
+                      }}
+                    >
+                      {t("cancelSession")}
+                    </Button>
+                  </div>
+                ) : null}
               </Card>
             ))}
+          </div>
+        </section>
+        <section className="mt-8">
+          <h2 className="text-lg font-semibold">رزروهای ثبت‌شده</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {(reservations.data?.items ?? []).map((item) => (
+              <Card
+                key={item.id}
+                variant="transparent"
+                className="rounded-2xl border border-border bg-surface p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <strong>{item.sessionTitle}</strong>
+                    <p className="mt-1 text-xs text-muted">
+                      کاربر {item.userId.slice(-8)} ·{" "}
+                      {item.participantCount.toLocaleString("fa-IR")} نفر
+                    </p>
+                  </div>
+                  <span className="text-xs text-muted">{item.status}</span>
+                </div>
+                <p className="mt-2 text-sm text-muted">
+                  {new Intl.DateTimeFormat("fa-IR", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }).format(new Date(item.sessionStartsAt))}
+                  {" · "}
+                  {item.totalPrice.toLocaleString("fa-IR")} ریال
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  پرداخت: {paymentStatusLabels[item.paymentStatus]}
+                </p>
+                {item.status === "reserved" &&
+                item.paymentStatus !== "pending" &&
+                new Date(item.sessionStartsAt) <= new Date() ? (
+                  <Button
+                    className="mt-3"
+                    size="sm"
+                    variant="danger"
+                    isPending={markNoShow.isPending}
+                    onPress={() =>
+                      markNoShow
+                        .mutateAsync(item.id)
+                        .then(() => toast.success("عدم حضور ثبت شد"))
+                        .catch(() => toast.danger("ثبت عدم حضور انجام نشد"))
+                    }
+                  >
+                    ثبت عدم حضور
+                  </Button>
+                ) : null}
+              </Card>
+            ))}
+            {!reservations.data?.items.length ? (
+              <p className="py-6 text-sm text-muted">
+                هنوز رزروی ثبت نشده است.
+              </p>
+            ) : null}
           </div>
         </section>
       </div>

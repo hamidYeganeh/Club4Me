@@ -5,6 +5,10 @@ import { createPortalAuth } from "../portal/create-portal-auth";
 export * from "./business-clubs";
 export {
   useBusinessSessions,
+  useCancelBusinessSession,
+  useClubReservations,
+  useCompleteSession,
+  useMarkClubReservationNoShow,
   useReservableClubClasses,
   useClubCoaches,
   useClubCourts,
@@ -16,6 +20,7 @@ export type {
   CreateCourtPayload,
   CreateSessionPayload,
   ReservableSession,
+  SessionReservation,
   SessionOption,
 } from "../reservations";
 export type {

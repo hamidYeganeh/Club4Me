@@ -5,7 +5,7 @@ import type { ProfileEditScreenProps } from "./ProfileEditScreen.types";
 
 export function ProfileEditScreen({ role }: ProfileEditScreenProps) {
   return (
-    <main className="flex min-h-0 flex-1 flex-col bg-surface">
+    <main className="flex min-h-0 w-full max-w-full flex-1 flex-col overflow-x-hidden bg-transparent">
       <ProfileEditHeroSection role={role} />
       <ProfileEditGeneralSection role={role} />
     </main>

@@ -1,3 +1,5 @@
+"use client";
+
 import { Typography } from "@heroui/react";
 import { ThemeToggle } from "@theme/theme-toggle";
 
@@ -10,9 +12,14 @@ export function AthleteScreenHeaderSection({
   const styles = athleteScreenHeaderSectionStyles();
 
   return (
-    <div className={styles.root()}>
-      <Typography type="h4" className={styles.title()}>{title}</Typography>
-      <ThemeToggle />
-    </div>
+    <>
+      <header className={styles.root()}>
+        <Typography type="h4" className={styles.title()}>
+          {title}
+        </Typography>
+        <ThemeToggle />
+      </header>
+      <div aria-hidden className={styles.spacer()} />
+    </>
   );
 }

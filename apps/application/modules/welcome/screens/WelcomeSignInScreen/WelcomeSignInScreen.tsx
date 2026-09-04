@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Typography } from "@heroui/react";
 import { getTranslations } from "next-intl/server";
 
 export async function WelcomeSignInScreen() {
@@ -14,7 +13,7 @@ export async function WelcomeSignInScreen() {
       >
         {tCommon("back")}
       </Link>
-      <Typography type="h3">{t("signIn")}</Typography>
+      <h1 className="text-3xl font-bold">{t("signIn")}</h1>
     </main>
   );
 }

@@ -23,8 +23,8 @@ export function Reveal({ children, className, delayMs = 0 }: RevealProps) {
     ).matches;
 
     if (reduceMotion) {
-      setVisible(true);
-      return;
+      const frame = window.requestAnimationFrame(() => setVisible(true));
+      return () => window.cancelAnimationFrame(frame);
     }
 
     const observer = new IntersectionObserver(

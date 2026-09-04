@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { Connection, Model, Types } from "mongoose";
+import { InjectConnection } from "@nestjs/mongoose";
 
 import { AppError } from "../../common/errors/app.exception";
 import { hashPassword, verifyPassword } from "../../common/utils/password.util";
@@ -15,6 +16,7 @@ const PASSWORD_HASH_SELECT = "+passwordHash";
 export class UsersRepository {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectConnection() private readonly connection: Connection,
   ) {}
 
   async findDocumentById(id: string): Promise<UserDocument> {
@@ -36,6 +38,99 @@ export class UsersRepository {
 
   async findById(id: string): Promise<PublicUser> {
     return toPublicUser(await this.findDocumentById(id));
+  }
+
+  async findManyByIds(
+    ids: Array<string | Types.ObjectId>,
+  ): Promise<PublicUser[]> {
+    const validIds = ids
+      .map(String)
+      .filter((id) => Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
+    if (!validIds.length) return [];
+    const users = await this.userModel.find({ _id: { $in: validIds } }).exec();
+    return users.map(toPublicUser);
+  }
+
+  async list(query?: string): Promise<PublicUser[]> {
+    const pattern = query?.trim()
+      ? new RegExp(escapeRegex(query.trim()), "i")
+      : undefined;
+    const users = await this.userModel
+      .find(
+        pattern
+          ? {
+              $or: [
+                { phone: pattern },
+                { firstName: pattern },
+                { lastName: pattern },
+              ],
+            }
+          : {},
+      )
+      .sort({ updatedAt: -1 })
+      .limit(500)
+      .exec();
+    return users.map(toPublicUser);
+  }
+
+  async updateStatus(
+    userId: string,
+    status: "active" | "suspended",
+  ): Promise<PublicUser> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { $set: { status } },
+      { new: true },
+    );
+    if (!user) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    return toPublicUser(user);
+  }
+
+  async deleteAccount(userId: string): Promise<void> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
+    const id = new Types.ObjectId(userId);
+    const cleanup: Array<[string, Record<string, unknown>]> = [
+      ["user_locations", { userId: id }],
+      ["favorites", { userId: id }],
+      ["notifications", { userId: id }],
+      ["push_devices", { userId: id }],
+      ["notification_preferences", { userId: id }],
+      ["role_requests", { userId: id }],
+      ["club_reviews", { userId: id }],
+      ["media", { ownerId: id }],
+      ["club_memberships", { userId: id }],
+    ];
+    await Promise.all(
+      cleanup.map(([collection, filter]) =>
+        this.connection.collection(collection).deleteMany(filter),
+      ),
+    );
+    const result = await this.userModel.updateOne(
+      { _id: id },
+      {
+        $set: {
+          phone: `deleted-${userId}@gym4me.invalid`,
+          roles: [],
+          status: "deleted",
+          deletedAt: new Date(),
+        },
+        $unset: {
+          firstName: 1,
+          lastName: 1,
+          birthdate: 1,
+          passwordHash: 1,
+        },
+      },
+    );
+    if (result.matchedCount === 0) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
   }
 
   async grantRole(userId: string, role: UserRole): Promise<PublicUser> {
@@ -188,4 +283,8 @@ function isDuplicateKey(error: unknown): boolean {
     "code" in error &&
     (error as { code?: unknown }).code === 11000
   );
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

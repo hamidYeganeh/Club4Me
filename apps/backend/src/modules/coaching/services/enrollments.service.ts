@@ -3,7 +3,8 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 
 import { AppError } from "../../../common/errors/app.exception";
-import type { EnrollmentStatus, PaymentStatus } from "../coaching.constants";
+import { UsersRepository } from "../../users/users.repository";
+import type { EnrollmentStatus } from "../coaching.constants";
 import {
   ClassEnrollment,
   type ClassEnrollmentDocument,
@@ -12,6 +13,7 @@ import {
 } from "../schemas/coaching.schemas";
 import { objectId, toPublicDocument } from "../coaching.utils";
 import { CoachesService } from "./coaches.service";
+import { NotificationsService } from "../../notifications/notifications.service";
 
 @Injectable()
 export class EnrollmentsService {
@@ -21,6 +23,8 @@ export class EnrollmentsService {
     @InjectModel(TrainingClass.name)
     private readonly classes: Model<TrainingClassDocument>,
     private readonly coaches: CoachesService,
+    private readonly users: UsersRepository,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(userId: string, classId: string) {
@@ -29,7 +33,34 @@ export class EnrollmentsService {
       .find({ classId: trainingClass._id })
       .sort({ registeredAt: -1 })
       .exec();
-    return { items: items.map(toPublicDocument) };
+    const users = await this.users.findManyByIds(
+      items.map((item) => item.athleteId),
+    );
+    const usersById = new Map(users.map((item) => [item.id, item]));
+    return {
+      items: items.map((item) => ({
+        ...serializeEnrollment(item),
+        athlete: usersById.get(String(item.athleteId)) ?? null,
+      })),
+    };
+  }
+
+  async listForAthlete(athleteUserId: string) {
+    const items = await this.enrollments
+      .find({ athleteId: objectId(athleteUserId, "ATHLETE_NOT_FOUND") })
+      .sort({ registeredAt: -1 })
+      .exec();
+    const classIds = items.map((item) => item.classId);
+    const classes = await this.classes.find({ _id: { $in: classIds } }).exec();
+    const classesById = new Map(
+      classes.map((item) => [String(item._id), item]),
+    );
+    return {
+      items: items.flatMap((item) => {
+        const trainingClass = classesById.get(String(item.classId));
+        return trainingClass ? [serializeEnrollment(item, trainingClass)] : [];
+      }),
+    };
   }
 
   async addByCoach(userId: string, classId: string, athleteId: string) {
@@ -40,11 +71,153 @@ export class EnrollmentsService {
     return this.createEnrollment(athleteUserId, classId, athleteUserId, false);
   }
 
+  async cancelByAthlete(athleteUserId: string, enrollmentId: string) {
+    const enrollment = await this.enrollments
+      .findOne({
+        _id: objectId(enrollmentId, "ENROLLMENT_NOT_FOUND"),
+        athleteId: objectId(athleteUserId, "ATHLETE_NOT_FOUND"),
+        status: { $in: ["pending", "active"] },
+      })
+      .exec();
+    if (!enrollment) {
+      throw new AppError(404, "ENROLLMENT_NOT_FOUND", "Enrollment not found");
+    }
+    const trainingClass = await this.classes
+      .findById(enrollment.classId)
+      .exec();
+    if (!trainingClass) {
+      throw new AppError(404, "CLASS_NOT_FOUND", "Class not found");
+    }
+    if (trainingClass.courseStartAt <= new Date()) {
+      throw new AppError(
+        409,
+        "CLASS_ALREADY_STARTED",
+        "Enrollment cannot be cancelled after the class starts",
+      );
+    }
+    const refundAmount =
+      enrollment.paymentStatus === "paid" ? enrollment.priceSnapshot.amount : 0;
+    const cancelled = await this.enrollments
+      .findOneAndUpdate(
+        { _id: enrollment._id, status: enrollment.status },
+        {
+          $set: {
+            status: "cancelled",
+            cancelledAt: new Date(),
+            refundPercent: refundAmount > 0 ? 100 : 0,
+            refundAmount,
+            ...(refundAmount > 0 ? { paymentStatus: "refunded" } : {}),
+          },
+        },
+        { new: true },
+      )
+      .exec();
+    if (!cancelled) {
+      throw new AppError(
+        409,
+        "ENROLLMENT_STATUS_CHANGED",
+        "Enrollment status changed before cancellation",
+      );
+    }
+    await this.releaseCapacity(cancelled.classId);
+    await this.notifications.notifyBookingCancelled({
+      userId: cancelled.athleteId,
+      bookingId: cancelled._id,
+      title: trainingClass.title,
+    });
+    return serializeEnrollment(cancelled, trainingClass);
+  }
+
+  async approveMockPayment(athleteUserId: string, enrollmentId: string) {
+    const enrollment = await this.requireAthleteEnrollment(
+      athleteUserId,
+      enrollmentId,
+    );
+    const trainingClass = await this.classes
+      .findById(enrollment.classId)
+      .exec();
+    if (!trainingClass) {
+      throw new AppError(404, "CLASS_NOT_FOUND", "Class not found");
+    }
+    if (enrollment.paymentStatus === "paid") {
+      return serializeEnrollment(enrollment, trainingClass);
+    }
+    const status =
+      trainingClass.enrollmentMode === "automatic" ? "active" : "pending";
+    const paid = await this.enrollments
+      .findOneAndUpdate(
+        {
+          _id: enrollment._id,
+          athleteId: objectId(athleteUserId),
+          status: "pending",
+          paymentStatus: "pending",
+        },
+        { $set: { paymentStatus: "paid", status } },
+        { new: true },
+      )
+      .exec();
+    if (!paid) {
+      throw new AppError(
+        409,
+        "PAYMENT_NOT_PENDING",
+        "Enrollment does not have a pending payment",
+      );
+    }
+    if (paid.status === "active") {
+      await this.notifications.notifyBookingConfirmed({
+        userId: paid.athleteId,
+        bookingId: paid._id,
+        title: trainingClass.title,
+      });
+    }
+    return serializeEnrollment(paid, trainingClass);
+  }
+
+  async rejectMockPayment(athleteUserId: string, enrollmentId: string) {
+    const rejected = await this.enrollments
+      .findOneAndUpdate(
+        {
+          _id: objectId(enrollmentId, "ENROLLMENT_NOT_FOUND"),
+          athleteId: objectId(athleteUserId, "ATHLETE_NOT_FOUND"),
+          status: "pending",
+          paymentStatus: "pending",
+        },
+        {
+          $set: {
+            status: "rejected",
+            paymentStatus: "failed",
+            cancelledAt: new Date(),
+            refundPercent: 0,
+            refundAmount: 0,
+          },
+        },
+        { new: true },
+      )
+      .exec();
+    if (!rejected) {
+      throw new AppError(
+        409,
+        "PAYMENT_NOT_PENDING",
+        "Enrollment does not have a pending payment",
+      );
+    }
+    const trainingClass = await this.classes.findById(rejected.classId).exec();
+    if (!trainingClass) {
+      throw new AppError(404, "CLASS_NOT_FOUND", "Class not found");
+    }
+    await this.releaseCapacity(rejected.classId);
+    await this.notifications.notifyPaymentFailed({
+      userId: rejected.athleteId,
+      paymentId: rejected._id,
+      title: trainingClass.title,
+    });
+    return serializeEnrollment(rejected, trainingClass);
+  }
+
   async updateStatus(
     userId: string,
     enrollmentId: string,
     status: EnrollmentStatus,
-    paymentStatus?: PaymentStatus,
   ) {
     const coach = await this.coaches.requireOwnedCoach(userId);
     const enrollment = await this.enrollments
@@ -55,6 +228,13 @@ export class EnrollmentsService {
       .exec();
     if (!enrollment)
       throw new AppError(404, "ENROLLMENT_NOT_FOUND", "Enrollment not found");
+    if (status === "active" && enrollment.paymentStatus === "pending") {
+      throw new AppError(
+        409,
+        "PAYMENT_REQUIRED",
+        "Payment must be completed before enrollment approval",
+      );
+    }
     assertEnrollmentTransition(enrollment.status, status);
     const wasOccupying = occupiesCapacity(enrollment.status);
     const willOccupy = occupiesCapacity(status);
@@ -82,9 +262,27 @@ export class EnrollmentsService {
       enrollment.cancelledAt = undefined;
     }
     enrollment.status = status;
-    if (paymentStatus) enrollment.paymentStatus = paymentStatus;
     await enrollment.save();
-    return toPublicDocument(enrollment);
+    const trainingClass = await this.classes
+      .findById(enrollment.classId)
+      .exec();
+    if (trainingClass && status === "active") {
+      await this.notifications.notifyBookingConfirmed({
+        userId: enrollment.athleteId,
+        bookingId: enrollment._id,
+        title: trainingClass.title,
+      });
+    } else if (
+      trainingClass &&
+      (status === "rejected" || status === "cancelled")
+    ) {
+      await this.notifications.notifyBookingCancelled({
+        userId: enrollment.athleteId,
+        bookingId: enrollment._id,
+        title: trainingClass.title,
+      });
+    }
+    return serializeEnrollment(enrollment);
   }
 
   private async createEnrollment(
@@ -99,10 +297,7 @@ export class EnrollmentsService {
       : await this.classes.findById(classObjectId).exec();
     if (!trainingClass)
       throw new AppError(404, "CLASS_NOT_FOUND", "Class not found");
-    if (
-      !["published", "registration_closed"].includes(trainingClass.status) &&
-      !byCoach
-    ) {
+    if (trainingClass.status !== "published" && !byCoach) {
       throw new AppError(
         409,
         "CLASS_NOT_OPEN",
@@ -128,6 +323,17 @@ export class EnrollmentsService {
     ) {
       throw new AppError(409, "REGISTRATION_CLOSED", "Registration is closed");
     }
+    const athleteObjectId = objectId(athleteId, "ATHLETE_NOT_FOUND");
+    const existing = await this.enrollments
+      .findOne({ classId: trainingClass._id, athleteId: athleteObjectId })
+      .exec();
+    if (existing && !["cancelled", "rejected"].includes(existing.status)) {
+      throw new AppError(
+        409,
+        "ALREADY_ENROLLED",
+        "Athlete is already enrolled in this class",
+      );
+    }
     const reserved = await this.classes.findOneAndUpdate(
       {
         _id: trainingClass._id,
@@ -139,21 +345,46 @@ export class EnrollmentsService {
     if (!reserved)
       throw new AppError(409, "CLASS_FULL", "Class capacity has been reached");
     try {
+      const requiresPayment = trainingClass.price.amount > 0;
       const status =
-        byCoach || trainingClass.enrollmentMode === "automatic"
+        !requiresPayment &&
+        (byCoach || trainingClass.enrollmentMode === "automatic")
           ? "active"
           : "pending";
-      const created = await this.enrollments.create({
+      const enrollmentPayload = {
         classId: trainingClass._id,
         coachId: trainingClass.ownerCoachId,
-        athleteId: objectId(athleteId, "ATHLETE_NOT_FOUND"),
+        athleteId: athleteObjectId,
         status,
         priceSnapshot: trainingClass.price,
-        paymentStatus:
-          trainingClass.price.amount > 0 ? "pending" : "not_required",
+        paymentStatus: requiresPayment ? "pending" : "not_required",
         createdBy: objectId(actorUserId, "USER_NOT_FOUND"),
-      });
-      return toPublicDocument(created);
+        registeredAt: now,
+        cancelledAt: undefined,
+        refundPercent: null,
+        refundAmount: null,
+      } as const;
+      const created = existing
+        ? await this.enrollments
+            .findOneAndUpdate(
+              {
+                _id: existing._id,
+                status: { $in: ["cancelled", "rejected"] },
+              },
+              { $set: enrollmentPayload, $unset: { cancelledAt: 1 } },
+              { new: true },
+            )
+            .orFail()
+            .exec()
+        : await this.enrollments.create(enrollmentPayload);
+      if (created.status === "active") {
+        await this.notifications.notifyBookingConfirmed({
+          userId: created.athleteId,
+          bookingId: created._id,
+          title: trainingClass.title,
+        });
+      }
+      return serializeEnrollment(created, trainingClass);
     } catch (error) {
       await this.classes.updateOne(
         { _id: trainingClass._id, enrollmentCount: { $gt: 0 } },
@@ -182,6 +413,57 @@ export class EnrollmentsService {
       throw new AppError(404, "CLASS_NOT_FOUND", "Class not found");
     return trainingClass;
   }
+
+  private async requireAthleteEnrollment(
+    athleteUserId: string,
+    enrollmentId: string,
+  ) {
+    const enrollment = await this.enrollments
+      .findOne({
+        _id: objectId(enrollmentId, "ENROLLMENT_NOT_FOUND"),
+        athleteId: objectId(athleteUserId, "ATHLETE_NOT_FOUND"),
+      })
+      .exec();
+    if (!enrollment) {
+      throw new AppError(404, "ENROLLMENT_NOT_FOUND", "Enrollment not found");
+    }
+    return enrollment;
+  }
+
+  private async releaseCapacity(classId: TrainingClassDocument["_id"]) {
+    await this.classes.updateOne(
+      { _id: classId, enrollmentCount: { $gt: 0 } },
+      { $inc: { enrollmentCount: -1 } },
+    );
+  }
+}
+
+function serializeEnrollment(
+  enrollment: ClassEnrollmentDocument,
+  trainingClass?: TrainingClassDocument,
+) {
+  return {
+    ...toPublicDocument(enrollment),
+    ...(trainingClass
+      ? {
+          classTitle: trainingClass.title,
+          classSlug: trainingClass.slug,
+          courseStartAt: trainingClass.courseStartAt.toISOString(),
+          courseEndAt: trainingClass.courseEndAt.toISOString(),
+          deliveryMode: trainingClass.deliveryMode,
+          venue: trainingClass.venue
+            ? toPublicDocumentValue(trainingClass.venue)
+            : null,
+        }
+      : {}),
+  };
+}
+
+function toPublicDocumentValue(value: unknown): unknown {
+  if (value && typeof value === "object" && "toObject" in value) {
+    return (value as { toObject: () => unknown }).toObject();
+  }
+  return value;
 }
 
 function occupiesCapacity(status: EnrollmentStatus) {

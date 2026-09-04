@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
-import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
 import { MongooseModule } from "@nestjs/mongoose";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 
 import { AppController } from "./app.controller";
 import { AppConfigModule } from "./config/app-config.module";
@@ -11,6 +12,12 @@ import { ZodValidationPipe } from "./common/pipes/zod-validation.pipe";
 import { RedisModule } from "./infrastructure/redis/redis.module";
 import { DiscoveryModule } from "./legacy/discovery.module";
 import { ArticlesModule } from "./modules/articles/articles.module";
+import { AppReleasesModule } from "./modules/app-releases/app-releases.module";
+import { FavoritesModule } from "./modules/favorites/favorites.module";
+import { AuditModule } from "./modules/audit/audit.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
+import { ReportsModule } from "./modules/reports/reports.module";
+import { DiscoveryFeedModule } from "./modules/discovery/discovery.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { ClubsModule } from "./modules/clubs/clubs.module";
 import { CoachingModule } from "./modules/coaching/coaching.module";
@@ -21,11 +28,13 @@ import { ClubReviewsModule } from "./modules/reviews/club-reviews.module";
 import { ResourcesModule } from "./modules/resources/resources.module";
 import { UsersModule } from "./modules/users/users.module";
 import { UserLocationsModule } from "./modules/user-locations/user-locations.module";
+import { TelemetryModule } from "./modules/telemetry/telemetry.module";
 
 @Module({
   imports: [
     AppConfigModule,
     RedisModule,
+    ThrottlerModule.forRoot([{ name: "default", ttl: 60_000, limit: 120 }]),
     MongooseModule.forRootAsync({
       imports: [AppConfigModule],
       inject: [AppConfigService],
@@ -44,10 +53,21 @@ import { UserLocationsModule } from "./modules/user-locations/user-locations.mod
     ClubReviewsModule,
     ResourcesModule,
     ArticlesModule,
+    AppReleasesModule,
+    FavoritesModule,
+    AuditModule,
+    NotificationsModule,
+    ReportsModule,
+    DiscoveryFeedModule,
     DiscoveryModule,
+    TelemetryModule,
   ],
   controllers: [AppController],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,

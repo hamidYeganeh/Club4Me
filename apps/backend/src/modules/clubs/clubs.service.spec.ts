@@ -3,6 +3,7 @@ import type { MediaService } from "../media/media.service";
 import type { ClubsRepository } from "./clubs.repository";
 import { ClubsService } from "./clubs.service";
 import { ClubFieldsSchema } from "./dto/club-fields.dto";
+import type { ClubMembershipsService } from "./club-memberships.service";
 
 describe("ClubsService", () => {
   const repository = {
@@ -13,10 +14,13 @@ describe("ClubsService", () => {
     requireActive: jest.fn(),
   };
   const media = { assertOwnedReady: jest.fn().mockResolvedValue(undefined) };
+  const memberships = { ensureOwner: jest.fn().mockResolvedValue(undefined) };
   const service = new ClubsService(
     repository as unknown as ClubsRepository,
     resources as unknown as ResourcesService,
     media as unknown as MediaService,
+    memberships as unknown as ClubMembershipsService,
+    { notifyOwnerApproved: jest.fn() } as never,
   );
 
   beforeEach(() => {
@@ -104,6 +108,25 @@ describe("ClubsService", () => {
           tiers: [{ hoursBefore: 24, refundPercent: 20 }],
         },
       ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("stores email and website as social media contacts", () => {
+    const result = ClubFieldsSchema.safeParse({
+      name: "باشگاه تست",
+      socialMedia: [
+        { platform: "email", link: "hello@club.example" },
+        { platform: "website", link: "https://club.example" },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects invalid social media contact values", () => {
+    const result = ClubFieldsSchema.safeParse({
+      name: "باشگاه تست",
+      socialMedia: [{ platform: "email", link: "not-an-email" }],
     });
     expect(result.success).toBe(false);
   });

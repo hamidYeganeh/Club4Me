@@ -9,7 +9,15 @@ export function AthletePlaceholderFeedSection({
   return (
     <div className={styles.root()}>
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className={styles.item()} />
+        <div
+          key={index}
+          className={styles.item({
+            className:
+              index % 3 === 0 || (index === count - 1 && count % 3 === 2)
+                ? "col-span-2"
+                : "col-span-1",
+          })}
+        />
       ))}
     </div>
   );

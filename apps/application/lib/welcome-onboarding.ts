@@ -1,4 +1,8 @@
-const WELCOME_SEEN_KEY = "club4me.welcome.seen";
+const WELCOME_SEEN_KEY = "gym4me.welcome.seen";
+
+export const WELCOME_PATH = "/welcome";
+export const POST_WELCOME_PATH = "/discovery";
+export const AUTH_PATH = "/auth";
 
 export function hasSeenWelcome(): boolean {
   if (typeof window === "undefined") {
@@ -22,4 +26,44 @@ export function markWelcomeSeen(): void {
   } catch {
     // Ignore quota / private-mode failures; routing still works for this session.
   }
+}
+
+export function isWelcomePath(pathname: string): boolean {
+  return pathname === WELCOME_PATH || pathname.startsWith(`${WELCOME_PATH}/`);
+}
+
+export function isAuthPath(pathname: string): boolean {
+  return pathname === AUTH_PATH || pathname.startsWith(`${AUTH_PATH}/`);
+}
+
+export function isRolePath(pathname: string): boolean {
+  return (
+    pathname === "/athlete" ||
+    pathname.startsWith("/athlete/") ||
+    pathname === "/coach" ||
+    pathname.startsWith("/coach/")
+  );
+}
+
+export function getAppRouteRedirect(
+  pathname: string,
+  { welcomeSeen, isAuthed }: { welcomeSeen: boolean; isAuthed: boolean },
+): string | null {
+  if (pathname === "/") {
+    return welcomeSeen || isAuthed ? POST_WELCOME_PATH : WELCOME_PATH;
+  }
+
+  if (isWelcomePath(pathname)) {
+    return welcomeSeen || isAuthed ? POST_WELCOME_PATH : null;
+  }
+
+  if (isAuthPath(pathname) || isRolePath(pathname)) {
+    return null;
+  }
+
+  if (!welcomeSeen && !isAuthed) {
+    return WELCOME_PATH;
+  }
+
+  return null;
 }

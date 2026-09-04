@@ -20,7 +20,6 @@ export async function SettingsScreen() {
       accountType={t("settingsPage.accountType")}
       regular={t("settingsPage.regular")}
       changeAvatar={t("settingsPage.changeAvatar")}
-      uploadHint={t("settingsPage.uploadHint")}
       paymentsTitle={t("settingsPage.paymentsTitle")}
       paymentsHint={t("settingsPage.paymentsHint")}
       autoPayout={t("settingsPage.autoPayout")}

@@ -3,11 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useAccountMe } from "@api/account";
-import { Avatar, Badge, Button, Chip, Typography } from "@heroui/react";
+import { Avatar, Badge, Chip, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { ThemeToggle } from "@theme/theme-toggle";
 import { useFormatter, useTranslations } from "next-intl";
 
+import { ButtonLink } from "@/components/button-link";
 import {
   PROFILE_AVATAR_SRC,
   PROFILE_COVER_SRC,
@@ -76,28 +77,16 @@ export function ProfileHeroSection({ role }: ProfileHeroSectionProps) {
           </Badge.Anchor>
         </Link>
 
-        <Button
+        <ButtonLink
+          href={editHref}
+          scroll={false}
           isIconOnly
           variant="secondary"
           aria-label={t("edit")}
           className={styles.sideButton()}
-          render={(props) => {
-            const { type: _type, children, className, style } = props;
-
-            return (
-              <Link
-                href={editHref}
-                scroll={false}
-                className={className}
-                style={style}
-              >
-                {children}
-              </Link>
-            );
-          }}
         >
           <Icon name="pencil-1" size={18} />
-        </Button>
+        </ButtonLink>
       </div>
 
       <div className={styles.identity()}>

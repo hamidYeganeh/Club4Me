@@ -11,22 +11,26 @@ export function AccountAuthOtpHeaderSection({
   backLabel,
   href = "/welcome",
   overlay = false,
+  transparent = false,
 }: AccountAuthOtpHeaderSectionProps) {
   const router = useRouter();
-  const styles = accountAuthOtpHeaderSectionStyles({ overlay });
+  const styles = accountAuthOtpHeaderSectionStyles({ overlay, transparent });
 
   return (
-    <header className={styles.root()}>
-      <Button
-        isIconOnly
-        variant="secondary"
-        size="lg"
-        aria-label={backLabel}
-        className={styles.back()}
-        onPress={() => router.push(href)}
-      >
-        <Icon name="chevron-right" size={22} />
-      </Button>
-    </header>
+    <>
+      <header className={styles.root()}>
+        <Button
+          isIconOnly
+          variant="secondary"
+          size="lg"
+          aria-label={backLabel}
+          className={styles.back()}
+          onPress={() => router.push(href)}
+        >
+          <Icon name="chevron-right" size={22} />
+        </Button>
+      </header>
+      <div aria-hidden className={styles.spacer()} />
+    </>
   );
 }

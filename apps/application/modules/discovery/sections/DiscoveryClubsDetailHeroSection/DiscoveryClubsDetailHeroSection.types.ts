@@ -5,7 +5,7 @@ export type DiscoveryClubsDetailHeroSectionProps = {
   clubId: string;
   name: string;
   location: string;
-  price: number;
+  statusLabel: string;
   images: string[];
   thumbsSwiper: SwiperType | null;
   onMainSwiper: (swiper: SwiperType) => void;

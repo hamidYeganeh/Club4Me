@@ -15,7 +15,7 @@ export class AppController {
   @Get()
   root() {
     return {
-      name: "Club4Me API",
+      name: "Gym4Me API",
       version: "0.1.0",
     };
   }
@@ -31,6 +31,16 @@ export class AppController {
       mongo: mongoPing.ok === 1 ? "connected" : "error",
       redis: redisPing === "PONG" ? "connected" : "error",
     };
+  }
+
+  @Get("health/live")
+  liveness() {
+    return { status: "ok", uptimeSeconds: Math.floor(process.uptime()) };
+  }
+
+  @Get("health/ready")
+  readiness() {
+    return this.health();
   }
 
   @Get("api")

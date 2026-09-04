@@ -1,0 +1,258 @@
+meta:
+  product: Gym4Me
+  version: 2
+  created: 2026-09-04
+  updated: 2026-09-04
+  owner: product-engineering
+  platform: capacitor-android-nextjs-nestjs
+  implementation: custom
+  destinations: [gym4me_first_party]
+  naming_convention: object.action
+  pii_policy: none
+  internal_user_policy: by_role
+  implementation_status: implemented
+
+entities:
+  user:
+    id_property: user_id
+    id_format: "MongoDB ObjectId string"
+    traits:
+      - name: roles
+        type: string_array
+        required: true
+        pii: false
+        update_pattern: on_change
+      - name: created_at
+        type: datetime
+        required: true
+        pii: false
+        update_pattern: one_time
+      - name: locale
+        type: string
+        required: true
+        pii: false
+        update_pattern: on_change
+      - name: platform
+        type: string
+        enum: [android, web]
+        required: true
+        pii: false
+        update_pattern: on_change
+
+groups:
+  - type: club
+    id_format: "MongoDB ObjectId string"
+    is_top_level: true
+    triggers: [creation, trait_change]
+    traits:
+      - name: status
+        type: string
+        required: true
+      - name: club_type_id
+        type: string
+        required: false
+      - name: city_id
+        type: string
+        required: false
+      - name: created_at
+        type: datetime
+        required: true
+  - type: session
+    id_format: "MongoDB ObjectId string"
+    parent_type: club
+    triggers: [creation, trait_change]
+    traits:
+      - name: parent_group_id
+        type: string
+        required: true
+      - name: session_type
+        type: string
+        enum: [court, class, coached_session]
+        required: true
+      - name: status
+        type: string
+        required: true
+      - name: starts_at
+        type: datetime
+        required: true
+
+events:
+  - name: user.signed_up
+    category: lifecycle
+    group_level: user
+    description: A new user account is created.
+    properties:
+      - name: signup_method
+        type: string
+        enum: [otp, password]
+        required: true
+      - name: initial_role
+        type: string
+        enum: [athlete, coach, owner]
+        required: true
+    expected_frequency: low
+
+  - name: onboarding.completed
+    category: lifecycle
+    group_level: user
+    description: A user completes role selection and initial onboarding.
+    properties:
+      - name: selected_role
+        type: string
+        enum: [athlete, coach, owner]
+        required: true
+    expected_frequency: low
+
+  - name: search.performed
+    category: feature_usage
+    group_level: user
+    description: A user submits a discovery search.
+    properties:
+      - name: result_type
+        type: string
+        enum: [all, club, coach, class]
+        required: true
+      - name: has_location_filter
+        type: boolean
+        required: true
+      - name: result_count
+        type: integer
+        required: true
+    expected_frequency: medium
+
+  - name: favorite.added
+    category: feature_usage
+    group_level: club
+    description: A user saves a discoverable entity as a favorite.
+    properties:
+      - name: favorite_type
+        type: string
+        enum: [club, coach, class]
+        required: true
+      - name: favorite_id
+        type: string
+        required: true
+      - name: club_id
+        type: string
+        required: false
+    expected_frequency: medium
+
+  - name: review.submitted
+    category: collaboration
+    group_level: club
+    description: A user submits a rating/review for a club or coach.
+    properties:
+      - name: review_target_type
+        type: string
+        enum: [club, coach]
+        required: true
+      - name: review_target_id
+        type: string
+        required: true
+      - name: rating
+        type: integer
+        required: true
+    expected_frequency: low
+
+  - name: reservation.created
+    category: core_value
+    group_level: session
+    description: An athlete successfully creates a reservation.
+    properties:
+      - name: reservation_id
+        type: string
+        required: true
+      - name: club_id
+        type: string
+        required: true
+      - name: session_id
+        type: string
+        required: true
+      - name: session_type
+        type: string
+        enum: [court, class, coached_session]
+        required: true
+      - name: participant_count
+        type: integer
+        required: true
+    expected_frequency: medium
+
+  - name: reservation.cancelled
+    category: core_value
+    group_level: session
+    description: An athlete or provider cancels a reservation.
+    properties:
+      - name: reservation_id
+        type: string
+        required: true
+      - name: club_id
+        type: string
+        required: true
+      - name: session_id
+        type: string
+        required: true
+      - name: cancelled_by
+        type: string
+        enum: [athlete, provider]
+        required: true
+    expected_frequency: low
+
+  - name: session.published
+    category: core_value
+    group_level: session
+    description: A provider publishes a reservable session.
+    properties:
+      - name: club_id
+        type: string
+        required: true
+      - name: session_id
+        type: string
+        required: true
+      - name: session_type
+        type: string
+        enum: [court, class, coached_session]
+        required: true
+    expected_frequency: medium
+
+  - name: notification_preference.changed
+    category: configuration
+    group_level: user
+    description: A user changes a push-notification preference.
+    properties:
+      - name: preference_name
+        type: string
+        enum: [push_enabled, booking_updates, reminders, discovery, marketing]
+        required: true
+      - name: is_enabled
+        type: boolean
+        required: true
+    expected_frequency: low
+
+  - name: account.deleted
+    category: lifecycle
+    group_level: user
+    description: A user permanently deletes their account.
+    properties:
+      - name: had_active_roles
+        type: boolean
+        required: true
+    expected_frequency: low
+
+snapshot_sync:
+  cadence: daily
+  traits:
+    - entity: club
+      trait: active_session_count
+      type: integer
+      source: "COUNT of active reservable sessions by club"
+    - entity: club
+      trait: reservation_count_30d
+      type: integer
+      source: "COUNT of reservations created in the previous 30 days by club"
+
+implementation_notes:
+  - "The backend derives user_id from the verified access token; clients cannot submit it."
+  - "Never include phone, name, search text, precise coordinates, or free-form review text."
+  - "Admin and system-role activity is discarded before persistence."
+  - "Critical outcome events are emitted server-side at the successful transaction boundary."
+  - "Client events include occurrence time and an idempotency key for offline-safe retries."

@@ -1,5 +1,5 @@
-import { AthleteHomeScreen } from "@modules/athlete/screens/AthleteHomeScreen";
+import { CoachHomeScreen } from "@modules/coach/screens/CoachHomeScreen";
 
 export default function CoachHomePage() {
-  return <AthleteHomeScreen />;
+  return <CoachHomeScreen />;
 }

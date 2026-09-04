@@ -44,6 +44,7 @@ export function AccountAuthForgotPasswordConfirmScreen() {
       <AccountAuthOtpHeaderSection
         backLabel={tCommon("back")}
         href="/auth/forgot-password"
+        transparent
       />
       <AccountAuthOtpHeroSection
         alt={t("illustrationAlt")}

@@ -1,0 +1,1 @@
+export { CoachHomeScreen } from "./CoachHomeScreen";

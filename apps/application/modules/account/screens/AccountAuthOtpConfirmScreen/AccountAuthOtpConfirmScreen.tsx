@@ -41,7 +41,11 @@ export function AccountAuthOtpConfirmScreen() {
 
   return (
     <AuthScreen>
-      <AccountAuthOtpHeaderSection backLabel={tCommon("back")} href="/auth/otp" />
+      <AccountAuthOtpHeaderSection
+        backLabel={tCommon("back")}
+        href="/auth/otp"
+        transparent
+      />
       <AccountAuthOtpCopySection
         titleId="account-auth-otp-confirm-title"
         title={tConfirm("title")}

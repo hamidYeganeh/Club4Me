@@ -3,7 +3,7 @@ import { HydratedDocument } from "mongoose";
 
 import type { UserRole } from "../../../lib/roles";
 
-export const USER_STATUSES = ["active", "suspended"] as const;
+export const USER_STATUSES = ["active", "suspended", "deleted"] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
 
 @Schema({
@@ -31,6 +31,9 @@ export class User {
 
   @Prop({ type: String, enum: USER_STATUSES, default: "active" })
   status: UserStatus;
+
+  @Prop({ type: Date })
+  deletedAt?: Date;
 
   createdAt: Date;
   updatedAt: Date;

@@ -2,7 +2,8 @@ import { tv } from "tailwind-variants";
 
 export const athleteScreenHeaderSectionStyles = tv({
   slots: {
-    root: "flex items-center justify-between",
-    title: "",
+    root: "app-header justify-between",
+    spacer: "app-header-spacer",
+    title: "truncate text-[1.4rem] tracking-tight",
   },
 });

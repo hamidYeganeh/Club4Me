@@ -16,6 +16,10 @@ import type {
   SetPasswordPayload,
 } from "./account.dto";
 import { accountQueries } from "./account.queries";
+import {
+  resetTelemetryIdentity,
+  trackUserSignedUp,
+} from "../../tracking/tracking";
 
 export function useAccountMe(enabled = true) {
   return useQuery({
@@ -40,6 +44,17 @@ export function useConfirmOtp() {
       accountClient.confirmOtp(payload),
     onSuccess: async (data) => {
       tokenStore.setSession(data.accessToken, data.refreshToken);
+      if (Date.now() - new Date(data.user.createdAt).getTime() < 120_000) {
+        const initialRole = data.user.roles.find(
+          (role) => role === "athlete" || role === "coach" || role === "owner",
+        );
+        if (initialRole) {
+          trackUserSignedUp({
+            signup_method: "otp",
+            initial_role: initialRole,
+          });
+        }
+      }
       await queryClient.invalidateQueries({ queryKey: accountQueries.me() });
     },
   });
@@ -53,8 +68,11 @@ export function useLogin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ remember: _remember, ...payload }: LoginVariables) =>
-      accountClient.login(payload),
+    mutationFn: (variables: LoginVariables) => {
+      const payload = { ...variables };
+      delete payload.remember;
+      return accountClient.login(payload);
+    },
     onSuccess: async (data, variables) => {
       tokenStore.setSession(
         data.accessToken,
@@ -119,8 +137,21 @@ export function useLogout() {
   return useMutation({
     mutationFn: () => accountClient.logout(),
     onSettled: () => {
+      resetTelemetryIdentity();
       tokenStore.clear();
       queryClient.removeQueries({ queryKey: accountQueries.all() });
+    },
+  });
+}
+
+export function useDeleteAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: accountClient.deleteAccount,
+    onSuccess: () => {
+      resetTelemetryIdentity();
+      tokenStore.clear();
+      queryClient.clear();
     },
   });
 }

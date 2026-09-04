@@ -1,3 +1,5 @@
+"use client";
+
 import { Avatar, Card } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { cn } from "@theme/cn";
@@ -29,7 +31,7 @@ export function DashboardAsideSection({
         <Avatar className="size-14">
           <Avatar.Image
             alt={name}
-            src="https://picsum.photos/seed/club4me-business/200/200"
+            src="https://picsum.photos/seed/gym4me-business/200/200"
           />
           <Avatar.Fallback>{name.slice(0, 1)}</Avatar.Fallback>
         </Avatar>
@@ -66,7 +68,10 @@ export function DashboardAsideSection({
           {monthDays.map((day) => (
             <span
               key={day}
-              className={cn(styles.day(), highlighted.has(day) && styles.dayOn())}
+              className={cn(
+                styles.day(),
+                highlighted.has(day) && styles.dayOn(),
+              )}
             >
               {day}
             </span>

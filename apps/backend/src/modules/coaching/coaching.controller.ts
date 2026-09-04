@@ -30,6 +30,7 @@ import {
   ReplaceCoachSportsDto,
   RescheduleSessionDto,
   ReviewCoachDto,
+  ReviewClubClassDto,
   UpdateBookingStatusDto,
   UpdateClassDto,
   UpdateClassStatusDto,
@@ -217,12 +218,7 @@ export class CoachPortalController {
     @Param("enrollmentId") enrollmentId: string,
     @Body() body: UpdateEnrollmentStatusDto,
   ) {
-    return this.enrollments.updateStatus(
-      user.sub,
-      enrollmentId,
-      body.status,
-      body.paymentStatus,
-    );
+    return this.enrollments.updateStatus(user.sub, enrollmentId, body.status);
   }
 
   @Get("calendar")
@@ -334,6 +330,16 @@ export class AthleteCoachingController {
     private readonly bookings: BookingsService,
   ) {}
 
+  @Get("enrollments")
+  listEnrollments(@CurrentUser() user: AuthTokenPayload) {
+    return this.enrollments.listForAthlete(user.sub);
+  }
+
+  @Get("bookings")
+  listBookings(@CurrentUser() user: AuthTokenPayload) {
+    return this.bookings.listForAthlete(user.sub);
+  }
+
   @Post("classes/:classId/enrollments")
   @HttpCode(HttpStatus.CREATED)
   enroll(
@@ -341,6 +347,30 @@ export class AthleteCoachingController {
     @Param("classId") classId: string,
   ) {
     return this.enrollments.enrollSelf(user.sub, classId);
+  }
+
+  @Post("enrollments/:enrollmentId/cancel")
+  cancelEnrollment(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("enrollmentId") enrollmentId: string,
+  ) {
+    return this.enrollments.cancelByAthlete(user.sub, enrollmentId);
+  }
+
+  @Patch("enrollments/:enrollmentId/mock-payment/approve")
+  approveEnrollmentPayment(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("enrollmentId") enrollmentId: string,
+  ) {
+    return this.enrollments.approveMockPayment(user.sub, enrollmentId);
+  }
+
+  @Patch("enrollments/:enrollmentId/mock-payment/reject")
+  rejectEnrollmentPayment(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("enrollmentId") enrollmentId: string,
+  ) {
+    return this.enrollments.rejectMockPayment(user.sub, enrollmentId);
   }
 
   @Post("sessions/:sessionId/bookings")
@@ -360,6 +390,22 @@ export class AthleteCoachingController {
   ) {
     return this.bookings.cancelByAthlete(user.sub, bookingId, body.reason);
   }
+
+  @Patch("bookings/:bookingId/mock-payment/approve")
+  approveMockPayment(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("bookingId") bookingId: string,
+  ) {
+    return this.bookings.approveMockPayment(user.sub, bookingId);
+  }
+
+  @Patch("bookings/:bookingId/mock-payment/reject")
+  rejectMockPayment(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("bookingId") bookingId: string,
+  ) {
+    return this.bookings.rejectMockPayment(user.sub, bookingId);
+  }
 }
 
 @Controller("api/v1/public")
@@ -368,6 +414,7 @@ export class PublicCoachingController {
     private readonly coaches: CoachesService,
     private readonly offerings: OfferingsService,
     private readonly classes: TrainingClassesService,
+    private readonly sessions: SessionsService,
   ) {}
 
   @Get("coaches/:slug")
@@ -378,6 +425,11 @@ export class PublicCoachingController {
   @Get("coaches/:slug/services")
   getCoachServices(@Param("slug") slug: string) {
     return this.offerings.listPublicByCoachSlug(slug);
+  }
+
+  @Get("coaches/:slug/sessions")
+  getCoachSessions(@Param("slug") slug: string) {
+    return this.sessions.listPublicForCoachSlug(slug);
   }
 
   @Get("classes")
@@ -419,5 +471,49 @@ export class AdminCoachesController {
   @Patch(":coachId/review")
   review(@Param("coachId") coachId: string, @Body() body: ReviewCoachDto) {
     return this.coaches.review(coachId, body.status, body.reason);
+  }
+}
+
+@Controller("api/v1/admin/classes")
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles("admin")
+export class AdminClassesController {
+  constructor(private readonly classes: TrainingClassesService) {}
+
+  @Get()
+  list(@Query("q") query?: string, @Query("status") status?: string) {
+    return this.classes.listForAdmin(query, status);
+  }
+
+  @Patch(":classId/disable")
+  disable(@Param("classId") classId: string) {
+    return this.classes.disableForAdmin(classId);
+  }
+}
+
+@Controller("api/v1/business/clubs/:clubId/classes")
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles("owner")
+export class ClubClassesController {
+  constructor(private readonly classes: TrainingClassesService) {}
+
+  @Get()
+  list(@CurrentUser() user: AuthTokenPayload, @Param("clubId") clubId: string) {
+    return this.classes.listForClubOwner(user.sub, clubId);
+  }
+
+  @Patch(":classId/review")
+  review(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("classId") classId: string,
+    @Body() body: ReviewClubClassDto,
+  ) {
+    return this.classes.reviewForClubOwner(
+      user.sub,
+      clubId,
+      classId,
+      body.status,
+    );
   }
 }

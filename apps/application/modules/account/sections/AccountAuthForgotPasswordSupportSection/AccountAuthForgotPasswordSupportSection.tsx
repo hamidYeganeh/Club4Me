@@ -1,3 +1,5 @@
+"use client";
+
 import { Typography } from "@heroui/react";
 
 import { accountAuthForgotPasswordSupportSectionStyles } from "./AccountAuthForgotPasswordSupportSection.styles";

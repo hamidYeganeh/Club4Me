@@ -59,5 +59,7 @@ describe("coaching persistence schemas", () => {
         [{ ownerCoachId: 1, startAt: 1 }, expect.any(Object)],
       ]),
     );
+    expect(TrainingClassSchema.path("courtId")).toBeDefined();
+    expect(TrainingClassSchema.path("clubApprovalStatus")).toBeDefined();
   });
 });

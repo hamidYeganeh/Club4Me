@@ -4,10 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { tokenStore } from "../../http/token-store";
 import { locationsClient } from "./locations.client";
-import type {
-  CreateUserLocationPayload,
-  UpdateUserLocationPayload,
-} from "./locations.dto";
+import type { UpdateUserLocationPayload } from "./locations.dto";
 import { locationsQueries } from "./locations.queries";
 
 export function useUserLocations(enabled = true) {

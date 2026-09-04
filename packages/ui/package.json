@@ -5,6 +5,14 @@
   "exports": {
     "./charts": "./src/charts/index.ts",
     "./panel-frame": "./src/panel-frame.tsx",
+    "./amenity-card": "./src/amenity-card.tsx",
+    "./sport-card": "./src/sport-card.tsx",
+    "./article-card": "./src/article-card/index.ts",
+    "./city-card": "./src/city-card/index.ts",
+    "./reminder-card": "./src/reminder-card/index.ts",
+    "./coach-card": "./src/coach-card/index.ts",
+    "./club-card": "./src/club-card/index.ts",
+    "./uploader": "./src/uploader/index.ts",
     "./*": "./src/*.tsx"
   },
   "scripts": {
@@ -18,10 +26,14 @@
     "@types/node": "26.3.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
-    "eslint": "10.9.1",
-    "typescript": "7.0.2"
+    "eslint": "9.39.5",
+    "typescript": "5.9.3"
   },
   "dependencies": {
+    "@heroui/react": "^3.0.0",
+    "@repo/theme": "*",
+    "react-dropzone": "^14.3.8",
+    "tailwind-variants": "^3.3.1",
     "@visx/curve": "^4.0.0",
     "@visx/group": "^4.0.0",
     "@visx/responsive": "^4.0.0",

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { http } from "../../http/client";
+import { trackReviewSubmitted } from "../../tracking/tracking";
 import type {
   ClubReview,
   ClubReviewsResponse,
@@ -40,9 +41,15 @@ export function useCreateClubReview(clubId: string) {
   return useMutation({
     mutationFn: (payload: CreateClubReviewPayload) =>
       publicClubsClient.createReview(clubId, payload),
-    onSuccess: async () =>
-      queryClient.invalidateQueries({
+    onSuccess: async (_review, payload) => {
+      trackReviewSubmitted({
+        review_target_type: "club",
+        review_target_id: clubId,
+        rating: payload.rating,
+      });
+      return queryClient.invalidateQueries({
         queryKey: ["public", "clubs", clubId, "reviews"],
-      }),
+      });
+    },
   });
 }

@@ -59,6 +59,8 @@ export class ClubsRepository {
     const created = await this.model.create({
       _id: id,
       ownerId: toObjectId(ownerId),
+      createdBy: toObjectId(ownerId),
+      updatedBy: toObjectId(ownerId),
       ...payload,
       slug: `${slugify(input.name) || "club"}-${id.toHexString().slice(-6)}`,
       normalizedName: normalizeText(input.name),
@@ -88,6 +90,7 @@ export class ClubsRepository {
       payload.normalizedName = normalizeText(input.name);
     }
     Object.assign(club, payload);
+    club.updatedBy = toObjectId(ownerId);
     if (club.reviewStatus === "rejected") club.reviewStatus = "draft";
     await club.save();
     return toPublicClub(club);
@@ -138,6 +141,7 @@ export class ClubsRepository {
             reviewStatus: status,
             visibility: status === "approved" ? "public" : "hidden",
             rejectionReason: status === "rejected" ? reason?.trim() : null,
+            publishedAt: status === "approved" ? new Date() : null,
           },
         },
         { new: true },
@@ -155,6 +159,22 @@ export class ClubsRepository {
     return toPublicClub(club);
   }
 
+  async updateRatingStats(
+    clubId: string,
+    averageRating: number,
+    reviewsCount: number,
+  ): Promise<void> {
+    await this.model.updateOne(
+      { _id: clubId },
+      {
+        $set: {
+          averageRating: Math.round(averageRating * 100) / 100,
+          reviewsCount,
+        },
+      },
+    );
+  }
+
   private findDocumentForOwner(ownerId: string, clubId: string) {
     if (!Types.ObjectId.isValid(clubId)) return null;
     return this.model
@@ -166,24 +186,40 @@ export class ClubsRepository {
 function toPersistence(input: Partial<ClubFields>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   if (input.name !== undefined) result.name = input.name.trim();
+  if (input.shortDescription !== undefined)
+    result.shortDescription = input.shortDescription.trim();
   if (input.description !== undefined)
     result.description = input.description.trim();
+  for (const field of ["logoMediaId", "coverMediaId"] as const) {
+    if (input[field] !== undefined)
+      result[field] = input[field] ? new Types.ObjectId(input[field]!) : null;
+  }
   if (input.gallery !== undefined) {
     result.gallery = input.gallery.map((item) => ({
       mediaId: new Types.ObjectId(item.mediaId),
       ...(item.title ? { title: item.title.trim() } : {}),
+      ...(item.altText ? { altText: item.altText.trim() } : {}),
+      kind: item.kind ?? "image",
+      position: item.position ?? 0,
+      isCover: item.isCover ?? false,
     }));
   }
   if (input.equipment !== undefined) {
     result.equipment = input.equipment.map((item) => ({
       resourceId: new Types.ObjectId(item.resourceId),
       quantity: item.quantity,
+      reservableQuantity: item.reservableQuantity ?? 0,
+      status: item.status ?? "available",
+      description: item.description?.trim() ?? "",
     }));
   }
   if (input.amenities !== undefined) {
     result.amenities = input.amenities.map((item) => ({
       resourceId: new Types.ObjectId(item.resourceId),
       quantity: item.quantity,
+      availability: item.availability ?? "included",
+      price: item.price,
+      description: item.description?.trim() ?? "",
     }));
   }
   if (input.rules !== undefined) result.rules = uniqueText(input.rules, false);
@@ -200,6 +236,9 @@ function toPersistence(input: Partial<ClubFields>): Record<string, unknown> {
       ),
     };
     result.address = input.location.address.trim();
+    result.postalCode = input.location.postalCode?.trim() ?? "";
+    result.timezone = input.location.timezone;
+    result.locationNotes = input.location.locationNotes?.trim() ?? "";
     result.location = {
       type: "Point",
       coordinates: [input.location.longitude, input.location.latitude],
@@ -208,12 +247,38 @@ function toPersistence(input: Partial<ClubFields>): Record<string, unknown> {
   if (input.socialMedia !== undefined) result.socialMedia = input.socialMedia;
   if (input.clubTypeIds !== undefined)
     result.clubTypeIds = input.clubTypeIds.map((id) => new Types.ObjectId(id));
+  if (input.sportIds !== undefined)
+    result.sportIds = input.sportIds.map((id) => new Types.ObjectId(id));
   if (input.tags !== undefined) result.tags = uniqueText(input.tags, true);
   if (input.cancellationRules !== undefined) {
     result.cancellationRules = input.cancellationRules.map((rule) => ({
+      ...(rule.id ? { _id: new Types.ObjectId(rule.id) } : {}),
       title: rule.title.trim(),
+      version: rule.version ?? 1,
+      priority: rule.priority ?? 0,
+      sessionTypes: rule.sessionTypes ?? [],
+      daysOfWeek: rule.daysOfWeek ?? [],
+      courtIds: (rule.courtIds ?? []).map((id) => new Types.ObjectId(id)),
+      reservationCutoffMinutes: rule.reservationCutoffMinutes ?? 0,
+      rescheduleCutoffMinutes: rule.rescheduleCutoffMinutes ?? 0,
+      noShowRefundPercent: rule.noShowRefundPercent ?? 0,
+      ownerCancellationRefundPercent:
+        rule.ownerCancellationRefundPercent ?? 100,
+      isActive: rule.isActive ?? true,
       tiers: [...rule.tiers].sort((a, b) => b.hoursBefore - a.hoursBefore),
     }));
+  }
+  if (input.weeklyHours !== undefined) result.weeklyHours = input.weeklyHours;
+  if (input.closures !== undefined) result.closures = input.closures;
+  for (const field of [
+    "audience",
+    "minAge",
+    "maxAge",
+    "currency",
+    "taxPercent",
+    "operationalStatus",
+  ] as const) {
+    if (input[field] !== undefined) result[field] = input[field];
   }
   return result;
 }

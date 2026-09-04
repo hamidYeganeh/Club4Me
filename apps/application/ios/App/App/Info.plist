@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Club4Me</string>
+        <string>Gym4Me</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -74,6 +74,6 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>برای نمایش باشگاه‌های نزدیک، Club4Me به موقعیت مکانی شما نیاز دارد.</string>
+	<string>برای نمایش باشگاه‌های نزدیک، Gym4Me به موقعیت مکانی شما نیاز دارد.</string>
 </dict>
 </plist>

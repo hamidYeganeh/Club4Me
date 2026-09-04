@@ -21,7 +21,8 @@ export type BarProps = {
   radius?: number;
 };
 
-export function Bar(_props: BarProps): null {
+export function Bar(props: BarProps): null {
+  void props;
   return null;
 }
 

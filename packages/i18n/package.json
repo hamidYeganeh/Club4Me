@@ -17,6 +17,7 @@
     "next-intl": "^4.3.4"
   },
   "devDependencies": {
+    "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",
     "@types/react": "^19",
     "react": "19.2.8",

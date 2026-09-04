@@ -1,0 +1,1 @@
+export { CoachClassFormScreen } from "./CoachClassFormScreen";

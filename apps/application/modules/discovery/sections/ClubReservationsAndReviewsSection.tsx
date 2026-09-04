@@ -7,8 +7,11 @@ import {
   useCreateClubReview,
   useReservableSessions,
   useReserveSession,
+  useResolveMockClubPayment,
 } from "@api";
 import { useTranslations } from "next-intl";
+
+import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGateway";
 
 const field =
   "h-11 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm outline-none focus:border-accent";
@@ -22,15 +25,21 @@ export function ClubReservationsAndReviewsSection({
   const sessions = useReservableSessions(clubId);
   const reviews = useClubReviews(clubId);
   const reserve = useReserveSession();
+  const resolvePayment = useResolveMockClubPayment();
   const createReview = useCreateClubReview(clubId);
   const [participants, setParticipants] = useState<Record<string, number>>({});
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [rating, setRating] = useState(5);
   const [reviewBody, setReviewBody] = useState("");
+  const [pendingPayment, setPendingPayment] = useState<{
+    id: string;
+    title: string;
+    amount: number;
+  } | null>(null);
 
   const book = async (sessionId: string, optionIds: string[]) => {
     try {
-      await reserve.mutateAsync({
+      const result = await reserve.mutateAsync({
         sessionId,
         participantCount: participants[sessionId] ?? 1,
         options: optionIds
@@ -40,9 +49,35 @@ export function ClubReservationsAndReviewsSection({
           }))
           .filter((item) => item.quantity > 0),
       });
-      toast.success(t("reserved"));
+      if (result.paymentStatus === "pending") {
+        setPendingPayment({
+          id: result.id,
+          title: result.sessionTitle,
+          amount: result.totalPrice,
+        });
+      } else {
+        toast.success(t("reserved"));
+      }
     } catch {
       toast.danger(t("reserveError"));
+    }
+  };
+
+  const finishPayment = async (result: "approve" | "reject") => {
+    if (!pendingPayment) return;
+    try {
+      await resolvePayment.mutateAsync({
+        reservationId: pendingPayment.id,
+        result,
+      });
+      if (result === "approve") {
+        toast.success("پرداخت آزمایشی موفق بود و رزرو قطعی شد");
+      } else {
+        toast.danger("پرداخت ناموفق بود و ظرفیت رزرو آزاد شد");
+      }
+      setPendingPayment(null);
+    } catch {
+      toast.danger("ثبت نتیجه پرداخت انجام نشد");
     }
   };
 
@@ -59,6 +94,14 @@ export function ClubReservationsAndReviewsSection({
 
   return (
     <section className="mx-auto w-full max-w-4xl space-y-8 px-4 pb-8">
+      {pendingPayment ? (
+        <MockPaymentGateway
+          title={pendingPayment.title}
+          amount={pendingPayment.amount}
+          isPending={resolvePayment.isPending}
+          onResult={(result) => void finishPayment(result)}
+        />
+      ) : null}
       <div>
         <Typography type="h4">{t("sessions")}</Typography>
         {sessions.isPending ? (
@@ -152,7 +195,9 @@ export function ClubReservationsAndReviewsSection({
               </Card>
             ))}
             {!sessions.data?.items.length && (
-              <Typography type="body-sm" color="muted">{t("noSessions")}</Typography>
+              <Typography type="body-sm" color="muted">
+                {t("noSessions")}
+              </Typography>
             )}
           </div>
         )}
@@ -207,10 +252,14 @@ export function ClubReservationsAndReviewsSection({
                 {t("stars", { count: review.rating })}
               </Typography>
               {review.title && (
-                <Typography type="h6" weight="medium" className="mt-2">{review.title}</Typography>
+                <Typography type="h6" weight="medium" className="mt-2">
+                  {review.title}
+                </Typography>
               )}
               {review.body && (
-                <Typography type="body-sm" color="muted" className="mt-1">{review.body}</Typography>
+                <Typography type="body-sm" color="muted" className="mt-1">
+                  {review.body}
+                </Typography>
               )}
             </article>
           ))}

@@ -18,7 +18,7 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
         <PanelRailSection
           addHref="/"
           addLabel={t("panel.add")}
-          avatarSrc="https://picsum.photos/seed/club4me-admin/160/160"
+          avatarSrc="https://picsum.photos/seed/gym4me-admin/160/160"
           avatarAlt={t("adminDashboard.profileName")}
           badge="2"
           items={[
@@ -39,6 +39,11 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
               label: t("panel.articles"),
             },
             {
+              href: "/discovery",
+              icon: "sparkle-1",
+              label: "چیدمان دیسکاوری",
+            },
+            {
               href: "/resources",
               icon: "database",
               label: t("panel.resources"),
@@ -49,9 +54,29 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
               label: t("panel.roleRequests"),
             },
             {
+              href: "/users",
+              icon: "users-three",
+              label: "کاربران",
+            },
+            {
+              href: "/reports",
+              icon: "flag-1",
+              label: "گزارش‌ها",
+            },
+            {
               href: "/coach",
               icon: "chat",
               label: t("panel.coach"),
+            },
+            {
+              href: "/classes",
+              icon: "calendar-1",
+              label: "کلاس‌ها",
+            },
+            {
+              href: "/app-releases",
+              icon: "mobile",
+              label: "انتشار نسخه اپ",
             },
             {
               href: "/settings",

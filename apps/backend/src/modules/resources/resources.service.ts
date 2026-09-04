@@ -376,7 +376,7 @@ export class ResourcesService {
           $setOnInsert: {
             title: sample.title,
             slug: sample.slug,
-            authorName: "تیم محتوای Club4Me",
+            authorName: "تیم محتوای Gym4Me",
             categoryId: category._id,
             excerpt: sample.excerpt,
             bodyHtml: sample.bodyHtml,

@@ -1,49 +1,66 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Spinner } from "@heroui/react";
-import { usePublicClub } from "@api";
+import { useRouter } from "next/navigation";
+import { Spinner, toast } from "@heroui/react";
+import {
+  tokenStore,
+  useCreateReport,
+  usePublicClub,
+  useToggleFavorite,
+} from "@api";
 import type { Swiper as SwiperType } from "swiper";
 import { useTranslations } from "next-intl";
-import { getDiscoveryClub } from "@modules/discovery/discovery.utils";
 import { DiscoveryClubsDetailActionsSection } from "@modules/discovery/sections/DiscoveryClubsDetailActionsSection";
 import { DiscoveryClubsDetailBodySection } from "@modules/discovery/sections/DiscoveryClubsDetailBodySection";
 import { DiscoveryClubsDetailHeroSection } from "@modules/discovery/sections/DiscoveryClubsDetailHeroSection";
 import { DiscoveryClubsDetailStickyHeaderSection } from "@modules/discovery/sections/DiscoveryClubsDetailStickyHeaderSection";
 import { ClubReservationsAndReviewsSection } from "@modules/discovery/sections/ClubReservationsAndReviewsSection";
+import { iconNames, type IconName } from "@theme/icon";
 
 import type { DiscoveryClubsDetailScreenProps } from "./DiscoveryClubsDetailScreen.types";
+import type { DiscoveryFacilityItem } from "@modules/discovery/discovery.types";
+
+const ICON_NAME_SET = new Set<string>(iconNames);
+
+function toIconName(value?: string): IconName | undefined {
+  if (!value || !ICON_NAME_SET.has(value)) {
+    return undefined;
+  }
+  return value as IconName;
+}
+
+function toFacilityItem(input: {
+  id: string;
+  title?: string;
+  quantity?: number;
+  description?: string;
+  icon?: string;
+  imageUrl?: string;
+}): DiscoveryFacilityItem {
+  return {
+    id: input.id,
+    title: input.title ?? input.id,
+    count: input.quantity,
+    description: input.description,
+    icon: toIconName(input.icon),
+    backgroundImage: input.imageUrl,
+  };
+}
 
 export function DiscoveryClubsDetailScreen({
   clubId,
 }: DiscoveryClubsDetailScreenProps) {
-  const previewClub = getDiscoveryClub(clubId);
+  const router = useRouter();
   const publicClub = usePublicClub(clubId);
   const isPersistedClub = /^[a-f\d]{24}$/i.test(clubId);
-  const club = publicClub.data
-    ? {
-        id: publicClub.data.id,
-        name: publicClub.data.name,
-        location: publicClub.data.location?.address ?? "",
-        price: 0,
-        rating: "جدید",
-        duration: "—",
-        distance: "—",
-        about: publicClub.data.description,
-        images: publicClub.data.gallery.map((item) => item.url),
-        map: {
-          address: publicClub.data.location?.address ?? "",
-          latitude: publicClub.data.location?.latitude ?? 35.6892,
-          longitude: publicClub.data.location?.longitude ?? 51.389,
-        },
-      }
-    : previewClub;
+  const favorite = useToggleFavorite("club", isPersistedClub ? clubId : "");
+  const report = useCreateReport();
   const t = useTranslations("discovery.clubDetail");
   const heroRef = useRef<HTMLElement>(null);
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [mainSwiper, setMainSwiper] = useState<SwiperType | null>(null);
   const [stickyHeaderVisible, setStickyHeaderVisible] = useState(false);
-  const [favorited, setFavorited] = useState(false);
 
   useEffect(() => {
     const hero = heroRef.current;
@@ -62,15 +79,7 @@ export function DiscoveryClubsDetailScreen({
     return () => observer.disconnect();
   }, []);
 
-  if (isPersistedClub && publicClub.isPending) {
-    return (
-      <main className="flex min-h-dvh items-center justify-center bg-background">
-        <Spinner />
-      </main>
-    );
-  }
-
-  if (isPersistedClub && publicClub.isError) {
+  if (!isPersistedClub || publicClub.isError) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-background p-6 text-center text-muted">
         {t("notFound")}
@@ -78,9 +87,78 @@ export function DiscoveryClubsDetailScreen({
     );
   }
 
+  if (publicClub.isPending) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-background">
+        <Spinner />
+      </main>
+    );
+  }
+
+  const data = publicClub.data;
+  const location = data?.location;
+  if (!data || !location) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-background p-6 text-center text-muted">
+        {t("notFound")}
+      </main>
+    );
+  }
+
+  const club = {
+    id: data.id,
+    name: data.name,
+    location: location.address,
+    rating:
+      data.reviewsCount > 0
+        ? data.averageRating.toLocaleString("fa-IR", {
+            maximumFractionDigits: 1,
+          })
+        : "جدید",
+    about: data.description,
+    amenities: data.amenities.map((item) =>
+      toFacilityItem({
+        id: item.amenityId,
+        title: item.title,
+        quantity: item.quantity,
+        description: item.description,
+        icon: item.icon,
+        imageUrl: item.imageUrl,
+      }),
+    ),
+    equipment: data.equipment.map((item) =>
+      toFacilityItem({
+        id: item.equipmentId,
+        title: item.title,
+        quantity: item.quantity,
+        description: item.description,
+        icon: item.icon,
+        imageUrl: item.imageUrl,
+      }),
+    ),
+    sports: [],
+    coaches: [],
+    images: data.gallery
+      .filter((item) => item.mimeType.startsWith("image/"))
+      .map((item) => item.url),
+    map: {
+      address: location.address,
+      latitude: location.latitude,
+      longitude: location.longitude,
+    },
+  };
+
   const clubStats = [
-    { icon: "clock" as const, label: t("duration"), value: club.duration },
-    { icon: "compass" as const, label: t("distance"), value: club.distance },
+    {
+      icon: "clock" as const,
+      label: "روزهای کاری",
+      value: `${data.weeklyHours.filter((item) => !item.isClosed).length.toLocaleString("fa-IR")} روز`,
+    },
+    {
+      icon: "compass" as const,
+      label: "وضعیت",
+      value: data.operationalStatus === "active" ? "فعال" : "موقتاً بسته",
+    },
     { icon: "star-full" as const, label: t("rating"), value: club.rating },
   ];
 
@@ -89,8 +167,14 @@ export function DiscoveryClubsDetailScreen({
       <DiscoveryClubsDetailStickyHeaderSection
         visible={stickyHeaderVisible}
         name={club.name}
-        favorited={favorited}
-        onFavoritePress={() => setFavorited((value) => !value)}
+        favorited={favorite.active}
+        onFavoritePress={() => {
+          if (!isPersistedClub || !tokenStore.get()) {
+            router.push("/auth");
+            return;
+          }
+          favorite.mutation.mutate();
+        }}
       />
 
       <DiscoveryClubsDetailHeroSection
@@ -98,7 +182,7 @@ export function DiscoveryClubsDetailScreen({
         clubId={club.id}
         name={club.name}
         location={club.location}
-        price={club.price}
+        statusLabel={data.operationalStatus === "active" ? "فعال" : "بسته"}
         images={club.images}
         thumbsSwiper={thumbsSwiper}
         onMainSwiper={setMainSwiper}
@@ -107,6 +191,10 @@ export function DiscoveryClubsDetailScreen({
       <DiscoveryClubsDetailBodySection
         images={club.images}
         about={club.about}
+        amenities={club.amenities}
+        equipment={club.equipment}
+        sports={club.sports}
+        coaches={club.coaches}
         location={club.map}
         stats={clubStats}
         onThumbsSwiper={setThumbsSwiper}
@@ -118,9 +206,50 @@ export function DiscoveryClubsDetailScreen({
         }}
       />
 
-      {isPersistedClub && <ClubReservationsAndReviewsSection clubId={clubId} />}
+      <ClubReservationsAndReviewsSection clubId={clubId} />
 
-      <DiscoveryClubsDetailActionsSection />
+      <DiscoveryClubsDetailActionsSection
+        primaryLabel={t("openInNeshan")}
+        onBook={() => {
+          window.open(
+            `https://nshn.ir/?lat=${club.map.latitude}&lng=${club.map.longitude}`,
+            "_blank",
+            "noopener,noreferrer",
+          );
+        }}
+        onShare={() => {
+          if (navigator.share) {
+            void navigator.share({
+              title: club.name,
+              url: window.location.href,
+            });
+          } else {
+            void navigator.clipboard?.writeText(window.location.href);
+          }
+        }}
+        onReport={() => {
+          if (!tokenStore.get()) {
+            router.push("/auth");
+            return;
+          }
+          const details = window
+            .prompt("چه اطلاعاتی در این صفحه نادرست است؟")
+            ?.trim();
+          if (!details) return;
+          report.mutate(
+            {
+              targetType: "club",
+              targetId: clubId,
+              reason: "اطلاعات نادرست",
+              details,
+            },
+            {
+              onSuccess: () => toast.success("گزارش شما ثبت شد"),
+              onError: () => toast.danger("ثبت گزارش ناموفق بود"),
+            },
+          );
+        }}
+      />
 
       <div className="h-dvh" />
     </main>

@@ -83,3 +83,161 @@ export type ListClassesResponse = {
 export type ListSlotsResponse = {
   items: ClubSlot[];
 };
+
+export type DiscoveryBannerItem = {
+  title: string;
+  subtitle: string;
+  imageUrl: string;
+  actionLabel: string;
+  actionUrl: string;
+};
+
+export type DiscoveryClubItem = Pick<Club, "id" | "name" | "slug"> & {
+  shortDescription: string;
+  logoMediaId: string | null;
+  coverMediaId: string | null;
+  averageRating: number;
+  reviewsCount: number;
+  sportIds: string[];
+  tags: string[];
+};
+
+export type DiscoveryCoachItem = {
+  id: string;
+  slug: string;
+  displayName: string;
+  shortBio: string;
+  avatarMediaId: string | null;
+  coverMediaId: string | null;
+  experienceYears: number;
+  serviceModes: string[];
+  averageRating: number;
+  reviewsCount: number;
+};
+
+export type DiscoveryArticleItem = {
+  id: string;
+  title: string;
+  slug: string;
+  authorName: string;
+  categoryId: string;
+  excerpt: string;
+  coverImageUrl: string | null;
+  publishedAt: string | null;
+};
+
+type DiscoverySectionBase<TType extends string, TItem> = {
+  id: string;
+  key: string;
+  type: TType;
+  title: string;
+  subtitle: string;
+  layout: string;
+  viewAllLabel: string;
+  viewAllUrl: string;
+  items: TItem[];
+};
+
+export type DiscoverySection =
+  | DiscoverySectionBase<"banners", DiscoveryBannerItem>
+  | DiscoverySectionBase<"clubs", DiscoveryClubItem>
+  | DiscoverySectionBase<"coaches", DiscoveryCoachItem>
+  | DiscoverySectionBase<"articles", DiscoveryArticleItem>;
+
+export type PublicCatalogParams = {
+  q?: string;
+  page?: number;
+  limit?: number;
+  sort?: "newest" | "rating";
+  cityId?: string;
+  cityRegionId?: string;
+  sportId?: string;
+  clubTypeId?: string;
+  amenityId?: string;
+  equipmentId?: string;
+  coachId?: string;
+  clubId?: string;
+  serviceMode?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
+};
+
+export type PublicCatalogClub = DiscoveryClubItem & {
+  imageUrl: string | null;
+  address: string;
+  geo: {
+    cityId: string | null;
+    districtId: string | null;
+    cityRegionIds: string[];
+  } | null;
+  location: { type: "Point"; coordinates: [number, number] } | null;
+  clubTypeIds: string[];
+  amenityIds: string[];
+  equipmentIds: string[];
+  socialMedia: Array<{ platform: string; link: string }>;
+  weeklyHours: Array<{
+    dayOfWeek: number;
+    periods: Array<{ opensAt: string; closesAt: string }>;
+    isClosed: boolean;
+  }>;
+  operationalStatus: string;
+};
+
+export type PublicCatalogCoach = DiscoveryCoachItem & {
+  imageUrl: string | null;
+  contact: Record<string, unknown>;
+};
+
+export type PublicCatalogClass = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  imageMediaId: string | null;
+  imageUrl: string | null;
+  sportId: string;
+  clubId: string | null;
+  coachIds: string[];
+  deliveryMode: string;
+  capacity: number;
+  enrollmentCount: number;
+  courseStartAt: string;
+  courseEndAt: string;
+  registrationStartAt: string | null;
+  registrationEndAt: string | null;
+  price: { amount: number; currency: string };
+  venue: {
+    clubId?: string;
+    courtId?: string;
+    address?: string;
+    onlineUrl?: string;
+  } | null;
+  prerequisites: string[];
+  status: string;
+};
+
+export type PublicCatalogPage<T> = {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type PublicCatalogSearchResponse = {
+  clubs: PublicCatalogClub[];
+  coaches: PublicCatalogCoach[];
+  classes: PublicCatalogClass[];
+  total: number;
+};
+
+export type PublicResourceItem = {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  [key: string]: unknown;
+};
+
+export type PublicResourcePage = PublicCatalogPage<PublicResourceItem>;

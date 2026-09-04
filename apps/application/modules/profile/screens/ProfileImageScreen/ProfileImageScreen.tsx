@@ -11,7 +11,9 @@ import type { ProfileImageScreenProps } from "./ProfileImageScreen.types";
 export function ProfileImageScreen({ role }: ProfileImageScreenProps) {
   const t = useTranslations("profile");
   const tCommon = useTranslations("common");
-  const [previewSrc, setPreviewSrc] = useState<string | null>(PROFILE_AVATAR_SRC);
+  const [previewSrc, setPreviewSrc] = useState<string | null>(
+    PROFILE_AVATAR_SRC,
+  );
 
   useEffect(() => {
     return () => {
@@ -22,7 +24,7 @@ export function ProfileImageScreen({ role }: ProfileImageScreenProps) {
   }, [previewSrc]);
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col bg-background px-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
+    <main className="flex min-h-0 w-full max-w-full flex-1 flex-col overflow-x-hidden bg-transparent px-5">
       <AccountAuthOtpHeaderSection
         backLabel={tCommon("back")}
         href={`/${role}/profile`}
@@ -32,14 +34,7 @@ export function ProfileImageScreen({ role }: ProfileImageScreenProps) {
         avatarAlt={t("avatarAlt", { name: t("fallbackName") })}
         avatarSrc={previewSrc}
         fallback={t("fallbackName")}
-        uploadLabel={t("upload")}
-        onUpload={(event) => {
-          const file = event.target.files?.[0];
-
-          if (!file) {
-            return;
-          }
-
+        onFile={(file) => {
           const nextSrc = URL.createObjectURL(file);
           setPreviewSrc((current) => {
             if (current?.startsWith("blob:")) {

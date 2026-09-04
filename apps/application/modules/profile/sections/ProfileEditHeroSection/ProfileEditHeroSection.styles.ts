@@ -2,10 +2,10 @@ import { tv } from "tailwind-variants";
 
 export const profileEditHeroSectionStyles = tv({
   slots: {
-    root: "relative bg-default px-5 pb-8 pt-[max(0.75rem,env(safe-area-inset-top))] rounded-b-[4.5rem]",
+    root: "relative rounded-b-[3rem] border-b border-white/7 bg-surface/72 px-5 pb-8 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl",
     back: "absolute start-3 top-[max(0.85rem,env(safe-area-inset-top))] z-10 size-11 min-w-11",
-    title: "mx-auto max-w-[16.5rem] pt-12",
-    avatarWrap: "mt-8 flex justify-center",
+    title: "app-reveal mx-auto max-w-[18rem] pt-12",
+    avatarWrap: "app-reveal mt-8 flex justify-center",
     avatarLink:
       "relative inline-flex rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus",
     avatar:

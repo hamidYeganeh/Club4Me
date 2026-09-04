@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { Icon } from "@theme/icon";
 import { useReducedMotion } from "motion/react";
 import type { Swiper as SwiperType } from "swiper";
@@ -11,7 +12,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 
 import { Typography } from "@heroui/react";
-import { markWelcomeSeen } from "@/lib/welcome-onboarding";
+import { getLocaleDirection } from "@/lib/locale-direction";
+import { POST_WELCOME_PATH, markWelcomeSeen } from "@/lib/welcome-onboarding";
 
 import { welcomeIntroduceCarouselSectionStyles } from "./WelcomeIntroduceCarouselSection.styles";
 import type { WelcomeIntroduceCarouselSectionProps } from "./WelcomeIntroduceCarouselSection.types";
@@ -26,6 +28,7 @@ export function WelcomeIntroduceCarouselSection({
   const styles = welcomeIntroduceCarouselSectionStyles();
   const router = useRouter();
   const reduceMotion = useReducedMotion();
+  const direction = getLocaleDirection(useLocale());
   const [swiper, setSwiper] = useState<SwiperType | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -34,14 +37,14 @@ export function WelcomeIntroduceCarouselSection({
 
   function completeWelcome() {
     markWelcomeSeen();
-    router.replace("/athlete");
+    router.replace(POST_WELCOME_PATH);
   }
 
   return (
     <div className={styles.root()}>
       <div className={styles.stage()}>
         <Swiper
-          dir="ltr"
+          dir={direction}
           slidesPerView={1}
           speed={reduceMotion ? 0 : 380}
           observer
@@ -95,7 +98,7 @@ export function WelcomeIntroduceCarouselSection({
 
         <div
           className={styles.pagination()}
-          dir="rtl"
+          dir={direction}
           role="tablist"
           aria-label={paginationLabel}
         >

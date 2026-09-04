@@ -7,7 +7,7 @@ type ThemeProviderProps = {
   children: ReactNode;
 };
 
-const THEME_VT_STYLE_ID = "club4me-theme-vt-css";
+const THEME_VT_STYLE_ID = "gym4me-theme-vt-css";
 
 const THEME_VT_CSS = `
 ::view-transition-old(root),

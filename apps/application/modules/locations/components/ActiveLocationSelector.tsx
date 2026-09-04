@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Geolocation } from "@capacitor/geolocation";
 import { useUserLocations } from "@api/locations";
 import { Icon } from "@theme/icon";
+import { getCurrentPosition } from "@/lib/native-geolocation";
 
 import { Typography } from "@heroui/react";
 import { useActiveLocation } from "../active-location";
@@ -19,16 +19,12 @@ export function ActiveLocationSelector() {
       ? active.location.title
       : (active?.title ?? "انتخاب لوکیشن");
 
-  async function useCurrentLocation() {
+  async function locateCurrentPosition() {
     setLocating(true);
     setGpsError(false);
     try {
       // This explicit click is the only point where GPS permission is requested.
-      const position = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 12_000,
-        maximumAge: 30_000,
-      });
+      const position = await getCurrentPosition();
       selectGps(position.coords.latitude, position.coords.longitude);
       setOpen(false);
     } catch {
@@ -56,7 +52,7 @@ export function ActiveLocationSelector() {
           <button
             type="button"
             disabled={locating}
-            onClick={() => void useCurrentLocation()}
+            onClick={() => void locateCurrentPosition()}
             className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-start text-sm hover:bg-surface-secondary disabled:opacity-50"
           >
             <Icon name="compass" size={18} />
@@ -79,7 +75,9 @@ export function ActiveLocationSelector() {
             >
               <span className="truncate">{location.title}</span>
               {location.isDefault ? (
-                <Typography type="body-xs" color="muted">پیش‌فرض</Typography>
+                <Typography type="body-xs" color="muted">
+                  پیش‌فرض
+                </Typography>
               ) : null}
             </button>
           ))}

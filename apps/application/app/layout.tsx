@@ -1,9 +1,17 @@
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@theme/provider";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTimeZone } from "next-intl/server";
 
 import { AppApiProvider } from "@/components/app-api-provider";
+import { AppMotion } from "@/components/app-motion";
+import { AppRouteGate } from "@/components/app-route-gate";
+import { AppReleaseGate } from "@/components/app-release-gate";
+import { AppPushNotifications } from "@/components/push-notifications";
+import { NetworkStatus } from "@/components/network-status";
+import { Observability } from "@/components/observability";
+import { ProductTelemetry } from "@/components/product-telemetry";
 import { CapacitorNative } from "@/components/capacitor-native";
 import { KeyboardInsets } from "@/components/keyboard-insets";
 import { MainBottomNavigation } from "@/components/main-bottom-navigation";
@@ -16,8 +24,8 @@ import { ActiveLocationProvider } from "@modules/locations/active-location";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Club4Me Application",
-  description: "Club4Me member application",
+  title: "Gym4Me Application",
+  description: "Gym4Me member application",
 };
 
 export const viewport: Viewport = {
@@ -38,8 +46,13 @@ export default async function RootLayout({
   const timeZone = await getTimeZone();
 
   return (
-    <html lang={locale} dir="rtl" className="h-full" suppressHydrationWarning>
-      <body className="flex h-full flex-col bg-background text-foreground font-sans antialiased">
+    <html
+      lang={locale}
+      dir="rtl"
+      className="dark h-full"
+      suppressHydrationWarning
+    >
+      <body className="flex h-full flex-col overflow-x-hidden bg-background text-foreground font-sans antialiased">
         <ThemeProvider>
           <NextIntlClientProvider
             locale={locale}
@@ -48,14 +61,24 @@ export default async function RootLayout({
           >
             <AppApiProvider>
               <ActiveLocationProvider>
-                <div className="flex h-full min-h-0 flex-1 flex-col">
+                <div className="mx-auto flex h-full min-h-0 w-full max-w-xl flex-1 flex-col">
+                  <Suspense fallback={null}>
+                    <AppMotion />
+                  </Suspense>
                   <CapacitorNative />
                   <KeyboardInsets />
                   <SplashScreen />
                   <AppToastProvider />
+                  <AppReleaseGate />
+                  <AppPushNotifications />
+                  <NetworkStatus />
+                  <Observability />
+                  <ProductTelemetry />
                   <SsgoiProvider>
-                    <div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-clip">
-                      <SsgoiRouteBoundary>{children}</SsgoiRouteBoundary>
+                    <div className="app-scroll-root relative z-0 flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-clip">
+                      <SsgoiRouteBoundary>
+                        <AppRouteGate>{children}</AppRouteGate>
+                      </SsgoiRouteBoundary>
                     </div>
                     <MainBottomNavigation />
                   </SsgoiProvider>

@@ -2,17 +2,26 @@ import { tv } from "tailwind-variants";
 
 export const accountAuthOtpHeaderSectionStyles = tv({
   slots: {
-    root: "flex w-full items-center self-stretch pb-2",
-    back: "size-11 min-w-11",
+    root: "app-header",
+    spacer: "app-header-spacer",
+    back: "app-icon-button",
   },
   variants: {
     overlay: {
       true: {
-        back: "border-border/50 bg-background/55 backdrop-blur-md",
+        root: "border-transparent bg-background/48 shadow-none",
+        spacer: "hidden",
+        back: "border-white/8 bg-background/58 backdrop-blur-xl",
+      },
+    },
+    transparent: {
+      true: {
+        root: "bg-transparent backdrop-blur-none",
       },
     },
   },
   defaultVariants: {
     overlay: false,
+    transparent: false,
   },
 });

@@ -13,7 +13,6 @@ export type SettingsContentSectionProps = {
   accountType: string;
   regular: string;
   changeAvatar: string;
-  uploadHint: string;
   paymentsTitle: string;
   paymentsHint: string;
   autoPayout: string;

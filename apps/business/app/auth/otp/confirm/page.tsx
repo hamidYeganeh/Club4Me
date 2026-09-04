@@ -3,7 +3,7 @@ import { AccountAuthOtpConfirmScreen } from "@modules/account/screens/AccountAut
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "تأیید کد | پنل باشگاه کلاب فور می",
+  title: "تأیید کد | پنل باشگاه جیم فور می",
 };
 
 export default function AuthOtpConfirmPage() {

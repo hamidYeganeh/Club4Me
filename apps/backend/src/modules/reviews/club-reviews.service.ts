@@ -4,7 +4,14 @@ import { Model, Types } from "mongoose";
 
 import { AppError } from "../../common/errors/app.exception";
 import { ClubsService } from "../clubs/clubs.service";
+import { ClubsRepository } from "../clubs/clubs.repository";
+import { MediaService } from "../media/media.service";
+import {
+  Reservation,
+  type ReservationDocument,
+} from "../reservations/schemas/reservation.schema";
 import type { CreateClubReviewDto } from "./dto/create-club-review.dto";
+import type { RespondToClubReviewDto } from "./dto/create-club-review.dto";
 import {
   ClubReview,
   type ClubReviewDocument,
@@ -16,6 +23,10 @@ export class ClubReviewsService {
     @InjectModel(ClubReview.name)
     private readonly reviews: Model<ClubReviewDocument>,
     private readonly clubs: ClubsService,
+    private readonly clubRepository: ClubsRepository,
+    @InjectModel(Reservation.name)
+    private readonly reservations: Model<ReservationDocument>,
+    private readonly media: MediaService,
   ) {}
 
   async list(clubId: string) {
@@ -54,14 +65,35 @@ export class ClubReviewsService {
         "An owner cannot review their own club",
       );
     }
+    const reservation = await this.reservations
+      .findOne({
+        clubId: objectId(clubId, "CLUB_NOT_FOUND"),
+        userId: objectId(userId, "USER_NOT_FOUND"),
+        status: "completed",
+      })
+      .sort({ sessionStartsAt: -1 })
+      .exec();
+    if (!reservation) {
+      throw new AppError(
+        403,
+        "COMPLETED_RESERVATION_REQUIRED",
+        "A completed reservation is required to review this club",
+      );
+    }
+    await this.media.assertOwnedReady(userId, input.mediaIds);
     try {
       const review = await this.reviews.create({
         clubId: objectId(clubId, "CLUB_NOT_FOUND"),
         userId: objectId(userId, "USER_NOT_FOUND"),
+        reservationId: reservation._id,
         rating: input.rating,
         title: input.title?.trim(),
         body: input.body.trim(),
+        ratings: input.ratings ?? {},
+        mediaIds: input.mediaIds.map((id) => objectId(id, "MEDIA_NOT_FOUND")),
+        isVerifiedBooking: true,
       });
+      await this.refreshClubRating(clubId);
       return toPublic(review);
     } catch (error) {
       if (isDuplicate(error)) {
@@ -74,6 +106,63 @@ export class ClubReviewsService {
       throw error;
     }
   }
+
+  async respond(
+    ownerId: string,
+    clubId: string,
+    reviewId: string,
+    input: RespondToClubReviewDto,
+  ) {
+    await this.clubs.get(ownerId, clubId);
+    const review = await this.reviews
+      .findOneAndUpdate(
+        {
+          _id: objectId(reviewId, "REVIEW_NOT_FOUND"),
+          clubId: objectId(clubId, "CLUB_NOT_FOUND"),
+          status: "published",
+        },
+        {
+          $set: {
+            ownerResponse: {
+              body: input.body.trim(),
+              respondedAt: new Date(),
+              respondedBy: objectId(ownerId, "OWNER_NOT_FOUND"),
+            },
+          },
+        },
+        { new: true },
+      )
+      .exec();
+    if (!review)
+      throw new AppError(404, "REVIEW_NOT_FOUND", "Review not found");
+    return toPublic(review);
+  }
+
+  private async refreshClubRating(clubId: string) {
+    const summary = await this.reviews.aggregate<{
+      averageRating: number;
+      reviewsCount: number;
+    }>([
+      {
+        $match: {
+          clubId: objectId(clubId, "CLUB_NOT_FOUND"),
+          status: "published",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          averageRating: { $avg: "$rating" },
+          reviewsCount: { $sum: 1 },
+        },
+      },
+    ]);
+    await this.clubRepository.updateRatingStats(
+      clubId,
+      summary[0]?.averageRating ?? 0,
+      summary[0]?.reviewsCount ?? 0,
+    );
+  }
 }
 
 function toPublic(review: ClubReviewDocument) {
@@ -84,6 +173,10 @@ function toPublic(review: ClubReviewDocument) {
     rating: review.rating,
     title: review.title,
     body: review.body,
+    ratings: review.ratings,
+    mediaIds: review.mediaIds.map(String),
+    isVerifiedBooking: review.isVerifiedBooking,
+    ownerResponse: review.ownerResponse,
     createdAt: review.createdAt.toISOString(),
     updatedAt: review.updatedAt.toISOString(),
   };

@@ -1,14 +1,27 @@
 apply plugin: 'com.android.application'
 
+def gym4meVersionCode = providers.gradleProperty('GYM4ME_VERSION_CODE').getOrElse('1').toInteger()
+def gym4meVersionName = providers.gradleProperty('GYM4ME_VERSION_NAME').getOrElse('1.0.0')
+def releaseKeystorePath = System.getenv('GYM4ME_ANDROID_KEYSTORE')
+def releaseKeystorePassword = System.getenv('GYM4ME_ANDROID_KEYSTORE_PASSWORD')
+def releaseKeyAlias = System.getenv('GYM4ME_ANDROID_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('GYM4ME_ANDROID_KEY_PASSWORD')
+def hasReleaseSigning = releaseKeystorePath && releaseKeystorePassword && releaseKeyAlias && releaseKeyPassword
+def requestedReleaseBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }
+
+if (requestedReleaseBuild && !hasReleaseSigning) {
+    throw new GradleException('Release signing is not configured. Set GYM4ME_ANDROID_KEYSTORE, GYM4ME_ANDROID_KEYSTORE_PASSWORD, GYM4ME_ANDROID_KEY_ALIAS and GYM4ME_ANDROID_KEY_PASSWORD.')
+}
+
 android {
-    namespace = "com.club4me.application"
+    namespace = "com.gym4me.application"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.club4me.application"
+        applicationId "com.gym4me.application"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode gym4meVersionCode
+        versionName gym4meVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +29,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseKeystorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

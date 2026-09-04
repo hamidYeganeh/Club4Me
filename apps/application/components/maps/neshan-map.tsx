@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Geolocation } from "@capacitor/geolocation";
 import { Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
+import { getCurrentPosition } from "@/lib/native-geolocation";
 
 import type { Map as NeshanMapInstance } from "@neshan-maps-platform/maplibre-sdk";
 
@@ -42,6 +42,8 @@ export function NeshanMap({
   const [mapError, setMapError] = useState(false);
   const [locating, setLocating] = useState(false);
   const apiKey = process.env.NEXT_PUBLIC_NESHAN_MAP_KEY?.trim();
+  const markerLatitude = marker?.latitude;
+  const markerLongitude = marker?.longitude;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -78,9 +80,9 @@ export function NeshanMap({
           "top-left",
         );
 
-        if (marker) {
+        if (markerLatitude !== undefined && markerLongitude !== undefined) {
           const nextLocationMarker = new maplibregl.Marker({ color: "#121212" })
-            .setLngLat([marker.longitude, marker.latitude])
+            .setLngLat([markerLongitude, markerLatitude])
             .addTo(map);
 
           if (markerLabel) {
@@ -118,8 +120,8 @@ export function NeshanMap({
     apiKey,
     center.latitude,
     center.longitude,
-    marker?.latitude,
-    marker?.longitude,
+    markerLatitude,
+    markerLongitude,
     markerLabel,
     onPointChange,
     zoom,
@@ -133,11 +135,7 @@ export function NeshanMap({
 
     setLocating(true);
     try {
-      const position = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        maximumAge: 30_000,
-        timeout: 12_000,
-      });
+      const position = await getCurrentPosition();
       const point: [number, number] = [
         position.coords.longitude,
         position.coords.latitude,

@@ -2,7 +2,7 @@ import { WelcomeIntroduceScreen } from "@modules/welcome/screens/WelcomeIntroduc
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "معرفی | کلاب فور می",
+  title: "معرفی | جیم فور می",
 };
 
 export default function WelcomeIntroducePage() {

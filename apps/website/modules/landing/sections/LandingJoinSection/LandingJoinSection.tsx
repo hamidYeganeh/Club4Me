@@ -18,7 +18,7 @@ export async function LandingJoinSection() {
           <p className={styles.subtitle()}>{t("landing.join.subtitle")}</p>
           <ButtonLink
             size="lg"
-            href="mailto:hello@club4me.ir"
+            href="mailto:hello@gym4me.ir"
             className={styles.cta()}
           >
             {t("landing.cta")}

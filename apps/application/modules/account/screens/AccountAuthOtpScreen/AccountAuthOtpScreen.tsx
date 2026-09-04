@@ -34,7 +34,11 @@ export function AccountAuthOtpScreen() {
 
   return (
     <AuthScreen>
-      <AccountAuthOtpHeaderSection backLabel={tCommon("back")} href="/auth" />
+      <AccountAuthOtpHeaderSection
+        backLabel={tCommon("back")}
+        href="/auth"
+        transparent
+      />
       <AccountAuthOtpCopySection title={t("title")} subtitle={t("subtitle")} />
       <AccountAuthOtpHeroSection
         alt={t("illustrationAlt")}

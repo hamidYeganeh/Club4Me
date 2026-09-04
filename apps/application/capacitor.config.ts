@@ -2,14 +2,31 @@ import type { CapacitorConfig } from "@capacitor/cli";
 import { KeyboardResize, KeyboardStyle } from "@capacitor/keyboard";
 
 const devServerUrl = process.env.CAPACITOR_DEV_URL;
+const allowCleartext =
+  process.env.CAPACITOR_ALLOW_CLEARTEXT === "1" || Boolean(devServerUrl);
+const isDemoBuild = process.env.CAPACITOR_DEMO === "1";
 
 const config: CapacitorConfig = {
-  appId: "com.club4me.application",
-  appName: "Club4Me",
+  appId: "com.gym4me.application",
+  appName: "Gym4Me",
   webDir: "out",
   backgroundColor: "#c6ff4e",
   android: {
-    allowMixedContent: true,
+    allowMixedContent: allowCleartext,
+    ...(isDemoBuild
+      ? {
+          // The demo APK works without Firebase credentials. Production syncs
+          // include PushNotifications after google-services.json is supplied.
+          includePlugins: [
+            "@capacitor/app",
+            "@capacitor/keyboard",
+            "@capacitor/network",
+            "@capacitor/preferences",
+            "@capacitor/splash-screen",
+            "@capacitor/status-bar",
+          ],
+        }
+      : {}),
   },
   ios: {
     contentInset: "automatic",

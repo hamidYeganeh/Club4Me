@@ -9,6 +9,14 @@ export class ClubReview {
   @Prop({ type: Types.ObjectId, ref: "User", required: true })
   userId: Types.ObjectId;
 
+  @Prop({
+    type: Types.ObjectId,
+    ref: "Reservation",
+    required: true,
+    unique: true,
+  })
+  reservationId: Types.ObjectId;
+
   @Prop({ type: Number, min: 1, max: 5, required: true })
   rating: number;
 
@@ -18,8 +26,27 @@ export class ClubReview {
   @Prop({ trim: true, maxlength: 2000, default: "" })
   body: string;
 
-  @Prop({ enum: ["published", "hidden"], default: "published" })
-  status: "published" | "hidden";
+  @Prop({ type: Object, default: {} })
+  ratings: Record<string, number>;
+
+  @Prop({ type: [Types.ObjectId], ref: "Media", default: [] })
+  mediaIds: Types.ObjectId[];
+
+  @Prop({ type: Boolean, default: true }) isVerifiedBooking: boolean;
+
+  @Prop({ type: Object, default: null })
+  ownerResponse: {
+    body: string;
+    respondedAt: Date;
+    respondedBy: Types.ObjectId;
+  } | null;
+
+  @Prop({
+    enum: ["pending", "published", "hidden", "reported"],
+    default: "published",
+  })
+  status: "pending" | "published" | "hidden" | "reported";
+  @Prop({ type: String, trim: true, maxlength: 500 }) moderationReason?: string;
 
   createdAt: Date;
   updatedAt: Date;

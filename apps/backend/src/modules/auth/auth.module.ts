@@ -4,6 +4,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { AppConfigModule } from "../../config/app-config.module";
 import { AppConfigService } from "../../config/app-config.service";
 import { UsersModule } from "../users/users.module";
+import { AdminUsersController } from "../users/admin-users.controller";
 import { AuthController } from "./auth.controller";
 import {
   AdminAuthController,
@@ -30,7 +31,12 @@ import { TokenService } from "./services/token.service";
       }),
     }),
   ],
-  controllers: [AuthController, AdminAuthController, BusinessAuthController],
+  controllers: [
+    AuthController,
+    AdminAuthController,
+    BusinessAuthController,
+    AdminUsersController,
+  ],
   providers: [
     AuthService,
     OtpService,
@@ -43,6 +49,13 @@ import { TokenService } from "./services/token.service";
       useClass: KavenegarSmsProvider,
     },
   ],
-  exports: [AuthService, TokenService, JwtAuthGuard, RolesGuard],
+  exports: [
+    AuthService,
+    TokenService,
+    JwtAuthGuard,
+    RolesGuard,
+    SMS_PROVIDER,
+    UsersModule,
+  ],
 })
 export class AuthModule {}

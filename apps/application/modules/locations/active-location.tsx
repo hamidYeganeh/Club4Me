@@ -25,7 +25,7 @@ type ActiveLocationContextValue = {
   selectGps: (latitude: number, longitude: number) => void;
 };
 
-const STORAGE_KEY = "club4me.active-location-id";
+const STORAGE_KEY = "gym4me.active-location-id";
 const ActiveLocationContext = createContext<ActiveLocationContextValue | null>(
   null,
 );
@@ -40,7 +40,11 @@ export function ActiveLocationProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const id = window.sessionStorage.getItem(STORAGE_KEY);
-    if (id) setSelection({ kind: "saved", id });
+    if (!id) return;
+    const frame = window.requestAnimationFrame(() => {
+      setSelection({ kind: "saved", id });
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   const active = useMemo<ActiveLocation | null>(() => {

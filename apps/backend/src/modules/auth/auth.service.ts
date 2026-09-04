@@ -183,6 +183,12 @@ export class AuthService {
     return { success: true };
   }
 
+  async deleteAccount(userId: string): Promise<{ success: true }> {
+    await this.sessions.revokeUserSessions(userId);
+    await this.usersService.deleteAccount(userId);
+    return { success: true };
+  }
+
   getMe(userId: string): Promise<PublicUser> {
     return this.usersService.findById(userId);
   }

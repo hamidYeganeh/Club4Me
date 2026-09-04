@@ -5,6 +5,8 @@ import { AuthModule } from "../auth/auth.module";
 import { ClubsModule } from "../clubs/clubs.module";
 import { ResourcesModule } from "../resources/resources.module";
 import { CoachingModule } from "../coaching/coaching.module";
+import { MediaModule } from "../media/media.module";
+import { NotificationsModule } from "../notifications/notifications.module";
 import {
   BusinessReservationsController,
   PublicSessionsController,
@@ -29,6 +31,8 @@ import {
     ClubsModule,
     ResourcesModule,
     CoachingModule,
+    MediaModule,
+    NotificationsModule,
   ],
   controllers: [
     BusinessReservationsController,

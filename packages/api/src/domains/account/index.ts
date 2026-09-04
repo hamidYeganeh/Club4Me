@@ -33,6 +33,7 @@ export {
   useAdminRoleRequests,
   useConfirmForgotPassword,
   useConfirmOtp,
+  useDeleteAccount,
   useForgotPassword,
   useLogin,
   useLogout,

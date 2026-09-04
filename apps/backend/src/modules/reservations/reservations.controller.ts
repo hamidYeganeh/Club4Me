@@ -46,12 +46,39 @@ export class BusinessReservationsController {
   ) {
     return this.service.listBusinessSessions(user.sub, clubId);
   }
+  @Get("reservations") listReservations(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+  ) {
+    return this.service.listClubReservations(user.sub, clubId);
+  }
   @Post("sessions") @HttpCode(HttpStatus.CREATED) createSession(
     @CurrentUser() user: AuthTokenPayload,
     @Param("clubId") clubId: string,
     @Body() body: CreateSessionDto,
   ) {
     return this.service.createSession(user.sub, clubId, body);
+  }
+  @Patch("sessions/:sessionId/complete") completeSession(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("sessionId") sessionId: string,
+  ) {
+    return this.service.completeSession(user.sub, clubId, sessionId);
+  }
+  @Patch("sessions/:sessionId/cancel") cancelSession(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("sessionId") sessionId: string,
+  ) {
+    return this.service.cancelSessionByOwner(user.sub, clubId, sessionId);
+  }
+  @Patch("reservations/:reservationId/no-show") markNoShow(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("reservationId") reservationId: string,
+  ) {
+    return this.service.markNoShow(user.sub, clubId, reservationId);
   }
 }
 
@@ -81,5 +108,17 @@ export class ReservationsController {
     @Param("reservationId") reservationId: string,
   ) {
     return this.service.cancel(user.sub, reservationId);
+  }
+  @Patch(":reservationId/mock-payment/approve") approveMockPayment(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("reservationId") reservationId: string,
+  ) {
+    return this.service.approveMockPayment(user.sub, reservationId);
+  }
+  @Patch(":reservationId/mock-payment/reject") rejectMockPayment(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("reservationId") reservationId: string,
+  ) {
+    return this.service.rejectMockPayment(user.sub, reservationId);
   }
 }

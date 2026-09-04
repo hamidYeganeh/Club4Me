@@ -6,6 +6,7 @@ const user = (roles: PublicUser["roles"]): PublicUser => ({
   id: "user-1",
   phone: "+989121000001",
   roles,
+  status: "active",
   hasPassword: true,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",

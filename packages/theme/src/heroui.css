@@ -2,7 +2,8 @@
  * HeroUI Theme Customization
  * Light on :root (no class). Dark when html has .dark — required for
  * next-themes + View Transition circle reveal (Magic UI pattern).
- * Default dark is applied by next-themes (defaultTheme="dark") before paint.
+ * Default is dark: layouts ship class="dark" on <html>, and ThemeProvider
+ * uses defaultTheme="dark" so SSR and first paint match.
  * @see https://heroui.com/docs/react/getting-started/theming
  */
 

@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Button } from "@heroui/react";
 import { Icon, type IconName } from "@theme/icon";
 import { useTranslations } from "next-intl";
 
+import { ButtonLink } from "@/components/button-link";
 import { ProgressiveBlur } from "@/components/progressive-blur";
 import { cn } from "@/lib/cn";
 
@@ -21,6 +20,7 @@ type NavItem = {
 type NavConfig = {
   items: NavItem[];
   actionLabelKey: "add";
+  actionHref: string;
 };
 
 function createRoleNav(role: "athlete" | "coach"): NavConfig {
@@ -36,14 +36,15 @@ function createRoleNav(role: "athlete" | "coach"): NavConfig {
       { href: `/${role}/profile`, labelKey: "profile", icon: "user" },
     ],
     actionLabelKey: "add",
+    actionHref: role === "coach" ? "/coach/classes/new" : "/discovery/search",
   };
 }
 
 const athleteNav = createRoleNav("athlete");
 const coachNav = createRoleNav("coach");
 
-function isDiscoveryClubDetail(pathname: string): boolean {
-  return /^\/discovery\/clubs\/[^/]+/.test(pathname);
+function isDiscoveryDetail(pathname: string): boolean {
+  return /^\/discovery\/(clubs|coaches|classes)\/[^/]+/.test(pathname);
 }
 
 function isNestedProfileRoute(pathname: string): boolean {
@@ -63,7 +64,7 @@ function getNavConfig(pathname: string): NavConfig | null {
     return coachNav;
   }
 
-  if (pathname.startsWith("/discovery") && !isDiscoveryClubDetail(pathname)) {
+  if (pathname.startsWith("/discovery") && !isDiscoveryDetail(pathname)) {
     return athleteNav;
   }
 
@@ -108,7 +109,7 @@ export function MainBottomNavigation() {
             className="absolute inset-0 bg-linear-to-t from-background from-40% via-background/75 to-transparent"
           />
         </div>
-        <div className="pointer-events-auto absolute inset-x-0 bottom-0 flex items-end px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-3">
+        <div className="pointer-events-auto absolute inset-x-0 bottom-0 mx-auto flex max-w-xl items-end px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-3">
           {leading.map((item) => (
             <NavLink
               key={item.href}
@@ -118,15 +119,15 @@ export function MainBottomNavigation() {
             />
           ))}
           <div className="flex flex-1 justify-center pb-2">
-            <Button
+            <ButtonLink
+              href={config.actionHref}
               isIconOnly
               variant="primary"
               aria-label={t(config.actionLabelKey)}
-              className="size-14 -translate-y-2 shadow-[0_8px_28px_color-mix(in_oklch,var(--accent)_42%,transparent)]"
-              style={{ borderRadius: "1.35rem" }}
+              className="size-14 -translate-y-2 rounded-[1.35rem] shadow-[0_8px_28px_color-mix(in_oklch,var(--accent)_42%,transparent)]"
             >
               <Icon name="plus-fat" size={26} />
-            </Button>
+            </ButtonLink>
           </div>
           {trailing.map((item) => (
             <NavLink
@@ -152,7 +153,9 @@ function NavLink({
   active: boolean;
 }) {
   return (
-    <Button
+    <ButtonLink
+      href={item.href}
+      scroll={false}
       variant="ghost"
       size="sm"
       aria-current={active ? "page" : undefined}
@@ -160,23 +163,9 @@ function NavLink({
         "h-auto min-w-0 flex-1 flex-col gap-1.5 px-1 py-2 text-sm leading-none font-medium whitespace-nowrap no-underline",
         active ? "text-accent" : "text-foreground/80",
       )}
-      render={(props) => {
-        const { type: _type, children, className, style } = props;
-        return (
-          <Link
-            href={item.href}
-            scroll={false}
-            className={className}
-            style={style}
-            aria-current={active ? "page" : undefined}
-          >
-            {children}
-          </Link>
-        );
-      }}
     >
       <Icon name={item.icon} size={28} />
       <span>{label}</span>
-    </Button>
+    </ButtonLink>
   );
 }

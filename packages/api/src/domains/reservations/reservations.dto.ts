@@ -4,10 +4,23 @@ export type ClubCourt = {
   id: string;
   clubId: string;
   name: string;
+  code?: string;
   courtTypeId?: string;
+  sportIds: string[];
   description: string;
   capacity: number;
+  environment: "indoor" | "outdoor" | "covered";
+  surfaceTypeId?: string;
+  lengthMeters?: number;
+  widthMeters?: number;
+  locationLabel?: string;
+  floor?: string;
+  galleryMediaIds: string[];
   isReservable: boolean;
+  minimumReservationMinutes: number;
+  maximumReservationMinutes: number;
+  preparationMinutes: number;
+  cleanupMinutes: number;
   status: "active" | "inactive";
   createdAt: string;
   updatedAt: string;
@@ -45,6 +58,8 @@ export type ReservableSession = {
   capacity: number;
   reservedCount: number;
   basePrice: number;
+  currency: string;
+  pricingUnit: "per_participant" | "per_session" | "per_court";
   options: SessionOption[];
   cancellationPolicy: ClubCancellationRule;
   status: "active" | "cancelled" | "completed";
@@ -54,6 +69,7 @@ export type SessionReservation = {
   clubId: string;
   sessionId: string;
   userId: string;
+  sessionType: "court" | "class" | "coached_session";
   sessionTitle: string;
   sessionStartsAt: string;
   sessionEndsAt: string;
@@ -66,6 +82,7 @@ export type SessionReservation = {
     unitPrice: number;
   }>;
   totalPrice: number;
+  paymentStatus: "not_required" | "pending" | "paid" | "failed" | "refunded";
   cancellationPolicy: ClubCancellationRule;
   refundPercent: number | null;
   refundAmount: number | null;
@@ -75,10 +92,23 @@ export type SessionReservation = {
 };
 export type CreateCourtPayload = {
   name: string;
+  code?: string;
   courtTypeId?: string;
+  sportIds?: string[];
   description?: string;
   capacity: number;
+  environment?: "indoor" | "outdoor" | "covered";
+  surfaceTypeId?: string;
+  lengthMeters?: number;
+  widthMeters?: number;
+  locationLabel?: string;
+  floor?: string;
+  galleryMediaIds?: string[];
   isReservable?: boolean;
+  minimumReservationMinutes?: number;
+  maximumReservationMinutes?: number;
+  preparationMinutes?: number;
+  cleanupMinutes?: number;
 };
 export type CreateSessionPayload = {
   title: string;
@@ -89,6 +119,8 @@ export type CreateSessionPayload = {
   endsAt: string;
   capacity: number;
   basePrice: number;
+  currency?: string;
+  pricingUnit?: "per_participant" | "per_session" | "per_court";
   options?: Array<{
     type: "equipment" | "amenity";
     resourceId: string;

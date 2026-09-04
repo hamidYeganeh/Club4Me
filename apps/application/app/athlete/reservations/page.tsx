@@ -1,5 +1,5 @@
-import { AthleteReservationsScreen } from "@modules/athlete/screens/AthleteReservationsScreen";
+import { ReservationsScreen } from "@modules/reservations/screens/ReservationsScreen";
 
 export default function AthleteReservationsPage() {
-  return <AthleteReservationsScreen />;
+  return <ReservationsScreen role="athlete" />;
 }

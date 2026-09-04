@@ -1,4 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gym4Me Android application
+
+Next.js static export packaged with Capacitor 8.
+
+## Production configuration
+
+Copy `.env.example` to `.env.production` and set the public HTTPS backend URL,
+website URL, Neshan key, and optional Sentry DSN. Never commit `.env.production`,
+`google-services.json`, signing keystores, or Firebase service-account keys.
+
+Push notifications require `android/app/google-services.json` from the matching
+Firebase Android app (`com.gym4me.application`). The backend separately needs
+the three `FIREBASE_*` service-account variables documented in
+`apps/backend/.env.example`.
+
+Build a signed release with explicit monotonic versions:
+
+```bash
+npm run cap:sync -w apps/application
+cd apps/application/android
+./gradlew bundleRelease \
+  -PGYM4ME_VERSION_CODE=2 \
+  -PGYM4ME_VERSION_NAME=1.0.1
+```
+
+The unsigned/locally signed bundle is generated under
+`android/app/build/outputs/bundle/release`. Configure the upload key through CI
+secrets: `GYM4ME_ANDROID_KEYSTORE`, `GYM4ME_ANDROID_KEYSTORE_PASSWORD`,
+`GYM4ME_ANDROID_KEY_ALIAS`, and `GYM4ME_ANDROID_KEY_PASSWORD`.
+
+## Release gates
+
+The admin panel route `/app-releases` controls optional updates, minimum
+supported version, maintenance mode, release notes, store URL, and feature
+flags. Only enable a required update after the new version is actually visible
+in the target store.
 
 ## Getting Started
 

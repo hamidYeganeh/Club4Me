@@ -3,9 +3,16 @@ import type {
   SocialPlatform,
 } from "../business/business-clubs.dto";
 
+export type PublicClubFacilityDetails = {
+  title?: string;
+  description?: string;
+  icon?: string;
+  imageUrl?: string;
+};
+
 export type PublicClubDetails = Omit<
   BusinessClub,
-  "gallery" | "socialMedia"
+  "gallery" | "socialMedia" | "equipment" | "amenities"
 > & {
   gallery: Array<{
     mediaId: string;
@@ -14,6 +21,12 @@ export type PublicClubDetails = Omit<
     mimeType: string;
   }>;
   socialMedia: Array<{ platform: SocialPlatform; link: string }>;
+  equipment: Array<
+    BusinessClub["equipment"][number] & PublicClubFacilityDetails
+  >;
+  amenities: Array<
+    BusinessClub["amenities"][number] & PublicClubFacilityDetails
+  >;
 };
 
 export type ClubReview = {

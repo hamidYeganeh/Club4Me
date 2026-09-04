@@ -1,9 +1,9 @@
 "use client";
 
-import { Button, Card, Chip, Spinner, Table } from "@heroui/react";
+import { Button, Spinner } from "@heroui/react";
 import { useArticles } from "@api/articles";
 import { Icon } from "@theme/icon";
-import Link from "next/link";
+import { ArticleCard } from "@ui/article-card";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 
@@ -25,78 +25,54 @@ export function ArticlesScreen() {
         </ButtonLink>
       </div>
 
-      <Card
-        variant="transparent"
-        className="mt-5 overflow-hidden rounded-[1.75rem] border border-border bg-surface"
-      >
-        {articles.isPending ? (
-          <div className="flex justify-center py-16">
-            <Spinner />
-          </div>
-        ) : articles.isError ? (
-          <p className="px-6 py-12 text-center text-muted">{t("error")}</p>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center gap-4 px-6 py-12">
-            <p className="text-center text-muted">{t("empty")}</p>
-            <Button
-              variant="primary"
-              onPress={() => router.push("/articles/new")}
-            >
-              {t("new")}
-            </Button>
-          </div>
-        ) : (
-          <Table>
-            <Table.ScrollContainer>
-              <Table.Content aria-label={t("title")}>
-                <Table.Header>
-                  <Table.Column isRowHeader>{t("titleColumn")}</Table.Column>
-                  <Table.Column>{t("author")}</Table.Column>
-                  <Table.Column>{t("category")}</Table.Column>
-                  <Table.Column>{t("status")}</Table.Column>
-                  <Table.Column>{t("updatedAt")}</Table.Column>
-                </Table.Header>
-                <Table.Body>
-                  {items.map((item) => (
-                    <Table.Row key={item.id} id={item.id}>
-                      <Table.Cell className="font-medium">
-                        <Link
-                          href={`/articles/${item.id}`}
-                          className="text-foreground hover:text-accent"
-                        >
-                          {item.title}
-                        </Link>
-                      </Table.Cell>
-                      <Table.Cell className="text-muted">
-                        {item.authorName}
-                      </Table.Cell>
-                      <Table.Cell>{item.categoryName}</Table.Cell>
-                      <Table.Cell>
-                        <Chip
-                          color={
-                            item.status === "published" ? "success" : "warning"
-                          }
-                          size="sm"
-                        >
-                          {item.status === "published"
-                            ? t("published")
-                            : t("draft")}
-                        </Chip>
-                      </Table.Cell>
-                      <Table.Cell className="text-muted tabular-nums">
-                        {new Intl.DateTimeFormat("fa-IR", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        }).format(new Date(item.updatedAt))}
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table.Content>
-            </Table.ScrollContainer>
-          </Table>
-        )}
-      </Card>
+      {articles.isPending ? (
+        <div className="flex justify-center py-16">
+          <Spinner />
+        </div>
+      ) : articles.isError ? (
+        <p className="px-6 py-12 text-center text-muted">{t("error")}</p>
+      ) : items.length === 0 ? (
+        <div className="flex flex-col items-center gap-4 px-6 py-12">
+          <p className="text-center text-muted">{t("empty")}</p>
+          <Button variant="primary" onPress={() => router.push("/articles/new")}>
+            {t("new")}
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-5 flex flex-col gap-4">
+          {items.map((item) => (
+            <ArticleCard
+              key={item.id}
+              title={item.title}
+              description={item.excerpt}
+              coverImageUrl={item.coverImageUrl}
+              badge={item.categoryName}
+              authorName={item.authorName}
+              readTime={new Intl.DateTimeFormat("fa-IR", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              }).format(new Date(item.updatedAt))}
+              tags={[
+                {
+                  id: `${item.id}-category`,
+                  label: item.categoryName,
+                  kind: "category",
+                },
+                {
+                  id: `${item.id}-status`,
+                  label:
+                    item.status === "published" ? t("published") : t("draft"),
+                  kind: "type",
+                },
+              ]}
+              tagsLabel={t("category")}
+              orientation="horizontal"
+              outlined
+              href={`/articles/${item.id}`}
+            />
+          ))}
+        </div>
+      )}
     </main>
   );
 }

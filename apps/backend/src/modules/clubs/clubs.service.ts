@@ -8,6 +8,8 @@ import type { ClubFields } from "./dto/club-fields.dto";
 import type { UpdateClubDto } from "./dto/update-club.dto";
 import type { PublicClub } from "./mappers/club.mapper";
 import { ClubsRepository } from "./clubs.repository";
+import { ClubMembershipsService } from "./club-memberships.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
 @Injectable()
 export class ClubsService {
@@ -15,6 +17,8 @@ export class ClubsService {
     private readonly repository: ClubsRepository,
     private readonly resources: ResourcesService,
     private readonly media: MediaService,
+    private readonly memberships: ClubMembershipsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(ownerId: string): Promise<{ items: PublicClub[] }> {
@@ -43,6 +47,24 @@ export class ClubsService {
       club.gallery.map((item) => item.mediaId),
     );
     const byId = new Map(media.map((item) => [item.id, item]));
+
+    const [equipmentResources, amenityResources] = await Promise.all([
+      Promise.all(
+        club.equipment.map((item) =>
+          this.resources
+            .get("facilities", "equipment", item.equipmentId)
+            .catch(() => null),
+        ),
+      ),
+      Promise.all(
+        club.amenities.map((item) =>
+          this.resources
+            .get("facilities", "amenity", item.amenityId)
+            .catch(() => null),
+        ),
+      ),
+    ]);
+
     return {
       ...club,
       gallery: club.gallery.flatMap((item) => {
@@ -51,16 +73,61 @@ export class ClubsService {
           ? [{ ...item, url: found.url, mimeType: found.mimeType }]
           : [];
       }),
+      equipment: club.equipment.map((item, index) => {
+        const resource = equipmentResources[index];
+        const description =
+          item.description?.trim() ||
+          (typeof resource?.description === "string"
+            ? resource.description
+            : undefined);
+        return {
+          ...item,
+          ...(typeof resource?.name === "string"
+            ? { title: resource.name }
+            : {}),
+          ...(description ? { description } : {}),
+          ...(typeof resource?.icon === "string"
+            ? { icon: resource.icon }
+            : {}),
+          ...(typeof resource?.imageUrl === "string"
+            ? { imageUrl: resource.imageUrl }
+            : {}),
+        };
+      }),
+      amenities: club.amenities.map((item, index) => {
+        const resource = amenityResources[index];
+        const description =
+          item.description?.trim() ||
+          (typeof resource?.description === "string"
+            ? resource.description
+            : undefined);
+        return {
+          ...item,
+          ...(typeof resource?.name === "string"
+            ? { title: resource.name }
+            : {}),
+          ...(description ? { description } : {}),
+          ...(typeof resource?.icon === "string"
+            ? { icon: resource.icon }
+            : {}),
+          ...(typeof resource?.imageUrl === "string"
+            ? { imageUrl: resource.imageUrl }
+            : {}),
+        };
+      }),
     };
   }
 
   async create(ownerId: string, input: CreateClubDto): Promise<PublicClub> {
     await this.validateReferences(input);
-    await this.media.assertOwnedReady(
-      ownerId,
-      (input.gallery ?? []).map((item) => item.mediaId),
-    );
-    return this.repository.create(ownerId, input);
+    await this.media.assertOwnedReady(ownerId, [
+      ...(input.gallery ?? []).map((item) => item.mediaId),
+      ...(input.logoMediaId ? [input.logoMediaId] : []),
+      ...(input.coverMediaId ? [input.coverMediaId] : []),
+    ]);
+    const club = await this.repository.create(ownerId, input);
+    await this.memberships.ensureOwner(club.id, ownerId);
+    return club;
   }
 
   async update(
@@ -69,10 +136,11 @@ export class ClubsService {
     input: UpdateClubDto,
   ): Promise<PublicClub> {
     await this.validateReferences(input);
-    await this.media.assertOwnedReady(
-      ownerId,
-      (input.gallery ?? []).map((item) => item.mediaId),
-    );
+    await this.media.assertOwnedReady(ownerId, [
+      ...(input.gallery ?? []).map((item) => item.mediaId),
+      ...(input.logoMediaId ? [input.logoMediaId] : []),
+      ...(input.coverMediaId ? [input.coverMediaId] : []),
+    ]);
     return this.repository.update(ownerId, clubId, input);
   }
 
@@ -96,18 +164,29 @@ export class ClubsService {
     return this.repository.submit(ownerId, clubId);
   }
 
-  review(
+  async review(
     clubId: string,
     status: "approved" | "rejected",
     reason?: string,
   ): Promise<PublicClub> {
-    return this.repository.review(clubId, status, reason);
+    const club = await this.repository.review(clubId, status, reason);
+    if (status === "approved") {
+      await this.notifications.notifyOwnerApproved({
+        userId: club.ownerId,
+        clubId: club.id,
+        clubName: club.name,
+      });
+    }
+    return club;
   }
 
   private async validateReferences(input: Partial<ClubFields>): Promise<void> {
     await Promise.all([
       ...(input.clubTypeIds ?? []).map((id) =>
         this.resources.requireActive("sports", "club-type", id),
+      ),
+      ...(input.sportIds ?? []).map((id) =>
+        this.resources.requireActive("sports", "sport", id),
       ),
       ...(input.equipment ?? []).map((item) =>
         this.resources.requireActive(

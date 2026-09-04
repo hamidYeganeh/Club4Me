@@ -1,5 +1,8 @@
 # Turborepo starter
 
+> راه‌اندازی سریع دموی اندروید، حساب‌های نمونه، پرداخت ماک و تنظیمات انتشار در
+> [راهنمای دموی اندروید](docs/demo-android-fa.md) آمده است.
+
 This Turborepo starter is maintained by the Turborepo core team.
 
 ## Using this example

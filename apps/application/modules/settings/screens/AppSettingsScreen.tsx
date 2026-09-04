@@ -1,0 +1,268 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
+import { Button, Switch, toast } from "@heroui/react";
+import {
+  useDeleteAccount,
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
+  trackNotificationPreferenceChanged,
+  type NotificationPreferences,
+} from "@api";
+import { Icon } from "@theme/icon";
+
+import {
+  disablePushNotifications,
+  enablePushNotifications,
+  getPushNotificationState,
+} from "@/lib/push-notifications";
+import { openExternalUrl } from "@/lib/native-browser";
+
+type Props = { role: "athlete" | "coach" };
+type PreferenceKey = keyof NotificationPreferences;
+
+const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL ?? "https://gym4me.ir";
+
+const notificationItems: Array<{
+  key: PreferenceKey;
+  title: string;
+  description: string;
+}> = [
+  {
+    key: "bookingUpdates",
+    title: "تغییرات رزرو",
+    description: "تأیید، لغو یا جابه‌جایی زمان رزرو",
+  },
+  {
+    key: "reminders",
+    title: "یادآوری کلاس",
+    description: "یادآوری نزدیک‌شدن زمان شروع تمرین",
+  },
+  {
+    key: "discovery",
+    title: "کلاس‌های جدید",
+    description: "کلاس جدید مربی‌ها و باشگاه‌های موردعلاقه",
+  },
+  {
+    key: "marketing",
+    title: "پیشنهادهای ویژه",
+    description: "تخفیف‌ها و پیام‌های غیرضروری؛ پیش‌فرض خاموش است",
+  },
+];
+
+export function AppSettingsScreen({ role }: Props) {
+  const router = useRouter();
+  const preferences = useNotificationPreferences();
+  const updatePreferences = useUpdateNotificationPreferences();
+  const deleteAccount = useDeleteAccount();
+  const [pushState, setPushState] = useState<
+    "enabled" | "disabled" | "denied" | "unsupported"
+  >("disabled");
+  const [version, setVersion] = useState("وب");
+
+  useEffect(() => {
+    void getPushNotificationState().then(setPushState);
+    if (Capacitor.isNativePlatform()) {
+      void App.getInfo().then((info) =>
+        setVersion(`${info.version} (${info.build})`),
+      );
+    }
+  }, []);
+
+  const togglePush = async (enabled: boolean) => {
+    try {
+      if (!enabled) {
+        await disablePushNotifications();
+        setPushState("disabled");
+        trackNotificationPreferenceChanged({
+          preference_name: "push_enabled",
+          is_enabled: false,
+        });
+        return;
+      }
+      const state = await enablePushNotifications();
+      setPushState(state);
+      if (state === "enabled") {
+        trackNotificationPreferenceChanged({
+          preference_name: "push_enabled",
+          is_enabled: true,
+        });
+      }
+      if (state === "denied") {
+        toast.warning(
+          "مجوز اعلان بسته است؛ آن را از تنظیمات Android فعال کنید.",
+        );
+      }
+    } catch {
+      toast.danger("فعال‌سازی اعلان‌ها ناموفق بود.");
+    }
+  };
+
+  const togglePreference = async (key: PreferenceKey, enabled: boolean) => {
+    try {
+      await updatePreferences.mutateAsync({ [key]: enabled });
+    } catch {
+      toast.danger("ذخیره تنظیم اعلان ناموفق بود.");
+    }
+  };
+
+  const removeAccount = async () => {
+    const confirmed = window.confirm(
+      "حساب و اطلاعات شخصی شما حذف می‌شود و این عملیات قابل بازگشت نیست. ادامه می‌دهید؟",
+    );
+    if (!confirmed) return;
+    try {
+      await deleteAccount.mutateAsync();
+      router.replace("/welcome");
+    } catch {
+      toast.danger("حذف حساب ناموفق بود. دوباره تلاش کنید.");
+    }
+  };
+
+  const openExternal = (path: string) =>
+    void openExternalUrl(`${WEBSITE_URL}${path}`);
+
+  return (
+    <main className="app-page gap-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+      <header className="flex items-center gap-3 py-2">
+        <Link
+          href={`/${role}/profile`}
+          className="app-icon-button"
+          aria-label="بازگشت"
+        >
+          <Icon name="chevron-right" size={20} />
+        </Link>
+        <div>
+          <h1 className="text-xl font-bold">تنظیمات</h1>
+          <p className="mt-1 text-sm text-muted">اعلان‌ها، حریم خصوصی و حساب</p>
+        </div>
+      </header>
+
+      <SettingsSection title="اعلان‌ها">
+        <SettingRow
+          title="Push Notification"
+          description={
+            pushState === "denied"
+              ? "مجوز در تنظیمات دستگاه غیرفعال است"
+              : "نمایش اعلان حتی وقتی اپ بسته است"
+          }
+        >
+          <Switch
+            isSelected={pushState === "enabled"}
+            isDisabled={pushState === "unsupported"}
+            onChange={togglePush}
+            aria-label="Push Notification"
+          />
+        </SettingRow>
+        {notificationItems.map((item) => (
+          <SettingRow
+            key={item.key}
+            title={item.title}
+            description={item.description}
+          >
+            <Switch
+              isSelected={preferences.data?.[item.key] ?? false}
+              isDisabled={preferences.isPending || updatePreferences.isPending}
+              onChange={(enabled) => void togglePreference(item.key, enabled)}
+              aria-label={item.title}
+            />
+          </SettingRow>
+        ))}
+      </SettingsSection>
+
+      <SettingsSection title="حریم خصوصی و پشتیبانی">
+        <LinkRow
+          title="سیاست حریم خصوصی"
+          onPress={() => openExternal("/privacy")}
+        />
+        <LinkRow
+          title="قوانین استفاده"
+          onPress={() => openExternal("/terms")}
+        />
+        <LinkRow
+          title="درخواست حذف اطلاعات"
+          onPress={() => openExternal("/account-deletion")}
+        />
+        <LinkRow
+          title="تماس با پشتیبانی"
+          onPress={() => openExternal("/support")}
+        />
+      </SettingsSection>
+
+      <SettingsSection title="حساب کاربری">
+        <div className="p-4">
+          <Button
+            variant="danger"
+            className="w-full"
+            isDisabled={deleteAccount.isPending}
+            onPress={() => void removeAccount()}
+          >
+            {deleteAccount.isPending ? "در حال حذف…" : "حذف دائمی حساب"}
+          </Button>
+          <p className="mt-3 text-xs leading-6 text-muted">
+            اطلاعات پروفایل، موقعیت‌ها، علاقه‌مندی‌ها، نظرها و توکن‌های دستگاه
+            حذف می‌شوند.
+          </p>
+        </div>
+      </SettingsSection>
+
+      <p className="pb-5 text-center text-xs text-muted" dir="ltr">
+        Gym4Me {version}
+      </p>
+    </main>
+  );
+}
+
+function SettingsSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <h2 className="mb-2 px-1 text-sm font-semibold text-muted">{title}</h2>
+      <div className="app-card divide-y divide-white/7 overflow-hidden">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function SettingRow({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 p-4">
+      <div>
+        <p className="font-medium">{title}</p>
+        <p className="mt-1 text-xs leading-5 text-muted">{description}</p>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function LinkRow({ title, onPress }: { title: string; onPress: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onPress}
+      className="flex w-full items-center justify-between p-4 text-start"
+    >
+      <span className="font-medium">{title}</span>
+      <Icon name="chevron-left" size={18} className="text-muted" />
+    </button>
+  );
+}

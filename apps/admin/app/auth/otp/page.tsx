@@ -2,7 +2,7 @@ import { AccountAuthOtpScreen } from "@modules/account/screens/AccountAuthOtpScr
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "ورود با پیامک | پنل مدیریت کلاب فور می",
+  title: "ورود با پیامک | پنل مدیریت جیم فور می",
 };
 
 export default function AuthOtpPage() {

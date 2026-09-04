@@ -12,10 +12,60 @@ import type {
   ListSlotsResponse,
   Reservation,
   ReserveSlotPayload,
+  DiscoverySection,
+  PublicCatalogClass,
+  PublicCatalogClub,
+  PublicCatalogCoach,
+  PublicCatalogPage,
+  PublicCatalogParams,
+  PublicCatalogSearchResponse,
+  PublicResourcePage,
 } from "./discovery.dto";
 import { discoveryEndpoints } from "./discovery.endpoints";
 
 export const discoveryClient = {
+  getFeed: () => http.get<DiscoverySection[]>(discoveryEndpoints.feed),
+
+  listCatalogClubs: (params?: PublicCatalogParams) =>
+    http.get<PublicCatalogPage<PublicCatalogClub>>(
+      discoveryEndpoints.catalogClubs,
+      params,
+    ),
+  getCatalogClub: (identifier: string) =>
+    http.get<PublicCatalogClub>(discoveryEndpoints.catalogClub(identifier)),
+
+  listCatalogCoaches: (params?: PublicCatalogParams) =>
+    http.get<PublicCatalogPage<PublicCatalogCoach>>(
+      discoveryEndpoints.catalogCoaches,
+      params,
+    ),
+  getCatalogCoach: (identifier: string) =>
+    http.get<PublicCatalogCoach>(discoveryEndpoints.catalogCoach(identifier)),
+
+  listCatalogClasses: (params?: PublicCatalogParams) =>
+    http.get<PublicCatalogPage<PublicCatalogClass>>(
+      discoveryEndpoints.catalogClasses,
+      params,
+    ),
+  getCatalogClass: (identifier: string) =>
+    http.get<PublicCatalogClass>(discoveryEndpoints.catalogClass(identifier)),
+
+  searchCatalog: (params?: PublicCatalogParams & { kind?: string }) =>
+    http.get<PublicCatalogSearchResponse>(
+      discoveryEndpoints.catalogSearch,
+      params,
+    ),
+
+  listPublicResources: (
+    category: string,
+    resource: string,
+    params?: Record<string, unknown>,
+  ) =>
+    http.get<PublicResourcePage>(
+      discoveryEndpoints.publicResource(category, resource),
+      params,
+    ),
+
   listClubs: (params?: ListClubsParams) =>
     http.get<ListClubsResponse>(discoveryEndpoints.clubs, params),
 

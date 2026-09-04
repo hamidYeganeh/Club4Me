@@ -10,7 +10,10 @@
     "./articles": "./src/domains/articles/index.ts",
     "./resources": "./src/domains/resources/index.ts",
     "./business": "./src/domains/business/index.ts",
-    "./discovery": "./src/domains/discovery/index.ts"
+    "./coaching": "./src/domains/coaching/index.ts",
+    "./discovery": "./src/domains/discovery/index.ts",
+    "./favorites": "./src/domains/favorites/index.ts",
+    "./tracking": "./src/tracking/index.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",

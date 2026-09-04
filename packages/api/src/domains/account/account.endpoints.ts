@@ -8,6 +8,7 @@ export const accountEndpoints = {
   refresh: "/account/auth/refresh",
   logout: "/account/auth/logout",
   me: "/account/me",
+  deleteAccount: "/account",
   role: (role: "coach" | "owner") => `/account/roles/${role}` as const,
   adminRoleRequests: "/admin/role-requests",
   adminRoleRequest: (requestId: string) =>

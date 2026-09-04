@@ -35,7 +35,10 @@ export function useSmsOtp({
   onCode,
 }: UseSmsOtpOptions) {
   const onCodeRef = useRef(onCode);
-  onCodeRef.current = onCode;
+
+  useEffect(() => {
+    onCodeRef.current = onCode;
+  }, [onCode]);
 
   useEffect(() => {
     if (!enabled || length <= 0 || typeof navigator === "undefined") {

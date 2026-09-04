@@ -104,7 +104,7 @@ function reservations() {
 export async function ensureDiscoveryIndexes(): Promise<void> {
   await clubs().createIndex({ slug: 1 }, { unique: true });
   await clubs().createIndex({ city: 1, createdAt: -1 });
-  await clubs().createIndex({ location: "2dsphere" });
+  await clubs().createIndex({ location: "2dsphere" }, { sparse: true });
   await classes().createIndex({ clubId: 1, createdAt: -1 });
   await slots().createIndex({ clubId: 1, startsAt: 1 });
   await reservations().createIndex({ slotId: 1, userId: 1 });

@@ -7,7 +7,7 @@ import { getLocale, getMessages, getTimeZone } from "next-intl/server";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "کلاب فور می | باشگاه شهری",
+  title: "جیم فور می | باشگاه شهری",
   description:
     "تمرین حضوری با مربی، برنامه شخصی، و کلاس‌های قدرتی، تناوبی، بوکس و یوگا.",
 };
@@ -22,7 +22,7 @@ export default async function RootLayout({
   const timeZone = await getTimeZone();
 
   return (
-    <html lang={locale} dir="rtl" className="h-full" suppressHydrationWarning>
+    <html lang={locale} dir="rtl" className="dark h-full" suppressHydrationWarning>
       <body
         id="top"
         className="flex min-h-full flex-col overflow-x-hidden bg-background font-sans text-foreground antialiased"

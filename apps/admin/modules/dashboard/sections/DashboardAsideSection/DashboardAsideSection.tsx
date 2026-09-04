@@ -24,7 +24,7 @@ export function DashboardAsideSection({
         <Avatar className="size-20">
           <Avatar.Image
             alt={name}
-            src="https://picsum.photos/seed/club4me-admin/240/240"
+            src="https://picsum.photos/seed/gym4me-admin/240/240"
           />
           <Avatar.Fallback>{name.slice(0, 1)}</Avatar.Fallback>
         </Avatar>

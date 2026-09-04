@@ -1,3 +1,5 @@
+"use client";
+
 import { Typography } from "@heroui/react";
 import { ThemeToggle } from "@theme/theme-toggle";
 import { ActiveLocationSelector } from "@modules/locations/components/ActiveLocationSelector";
@@ -11,14 +13,17 @@ export function DiscoveryHomeHeaderSection({
   const styles = discoveryHomeHeaderSectionStyles();
 
   return (
-    <div className={styles.root()}>
-      <div>
-        <Typography type="h4" className={styles.title()}>{title}</Typography>
-        <div className="mt-2">
+    <>
+      <header className={styles.root()}>
+        <div className={styles.lead()}>
+          <Typography type="h4" className={styles.title()}>
+            {title}
+          </Typography>
           <ActiveLocationSelector />
         </div>
-      </div>
-      <ThemeToggle />
-    </div>
+        <ThemeToggle />
+      </header>
+      <div aria-hidden className={styles.spacer()} />
+    </>
   );
 }

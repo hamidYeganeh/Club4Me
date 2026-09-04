@@ -2,7 +2,7 @@ import { AccountAuthRolesScreen } from "@modules/account/screens/AccountAuthRole
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "انتخاب نقش | کلاب فور می",
+  title: "انتخاب نقش | جیم فور می",
 };
 
 export default function AuthRolesPage() {

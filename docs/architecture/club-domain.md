@@ -72,12 +72,45 @@ separate slot models.
 _id, clubId, sessionId, userId, participantCount,
 selectedOptions: [{ type, resourceId, quantity, unitPriceSnapshot }],
 priceSnapshot, cancellationPolicySnapshot,
+paymentStatus: "not_required" | "pending" | "paid" | "failed" | "refunded",
 status: "reserved" | "cancelled" | "completed" | "no_show",
 createdAt, cancelledAt?
 ```
 
 Capacity and option inventory must be claimed atomically. Reservation creation
 and cancellation/refund are transaction boundaries.
+
+## Direct coach booking
+
+Direct coach bookings use the coaching calendar as their source of truth:
+
+```text
+coach_services -> class_sessions -> session_bookings
+```
+
+A public coach session must reference a published service. The service supplies
+the price and cancellation policy, while the session supplies the exact time,
+delivery mode, venue, and capacity. `session_bookings` stores snapshots of the
+price and cancellation policy so later service edits do not alter an existing
+booking.
+
+The athlete reservation timeline composes club reservations and coach bookings
+into one read model. The original source identifier is retained so cancellation
+is routed to the correct aggregate.
+
+Coach availability is checked across both calendars. Creating a club session
+with a coach checks `class_sessions`; creating a direct coach session checks
+`reservable_sessions`. A court-backed direct coach session also checks the court
+buffer window before it is created.
+
+Paid club and coach bookings start with `paymentStatus: "pending"`; free
+bookings use `paymentStatus: "not_required"`. The MVP exposes an intentionally
+local mock gateway with approve and reject actions. Approval marks the payment
+as paid and confirms direct coach bookings. Rejection marks the payment failed,
+cancels/rejects the booking, and releases claimed session and option capacity.
+Athletes can resume any unresolved mock payment from their reservation timeline.
+Real gateway capture, payout, and settlement remain separate future transaction
+boundaries.
 
 ## Authorization
 

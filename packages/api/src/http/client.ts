@@ -94,8 +94,8 @@ export const http = {
     const response = await getHttpClient().patch<ApiSuccess<T>>(url, data);
     return response.data.data;
   },
-  delete: async <T>(url: string): Promise<T> => {
-    const response = await getHttpClient().delete<ApiSuccess<T>>(url);
+  delete: async <T>(url: string, data?: unknown): Promise<T> => {
+    const response = await getHttpClient().delete<ApiSuccess<T>>(url, { data });
     return response.data.data;
   },
 };

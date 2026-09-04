@@ -12,6 +12,12 @@ import type {
   ReservableSession,
   SessionReservation,
 } from "./reservations.dto";
+import {
+  trackReservationCancelled,
+  trackReservationCreated,
+  trackSessionPublished,
+  groupSession,
+} from "../../tracking/tracking";
 
 export const reservationsClient = {
   listCourts: (clubId: string) =>
@@ -22,8 +28,24 @@ export const reservationsClient = {
     http.get<{ items: ReservableSession[] }>(
       `/business/clubs/${clubId}/sessions`,
     ),
+  listClubReservations: (clubId: string) =>
+    http.get<{ items: SessionReservation[] }>(
+      `/business/clubs/${clubId}/reservations`,
+    ),
   createSession: (clubId: string, payload: CreateSessionPayload) =>
     http.post<ReservableSession>(`/business/clubs/${clubId}/sessions`, payload),
+  completeSession: (clubId: string, sessionId: string) =>
+    http.patch<ReservableSession>(
+      `/business/clubs/${clubId}/sessions/${sessionId}/complete`,
+    ),
+  cancelBusinessSession: (clubId: string, sessionId: string) =>
+    http.patch<ReservableSession>(
+      `/business/clubs/${clubId}/sessions/${sessionId}/cancel`,
+    ),
+  markNoShow: (clubId: string, reservationId: string) =>
+    http.patch<SessionReservation>(
+      `/business/clubs/${clubId}/reservations/${reservationId}/no-show`,
+    ),
   listPublicSessions: (clubId: string) =>
     http.get<{ items: ReservableSession[] }>(
       `/public/clubs/${clubId}/reservable-sessions`,
@@ -37,6 +59,14 @@ export const reservationsClient = {
     http.post<SessionReservation>("/reservations", payload),
   cancel: (reservationId: string) =>
     http.patch<SessionReservation>(`/reservations/${reservationId}/cancel`),
+  approveMockPayment: (reservationId: string) =>
+    http.patch<SessionReservation>(
+      `/reservations/${reservationId}/mock-payment/approve`,
+    ),
+  rejectMockPayment: (reservationId: string) =>
+    http.patch<SessionReservation>(
+      `/reservations/${reservationId}/mock-payment/reject`,
+    ),
 };
 
 export function useClubCourts(clubId: string) {
@@ -64,14 +94,71 @@ export function useBusinessSessions(clubId: string) {
     enabled: Boolean(clubId),
   });
 }
+export function useClubReservations(clubId: string) {
+  return useQuery({
+    queryKey: ["business", "clubs", clubId, "reservations"],
+    queryFn: () => reservationsClient.listClubReservations(clubId),
+    enabled: Boolean(clubId),
+  });
+}
 export function useCreateSession(clubId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateSessionPayload) =>
       reservationsClient.createSession(clubId, payload),
+    onSuccess: async (session) => {
+      const sessionType = session.courtId
+        ? "court"
+        : session.classId
+          ? "class"
+          : "coached_session";
+      groupSession(session.id, {
+        parent_group_id: clubId,
+        session_type: sessionType,
+        status: session.status,
+        starts_at: session.startsAt,
+      });
+      trackSessionPublished({
+        club_id: clubId,
+        session_id: session.id,
+        session_type: sessionType,
+      });
+      return qc.invalidateQueries({
+        queryKey: ["business", "clubs", clubId, "sessions"],
+      });
+    },
+  });
+}
+export function useCompleteSession(clubId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sessionId: string) =>
+      reservationsClient.completeSession(clubId, sessionId),
     onSuccess: async () =>
       qc.invalidateQueries({
         queryKey: ["business", "clubs", clubId, "sessions"],
+      }),
+  });
+}
+export function useCancelBusinessSession(clubId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sessionId: string) =>
+      reservationsClient.cancelBusinessSession(clubId, sessionId),
+    onSuccess: async () =>
+      qc.invalidateQueries({
+        queryKey: ["business", "clubs", clubId, "sessions"],
+      }),
+  });
+}
+export function useMarkClubReservationNoShow(clubId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (reservationId: string) =>
+      reservationsClient.markNoShow(clubId, reservationId),
+    onSuccess: async () =>
+      qc.invalidateQueries({
+        queryKey: ["business", "clubs", clubId, "reservations"],
       }),
   });
 }
@@ -107,13 +194,54 @@ export function useReserveSession() {
   return useMutation({
     mutationFn: (payload: CreateReservationPayload) =>
       reservationsClient.reserve(payload),
-    onSuccess: async () => qc.invalidateQueries({ queryKey: ["reservations"] }),
+    onSuccess: async (reservation) => {
+      trackReservationCreated({
+        reservation_id: reservation.id,
+        club_id: reservation.clubId,
+        session_id: reservation.sessionId,
+        session_type: reservation.sessionType,
+        participant_count: reservation.participantCount,
+      });
+      await qc.invalidateQueries({ queryKey: ["reservations"] });
+      await qc.invalidateQueries({ queryKey: ["discovery", "clubs"] });
+      await qc.invalidateQueries({ queryKey: ["public", "coaches"] });
+    },
   });
 }
 export function useCancelReservation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => reservationsClient.cancel(id),
-    onSuccess: async () => qc.invalidateQueries({ queryKey: ["reservations"] }),
+    onSuccess: async (reservation) => {
+      trackReservationCancelled({
+        reservation_id: reservation.id,
+        club_id: reservation.clubId,
+        session_id: reservation.sessionId,
+        cancelled_by: "athlete",
+      });
+      await qc.invalidateQueries({ queryKey: ["reservations"] });
+      await qc.invalidateQueries({ queryKey: ["discovery", "clubs"] });
+      await qc.invalidateQueries({ queryKey: ["public", "coaches"] });
+    },
+  });
+}
+export function useResolveMockClubPayment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      reservationId,
+      result,
+    }: {
+      reservationId: string;
+      result: "approve" | "reject";
+    }) =>
+      result === "approve"
+        ? reservationsClient.approveMockPayment(reservationId)
+        : reservationsClient.rejectMockPayment(reservationId),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["reservations"] });
+      await qc.invalidateQueries({ queryKey: ["discovery", "clubs"] });
+      await qc.invalidateQueries({ queryKey: ["public", "coaches"] });
+    },
   });
 }

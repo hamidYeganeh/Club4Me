@@ -25,6 +25,12 @@ export class Reservation {
   sessionId: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
   userId: Types.ObjectId;
+  @Prop({
+    type: String,
+    enum: ["court", "class", "coached_session"],
+    required: true,
+  })
+  sessionType: "court" | "class" | "coached_session";
   @Prop({ type: String, required: true, trim: true, maxlength: 120 })
   sessionTitle: string;
   @Prop({ type: Date, required: true }) sessionStartsAt: Date;
@@ -33,6 +39,12 @@ export class Reservation {
   @Prop({ type: [ReservedOption], default: [] })
   selectedOptions: ReservedOption[];
   @Prop({ type: Number, required: true, min: 0 }) totalPrice: number;
+  @Prop({
+    type: String,
+    enum: ["not_required", "pending", "paid", "failed", "refunded"],
+    default: "not_required",
+  })
+  paymentStatus: "not_required" | "pending" | "paid" | "failed" | "refunded";
   @Prop({ type: SessionCancellationPolicy, required: true })
   cancellationPolicy: SessionCancellationPolicy;
   @Prop({ type: Number, default: null }) refundPercent: number | null;

@@ -31,10 +31,18 @@ export class SessionCancellationTier {
 
 @Schema({ _id: false })
 export class SessionCancellationPolicy {
+  @Prop({ type: Types.ObjectId }) policyId?: Types.ObjectId;
   @Prop({ required: true, trim: true })
   title: string;
+  @Prop({ type: Number, min: 1, default: 1 }) version: number;
   @Prop({ type: [SessionCancellationTier], required: true })
   tiers: SessionCancellationTier[];
+  @Prop({ type: Number, min: 0, default: 0 }) reservationCutoffMinutes: number;
+  @Prop({ type: Number, min: 0, default: 0 }) rescheduleCutoffMinutes: number;
+  @Prop({ type: Number, min: 0, max: 100, default: 0 })
+  noShowRefundPercent: number;
+  @Prop({ type: Number, min: 0, max: 100, default: 100 })
+  ownerCancellationRefundPercent: number;
 }
 
 @Schema({ collection: "reservable_sessions", timestamps: true })
@@ -43,10 +51,12 @@ export class ReservableSession {
   clubId: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: "Court" })
   courtId?: Types.ObjectId;
-  @Prop({ type: Types.ObjectId, ref: "User" })
+  @Prop({ type: Types.ObjectId, ref: "Coach" })
   coachId?: Types.ObjectId;
-  @Prop({ type: Types.ObjectId, ref: "Class" })
+  @Prop({ type: Types.ObjectId, ref: "TrainingClass" })
   classId?: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: "TrainingSession" })
+  classSessionId?: Types.ObjectId;
   @Prop({ required: true, trim: true, minlength: 2, maxlength: 120 })
   title: string;
   @Prop({ type: Date, required: true })
@@ -59,6 +69,14 @@ export class ReservableSession {
   reservedCount: number;
   @Prop({ type: Number, required: true, min: 0 })
   basePrice: number;
+  @Prop({ type: String, trim: true, uppercase: true, default: "IRR" })
+  currency: string;
+  @Prop({
+    type: String,
+    enum: ["per_participant", "per_session", "per_court"],
+    default: "per_participant",
+  })
+  pricingUnit: "per_participant" | "per_session" | "per_court";
   @Prop({ type: [SessionOption], default: [] })
   options: SessionOption[];
   @Prop({ type: SessionCancellationPolicy, required: true })
@@ -77,3 +95,7 @@ export const ReservableSessionSchema =
   SchemaFactory.createForClass(ReservableSession);
 ReservableSessionSchema.index({ clubId: 1, startsAt: 1 });
 ReservableSessionSchema.index({ status: 1, startsAt: 1 });
+ReservableSessionSchema.index(
+  { classSessionId: 1 },
+  { unique: true, sparse: true },
+);

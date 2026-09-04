@@ -18,7 +18,10 @@ export function AuthGate({ children }: AuthGateProps) {
   const me = useBusinessMe(hasToken === true);
 
   useEffect(() => {
-    setHasToken(Boolean(tokenStore.get()));
+    const frame = window.requestAnimationFrame(() => {
+      setHasToken(Boolean(tokenStore.get()));
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {

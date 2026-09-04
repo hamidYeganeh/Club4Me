@@ -10,6 +10,7 @@
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "sourceMap": true,
     "declaration": false,
     "declarationMap": false,

@@ -3,7 +3,7 @@ import { AccountAuthForgotPasswordConfirmScreen } from "@modules/account/screens
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "تأیید بازیابی رمز عبور | کلاب فور می",
+  title: "تأیید بازیابی رمز عبور | جیم فور می",
 };
 
 export default function AuthForgotPasswordConfirmPage() {

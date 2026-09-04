@@ -39,7 +39,7 @@ export function CoachThreadSection({
           <Avatar className="size-11">
             <Avatar.Image
               alt={name}
-              src="https://picsum.photos/seed/club4me-admin/160/160"
+              src="https://picsum.photos/seed/gym4me-admin/160/160"
             />
             <Avatar.Fallback>{name.slice(0, 1)}</Avatar.Fallback>
           </Avatar>

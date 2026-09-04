@@ -1,10 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Avatar, Button, Card, Chip, Input, Switch } from "@heroui/react";
 import { Icon } from "@theme/icon";
+import { imageUploaderAccept, Uploader, type UploaderLabels } from "@ui/uploader";
+import { useTranslations } from "next-intl";
 
 import { settingsContentSectionStyles } from "./SettingsContentSection.styles";
 import type { SettingsContentSectionProps } from "./SettingsContentSection.types";
+
+const defaultAvatar = "https://picsum.photos/seed/gym4me-admin/240/240";
 
 export function SettingsContentSection({
   name,
@@ -21,19 +26,39 @@ export function SettingsContentSection({
   accountType,
   regular,
   changeAvatar,
-  uploadHint,
   paymentsTitle,
   paymentsHint,
   autoPayout,
 }: SettingsContentSectionProps) {
   const styles = settingsContentSectionStyles();
+  const t = useTranslations("uploader");
+  const [avatarSrc, setAvatarSrc] = useState(defaultAvatar);
+  const labels: UploaderLabels = {
+    clickToUpload: t("clickToUpload"),
+    dropHint: t("dropHint"),
+    formats: t("formats"),
+    progress: t("progress"),
+    success: t("success"),
+    error: t("error"),
+    retry: t("retry"),
+    remove: t("remove"),
+    dropzoneAria: t("dropzoneAria"),
+  };
+
+  useEffect(() => {
+    return () => {
+      if (avatarSrc.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarSrc);
+      }
+    };
+  }, [avatarSrc]);
 
   return (
     <main className={styles.root()}>
       <div className={styles.cover()}>
         <img
           alt=""
-          src="https://picsum.photos/seed/club4me-cover/1400/420"
+          src="https://picsum.photos/seed/gym4me-cover/1400/420"
           className={styles.coverImage()}
         />
         <Button
@@ -49,10 +74,7 @@ export function SettingsContentSection({
       <div className={styles.identity()}>
         <div className={styles.person()}>
           <Avatar className="size-24 ring-4 ring-background">
-            <Avatar.Image
-              alt={name}
-              src="https://picsum.photos/seed/club4me-admin/240/240"
-            />
+            <Avatar.Image alt={name} src={avatarSrc} />
             <Avatar.Fallback>{name.slice(0, 1)}</Avatar.Fallback>
           </Avatar>
           <div>
@@ -114,18 +136,25 @@ export function SettingsContentSection({
             />
           </label>
         </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-[auto_1fr] md:items-center">
-          <Avatar className="size-16">
-            <Avatar.Image
-              alt={name}
-              src="https://picsum.photos/seed/club4me-admin/240/240"
-            />
-            <Avatar.Fallback>{name.slice(0, 1)}</Avatar.Fallback>
-          </Avatar>
-          <div className={styles.upload()}>
-            <Icon name="arrow-upload" size="lg" />
-            <span>{uploadHint}</span>
-          </div>
+        <div className="mt-5">
+          <Uploader
+            multiple={false}
+            accept={imageUploaderAccept}
+            labels={labels}
+            onDrop={(files) => {
+              const file = files[0];
+              if (!file) {
+                return;
+              }
+              const nextSrc = URL.createObjectURL(file);
+              setAvatarSrc((current) => {
+                if (current.startsWith("blob:")) {
+                  URL.revokeObjectURL(current);
+                }
+                return nextSrc;
+              });
+            }}
+          />
         </div>
       </Card>
 

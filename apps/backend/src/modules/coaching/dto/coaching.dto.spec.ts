@@ -1,4 +1,8 @@
-import { CreateOfferingDto, GenerateScheduleDto } from "./coaching.dto";
+import {
+  CreateClassDto,
+  CreateOfferingDto,
+  GenerateScheduleDto,
+} from "./coaching.dto";
 
 const objectId = "507f1f77bcf86cd799439011";
 
@@ -27,5 +31,26 @@ describe("coaching DTO validation", () => {
       endDate: "2026-10-03",
     });
     expect(result.success).toBe(false);
+  });
+
+  it("accepts club class details and defaults their collections", () => {
+    const result = CreateClassDto.schema.safeParse({
+      clubId: objectId,
+      courtId: "507f1f77bcf86cd799439012",
+      title: "کلاس فوتبال",
+      sportId: "507f1f77bcf86cd799439013",
+      deliveryMode: "club",
+      capacity: 12,
+      courseStartAt: "2026-10-01T10:00:00.000Z",
+      courseEndAt: "2026-11-01T10:00:00.000Z",
+      price: { amount: 500_000, currency: "IRR" },
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.galleryMediaIds).toEqual([]);
+      expect(result.data.requiredEquipmentIds).toEqual([]);
+      expect(result.data.amenityIds).toEqual([]);
+    }
   });
 });

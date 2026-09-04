@@ -28,7 +28,8 @@ export type LineProps = {
   fill?: boolean;
 };
 
-export function Line(_props: LineProps): null {
+export function Line(props: LineProps): null {
+  void props;
   return null;
 }
 
@@ -38,7 +39,8 @@ export type GridProps = {
   horizontal?: boolean;
 };
 
-export function Grid(_props: GridProps): null {
+export function Grid(props: GridProps): null {
+  void props;
   return null;
 }
 
@@ -48,7 +50,8 @@ export type XAxisProps = {
   tickCount?: number;
 };
 
-export function XAxis(_props: XAxisProps): null {
+export function XAxis(props: XAxisProps): null {
+  void props;
   return null;
 }
 

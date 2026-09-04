@@ -3,12 +3,12 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import NumberFlow from "@number-flow/react";
 import { Button, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Autoplay, FreeMode, Thumbs } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { getLocaleDirection } from "@/lib/locale-direction";
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -21,26 +21,26 @@ export function DiscoveryClubsDetailHeroSection({
   clubId,
   name,
   location,
-  price,
+  statusLabel,
   images,
   thumbsSwiper,
   onMainSwiper,
   sectionRef,
 }: DiscoveryClubsDetailHeroSectionProps) {
   const t = useTranslations("discovery.clubDetail");
+  const direction = getLocaleDirection(useLocale());
   const styles = discoveryClubsDetailHeroSectionStyles();
   const router = useRouter();
   const [favorited, setFavorited] = useState(false);
 
   return (
-    <section ref={sectionRef} className={styles.root()} dir="ltr">
+    <section ref={sectionRef} className={styles.root()} dir={direction}>
       <Swiper
-        dir="ltr"
+        dir={direction}
         modules={[Autoplay, FreeMode, Thumbs]}
         onSwiper={onMainSwiper}
         thumbs={{
-          swiper:
-            thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null,
+          swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null,
         }}
         autoplay={{
           delay: 3500,
@@ -50,6 +50,11 @@ export function DiscoveryClubsDetailHeroSection({
         watchOverflow
         className={styles.mainSwiper()}
       >
+        {images.length === 0 ? (
+          <div className="grid h-full place-items-center bg-surface-secondary text-white/75">
+            <Icon name="building-1" size={44} />
+          </div>
+        ) : null}
         {images.map((src, index) => (
           <SwiperSlide key={src} className={styles.slide()}>
             <Image
@@ -68,7 +73,7 @@ export function DiscoveryClubsDetailHeroSection({
 
       <div aria-hidden className={styles.overlay()} />
 
-      <div className={styles.topBar()} dir="rtl">
+      <div className={styles.topBar()} dir={direction}>
         <Button
           isIconOnly
           aria-label={t("back")}
@@ -90,21 +95,17 @@ export function DiscoveryClubsDetailHeroSection({
         </Button>
       </div>
 
-      <div className={styles.metaRow()} dir="rtl">
+      <div className={styles.metaRow()} dir={direction}>
         <div className={styles.meta()}>
-          <Typography type="body-sm" className={styles.location()}>{location}</Typography>
-          <Typography type="h2" truncate className={styles.name()}>{name}</Typography>
+          <Typography type="body-sm" className={styles.location()}>
+            {location}
+          </Typography>
+          <Typography type="h2" truncate className={styles.name()}>
+            {name}
+          </Typography>
         </div>
 
-        <NumberFlow
-          value={price}
-          format={{
-            style: "currency",
-            currency: "USD",
-            maximumFractionDigits: 0,
-          }}
-          className={styles.price()}
-        />
+        <span className={styles.price()}>{statusLabel}</span>
       </div>
     </section>
   );
