@@ -32,7 +32,7 @@ const monoton = Monoton({
 });
 
 export const metadata: Metadata = {
-  title: "Gym4Me Application",
+  title: "Gym4Me",
   description: "Gym4Me member application",
 };
 

@@ -5,7 +5,7 @@ import { Button, Card, Spinner, Typography } from "@heroui/react";
 import { useClubReviews, usePublicClub } from "@api";
 import { Icon } from "@theme/icon";
 
-import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
 type ReviewFilter = "recent" | "positive" | "negative";
 
@@ -104,7 +104,7 @@ export function DiscoveryReviewsScreen({
 
   return (
     <main className="min-h-dvh w-full max-w-full overflow-x-hidden bg-transparent pb-[calc(2rem+env(safe-area-inset-bottom))]">
-      <DiscoveryPageHeader title="نظر کاربران" description={entityName} />
+      <SecondaryHeader title="نظر کاربران" />
 
       <section className="space-y-5 px-4 pt-5">
         <Card className="app-card app-reveal p-5 shadow-none">
@@ -176,7 +176,10 @@ export function DiscoveryReviewsScreen({
         ) : (
           <div className="space-y-3">
             {visibleReviews.map((review) => (
-              <Card key={review.id} className="app-card app-stack-card p-5 shadow-none">
+              <Card
+                key={review.id}
+                className="app-card app-stack-card p-5 shadow-none"
+              >
                 <div className="flex items-start gap-3">
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground">
                     {review.author.slice(0, 1)}

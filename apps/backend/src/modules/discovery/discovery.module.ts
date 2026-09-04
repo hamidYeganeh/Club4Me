@@ -13,6 +13,7 @@ import {
   TrainingClassSchema,
 } from "../coaching/schemas/coaching.schemas";
 import { MediaModule } from "../media/media.module";
+import { ResourcesModule } from "../resources/resources.module";
 import {
   AdminDiscoveryController,
   DiscoveryFeedController,
@@ -27,6 +28,7 @@ import {
   imports: [
     AuthModule,
     MediaModule,
+    ResourcesModule,
     MongooseModule.forFeature([
       { name: DiscoverySection.name, schema: DiscoverySectionSchema },
       { name: Club.name, schema: ClubSchema },

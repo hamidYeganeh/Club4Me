@@ -17,7 +17,7 @@ export function ActiveLocationSelector() {
   const title =
     active?.kind === "saved"
       ? active.location.title
-      : (active?.title ?? "انتخاب لوکیشن");
+      : (active?.title ?? "انتخاب موقعیت");
 
   async function locateCurrentPosition() {
     setLocating(true);
@@ -40,7 +40,7 @@ export function ActiveLocationSelector() {
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex max-w-44 items-center gap-1.5 rounded-full bg-surface-secondary px-3 py-2 text-sm font-semibold text-foreground"
+        className="flex max-w-52 items-center gap-2 rounded-full bg-surface-secondary px-4 py-2.5 text-sm font-semibold text-foreground"
       >
         <Icon name="map-pin-1" size={16} />
         <span className="truncate">{title}</span>

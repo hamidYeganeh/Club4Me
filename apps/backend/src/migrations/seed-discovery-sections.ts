@@ -7,7 +7,7 @@ const sections = [
     type: "banners",
     title: "پیشنهادهای ویژه",
     subtitle: "فرصت‌های تازه برای شروع حرکت",
-    layout: "carousel",
+    layout: "16/9:1",
     viewAllLabel: "",
     viewAllUrl: "",
     enabled: true,

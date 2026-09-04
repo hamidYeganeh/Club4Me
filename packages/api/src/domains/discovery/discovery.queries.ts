@@ -17,6 +17,7 @@ export const discoveryQueries = {
       [...discoveryQueries.catalog.all(), "classes", params] as const,
     class: (identifier: string) =>
       [...discoveryQueries.catalog.all(), "class", identifier] as const,
+    clubTypes: () => [...discoveryQueries.catalog.all(), "club-types"] as const,
     search: (params?: PublicCatalogParams & { kind?: string }) =>
       [...discoveryQueries.catalog.all(), "search", params] as const,
     resource: (

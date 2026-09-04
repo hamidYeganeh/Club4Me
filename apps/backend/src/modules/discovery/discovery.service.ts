@@ -18,6 +18,7 @@ import {
   type TrainingClassDocument,
 } from "../coaching/schemas/coaching.schemas";
 import { MediaService } from "../media/media.service";
+import { ResourcesService } from "../resources/resources.service";
 import type {
   CreateDiscoverySectionDto,
   ReorderDiscoverySectionsDto,
@@ -44,6 +45,7 @@ export class DiscoveryFeedService {
     @InjectModel(Article.name)
     private readonly articles: Model<ArticleDocument>,
     private readonly media: MediaService,
+    private readonly resources: ResourcesService,
   ) {}
 
   async listPublicClubs(query: Record<string, string | undefined>) {
@@ -112,6 +114,43 @@ export class DiscoveryFeedService {
       .lean();
     if (!document) catalogNotFound("CLUB_NOT_FOUND");
     return (await this.hydrateMedia([publicClub(document!)]))[0];
+  }
+
+  async listPublicClubTypes() {
+    const catalog = await this.resources.list("sports", "club-type", {
+      isActive: "true",
+      limit: "100",
+    });
+    const counts = await this.clubs.aggregate<{
+      _id: Types.ObjectId;
+      count: number;
+    }>([
+      {
+        $match: {
+          reviewStatus: "approved",
+          visibility: "public",
+          operationalStatus: { $ne: "permanently_closed" },
+        },
+      },
+      { $unwind: "$clubTypeIds" },
+      { $group: { _id: "$clubTypeIds", count: { $sum: 1 } } },
+    ]);
+    const countById = new Map(
+      counts.map((row) => [String(row._id), row.count] as const),
+    );
+
+    return {
+      items: catalog.items.map((item) => {
+        const id = String(item.id ?? "");
+        return {
+          id,
+          name: typeof item.name === "string" ? item.name : "",
+          code: typeof item.code === "string" ? item.code : "",
+          icon: typeof item.icon === "string" ? item.icon : null,
+          clubsCount: countById.get(id) ?? 0,
+        };
+      }),
+    };
   }
 
   async listPublicCoaches(query: Record<string, string | undefined>) {

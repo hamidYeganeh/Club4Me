@@ -7,5 +7,6 @@ export const discoveryCitiesProvinceSectionStyles = tv({
     carousel: "-mx-5 w-[calc(100%+2.5rem)] px-5",
     swiper: "w-full",
     slide: "!w-auto",
+    card: "w-[9.75rem] sm:w-[11.5rem]",
   },
 });

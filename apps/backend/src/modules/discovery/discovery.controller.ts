@@ -27,6 +27,11 @@ export class DiscoveryFeedController {
     return this.service.getFeed();
   }
 
+  @Get("catalog/club-types")
+  listClubTypes() {
+    return this.service.listPublicClubTypes();
+  }
+
   @Get("catalog/clubs")
   listClubs(@Query() query: Record<string, string | undefined>) {
     return this.service.listPublicClubs(query);

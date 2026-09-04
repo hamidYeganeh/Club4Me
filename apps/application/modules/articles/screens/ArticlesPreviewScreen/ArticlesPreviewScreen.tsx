@@ -4,9 +4,9 @@ import { Typography } from "@heroui/react";
 import { ArticleCard, type ArticleCardTag } from "@ui/article-card";
 
 const SAMPLE_TAGS: ArticleCardTag[] = [
-  { id: "category-training", label: "Text", kind: "category" },
-  { id: "type-guide", label: "Text", kind: "type" },
-  { id: "type-beginner", label: "Text", kind: "type" },
+  { id: "category-training", label: "Text", kind: "category", icon: "weight" },
+  { id: "type-guide", label: "Text", kind: "type", icon: "book-open" },
+  { id: "type-beginner", label: "Text", kind: "type", icon: "star-four" },
 ];
 
 const SAMPLE = {

@@ -43,7 +43,7 @@ export function DiscoveryCitiesProvinceSection({
           modules={[FreeMode]}
           freeMode
           slidesPerView="auto"
-          spaceBetween={16}
+          spaceBetween={12}
           watchOverflow
           className={styles.swiper()}
         >
@@ -58,6 +58,7 @@ export function DiscoveryCitiesProvinceSection({
                   imageUrl={city.imageUrl}
                   imageAlt={city.name}
                   href={`/discovery/city/${city.id}`}
+                  className={styles.card()}
                 />
               </div>
             </SwiperSlide>

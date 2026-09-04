@@ -8,22 +8,27 @@ export type ClubCardAmenity = {
   icon?: IconName;
 };
 
+export type ClubCardSport = {
+  id?: string;
+  label: string;
+  icon: IconName;
+};
+
 export type ClubCardProps = {
   variant?: ClubCardVariant;
   title: string;
   imageUrl: string;
   imageAlt?: string;
+  /** City and district only, e.g. "تهران، سعادت‌آباد" */
   location?: string;
-  description?: string;
   rating?: number;
   reviewsCount?: number;
   amenities?: ClubCardAmenity[];
-  price: string;
+  sports?: ClubCardSport[];
+  price?: string;
   pricePrefix?: string;
   priceSuffix?: string;
-  actionLabel: string;
   href?: string;
-  onActionPress?: () => void;
   onFavoritePress?: () => void;
   onSharePress?: () => void;
   favoriteAriaLabel?: string;

@@ -6,8 +6,8 @@ import { useCatalogClubs } from "@api/discovery";
 
 import { ButtonLink } from "@/components/button-link";
 import { NeshanMap } from "@/components/maps/neshan-map";
-import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
 import { DiscoveryResultCard } from "@modules/discovery/components/DiscoveryResultCard";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
 export function DiscoveryMapScreen() {
   const clubs = useCatalogClubs({ limit: 100 });
@@ -31,10 +31,7 @@ export function DiscoveryMapScreen() {
 
   return (
     <main className="flex min-h-dvh flex-col gap-5 px-5 pb-[calc(6.25rem+env(safe-area-inset-bottom))]">
-      <DiscoveryPageHeader
-        title="نقشه باشگاه‌ها"
-        description="باشگاه‌های دارای موقعیت ثبت‌شده را روی نقشه پیدا کن."
-      />
+      <SecondaryHeader title="نقشه باشگاه‌ها" />
       {clubs.isLoading ? (
         <div className="flex min-h-80 items-center justify-center">
           <Spinner />

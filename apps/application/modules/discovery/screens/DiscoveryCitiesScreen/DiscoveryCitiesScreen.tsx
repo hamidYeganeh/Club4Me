@@ -1,4 +1,4 @@
-import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { DISCOVERY_PROVINCES } from "@modules/discovery/discovery.constants";
 import { DiscoveryCitiesProvinceSection } from "@modules/discovery/sections/DiscoveryCitiesProvinceSection";
 import { getTranslations } from "next-intl/server";
@@ -12,10 +12,7 @@ export async function DiscoveryCitiesScreen({
 
   return (
     <main className="app-page gap-8">
-      <DiscoveryPageHeader
-        title={t("title")}
-        description="شهر و محدوده‌ی مناسب برای جست‌وجوی باشگاه را انتخاب کن."
-      />
+      <SecondaryHeader title={t("title")} />
 
       <div className="app-reveal flex flex-col gap-8">
         {provinces.map((province) => (

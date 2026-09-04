@@ -9,12 +9,15 @@ import type {
 import { ArticleCard } from "@ui/article-card";
 import { ClubCard } from "@ui/club-card";
 import { CoachCard } from "@ui/coach-card";
-import Link from "next/link";
 import { useLocale } from "next-intl";
 import { FreeMode } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { getLocaleDirection } from "@/lib/locale-direction";
 import { DiscoverySectionHeader } from "../../components/DiscoverySectionHeader";
+import {
+  DiscoveryBannersSection,
+  parseDiscoveryBannersLayout,
+} from "../DiscoveryBannersSection";
 import "swiper/css";
 import "swiper/css/free-mode";
 
@@ -28,6 +31,25 @@ export function DiscoveryDynamicSection({
 }) {
   const direction = getLocaleDirection(useLocale());
   if (!section.items.length) return null;
+
+  if (section.type === "banners") {
+    const { aspectRatio, slidesPerView } = parseDiscoveryBannersLayout(
+      section.layout,
+    );
+    return (
+      <DiscoveryBannersSection
+        id={section.id}
+        title={section.title}
+        subtitle={section.subtitle}
+        viewAllLabel={section.viewAllLabel}
+        viewAllUrl={section.viewAllUrl}
+        items={section.items}
+        aspectRatio={aspectRatio}
+        slidesPerView={slidesPerView}
+      />
+    );
+  }
+
   const header = (
     <DiscoverySectionHeader
       title={section.title}
@@ -36,47 +58,7 @@ export function DiscoveryDynamicSection({
       viewAllUrl={section.viewAllUrl}
     />
   );
-  if (section.type === "banners")
-    return (
-      <section className="flex flex-col gap-3">
-        {header}
-        <Swiper
-          dir={direction}
-          slidesPerView={1.08}
-          spaceBetween={12}
-          className="w-full"
-        >
-          {section.items.map((item, index) => (
-            <SwiperSlide key={`${item.imageUrl}-${index}`}>
-              <Link
-                href={item.actionUrl || "#"}
-                className="relative block aspect-[16/9] overflow-hidden rounded-3xl"
-              >
-                <img
-                  src={item.imageUrl}
-                  alt={item.title}
-                  className="size-full object-cover"
-                />
-                <span className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                <span className="absolute inset-x-5 bottom-5 text-white">
-                  <strong className="block text-xl">{item.title}</strong>
-                  {item.subtitle && (
-                    <small className="mt-1 block text-white/80">
-                      {item.subtitle}
-                    </small>
-                  )}
-                  {item.actionLabel && (
-                    <span className="mt-3 inline-block rounded-full bg-white px-3 py-2 text-xs font-bold text-black">
-                      {item.actionLabel}
-                    </span>
-                  )}
-                </span>
-              </Link>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </section>
-    );
+
   return (
     <section className="flex flex-col gap-4">
       {header}
@@ -102,12 +84,9 @@ export function DiscoveryDynamicSection({
                       <ClubCard
                         variant="compact"
                         title={club.name}
-                        description={club.shortDescription}
                         imageUrl={fallback}
                         rating={club.averageRating}
                         reviewsCount={club.reviewsCount}
-                        price=""
-                        actionLabel="مشاهده"
                         href={`/discovery/clubs/${club.id}`}
                       />
                     );

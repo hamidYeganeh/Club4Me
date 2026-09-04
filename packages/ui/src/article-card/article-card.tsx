@@ -1,16 +1,22 @@
 "use client";
 
 import { Avatar, Button, Card, Chip, Typography } from "@heroui/react";
-import { Icon } from "@repo/theme/icon";
+import { Icon, type IconName } from "@repo/theme/icon";
 
 import { articleCardStyles } from "./article-card.styles";
-import type { ArticleCardProps } from "./article-card.types";
+import type { ArticleCardProps, ArticleCardTag } from "./article-card.types";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   const first = parts[0]?.[0] ?? "";
   const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
   return `${first}${last}`.toUpperCase() || "?";
+}
+
+function getTagIcon(tag: ArticleCardTag): IconName {
+  if (tag.icon) return tag.icon;
+  if (tag.kind === "type") return "hash-tag-1";
+  return "folder";
 }
 
 export function ArticleCard({
@@ -107,36 +113,36 @@ export function ArticleCard({
 
         <Card.Title className={styles.title()}>{title}</Card.Title>
 
-        {description ? (
-          <Card.Description className={styles.description()}>
-            {description}
-          </Card.Description>
-        ) : null}
+        <Card.Description className={styles.description()}>
+          {description?.trim() ? description : "\u00A0"}
+        </Card.Description>
 
-        {tags.length > 0 || (!isVertical && menuButton) ? (
-          <Card.Footer className={styles.footer()}>
-            {tags.length > 0 ? (
-              <ul className={styles.tags()} aria-label={tagsLabel}>
-                {tags.map((tag) => (
-                  <li key={tag.id}>
-                    <Chip
-                      size="sm"
-                      variant="tertiary"
-                      className={styles.tag()}
-                      data-kind={tag.kind}
-                    >
-                      <span aria-hidden className={styles.tagDot()} />
-                      <Chip.Label>{tag.label}</Chip.Label>
-                    </Chip>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <span />
-            )}
-            {isVertical ? null : menuButton}
-          </Card.Footer>
-        ) : null}
+        <Card.Footer className={styles.footer()}>
+          {tags.length > 0 ? (
+            <ul className={styles.tags()} aria-label={tagsLabel}>
+              {tags.map((tag) => (
+                <li key={tag.id}>
+                  <Chip
+                    size="sm"
+                    variant="tertiary"
+                    className={styles.tag()}
+                    data-kind={tag.kind}
+                  >
+                    <Icon
+                      name={getTagIcon(tag)}
+                      size={14}
+                      className={styles.tagIcon()}
+                    />
+                    <Chip.Label>{tag.label}</Chip.Label>
+                  </Chip>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <span />
+          )}
+          {isVertical ? null : menuButton}
+        </Card.Footer>
       </div>
     </Card>
   );

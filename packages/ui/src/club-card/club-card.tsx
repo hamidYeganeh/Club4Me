@@ -1,12 +1,13 @@
 "use client";
 
-import { Button, Card, Chip, Typography } from "@heroui/react";
+import { Button, Card, Typography } from "@heroui/react";
 import { Icon } from "@repo/theme/icon";
 
 import { clubCardStyles } from "./club-card.styles";
 import type { ClubCardProps } from "./club-card.types";
 
 const MAX_RATING = 5;
+const MAX_VISIBLE_SPORTS = 2;
 
 function displayRating(rating: number) {
   return Number.isInteger(rating) ? String(rating) : rating.toFixed(1);
@@ -18,16 +19,13 @@ export function ClubCard({
   imageUrl,
   imageAlt,
   location,
-  description,
   rating,
   reviewsCount,
-  amenities = [],
+  sports = [],
   price,
-  pricePrefix = "From",
+  pricePrefix,
   priceSuffix,
-  actionLabel,
   href,
-  onActionPress,
   onFavoritePress,
   onSharePress,
   favoriteAriaLabel = "Add to favorites",
@@ -35,13 +33,19 @@ export function ClubCard({
   className,
 }: ClubCardProps) {
   const styles = clubCardStyles({ variant });
-  const isEditorial = variant === "editorial";
   const safeRating =
     typeof rating === "number"
       ? Math.min(MAX_RATING, Math.max(0, rating))
       : undefined;
-  const visibleAmenities = amenities.filter(({ label }) => label.trim());
-  const detail = location || description;
+  const visibleSports = sports.filter(
+    ({ label, icon }) => label.trim() && icon,
+  );
+  const shownSports = visibleSports.slice(0, MAX_VISIBLE_SPORTS);
+  const hiddenSportsCount = Math.max(
+    0,
+    visibleSports.length - shownSports.length,
+  );
+  const hasPrice = Boolean(price?.trim());
 
   return (
     <Card variant="transparent" className={styles.root({ className })}>
@@ -108,100 +112,64 @@ export function ClubCard({
         </div>
 
         <div className={styles.body()}>
-          <div className={styles.heading()}>
+          <div className={styles.bottom()}>
             <div className={styles.identity()}>
               <Card.Title className={styles.title()}>{title}</Card.Title>
-              {detail ? (
+              {location ? (
                 <div className={styles.details()}>
-                  {location ? (
-                    <Icon
-                      name="pin-1"
-                      size={16}
-                      className={styles.detailIcon()}
-                    />
-                  ) : null}
+                  <Icon
+                    name="pin-1"
+                    size={16}
+                    className={styles.detailIcon()}
+                  />
                   <Typography type="body-sm" className={styles.detailText()}>
-                    {[location, description].filter(Boolean).join(" · ")}
+                    {location}
                   </Typography>
+                </div>
+              ) : null}
+              {shownSports.length > 0 ? (
+                <div
+                  className={styles.sports()}
+                  aria-label={visibleSports
+                    .map((sport) => sport.label)
+                    .join(", ")}
+                >
+                  {shownSports.map((sport, index) => (
+                    <span
+                      key={sport.id ?? `${sport.label}-${index}`}
+                      className={styles.sport()}
+                    >
+                      <Icon
+                        name={sport.icon}
+                        size={14}
+                        className={styles.sportIcon()}
+                      />
+                      <span className={styles.sportLabel()}>{sport.label}</span>
+                    </span>
+                  ))}
+                  {hiddenSportsCount > 0 ? (
+                    <span className={styles.sportMore()}>
+                      +{hiddenSportsCount}
+                    </span>
+                  ) : null}
                 </div>
               ) : null}
             </div>
 
-            {!isEditorial ? (
-              <div className={styles.bottom()}>
-                <div className={styles.priceBlock()}>
-                  <div className={styles.priceLine()}>
-                    <span className={styles.price()}>{price}</span>
-                    {priceSuffix ? (
-                      <span className={styles.priceSuffix()}>
-                        {priceSuffix}
-                      </span>
-                    ) : null}
-                  </div>
+            {hasPrice ? (
+              <div className={styles.priceBlock()}>
+                {pricePrefix ? (
+                  <div className={styles.pricePrefix()}>{pricePrefix}</div>
+                ) : null}
+                <div className={styles.priceLine()}>
+                  <span className={styles.price()}>{price}</span>
+                  {priceSuffix ? (
+                    <span className={styles.priceSuffix()}>{priceSuffix}</span>
+                  ) : null}
                 </div>
-                <Button
-                  className={styles.action()}
-                  variant="primary"
-                  onPress={onActionPress}
-                >
-                  {actionLabel}
-                </Button>
               </div>
             ) : null}
           </div>
-
-          {isEditorial ? (
-            <>
-              {visibleAmenities.length > 0 ? (
-                <div className={styles.amenityList()} aria-label="Amenities">
-                  {visibleAmenities.map((amenity, index) => (
-                    <Chip
-                      key={amenity.id ?? `${amenity.label}-${index}`}
-                      size="sm"
-                      className={styles.amenity()}
-                    >
-                      <Chip.Label>
-                        <span className={styles.amenityInner()}>
-                          {amenity.icon ? (
-                            <Icon
-                              name={amenity.icon}
-                              size={15}
-                              className={styles.amenityIcon()}
-                            />
-                          ) : null}
-                          {amenity.label}
-                        </span>
-                      </Chip.Label>
-                    </Chip>
-                  ))}
-                </div>
-              ) : null}
-
-              <div aria-hidden className={styles.divider()} />
-              <div className={styles.bottom()}>
-                <div className={styles.priceBlock()}>
-                  {pricePrefix ? (
-                    <div className={styles.pricePrefix()}>{pricePrefix}</div>
-                  ) : null}
-                  <div className={styles.priceLine()}>
-                    <span className={styles.price()}>{price}</span>
-                    {priceSuffix ? (
-                      <span className={styles.priceSuffix()}>
-                        {priceSuffix}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-                <Button
-                  className={styles.action()}
-                  variant="primary"
-                  onPress={onActionPress}
-                >
-                  {actionLabel}
-                </Button>
-              </div>
-            </>
-          ) : null}
         </div>
       </div>
     </Card>

@@ -1,9 +1,12 @@
+import type { IconName } from "@repo/theme/icon";
+
 export type ArticleCardOrientation = "horizontal" | "vertical";
 
 export type ArticleCardTag = {
   id: string;
   label: string;
   kind?: "category" | "type" | (string & {});
+  icon?: IconName;
 };
 
 export type ArticleCardProps = {

@@ -4,9 +4,9 @@ import { useDeferredValue, useState } from "react";
 import { Button, Spinner, Typography } from "@heroui/react";
 import { useCatalogSearch } from "@api/discovery";
 
-import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
 import { DiscoveryResultCard } from "@modules/discovery/components/DiscoveryResultCard";
 import { DiscoverySearchField } from "@modules/discovery/components/DiscoverySearchField";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
 const KINDS = [
   { label: "همه", value: undefined },
@@ -49,10 +49,7 @@ export function DiscoverySearchScreen() {
 
   return (
     <main className="app-page gap-6">
-      <DiscoveryPageHeader
-        title="جست‌وجو"
-        description="بین باشگاه‌ها، مربی‌ها و کلاس‌ها جست‌وجو کن."
-      />
+      <SecondaryHeader title="جست‌وجو" showFilter={false} />
       <DiscoverySearchField
         value={query}
         onChange={setQuery}

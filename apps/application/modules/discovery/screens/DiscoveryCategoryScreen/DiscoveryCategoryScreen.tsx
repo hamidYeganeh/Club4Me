@@ -11,8 +11,16 @@ export function DiscoveryCategoryScreen({
   const item = DISCOVERY_CATEGORIES[type].find((entry) => entry.id === id);
   return (
     <DiscoveryClubsScreen
-      title={item?.title ?? "نتایج کشف"}
-      description={item?.subtitle ?? "باشگاه‌های مرتبط با این دسته‌بندی"}
+      layout="list"
+      title={item?.title}
+      description={item?.subtitle}
+      browse={
+        type === "club-types"
+          ? { clubTypeId: id }
+          : type === "sports"
+            ? { sportId: id }
+            : undefined
+      }
     />
   );
 }

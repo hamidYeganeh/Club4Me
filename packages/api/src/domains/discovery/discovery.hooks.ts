@@ -28,10 +28,11 @@ export function useDiscoveryFeed() {
   });
 }
 
-export function useCatalogClubs(params?: PublicCatalogParams) {
+export function useCatalogClubs(params?: PublicCatalogParams, enabled = true) {
   return useQuery({
     queryKey: discoveryQueries.catalog.clubs(params),
     queryFn: () => discoveryClient.listCatalogClubs(params),
+    enabled,
   });
 }
 
@@ -98,6 +99,14 @@ export function useCatalogSearch(
       }
       return result;
     },
+  });
+}
+
+export function useCatalogClubTypes(enabled = true) {
+  return useQuery({
+    queryKey: discoveryQueries.catalog.clubTypes(),
+    queryFn: () => discoveryClient.listCatalogClubTypes(),
+    enabled,
   });
 }
 

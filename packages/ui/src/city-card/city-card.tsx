@@ -5,13 +5,15 @@ import { Card, Typography } from "@heroui/react";
 import { cityCardStyles } from "./city-card.styles";
 import type { CityCardProps } from "./city-card.types";
 
+/** Stronger blur toward the bottom so titles stay readable on busy photos. */
 const BLUR_LAYERS = [
-  { blur: 1, stop: 72 },
-  { blur: 2, stop: 58 },
-  { blur: 4, stop: 46 },
-  { blur: 8, stop: 34 },
-  { blur: 16, stop: 22 },
-  { blur: 28, stop: 12 },
+  { blur: 1, stop: 78 },
+  { blur: 2, stop: 64 },
+  { blur: 4, stop: 50 },
+  { blur: 8, stop: 36 },
+  { blur: 14, stop: 24 },
+  { blur: 22, stop: 14 },
+  { blur: 32, stop: 6 },
 ] as const;
 
 export function CityCard({
@@ -49,9 +51,11 @@ export function CityCard({
       ) : null}
 
       <div className={styles.content()}>
-        <Typography type="body-xs" className={styles.label()}>
-          {label}
-        </Typography>
+        {label ? (
+          <Typography type="body-xs" className={styles.label()}>
+            {label}
+          </Typography>
+        ) : null}
         <Card.Title className={styles.title()}>{title}</Card.Title>
       </div>
     </Card>

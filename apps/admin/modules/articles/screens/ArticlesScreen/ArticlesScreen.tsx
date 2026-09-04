@@ -57,12 +57,15 @@ export function ArticlesScreen() {
                   id: `${item.id}-category`,
                   label: item.categoryName,
                   kind: "category",
+                  icon: "folder",
                 },
                 {
                   id: `${item.id}-status`,
                   label:
                     item.status === "published" ? t("published") : t("draft"),
                   kind: "type",
+                  icon:
+                    item.status === "published" ? "check-circle" : "clipboard",
                 },
               ]}
               tagsLabel={t("category")}

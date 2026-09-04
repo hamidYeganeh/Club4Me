@@ -1,8 +1,7 @@
 export const discoveryEndpoints = {
   feed: "/discovery",
   catalogClubs: "/discovery/catalog/clubs",
-  catalogClub: (identifier: string) =>
-    `/discovery/catalog/clubs/${identifier}`,
+  catalogClub: (identifier: string) => `/discovery/catalog/clubs/${identifier}`,
   catalogCoaches: "/discovery/catalog/coaches",
   catalogCoach: (identifier: string) =>
     `/discovery/catalog/coaches/${identifier}`,
@@ -10,6 +9,7 @@ export const discoveryEndpoints = {
   catalogClass: (identifier: string) =>
     `/discovery/catalog/classes/${identifier}`,
   catalogSearch: "/discovery/catalog/search",
+  catalogClubTypes: "/discovery/catalog/club-types",
   publicResource: (category: string, resource: string) =>
     `/public/catalog/${category}/${resource}`,
   clubs: "/discovery/clubs",

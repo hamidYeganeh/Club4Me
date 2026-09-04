@@ -15,26 +15,29 @@ export const articleCardStyles = tv({
     authorName: "min-w-0",
     separator: "shrink-0 text-muted",
     readTime: "shrink-0",
-    title: "line-clamp-2 font-bold text-foreground",
-    description: "line-clamp-2 text-muted",
-    footer: "relative z-10 mt-auto flex items-end justify-between gap-3 p-0",
-    tags: "flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1",
-    tag: "h-auto min-h-0 gap-1.5 px-0 py-0 text-foreground",
-    tagDot: "size-2.5 shrink-0 rounded-full border border-current",
+    title:
+      "line-clamp-2 min-h-[calc(1.375em*2)] overflow-hidden font-bold break-words text-foreground",
+    description:
+      "line-clamp-2 min-h-[calc(1.25rem*2)] overflow-hidden break-words text-muted",
+    footer:
+      "relative z-10 mt-auto flex min-h-6 items-end justify-between gap-3 p-0",
+    tags: "flex min-w-0 flex-nowrap items-center gap-x-3 overflow-hidden",
+    tag: "h-auto min-h-0 max-w-full shrink-0 gap-1.5 px-0 py-0 text-foreground",
+    tagIcon: "shrink-0 text-accent",
     link: "absolute inset-0 z-[1] rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-focus",
   },
   variants: {
     orientation: {
       vertical: {
-        root: "flex w-full max-w-sm flex-col gap-0 p-0",
-        media: "aspect-[16/10] w-full",
+        root: "flex h-full w-full max-w-sm flex-col gap-0 p-0",
+        media: "aspect-[16/10] w-full shrink-0",
         menu: "absolute end-2 top-2",
         body: "gap-2.5 px-4 pt-3 pb-4",
         title: "text-lg leading-snug",
         description: "text-sm leading-5",
       },
       horizontal: {
-        root: "flex w-full flex-row items-stretch gap-3.5 p-3",
+        root: "flex h-full w-full flex-row items-stretch gap-3.5 p-3",
         media: "w-[7.75rem] min-w-[7.75rem] self-stretch rounded-2xl",
         menu: "relative shrink-0",
         body: "gap-2 py-0.5 pe-1",

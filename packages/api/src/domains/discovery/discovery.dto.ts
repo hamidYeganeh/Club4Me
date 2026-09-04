@@ -184,6 +184,18 @@ export type PublicCatalogClub = DiscoveryClubItem & {
   operationalStatus: string;
 };
 
+export type PublicCatalogClubType = {
+  id: string;
+  name: string;
+  code: string;
+  icon: string | null;
+  clubsCount: number;
+};
+
+export type PublicCatalogClubTypesResponse = {
+  items: PublicCatalogClubType[];
+};
+
 export type PublicCatalogCoach = DiscoveryCoachItem & {
   imageUrl: string | null;
   contact: Record<string, unknown>;

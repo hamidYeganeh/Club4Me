@@ -16,6 +16,7 @@ import type {
   PublicCatalogClass,
   PublicCatalogClub,
   PublicCatalogCoach,
+  PublicCatalogClubTypesResponse,
   PublicCatalogPage,
   PublicCatalogParams,
   PublicCatalogSearchResponse,
@@ -54,6 +55,11 @@ export const discoveryClient = {
     http.get<PublicCatalogSearchResponse>(
       discoveryEndpoints.catalogSearch,
       params,
+    ),
+
+  listCatalogClubTypes: () =>
+    http.get<PublicCatalogClubTypesResponse>(
+      discoveryEndpoints.catalogClubTypes,
     ),
 
   listPublicResources: (

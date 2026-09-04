@@ -41,12 +41,42 @@ export const resourceSeedData: Readonly<
     },
     { name: "بوکس", code: "BOXING", categoryId: "@MARTIAL_ARTS", sortOrder: 6 },
   ],
-  club_types: named(
-    ["باشگاه بدنسازی", "GYM"],
-    ["مجموعه ورزشی", "SPORT_COMPLEX"],
-    ["استخر", "POOL"],
-    ["آکادمی تخصصی", "ACADEMY"],
-  ),
+  club_types: [
+    { name: "باشگاه بدنسازی", code: "GYM", icon: "weight", sortOrder: 1 },
+    {
+      name: "مجموعه ورزشی",
+      code: "SPORT_COMPLEX",
+      icon: "building-1",
+      sortOrder: 2,
+    },
+    { name: "استخر", code: "POOL", icon: "person-swimming", sortOrder: 3 },
+    {
+      name: "آکادمی تخصصی",
+      code: "ACADEMY",
+      icon: "academic-cap",
+      sortOrder: 4,
+    },
+    {
+      name: "استودیو ورزشی",
+      code: "STUDIO",
+      icon: "person-yoga",
+      sortOrder: 5,
+    },
+    { name: "سالن رزمی", code: "MARTIAL_ARTS", icon: "boxing", sortOrder: 6 },
+    {
+      name: "زمین فوتبال",
+      code: "FOOTBALL_FIELD",
+      icon: "soccer-field",
+      sortOrder: 7,
+    },
+    { name: "باشگاه تنیس", code: "TENNIS", icon: "tennis", sortOrder: 8 },
+    {
+      name: "سالن والیبال",
+      code: "VOLLEYBALL",
+      icon: "volleyball",
+      sortOrder: 9,
+    },
+  ],
   coach_types: named(
     ["مربی خصوصی", "PERSONAL"],
     ["مربی گروهی", "GROUP"],

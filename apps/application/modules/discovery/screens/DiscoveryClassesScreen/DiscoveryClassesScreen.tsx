@@ -3,9 +3,9 @@
 import { useDeferredValue, useState } from "react";
 import { Button, Spinner, Typography } from "@heroui/react";
 import { useCatalogClasses } from "@api/discovery";
-import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
 import { DiscoveryResultCard } from "@modules/discovery/components/DiscoveryResultCard";
 import { DiscoverySearchField } from "@modules/discovery/components/DiscoverySearchField";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
 export function DiscoveryClassesScreen() {
   const [query, setQuery] = useState("");
@@ -14,10 +14,7 @@ export function DiscoveryClassesScreen() {
   const classes = result.data?.items ?? [];
   return (
     <main className="app-page gap-6">
-      <DiscoveryPageHeader
-        title="کلاس‌ها"
-        description="کلاس‌های فعال و نزدیک در حال ثبت‌نام را ببین."
-      />
+      <SecondaryHeader title="کلاس‌ها" />
       <DiscoverySearchField
         value={query}
         onChange={setQuery}

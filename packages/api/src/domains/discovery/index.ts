@@ -20,6 +20,8 @@ export type {
   PublicCatalogClass,
   PublicCatalogClub,
   PublicCatalogCoach,
+  PublicCatalogClubType,
+  PublicCatalogClubTypesResponse,
   PublicCatalogPage,
   PublicCatalogParams,
   PublicCatalogSearchResponse,
@@ -44,6 +46,7 @@ export {
   useCatalogClasses,
   useCatalogClass,
   useCatalogSearch,
+  useCatalogClubTypes,
   usePublicCatalogResource,
 } from "./discovery.hooks";
 export { discoveryQueries } from "./discovery.queries";
