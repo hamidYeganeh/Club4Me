@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
 
 import type { RequestableRole } from "../../../lib/roles";
+import type { RoleRequestDetails } from "../dto/create-role-request.dto";
 
 export const ROLE_REQUEST_STATUSES = [
   "pending",
@@ -31,6 +32,9 @@ export class RoleRequest {
 
   @Prop({ required: true })
   phone: string;
+
+  @Prop({ type: Object, required: true })
+  details: RoleRequestDetails;
 
   createdAt: Date;
   updatedAt: Date;

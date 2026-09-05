@@ -1,5 +1,7 @@
 "use client";
 
+import { ClubEmptyState } from "@modules/discovery/components/ClubEmptyState";
+
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Typography } from "@heroui/react";
@@ -44,84 +46,88 @@ export function ClubSlotsSection({ clubId }: { clubId: string }) {
   const t = useTranslations("discovery.clubDetail");
   const sessions = useReservableSessions(clubId);
 
-  const { chartData, calendarDates, monthLabel, totalAvailable } = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const currentMonthKey = getPersianMonthKey(today);
+  const { chartData, calendarDates, monthLabel, totalAvailable } =
+    useMemo(() => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const currentMonthKey = getPersianMonthKey(today);
 
-    const monthStart = new Date(today);
-    while (true) {
-      const previous = new Date(monthStart);
-      previous.setDate(previous.getDate() - 1);
-      if (getPersianMonthKey(previous) !== currentMonthKey) break;
-      monthStart.setDate(monthStart.getDate() - 1);
-    }
-
-    const monthEnd = new Date(today);
-    while (true) {
-      const next = new Date(monthEnd);
-      next.setDate(next.getDate() + 1);
-      if (getPersianMonthKey(next) !== currentMonthKey) break;
-      monthEnd.setDate(monthEnd.getDate() + 1);
-    }
-
-    // Persian calendars run Saturday through Friday. Include the surrounding
-    // days needed to complete the first and last visual week.
-    const gridStart = new Date(monthStart);
-    gridStart.setDate(gridStart.getDate() - ((gridStart.getDay() + 1) % 7));
-    const gridEnd = new Date(monthEnd);
-    gridEnd.setDate(gridEnd.getDate() + ((5 - gridEnd.getDay() + 7) % 7));
-    const dayCount =
-      Math.round((gridEnd.getTime() - gridStart.getTime()) / 86_400_000) + 1;
-    const dates = Array.from({ length: dayCount }, (_, index) => {
-      const date = new Date(gridStart);
-      date.setDate(gridStart.getDate() + index);
-      return date;
-    });
-
-    const availableByDate = new Map<string, number>();
-    for (const session of sessions.data?.items ?? []) {
-      if (
-        session.status === "active" &&
-        session.reservedCount < session.capacity
-      ) {
-        const startsAt = new Date(session.startsAt);
-        const key = toDateKey(startsAt);
-        availableByDate.set(key, (availableByDate.get(key) ?? 0) + 1);
+      const monthStart = new Date(today);
+      while (true) {
+        const previous = new Date(monthStart);
+        previous.setDate(previous.getDate() - 1);
+        if (getPersianMonthKey(previous) !== currentMonthKey) break;
+        monthStart.setDate(monthStart.getDate() - 1);
       }
-    }
 
-    const weekCount = dayCount / 7;
-    const data: HeatmapColumn[] = Array.from({ length: 7 }, (_, dayIndex) => ({
-      bin: dayIndex,
-      bins: Array.from({ length: weekCount }, (_, weekIndex) => {
-        const date = dates[weekIndex * 7 + dayIndex];
-        const inCurrentMonth = getPersianMonthKey(date) === currentMonthKey;
-        return {
-          bin: weekIndex,
-          count: inCurrentMonth
-            ? (availableByDate.get(toDateKey(date)) ?? 0)
-            : 0,
-          date,
-        };
-      }),
-    }));
+      const monthEnd = new Date(today);
+      while (true) {
+        const next = new Date(monthEnd);
+        next.setDate(next.getDate() + 1);
+        if (getPersianMonthKey(next) !== currentMonthKey) break;
+        monthEnd.setDate(monthEnd.getDate() + 1);
+      }
 
-    return {
-      chartData: data,
-      calendarDates: dates,
-      monthLabel: new Intl.DateTimeFormat("fa-IR", {
-        calendar: "persian",
-        month: "long",
-        year: "numeric",
-      }).format(today),
-      totalAvailable: data.reduce(
-        (total, column) =>
-          total + column.bins.reduce((sum, bin) => sum + bin.count, 0),
-        0,
-      ),
-    };
-  }, [sessions.data?.items]);
+      // Persian calendars run Saturday through Friday. Include the surrounding
+      // days needed to complete the first and last visual week.
+      const gridStart = new Date(monthStart);
+      gridStart.setDate(gridStart.getDate() - ((gridStart.getDay() + 1) % 7));
+      const gridEnd = new Date(monthEnd);
+      gridEnd.setDate(gridEnd.getDate() + ((5 - gridEnd.getDay() + 7) % 7));
+      const dayCount =
+        Math.round((gridEnd.getTime() - gridStart.getTime()) / 86_400_000) + 1;
+      const dates = Array.from({ length: dayCount }, (_, index) => {
+        const date = new Date(gridStart);
+        date.setDate(gridStart.getDate() + index);
+        return date;
+      });
+
+      const availableByDate = new Map<string, number>();
+      for (const session of sessions.data?.items ?? []) {
+        if (
+          session.status === "active" &&
+          session.reservedCount < session.capacity
+        ) {
+          const startsAt = new Date(session.startsAt);
+          const key = toDateKey(startsAt);
+          availableByDate.set(key, (availableByDate.get(key) ?? 0) + 1);
+        }
+      }
+
+      const weekCount = dayCount / 7;
+      const data: HeatmapColumn[] = Array.from(
+        { length: 7 },
+        (_, dayIndex) => ({
+          bin: dayIndex,
+          bins: Array.from({ length: weekCount }, (_, weekIndex) => {
+            const date = dates[weekIndex * 7 + dayIndex];
+            const inCurrentMonth = getPersianMonthKey(date) === currentMonthKey;
+            return {
+              bin: weekIndex,
+              count: inCurrentMonth
+                ? (availableByDate.get(toDateKey(date)) ?? 0)
+                : 0,
+              date,
+            };
+          }),
+        }),
+      );
+
+      return {
+        chartData: data,
+        calendarDates: dates,
+        monthLabel: new Intl.DateTimeFormat("fa-IR", {
+          calendar: "persian",
+          month: "long",
+          year: "numeric",
+        }).format(today),
+        totalAvailable: data.reduce(
+          (total, column) =>
+            total + column.bins.reduce((sum, bin) => sum + bin.count, 0),
+          0,
+        ),
+      };
+    }, [sessions.data?.items]);
 
   const weekdayDates = calendarDates.slice(0, 7);
 
@@ -162,6 +168,13 @@ export function ClubSlotsSection({ clubId }: { clubId: string }) {
           {sessions.isError ? (
             <div className="mt-6 rounded-2xl border border-dashed border-border bg-surface-tertiary/45 p-5 text-center text-sm text-muted">
               {t("slotsLoadError")}
+            </div>
+          ) : !sessions.isPending && totalAvailable === 0 ? (
+            <div className="mt-6">
+              <ClubEmptyState
+                title="این ماه سانس آزادی وجود ندارد"
+                description="برای بررسی سانس‌های تاریخ‌های دیگر، همه سانس‌های باشگاه را ببینید."
+              />
             </div>
           ) : (
             <div className="mt-6" dir="ltr">

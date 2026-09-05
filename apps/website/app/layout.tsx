@@ -2,22 +2,14 @@ import type { Metadata } from "next";
 import { ApiProvider } from "@api/provider";
 import { ThemeProvider } from "@theme/provider";
 import { NextIntlClientProvider } from "next-intl";
-import { Monoton } from "next/font/google";
 import { getLocale, getMessages, getTimeZone } from "next-intl/server";
 
 import "./globals.css";
 
-const monoton = Monoton({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-monoton",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "جیم فور می | باشگاه شهری",
+  title: "جیم فور می | کشف باشگاه، مربی و کلاس",
   description:
-    "تمرین حضوری با مربی، برنامه شخصی، و کلاس‌های قدرتی، تناوبی، بوکس و یوگا.",
+    "باشگاه و مربی نزدیک خود را پیدا کنید؛ کلاس رزرو کنید و عضویت باشگاه را در جیم فور می تمدید کنید.",
 };
 
 export default async function RootLayout({
@@ -33,7 +25,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir="rtl"
-      className={`dark h-full ${monoton.variable}`}
+      className="dark h-full"
       suppressHydrationWarning
     >
       <body
@@ -48,7 +40,8 @@ export default async function RootLayout({
           >
             <ApiProvider
               baseURL={
-                process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:7088/api/v1"
+                process.env.NEXT_PUBLIC_API_URL ??
+                "http://localhost:7088/api/v1"
               }
             >
               {children}

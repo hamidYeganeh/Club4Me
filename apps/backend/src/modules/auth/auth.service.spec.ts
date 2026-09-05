@@ -38,6 +38,11 @@ describe("AuthService portal access", () => {
   const smsProvider = {
     sendOtp: jest.fn(),
   };
+  const config = {
+    env: {
+      APIIR_KEY: "api-ir-key",
+    },
+  };
 
   let authService: AuthService;
 
@@ -59,6 +64,7 @@ describe("AuthService portal access", () => {
       otpService as never,
       tokenService as never,
       sessions as never,
+      config as never,
       smsProvider as never,
     );
   });

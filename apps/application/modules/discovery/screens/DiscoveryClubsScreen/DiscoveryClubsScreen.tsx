@@ -19,6 +19,10 @@ import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 import { DiscoveryClubsCatalogSections } from "@modules/discovery/sections/DiscoveryClubsCatalogSections";
 import {
+  SortBottomSheet,
+  type SortOption,
+} from "@/components/sort-bottom-sheet";
+import {
   getActiveCoordinates,
   useActiveLocation,
 } from "@modules/locations/active-location";
@@ -28,6 +32,14 @@ import type {
   DiscoveryClubsBrowse,
   DiscoveryClubsScreenProps,
 } from "./DiscoveryClubsScreen.types";
+
+type ClubSort = "suggested" | "rating" | "newest";
+
+const clubSortOptions: ReadonlyArray<SortOption<ClubSort>> = [
+  { value: "suggested", label: "پیشنهادی", icon: "arrow-trend-up" },
+  { value: "rating", label: "محبوب‌ترین", icon: "medal" },
+  { value: "newest", label: "جدیدترین", icon: "sort-descending" },
+];
 
 export function DiscoveryClubsScreen({
   title,
@@ -39,6 +51,7 @@ export function DiscoveryClubsScreen({
   const t = useTranslations("discovery.clubs");
   const styles = discoveryClubsScreenStyles();
   const [query, setQuery] = useState("");
+  const [sortOpen, setSortOpen] = useState(false);
   const { active } = useActiveLocation();
   const coords = getActiveCoordinates(active);
   const [filters, setFilters] = useState<PublicCatalogParams>(
@@ -122,6 +135,18 @@ export function DiscoveryClubsScreen({
         longitude: position.coords.longitude,
         radiusKm: 25,
       });
+    });
+  };
+  const selectedSort: ClubSort = filters.sort ?? "suggested";
+
+  const applySort = (nextSort: ClubSort) => {
+    setFilters((current) => {
+      if (nextSort === "suggested") {
+        const nextFilters = { ...current };
+        delete nextFilters.sort;
+        return nextFilters;
+      }
+      return { ...current, sort: nextSort };
     });
   };
 
@@ -215,9 +240,15 @@ export function DiscoveryClubsScreen({
                 })}
               </Typography>
             )}
-            <Typography type="body-xs" color="muted">
-              {t("sortSuggested")}
-            </Typography>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-10 min-h-10 gap-2 px-2 font-bold text-muted"
+              onPress={() => setSortOpen(true)}
+            >
+              مرتب‌سازی: {clubSortOptions.find((option) => option.value === selectedSort)?.label}
+              <Icon name="sort-descending" size={18} className="text-accent" />
+            </Button>
           </div>
           <div className={styles.list()}>
             {clubs.isPending ? <DiscoveryResultCardSkeleton count={4} /> : null}
@@ -242,6 +273,16 @@ export function DiscoveryClubsScreen({
           </div>
         </>
       )}
+
+      <SortBottomSheet
+        open={sortOpen}
+        onOpenChange={setSortOpen}
+        value={selectedSort}
+        onApply={applySort}
+        title="مرتب‌سازی باشگاه‌ها"
+        description="باشگاه‌ها را بر اساس پیشنهاد، محبوبیت یا تازگی مرتب کنید."
+        options={clubSortOptions}
+      />
     </main>
   );
 }

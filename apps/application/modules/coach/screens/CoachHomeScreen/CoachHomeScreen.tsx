@@ -11,6 +11,7 @@ import {
 import { AthleteScreenHeaderSection } from "@modules/athlete/sections/AthleteScreenHeaderSection";
 import { CoachClubClassesSection } from "@modules/coach/sections/CoachClubClassesSection";
 import { DashboardPageSkeleton } from "@/components/loading-skeletons";
+import { CoachAnalyticsSection } from "@modules/coach/sections/CoachAnalyticsSection/CoachAnalyticsSection";
 
 const statusLabel: Record<string, string> = {
   draft: "پیش‌نویس",
@@ -96,6 +97,7 @@ export function CoachHomeScreen() {
           </Button>
         ) : null}
       </Card>
+      <CoachAnalyticsSection />
       <CoachClubClassesSection />
       <section>
         <div className="mb-3 flex items-center justify-between">
@@ -108,7 +110,10 @@ export function CoachHomeScreen() {
         </div>
         <div className="flex flex-col gap-3">
           {(classes.data?.items ?? []).map((item) => (
-            <Card key={item.id} className="rounded-2xl bg-surface p-4 shadow-none">
+            <Card
+              key={item.id}
+              className="rounded-2xl bg-surface p-4 shadow-none"
+            >
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <Typography type="body" weight="bold">

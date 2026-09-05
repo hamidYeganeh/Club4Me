@@ -1,6 +1,8 @@
 "use client";
 
-import { Typography } from "@heroui/react";
+import { ClubEmptyState } from "@modules/discovery/components/ClubEmptyState";
+
+import { Button, Typography } from "@heroui/react";
 import { useClubReviews } from "@api";
 import { useTranslations } from "next-intl";
 
@@ -27,31 +29,54 @@ export function ClubReservationsAndReviewsSection({
             })}
           </Typography>
         </div>
-        <ButtonLink href={`/discovery/clubs/${clubId}/reviews`} variant="secondary" className="mt-4 w-full">
+        <ButtonLink
+          href={`/discovery/clubs/${clubId}/reviews`}
+          variant="secondary"
+          className="mt-4 w-full"
+        >
           مشاهده خلاصه امتیازها و همه نظرها
         </ButtonLink>
         <div className="mt-3 space-y-2">
           {reviews.isPending ? <ReviewListSkeleton count={2} /> : null}
-          {!reviews.isPending && (reviews.data?.items ?? []).map((review) => (
-            <article
-              key={review.id}
-              className="rounded-2xl bg-surface-secondary p-4"
-            >
-              <Typography type="body-sm" weight="semibold">
-                {t("stars", { count: review.rating })}
-              </Typography>
-              {review.title && (
-                <Typography type="h6" weight="medium" className="mt-2">
-                  {review.title}
+          {reviews.isError ? (
+            <div className="app-surface rounded-3xl p-5 text-center text-sm text-muted">
+              دریافت نظرها انجام نشد.
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-3"
+                onPress={() => void reviews.refetch()}
+              >
+                تلاش دوباره
+              </Button>
+            </div>
+          ) : !reviews.isPending && !reviews.data?.items.length ? (
+            <ClubEmptyState
+              title="هنوز نظری ثبت نشده است"
+              description="پس از تجربه این باشگاه، نظر شما می‌تواند به انتخاب دیگران کمک کند."
+            />
+          ) : null}
+          {!reviews.isPending &&
+            (reviews.data?.items ?? []).map((review) => (
+              <article
+                key={review.id}
+                className="rounded-2xl bg-surface-secondary p-4"
+              >
+                <Typography type="body-sm" weight="semibold">
+                  {t("stars", { count: review.rating })}
                 </Typography>
-              )}
-              {review.body && (
-                <Typography type="body-sm" color="muted" className="mt-1">
-                  {review.body}
-                </Typography>
-              )}
-            </article>
-          ))}
+                {review.title && (
+                  <Typography type="h6" weight="medium" className="mt-2">
+                    {review.title}
+                  </Typography>
+                )}
+                {review.body && (
+                  <Typography type="body-sm" color="muted" className="mt-1">
+                    {review.body}
+                  </Typography>
+                )}
+              </article>
+            ))}
         </div>
       </div>
     </section>

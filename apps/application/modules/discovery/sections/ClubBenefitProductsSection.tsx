@@ -1,5 +1,7 @@
 "use client";
 
+import { ClubEmptyState } from "@modules/discovery/components/ClubEmptyState";
+
 import { usePublicBenefitProducts, usePurchaseBenefitProduct } from "@api";
 import { Button, Card, Chip, Skeleton, toast } from "@heroui/react";
 import { CompactCardListSkeleton } from "@/components/loading-skeletons";
@@ -17,7 +19,7 @@ export function ClubBenefitProductsSection({ clubId }: { clubId: string }) {
         <CompactCardListSkeleton count={2} />
       </section>
     );
-  if (!products.data?.items.length) return null;
+
   return (
     <section className="px-4 py-5">
       <div className="mb-4">
@@ -26,8 +28,26 @@ export function ClubBenefitProductsSection({ clubId }: { clubId: string }) {
           یک‌بار بخرید و هنگام رزرو استفاده کنید
         </p>
       </div>
+      {products.isError ? (
+        <div className="app-surface rounded-3xl p-5 text-center text-sm text-muted">
+          دریافت بسته‌ها و عضویت‌ها انجام نشد.
+          <Button
+            variant="secondary"
+            size="sm"
+            className="mt-3"
+            onPress={() => void products.refetch()}
+          >
+            تلاش دوباره
+          </Button>
+        </div>
+      ) : !products.data?.items.length ? (
+        <ClubEmptyState
+          title="هنوز بسته یا عضویتی ارائه نشده است"
+          description="بسته‌های جلسه و عضویت‌های این باشگاه پس از انتشار اینجا نمایش داده می‌شوند."
+        />
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
-        {products.data.items.map((item) => (
+        {(products.data?.items ?? []).map((item) => (
           <Card key={item.id} className="app-card rounded-3xl p-5 shadow-none">
             <Chip size="sm" variant="soft">
               {item.type === "session_pack" ? "بسته جلسه" : "عضویت زمانی"}

@@ -1,4 +1,4 @@
-export type FavoriteEntityType = "club" | "coach" | "class";
+export type FavoriteEntityType = "club" | "coach" | "class" | "article";
 
 export type Favorite = {
   id: string;

@@ -318,7 +318,7 @@ export class DiscoveryFeedService {
 
   async getPublicArticle(slug: string) {
     const document = await this.articles
-      .findOne({ slug, status: "published" })
+      .findOne({ ...identifierFilter(slug), status: "published" })
       .lean();
     if (!document) catalogNotFound("ARTICLE_NOT_FOUND");
     return publicCatalogArticle(document!);

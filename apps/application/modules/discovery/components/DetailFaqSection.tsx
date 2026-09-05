@@ -1,15 +1,32 @@
 "use client";
 
+import { ClubEmptyState } from "@modules/discovery/components/ClubEmptyState";
+
 import { Card } from "@heroui/react";
 import { Icon } from "@theme/icon";
 
 export type DetailFaqItem = { question: string; answer: string };
 
-export function DetailFaqSection({ items }: { items?: DetailFaqItem[] }) {
+export function DetailFaqSection({
+  items,
+  showEmpty = false,
+}: {
+  items?: DetailFaqItem[];
+  showEmpty?: boolean;
+}) {
   const visible = (items ?? []).filter(
     (item) => item.question.trim() && item.answer.trim(),
   );
-  if (!visible.length) return null;
+  if (!visible.length)
+    return showEmpty ? (
+      <section className="space-y-3 pb-8">
+        <h2 className="text-lg font-bold">سوالات متداول</h2>
+        <ClubEmptyState
+          title="هنوز پرسش و پاسخی ثبت نشده است"
+          description="پاسخ باشگاه به پرسش‌های رایج اینجا نمایش داده می‌شود."
+        />
+      </section>
+    ) : null;
 
   return (
     <Card className="app-card app-stack-card p-5 shadow-none">

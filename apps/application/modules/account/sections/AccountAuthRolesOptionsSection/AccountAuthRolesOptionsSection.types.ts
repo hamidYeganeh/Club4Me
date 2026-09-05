@@ -6,7 +6,8 @@ export type AccountAuthRolesOptionsSectionProps = {
   athleteLabel: string;
   coachLabel: string;
   ownerLabel: string;
-  availableRoles?: ApplicationRole[];
+  grantedRoles: ApplicationRole[];
+  isFirstTime?: boolean;
   onSelectRole: (role: ApplicationRole) => void;
 };
 

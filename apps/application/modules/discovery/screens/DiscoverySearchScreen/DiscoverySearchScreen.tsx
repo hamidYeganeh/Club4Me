@@ -15,6 +15,10 @@ import { DiscoveryResultCard } from "@modules/discovery/components/DiscoveryResu
 import { RequestFailureState } from "@/components/request-failure-state";
 import { DiscoveryResultCardSkeleton } from "@/components/loading-skeletons";
 import { getQueryFailure } from "@/lib/request-failure";
+import {
+  SortBottomSheet,
+  type SortOption,
+} from "@/components/sort-bottom-sheet";
 
 const RECENT_SEARCHES_KEY = "gym4me.discovery.recent-searches";
 const kinds = [
@@ -25,6 +29,13 @@ const kinds = [
 ] as const;
 
 type RecentSearch = { query: string; kind?: PublicCatalogSearchKind };
+type SearchSort = "suggested" | "rating" | "newest";
+
+const searchSortOptions: ReadonlyArray<SortOption<SearchSort>> = [
+  { value: "suggested", label: "پیشنهادی", icon: "arrow-trend-up" },
+  { value: "rating", label: "محبوب‌ترین", icon: "medal" },
+  { value: "newest", label: "جدیدترین", icon: "sort-descending" },
+];
 
 export function DiscoverySearchScreen({
   initialKind,
@@ -38,6 +49,8 @@ export function DiscoverySearchScreen({
     initialKind,
   );
   const [showFilters, setShowFilters] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sort, setSort] = useState<SearchSort>("suggested");
   const [recent, setRecent] = useState<RecentSearch[]>([]);
   const [deferredQuery, setDeferredQuery] = useState("");
   const keywords = usePublicCatalogResource(
@@ -47,7 +60,12 @@ export function DiscoverySearchScreen({
   );
   const canSearch = deferredQuery.length >= 2;
   const result = useCatalogSearch(
-    { q: deferredQuery, kind, limit: 20 },
+    {
+      q: deferredQuery,
+      kind,
+      limit: 20,
+      sort: sort === "suggested" ? undefined : sort,
+    },
     canSearch,
   );
   const failure = getQueryFailure(result.error, result.fetchStatus);
@@ -297,18 +315,36 @@ export function DiscoverySearchScreen({
         </section>
       ) : (
         <section className="flex flex-col gap-3 pt-1">
-          {result.isLoading && !failure ? (
-            <Skeleton
-              className="h-4 w-24 rounded-lg"
-              aria-label="در حال جست‌وجو"
-            />
-          ) : (
-            <p className="text-sm text-muted">
-              {failure
-                ? "جست‌وجو انجام نشد"
-                : `${(result.data?.total ?? 0).toLocaleString("fa-IR")} نتیجه`}
-            </p>
-          )}
+          <div className="flex min-h-10 items-center justify-between gap-3">
+            {result.isLoading && !failure ? (
+              <Skeleton
+                className="h-4 w-24 rounded-lg"
+                aria-label="در حال جست‌وجو"
+              />
+            ) : (
+              <p className="text-sm text-muted">
+                {failure
+                  ? "جست‌وجو انجام نشد"
+                  : `${(result.data?.total ?? 0).toLocaleString("fa-IR")} نتیجه`}
+              </p>
+            )}
+            {!failure ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-10 min-h-10 gap-2 px-2 font-bold text-muted"
+                onPress={() => setSortOpen(true)}
+              >
+                {searchSortOptions.find((option) => option.value === sort)
+                  ?.label ?? "پیشنهادی"}
+                <Icon
+                  name="sort-descending"
+                  size={18}
+                  className="text-accent"
+                />
+              </Button>
+            ) : null}
+          </div>
           {!failure
             ? results.map((item) => (
                 <div
@@ -340,6 +376,16 @@ export function DiscoverySearchScreen({
           ) : null}
         </section>
       )}
+
+      <SortBottomSheet
+        open={sortOpen}
+        onOpenChange={setSortOpen}
+        value={sort}
+        onApply={setSort}
+        title="مرتب‌سازی نتایج جست‌وجو"
+        description="نتیجه‌ها را با ترتیبی که برایتان مهم‌تر است نمایش دهید."
+        options={searchSortOptions}
+      />
     </main>
   );
 }

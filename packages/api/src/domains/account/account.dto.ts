@@ -4,6 +4,21 @@ export type RequestableRole = "coach" | "owner";
 
 export type RoleRequestStatus = "pending" | "approved" | "rejected";
 
+export type RoleRequestDetails = {
+  displayName: string;
+  city: string;
+  experienceYears?: number;
+  specialty?: string;
+  credentials?: string;
+  businessName?: string;
+  businessType?: string;
+  description: string;
+};
+
+export type RequestRolePayload = {
+  details: RoleRequestDetails;
+};
+
 export type AccountGender = "female" | "male" | "other";
 
 export type AccountActivityLevel = "very-active" | "normal" | "very-lazy";
@@ -25,6 +40,7 @@ export type AccountRoleRequest = {
   userId: string;
   phone: string;
   role: RequestableRole;
+  details: RoleRequestDetails;
   status: RoleRequestStatus;
   createdAt: string;
   updatedAt: string;
@@ -52,6 +68,7 @@ export type AccountUser = {
   genderDescription?: string;
   activityLevel?: AccountActivityLevel;
   idCard?: string;
+  avatarUrl?: string;
   roles: UserRole[];
   hasPassword: boolean;
   createdAt: string;
@@ -66,6 +83,15 @@ export type UpdateAccountMePayload = {
   genderDescription?: string;
   activityLevel?: AccountActivityLevel;
   idCard?: string;
+  avatarUrl?: string;
+};
+
+export type VerifyIdCardPayload = {
+  idCard: string;
+};
+
+export type VerifyIdCardResponse = {
+  match: true;
 };
 
 export type RequestOtpPayload = {

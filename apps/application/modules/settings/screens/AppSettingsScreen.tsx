@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
@@ -24,6 +23,9 @@ import {
 import { openExternalUrl } from "@/lib/native-browser";
 import { PermissionGrantSheet } from "@/components/permissions/permission-grant-sheet";
 import { getRequestFailurePresentation } from "@/lib/request-failure";
+import { getQueryFailure } from "@/lib/request-failure";
+import { RequestFailureState } from "@/components/request-failure-state";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
 type Props = { role: "athlete" | "coach" };
 type PreferenceKey = keyof NotificationPreferences;
@@ -60,6 +62,10 @@ const notificationItems: Array<{
 export function AppSettingsScreen({ role }: Props) {
   const router = useRouter();
   const preferences = useNotificationPreferences();
+  const preferencesFailure = getQueryFailure(
+    preferences.error,
+    preferences.fetchStatus,
+  );
   const updatePreferences = useUpdateNotificationPreferences();
   const deleteAccount = useDeleteAccount();
   const logout = useLogout();
@@ -156,24 +162,16 @@ export function AppSettingsScreen({ role }: Props) {
     void openExternalUrl(`${WEBSITE_URL}${path}`);
 
   return (
-    <main className="app-page gap-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
-      <header className="flex items-center gap-3 py-2">
-        <Link
-          href={`/${role}/profile`}
-          className="app-icon-button"
-          aria-label="بازگشت"
-        >
-          <Icon name="chevron-right" size={20} />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold">تنظیمات</h1>
-          <p className="mt-1 text-sm text-muted">اعلان‌ها، حریم خصوصی و حساب</p>
-        </div>
-      </header>
+    <main className="app-page gap-5">
+      <SecondaryHeader
+        title="تنظیمات"
+        showFilter={false}
+        backHref={`/${role}/profile`}
+      />
 
       <SettingsSection title="اعلان‌ها">
         <SettingRow
-          title="Push Notification"
+          title="اعلان‌های دستگاه"
           description={
             pushState === "denied"
               ? "مجوز در تنظیمات دستگاه غیرفعال است"
@@ -181,33 +179,55 @@ export function AppSettingsScreen({ role }: Props) {
           }
         >
           <Switch
+            aria-label="اعلان‌های دستگاه"
             isSelected={pushState === "enabled"}
             isDisabled={pushState === "unsupported"}
             onChange={togglePush}
-            aria-label="Push Notification"
-          />
-        </SettingRow>
-        {notificationItems.map((item) => (
-          <SettingRow
-            key={item.key}
-            title={item.title}
-            description={item.description}
           >
-            {preferences.isPending ? (
-              <Skeleton
-                className="h-7 w-12 shrink-0 rounded-full"
-                aria-label={`در حال بارگذاری ${item.title}`}
-              />
-            ) : (
-              <Switch
-                isSelected={preferences.data?.[item.key] ?? false}
-                isDisabled={updatePreferences.isPending}
-                onChange={(enabled) => void togglePreference(item.key, enabled)}
-                aria-label={item.title}
-              />
-            )}
-          </SettingRow>
-        ))}
+            <Switch.Content aria-label="اعلان‌های دستگاه">
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+            </Switch.Content>
+          </Switch>
+        </SettingRow>
+        {preferencesFailure ? (
+          <RequestFailureState
+            compact
+            error={preferencesFailure}
+            onRetry={() => void preferences.refetch()}
+          />
+        ) : (
+          notificationItems.map((item) => (
+            <SettingRow
+              key={item.key}
+              title={item.title}
+              description={item.description}
+            >
+              {preferences.isPending ? (
+                <Skeleton
+                  className="h-7 w-12 shrink-0 rounded-full"
+                  aria-label={`در حال بارگذاری ${item.title}`}
+                />
+              ) : (
+                <Switch
+                  aria-label={item.title}
+                  isSelected={preferences.data?.[item.key] ?? false}
+                  isDisabled={updatePreferences.isPending}
+                  onChange={(enabled) =>
+                    void togglePreference(item.key, enabled)
+                  }
+                >
+                  <Switch.Content aria-label={item.title}>
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                  </Switch.Content>
+                </Switch>
+              )}
+            </SettingRow>
+          ))
+        )}
       </SettingsSection>
 
       <SettingsSection title="حریم خصوصی و پشتیبانی">
@@ -262,7 +282,7 @@ export function AppSettingsScreen({ role }: Props) {
             {deleteAccount.isPending ? "در حال حذف…" : "حذف دائمی حساب"}
           </Button>
           <p className="mt-3 text-xs leading-6 text-muted">
-            اطلاعات پروفایل، موقعیت‌ها، علاقه‌مندی‌ها، نظرها و توکن‌های دستگاه
+            اطلاعات پروفایل، موقعیت‌ها، ذخیره‌شده‌ها، نظرها و توکن‌های دستگاه
             حذف می‌شوند.
           </p>
         </div>

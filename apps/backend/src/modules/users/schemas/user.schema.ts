@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument } from "mongoose";
 
 import type { UserRole } from "../../../lib/roles";
+import { MAX_INLINE_IMAGE_URL_LENGTH } from "../../media/media.constants";
 
 export const USER_STATUSES = ["active", "suspended", "deleted"] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
@@ -42,6 +43,9 @@ export class User {
 
   @Prop({ trim: true, maxlength: 10 })
   idCard?: string;
+
+  @Prop({ trim: true, maxlength: MAX_INLINE_IMAGE_URL_LENGTH })
+  avatarUrl?: string;
 
   @Prop({ type: [String], default: ["athlete"] })
   roles: UserRole[];

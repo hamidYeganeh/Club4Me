@@ -38,24 +38,30 @@ test("کشف تا رزرو، پرداخت، اعلان، لغو و refund", asyn
 
   await page
     .getByRole("button", { name: "همین حالا رزرو کن", exact: true })
+    .last()
     .click();
-  await expect(page).toHaveURL(
-    /\/discovery\/clubs\/energy-plus-demo\/slots$/,
-  );
+  await expect(page).toHaveURL(/\/discovery\/clubs\/energy-plus-demo\/slots$/);
 
-  await page.getByRole("button", { name: "رزرو کنید", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "مرور رزرو" }),
-  ).toBeVisible();
-  await expect(page.getByText("سانس تست باشگاه", { exact: true })).toBeVisible();
   await page
-    .getByRole("button", { name: "ثبت رزرو و ادامه پرداخت" })
+    .getByRole("radiogroup", { name: "ساعت رزرو را انتخاب کنید" })
+    .locator('[data-slot="radio-content"]')
+    .first()
     .click();
+  await expect(page.getByRole("radio").first()).toBeChecked();
+  await page.getByRole("button", { name: "رزرو کنید", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "مرور رزرو" })).toBeVisible();
+  await expect(
+    page.getByText("سانس تست باشگاه", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "ثبت رزرو و ادامه پرداخت" }).click();
   await expect(page.getByText("درگاه پرداخت آزمایشی")).toBeVisible();
   await page.getByRole("button", { name: "پرداخت موفق" }).click();
   await expect(
-    page.getByText("پرداخت آزمایشی موفق بود و رزرو قطعی شد"),
+    page.getByRole("heading", { name: "رزرو شما با موفقیت انجام شد" }),
   ).toBeVisible();
+  expect(state.reservation?.paymentStatus).toBe("paid");
+  await page.getByRole("button", { name: "مشاهده رزروهای من" }).click();
+  await expect(page).toHaveURL(/\/athlete\/reservations$/);
 
   await page.goto("/athlete/notifications");
   await expect(page.getByText("رزرو شما قطعی شد")).toBeVisible();
@@ -65,7 +71,27 @@ test("کشف تا رزرو، پرداخت، اعلان، لغو و refund", asyn
     name: /سانس تست باشگاه/,
   });
   await expect(reservation).toBeVisible();
+  await expect(
+    page.getByRole("status", { name: "Gym4Me", exact: true }),
+  ).toHaveCount(0);
 
+  const swipeSurface = page
+    .locator(".cursor-grab")
+    .filter({ has: reservation });
+  await swipeSurface.scrollIntoViewIfNeeded();
+  const bounds = await swipeSurface.boundingBox();
+  if (!bounds) throw new Error("Reservation swipe surface is missing");
+  await page.mouse.move(
+    bounds.x + bounds.width / 2,
+    bounds.y + bounds.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    bounds.x + bounds.width / 2 - 110,
+    bounds.y + bounds.height / 2,
+    { steps: 12 },
+  );
+  await page.mouse.up();
   await page.getByRole("button", { name: "لغو رزرو", exact: true }).click();
   await expect(page.getByRole("heading", { name: "لغو رزرو" })).toBeVisible();
   await page.getByLabel("تغییر برنامه").check();
@@ -93,4 +119,31 @@ test("حذف حساب نشست را پاک و کاربر را به ورود هد
     )
     .toBeNull();
   expect(state.accountDeleted).toBe(true);
+});
+
+test("ویرایش پروفایل در bottom sheet و بدون route فیلد انجام می‌شود", async ({
+  page,
+}) => {
+  const state = createMockApiState();
+  await installApiMock(page, state);
+  await setBrowserSession(page, true);
+
+  await page.goto("/athlete/profile/edit");
+  await page.getByRole("button", { name: "ویرایش جنسیت" }).click();
+  await expect(
+    page.getByRole("heading", { name: "ویرایش جنسیت" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "سایر" }).click();
+  await page.getByPlaceholder("توضیح کوتاهی بنویسید…").fill("ترجیح شخصی");
+  await page.getByRole("button", { name: "اعمال" }).click();
+
+  await expect(page).toHaveURL(/\/athlete\/profile\/edit$/);
+  await expect(page.getByText("سایر", { exact: true })).toBeVisible();
+  expect(state.user.gender).toBe("other");
+  expect(state.user.genderDescription).toBe("ترجیح شخصی");
+
+  await page.getByRole("button", { name: "ویرایش سطح فعالیت" }).click();
+  await page.getByRole("button", { name: /بسیار فعال/ }).click();
+  await page.getByRole("button", { name: "اعمال" }).click();
+  expect(state.user.activityLevel).toBe("very-active");
 });

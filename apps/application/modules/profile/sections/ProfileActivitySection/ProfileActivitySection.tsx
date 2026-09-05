@@ -7,7 +7,7 @@ import {
   useCoachBookings,
   useCoachCalendar,
   useCoachClasses,
-  useFavorites,
+  useSavedItems,
   useMyReservations,
 } from "@api";
 import { Skeleton, Typography } from "@heroui/react";
@@ -30,7 +30,7 @@ export function ProfileActivitySection({ role }: { role: ProfileRole }) {
 function AthleteActivity() {
   const reservations = useMyReservations();
   const clubClasses = useAthleteClubClasses();
-  const favorites = useFavorites();
+  const favorites = useSavedItems();
 
   const items: ActivityItem[] = [
     {
@@ -60,9 +60,9 @@ function AthleteActivity() {
     },
     {
       href: "/athlete/favorites",
-      label: "علاقه‌مندی‌ها",
+      label: "ذخیره‌شده‌ها",
       description: "انتخاب‌های ذخیره‌شده",
-      icon: "heart",
+      icon: "bookmark",
       value: getQueryCount(
         favorites.isPending,
         favorites.isError,
@@ -190,10 +190,7 @@ function ActivityGrid({ items }: { items: ActivityItem[] }) {
 function ActivityValue({ value }: { value: number | null | undefined }) {
   if (value === null) {
     return (
-      <Skeleton
-        aria-label="در حال دریافت"
-        className="h-7 w-9 rounded-md"
-      />
+      <Skeleton aria-label="در حال دریافت" className="h-7 w-9 rounded-md" />
     );
   }
 

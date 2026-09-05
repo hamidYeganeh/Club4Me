@@ -3,5 +3,5 @@
 import { Toast } from "@heroui/react";
 
 export function AppToastProvider() {
-  return <Toast.Provider placement="top" />;
+  return <Toast.Provider placement="top" className="!z-[2000]" />;
 }

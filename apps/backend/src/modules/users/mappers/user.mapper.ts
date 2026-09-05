@@ -16,6 +16,7 @@ export type PublicUser = {
   genderDescription?: string;
   activityLevel?: UserActivityLevel;
   idCard?: string;
+  avatarUrl?: string;
   roles: UserRole[];
   status: "active" | "suspended" | "deleted";
   hasPassword: boolean;
@@ -48,6 +49,9 @@ export function toPublicUser(user: UserDocument): PublicUser {
     ...(user.idCard === undefined || user.idCard === null
       ? {}
       : { idCard: user.idCard }),
+    ...(user.avatarUrl === undefined || user.avatarUrl === null
+      ? {}
+      : { avatarUrl: user.avatarUrl }),
     roles: user.roles ?? [],
     status: user.status,
     hasPassword: Boolean(user.passwordHash),

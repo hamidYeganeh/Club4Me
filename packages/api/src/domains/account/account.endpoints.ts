@@ -10,8 +10,10 @@ export const accountEndpoints = {
   me: "/account/me",
   profileChoices: "/account/me/choices",
   updateMe: "/account/me",
+  verifyIdCard: "/account/me/verify-id-card",
   deleteAccount: "/account",
   role: (role: "coach" | "owner") => `/account/roles/${role}` as const,
+  myRoleRequests: "/account/role-requests",
   adminRoleRequests: "/admin/role-requests",
   adminRoleRequest: (requestId: string) =>
     `/admin/role-requests/${requestId}` as const,

@@ -10,7 +10,8 @@ import {
   type FavoriteEntityType,
 } from "./schemas/favorite.schema";
 
-@Controller("api/v1/favorites")
+// Keep the legacy route for installed clients; both routes share user saves.
+@Controller(["api/v1/saves", "api/v1/favorites"])
 @UseGuards(JwtAuthGuard)
 export class FavoritesController {
   constructor(private readonly favorites: FavoritesService) {}

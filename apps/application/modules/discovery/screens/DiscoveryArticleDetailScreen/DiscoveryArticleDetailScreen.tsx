@@ -1,5 +1,6 @@
 "use client";
 
+import { SaveButton } from "@/components/save-button";
 import Link from "next/link";
 import { Button } from "@heroui/react";
 import { Icon } from "@theme/icon";
@@ -44,6 +45,7 @@ export function DiscoveryArticleDetailScreen({
         >
           <Icon name="chevron-right" size={22} />
         </Link>
+        <SaveButton entityType="article" entityId={article.id} />
       </div>
 
       <article>

@@ -190,19 +190,16 @@ export function BottomSheet({
               {title || description ? (
                 <div className="mt-3 flex w-full items-start gap-3 text-start">
                   <div className="min-w-0 flex-1">
-                  {title ? (
-                    <h2 id={titleId} className="text-xl font-semibold">
-                      {title}
-                    </h2>
-                  ) : null}
-                  {description ? (
-                    <p
-                      id={descriptionId}
-                      className="mt-1 text-sm text-muted"
-                    >
-                      {description}
-                    </p>
-                  ) : null}
+                    {title ? (
+                      <h2 id={titleId} className="text-xl font-semibold">
+                        {title}
+                      </h2>
+                    ) : null}
+                    {description ? (
+                      <p id={descriptionId} className="mt-1 text-sm text-muted">
+                        {description}
+                      </p>
+                    ) : null}
                   </div>
                   {headerAction ? (
                     <div className="shrink-0">{headerAction}</div>

@@ -286,7 +286,14 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
         exploreLabel={t("explore")}
         exploreHref="/discovery"
         selectedId={activeSelectedId}
-        onSelect={setSelectedId}
+        onSelect={(id) => {
+          setSelectedId(id);
+          const item = items.find((candidate) => candidate.id === id);
+          if (!item) return;
+          router.push(
+            `/athlete/reservations/${encodeURIComponent(item.sourceId ?? item.id)}?source=${item.source ?? "club"}`,
+          );
+        }}
         renewLabel={t("renew")}
         onRenew={(item) =>
           router.push(item.changeTimeHref ?? "/discovery")

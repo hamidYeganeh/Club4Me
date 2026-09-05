@@ -38,6 +38,7 @@ const envSchema = z
     FIREBASE_CLIENT_EMAIL: z.string().email().optional().or(z.literal("")),
     FIREBASE_PRIVATE_KEY: z.string().optional(),
     FIREBASE_SERVICE_ACCOUNT_PATH: z.string().optional(),
+    APIIR_KEY: z.string().optional(),
     KAVENEGAR_API_KEY: z.string().optional(),
     KAVENEGAR_SENDER: z.string().optional(),
     KAVENEGAR_OTP_TEMPLATE: z.string().default("gym4meotp"),

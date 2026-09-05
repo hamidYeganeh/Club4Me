@@ -15,11 +15,11 @@ public class ReminderWidgetPlugin extends Plugin {
     public void setReminder(PluginCall call) {
         String date = call.getString("date");
         String time = call.getString("time");
-        Integer joinedCount = call.getInt("joinedCount");
-        Integer interestedCount = call.getInt("interestedCount");
+        String meta = call.getString("meta");
+        Double startsAtEpochMs = call.getDouble("startsAtEpochMs");
 
-        if (date == null || time == null || joinedCount == null || interestedCount == null) {
-            call.reject("date, time, joinedCount, and interestedCount are required");
+        if (date == null || time == null || meta == null || startsAtEpochMs == null) {
+            call.reject("date, time, meta, and startsAtEpochMs are required");
             return;
         }
 
@@ -30,10 +30,25 @@ public class ReminderWidgetPlugin extends Plugin {
         preferences.edit()
                 .putString(ReminderWidgetProvider.DATE_KEY, date)
                 .putString(ReminderWidgetProvider.TIME_KEY, time)
-                .putInt(ReminderWidgetProvider.JOINED_COUNT_KEY, joinedCount)
-                .putInt(ReminderWidgetProvider.INTERESTED_COUNT_KEY, interestedCount)
+                .putString(ReminderWidgetProvider.META_KEY, meta)
+                .putLong(ReminderWidgetProvider.STARTS_AT_KEY, startsAtEpochMs.longValue())
+                .putBoolean(ReminderWidgetProvider.HAS_REMINDER_KEY, true)
                 .apply();
 
+        ReminderWidgetProvider.refresh(getContext());
+
+        JSObject result = new JSObject();
+        result.put("updated", true);
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void clearReminder(PluginCall call) {
+        SharedPreferences preferences = getContext().getSharedPreferences(
+                ReminderWidgetProvider.PREFERENCES_NAME,
+                Context.MODE_PRIVATE
+        );
+        preferences.edit().clear().apply();
         ReminderWidgetProvider.refresh(getContext());
 
         JSObject result = new JSObject();

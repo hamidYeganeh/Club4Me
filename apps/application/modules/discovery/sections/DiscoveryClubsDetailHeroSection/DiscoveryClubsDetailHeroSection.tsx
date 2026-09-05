@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { SaveButton } from "@/components/save-button";
 import { useRouter } from "next/navigation";
 import { Button, Typography } from "@heroui/react";
 import {
@@ -37,6 +38,7 @@ const GALLERY_PULL_RESISTANCE = 180;
 
 export function DiscoveryClubsDetailHeroSection({
   clubId,
+  favoriteId,
   name,
   location,
   statusLabel,
@@ -49,7 +51,6 @@ export function DiscoveryClubsDetailHeroSection({
   const direction = getLocaleDirection(useLocale());
   const styles = discoveryClubsDetailHeroSectionStyles();
   const router = useRouter();
-  const [favorited, setFavorited] = useState(false);
   const [pullReady, setPullReady] = useState(false);
   const slides = images.length > 0 ? images : [FALLBACK_IMAGE_SRC];
   const rootRef = useRef<HTMLElement | null>(null);
@@ -265,15 +266,7 @@ export function DiscoveryClubsDetailHeroSection({
             <Icon name="chevron-right" size="lg" />
           </Button>
 
-          <Button
-            isIconOnly
-            aria-label={favorited ? t("unfavorite") : t("favorite")}
-            variant="secondary"
-            size="lg"
-            onPress={() => setFavorited((value) => !value)}
-          >
-            <Icon name="heart" size="lg" className={styles.favoriteIcon()} />
-          </Button>
+          <SaveButton entityType="club" entityId={favoriteId} />
         </div>
 
         <div className={styles.metaRow()} dir={direction}>

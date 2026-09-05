@@ -21,6 +21,12 @@ import { SsgoiProvider } from "@/components/ssgoi-provider";
 import { SsgoiRouteBoundary } from "@/components/ssgoi-route-boundary";
 import { AppToastProvider } from "@/components/toast-provider";
 import { ActiveLocationProvider } from "@modules/locations/active-location";
+import {
+  siteDescription,
+  siteName,
+  siteTitle,
+  siteUrl,
+} from "@/lib/site-metadata";
 
 import "./globals.css";
 
@@ -32,8 +38,51 @@ const monoton = Monoton({
 });
 
 export const metadata: Metadata = {
-  title: "Gym4Me",
-  description: "Gym4Me member application",
+  metadataBase: siteUrl,
+  title: {
+    default: siteTitle,
+    template: "%s | Gym4Me",
+  },
+  description: siteDescription,
+  applicationName: siteName,
+  keywords: [
+    "Gym4Me",
+    "جیم فور می",
+    "باشگاه ورزشی",
+    "مربی ورزشی",
+    "کلاس ورزشی",
+    "رزرو آنلاین باشگاه",
+    "تناسب اندام",
+  ],
+  authors: [{ name: siteName, url: "https://gym4me.ir" }],
+  creator: siteName,
+  publisher: siteName,
+  category: "fitness",
+  classification: "Fitness discovery and booking application",
+  manifest: "/manifest.webmanifest",
+  referrer: "origin-when-cross-origin",
+  formatDetection: {
+    address: false,
+    email: false,
+    telephone: false,
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: siteName,
+  },
+  openGraph: {
+    type: "website",
+    locale: "fa_IR",
+    siteName,
+    title: siteTitle,
+    description: siteDescription,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteTitle,
+    description: siteDescription,
+  },
 };
 
 export const viewport: Viewport = {

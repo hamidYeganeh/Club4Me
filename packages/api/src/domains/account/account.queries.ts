@@ -3,4 +3,5 @@ export const accountQueries = {
   me: () => [...accountQueries.all(), "me"] as const,
   profileChoices: () => [...accountQueries.all(), "profile-choices"] as const,
   roleRequests: () => [...accountQueries.all(), "role-requests"] as const,
+  myRoleRequests: () => [...accountQueries.all(), "my-role-requests"] as const,
 };

@@ -1,5 +1,7 @@
 "use client";
 
+import { ClubEmptyState } from "@modules/discovery/components/ClubEmptyState";
+
 import { useState } from "react";
 import { Card } from "@heroui/react";
 import { useLocale } from "next-intl";
@@ -14,23 +16,39 @@ import "swiper/css/pagination";
 
 export function DetailGallerySection({
   title = "گالری",
+  showEmpty = false,
   images,
   viewAllHref,
 }: {
   title?: string;
+  showEmpty?: boolean;
   images: string[];
   viewAllHref?: string;
 }) {
   const direction = getLocaleDirection(useLocale());
   const [activeIndex, setActiveIndex] = useState(0);
-  if (!images.length) return null;
+  if (!images.length)
+    return showEmpty ? (
+      <section className="space-y-3">
+        <h2 className="text-lg font-black text-foreground">{title}</h2>
+        <ClubEmptyState
+          title="هنوز تصویری اضافه نشده است"
+          description="تصاویر فضای باشگاه پس از انتشار اینجا نمایش داده می‌شوند."
+        />
+      </section>
+    ) : null;
 
   return (
     <section className="app-reveal min-w-0 overflow-hidden">
       <div className="mb-3 flex items-center justify-between px-1">
         <h2 className="text-lg font-black text-foreground">{title}</h2>
         {viewAllHref ? (
-          <ButtonLink href={viewAllHref} variant="ghost" size="sm" className="font-bold text-accent">
+          <ButtonLink
+            href={viewAllHref}
+            variant="ghost"
+            size="sm"
+            className="font-bold text-accent"
+          >
             مشاهده همه
           </ButtonLink>
         ) : null}

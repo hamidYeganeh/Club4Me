@@ -10,7 +10,7 @@ import { useTranslations } from "next-intl";
 import { Controller, useForm } from "react-hook-form";
 
 import { Form, FormFieldset, FormTextField } from "@/components/form";
-import { SmoothInputGroupInput } from "@/components/smooth-input";
+import { SmoothInputGroupInput } from "@repo/ui/smooth-input";
 import { getAccountApiErrorMessage } from "@/lib/account-api-error";
 import { formatIranianPhoneDisplay, toE164IranianPhone } from "@/lib/phone";
 

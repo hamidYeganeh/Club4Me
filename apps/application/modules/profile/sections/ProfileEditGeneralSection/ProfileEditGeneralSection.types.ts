@@ -3,8 +3,6 @@ import type { ReactNode } from "react";
 
 import type { ProfileEditField } from "../../profile.types";
 
-export type ProfileEditGeneralSectionProps = Record<string, never>;
-
 export type ProfileEditFieldRowProps = {
   onPress: () => void;
   label: string;

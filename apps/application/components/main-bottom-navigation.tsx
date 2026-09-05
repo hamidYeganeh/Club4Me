@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { Icon, type IconName } from "@theme/icon";
 import { useTranslations } from "next-intl";
 
@@ -54,7 +55,10 @@ function isNestedProfileRoute(pathname: string): boolean {
   return /^\/(athlete|coach)\/profile\/(edit|image)/.test(pathname);
 }
 
-function getNavConfig(pathname: string): NavConfig | null {
+function getNavConfig(
+  pathname: string,
+  discoveryRole: "athlete" | "coach",
+): NavConfig | null {
   if (isNestedProfileRoute(pathname)) {
     return null;
   }
@@ -68,7 +72,7 @@ function getNavConfig(pathname: string): NavConfig | null {
   }
 
   if (pathname.startsWith("/discovery") && !isDiscoveryDetail(pathname)) {
-    return athleteNav;
+    return discoveryRole === "coach" ? coachNav : athleteNav;
   }
 
   return null;
@@ -79,13 +83,30 @@ function isItemActive(pathname: string, item: NavItem): boolean {
     return pathname === item.href;
   }
 
+  if (item.labelKey === "profile") {
+    const role = item.href.split("/")[1];
+    if (
+      ["settings", "favorites", "notifications", "benefits", "support"].some(
+        (screen) => pathname === `/${role}/${screen}`,
+      )
+    )
+      return true;
+  }
+
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
 export function MainBottomNavigation() {
   const pathname = usePathname();
   const t = useTranslations("nav");
-  const config = getNavConfig(pathname);
+  const [lastRole, setLastRole] = useState<"athlete" | "coach">("athlete");
+  const routeRole = pathname.startsWith("/coach")
+    ? "coach"
+    : pathname.startsWith("/athlete")
+      ? "athlete"
+      : null;
+  if (routeRole && routeRole !== lastRole) setLastRole(routeRole);
+  const config = getNavConfig(pathname, routeRole ?? lastRole);
 
   if (!config) {
     return null;

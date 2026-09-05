@@ -11,12 +11,15 @@ import { FormEvent, useState } from "react";
 
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { TicketListSkeleton } from "@/components/loading-skeletons";
+import { RequestFailureState } from "@/components/request-failure-state";
+import { getQueryFailure } from "@/lib/request-failure";
 
 const fieldClass =
   "w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-accent";
 
 export function SupportTicketsScreen() {
   const tickets = useSupportTickets();
+  const failure = getQueryFailure(tickets.error, tickets.fetchStatus);
   const create = useCreateSupportTicket();
   const reply = useReplySupportTicket();
   const [open, setOpen] = useState(false);
@@ -43,9 +46,13 @@ export function SupportTicketsScreen() {
   };
 
   return (
-    <main className="min-h-dvh pb-8">
-      <SecondaryHeader title="پشتیبانی" showFilter={false} />
-      <div className="mx-auto max-w-2xl space-y-4 px-4 pt-5">
+    <main className="app-page">
+      <SecondaryHeader
+        title="پشتیبانی"
+        showFilter={false}
+        backHref="/athlete/settings"
+      />
+      <div className="space-y-5 pt-5">
         <Button variant="primary" onPress={() => setOpen((value) => !value)}>
           ثبت تیکت جدید
         </Button>
@@ -55,11 +62,16 @@ export function SupportTicketsScreen() {
               <input
                 required
                 name="subject"
+                aria-label="موضوع"
                 minLength={3}
                 placeholder="موضوع"
                 className={fieldClass}
               />
-              <select name="category" className={fieldClass}>
+              <select
+                name="category"
+                aria-label="دسته‌بندی درخواست"
+                className={fieldClass}
+              >
                 <option value="reservation">رزرو</option>
                 <option value="payment">پرداخت</option>
                 <option value="account">حساب کاربری</option>
@@ -69,11 +81,16 @@ export function SupportTicketsScreen() {
               <textarea
                 required
                 name="message"
+                aria-label="شرح درخواست"
                 minLength={5}
                 placeholder="شرح درخواست"
                 className={`${fieldClass} min-h-28`}
               />
-              <select name="preferredContact" className={fieldClass}>
+              <select
+                name="preferredContact"
+                aria-label="روش دریافت پاسخ"
+                className={fieldClass}
+              >
                 <option value="in_app">پاسخ داخل اپ</option>
                 <option value="phone">تماس تلفنی</option>
               </select>
@@ -87,7 +104,23 @@ export function SupportTicketsScreen() {
             </form>
           </Card>
         ) : null}
-        {tickets.isPending ? <TicketListSkeleton count={3} /> : null}
+        {tickets.isPending && !failure ? (
+          <TicketListSkeleton count={3} />
+        ) : null}
+        {failure ? (
+          <RequestFailureState
+            error={failure}
+            onRetry={() => void tickets.refetch()}
+          />
+        ) : null}
+        {!tickets.isPending && !failure && !tickets.data?.items.length ? (
+          <div className="rounded-3xl bg-surface-secondary p-8 text-center">
+            <h2 className="font-bold">هنوز درخواستی ثبت نکرده‌اید</h2>
+            <p className="mt-2 text-sm leading-7 text-muted">
+              برای پیگیری رزرو، پرداخت یا حساب خود، درخواست جدیدی ثبت کنید.
+            </p>
+          </div>
+        ) : null}
         {tickets.data?.items.map((ticket) => (
           <Card key={ticket.id} className="space-y-3 p-4">
             <div className="flex items-start justify-between gap-3">
@@ -117,16 +150,21 @@ export function SupportTicketsScreen() {
                   event.preventDefault();
                   const form = event.currentTarget;
                   const data = new FormData(form);
-                  await reply.mutateAsync({
-                    ticketId: ticket.id,
-                    message: String(data.get("message")),
-                  });
-                  form.reset();
+                  try {
+                    await reply.mutateAsync({
+                      ticketId: ticket.id,
+                      message: String(data.get("message")),
+                    });
+                    form.reset();
+                  } catch {
+                    toast.danger("ارسال پاسخ انجام نشد؛ دوباره تلاش کنید");
+                  }
                 }}
               >
                 <input
                   required
                   name="message"
+                  aria-label="پاسخ شما"
                   placeholder="پاسخ شما"
                   className={fieldClass}
                 />

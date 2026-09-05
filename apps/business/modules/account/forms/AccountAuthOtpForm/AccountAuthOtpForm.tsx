@@ -5,9 +5,6 @@ import {
   Button,
   InputGroup,
   Label,
-  ListBox,
-  Select,
-  Separator,
   Spinner,
   toast,
 } from "@heroui/react";
@@ -15,9 +12,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRequestOtp } from "@api/business";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 import { Form, FormFieldset, FormTextField } from "@/components/form";
+import { SmoothInputGroupInput } from "@repo/ui/smooth-input";
 import { getAccountApiErrorMessage } from "@/lib/account-api-error";
 import { formatIranianPhoneDisplay, toE164IranianPhone } from "@/lib/phone";
 
@@ -31,8 +29,6 @@ import type {
 export function AccountAuthOtpForm({
   phoneLabel,
   phonePlaceholder,
-  countryLabel,
-  iranLabel,
   continueLabel,
   legend,
   phoneRequired,
@@ -101,45 +97,7 @@ export function AccountAuthOtpForm({
               className={styles.inputGroup()}
               dir="ltr"
             >
-              <InputGroup.Prefix className={styles.prefix()}>
-                <Controller
-                  name="country"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Select
-                      aria-label={countryLabel}
-                      isDisabled={isBusy}
-                      value={field.value}
-                      onChange={(key) => {
-                        if (key === "IR") {
-                          field.onChange(key);
-                        }
-                      }}
-                    >
-                      <Select.Trigger className={styles.trigger()}>
-                        <IranFlag className={styles.flag()} />
-                        <Icon name="chevron-down" size={14} className="text-muted" />
-                      </Select.Trigger>
-                      <Select.Popover>
-                        <ListBox>
-                          <ListBox.Item id="IR" textValue={iranLabel}>
-                            <span className="flex items-center gap-2">
-                              <IranFlag className="size-4 overflow-hidden rounded-sm" />
-                              {iranLabel}
-                            </span>
-                            <ListBox.ItemIndicator />
-                          </ListBox.Item>
-                        </ListBox>
-                      </Select.Popover>
-                    </Select>
-                  )}
-                />
-                <Separator
-                  orientation="vertical"
-                  className={styles.separator()}
-                />
-              </InputGroup.Prefix>
-              <InputGroup.Input
+              <SmoothInputGroupInput
                 className={styles.input()}
                 inputMode="tel"
                 autoComplete="tel"
@@ -165,20 +123,5 @@ export function AccountAuthOtpForm({
         </FormFieldset.Actions>
       </FormFieldset>
     </Form>
-  );
-}
-
-function IranFlag({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 9 6"
-      className={className}
-      aria-hidden
-      focusable="false"
-    >
-      <rect width="9" height="2" fill="#239f40" />
-      <rect width="9" height="2" y="2" fill="#fff" />
-      <rect width="9" height="2" y="4" fill="#da0000" />
-    </svg>
   );
 }

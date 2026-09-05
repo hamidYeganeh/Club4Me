@@ -6,11 +6,23 @@ const RESERVATION_ID = "66d700000000000000000001";
 const INTENT_ID = "66d800000000000000000001";
 
 type SearchMode =
-  | "success"
-  | "offline"
-  | "server-error"
-  | "permission-denied"
-  | "timeout";
+  "success" | "offline" | "server-error" | "permission-denied" | "timeout";
+
+type MockUser = {
+  id: string;
+  phone: string;
+  firstName: string;
+  lastName: string;
+  gender?: "female" | "male" | "other";
+  genderDescription?: string;
+  activityLevel?: "very-active" | "normal" | "very-lazy";
+  idCard?: string;
+  birthdate?: string;
+  roles: string[];
+  hasPassword: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type MockApiState = ReturnType<typeof createMockApiState>;
 
@@ -35,6 +47,7 @@ export function createMockApiState(searchMode: SearchMode = "success") {
       createdAt: string;
     }>,
     accountDeleted: false,
+    user: userFixture(),
   };
 }
 
@@ -54,8 +67,17 @@ export async function installApiMock(page: Page, state: MockApiState) {
       });
     }
 
+    if (path === "/account/me/choices" && method === "GET") {
+      return success(route, profileChoicesFixture());
+    }
+
     if (path === "/account/me" && method === "GET") {
-      return success(route, userFixture());
+      return success(route, state.user);
+    }
+
+    if (path === "/account/me" && method === "PATCH") {
+      state.user = { ...state.user, ...(request.postDataJSON() as object) };
+      return success(route, state.user);
     }
 
     if (path === "/account" && method === "DELETE") {
@@ -247,7 +269,7 @@ export async function setBrowserSession(page: Page, authenticated = false) {
   }, authenticated);
 }
 
-function userFixture() {
+function userFixture(): MockUser {
   const timestamp = "2026-01-01T00:00:00.000Z";
   return {
     id: "66d100000000000000000001",
@@ -258,6 +280,38 @@ function userFixture() {
     hasPassword: true,
     createdAt: timestamp,
     updatedAt: timestamp,
+  };
+}
+
+function profileChoicesFixture() {
+  return {
+    genders: [
+      { value: "female", label: "زن" },
+      { value: "male", label: "مرد" },
+      {
+        value: "other",
+        label: "سایر",
+        description: "هویت جنسیتی خود را بنویسید",
+        requiresDescription: true,
+      },
+    ],
+    activityLevels: [
+      {
+        value: "very-active",
+        label: "بسیار فعال",
+        description: "هر روز ورزش می‌کنم",
+      },
+      {
+        value: "normal",
+        label: "معمولی",
+        description: "هفته‌ای یک یا دو بار ورزش می‌کنم",
+      },
+      {
+        value: "very-lazy",
+        label: "کم‌تحرک",
+        description: "به‌ندرت ورزش می‌کنم",
+      },
+    ],
   };
 }
 

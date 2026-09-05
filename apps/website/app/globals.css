@@ -44,3 +44,22 @@ html[data-magicui-theme-vt="active"]::view-transition-group(root) {
 html[data-magicui-theme-vt="active"]::view-transition-new(root) {
   clip-path: var(--magicui-theme-vt-clip-from);
 }
+
+@theme {
+  --ease-app: cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-line-shadow: line-shadow 15s linear infinite;
+  @keyframes line-shadow {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 100% -100%;
+    }
+  }
+}
+@utility duration-fast {
+  transition-duration: 150ms;
+}
+@utility duration-moderate {
+  transition-duration: 300ms;
+}

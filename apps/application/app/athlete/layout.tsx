@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
+
 import { AuthGate } from "@/components/auth-gate";
+
+export const metadata: Metadata = {
+  title: "حساب ورزشکار",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function AthleteLayout({
   children,

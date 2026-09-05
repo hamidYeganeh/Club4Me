@@ -5,6 +5,7 @@ import type {
   AccountProfileChoicesResponse,
   ListRoleRequestsResponse,
   RequestableRole,
+  RequestRolePayload,
   RequestRoleResponse,
   ReviewRoleRequestPayload,
   ReviewRoleRequestResponse,
@@ -21,6 +22,8 @@ import type {
   RefreshSessionResponse,
   RequestOtpPayload,
   RequestOtpResponse,
+  VerifyIdCardPayload,
+  VerifyIdCardResponse,
   SetPasswordPayload,
   SetPasswordResponse,
   UpdateAccountMePayload,
@@ -61,13 +64,19 @@ export const accountClient = {
   updateMe: (payload: UpdateAccountMePayload) =>
     http.patch<AccountMeResponse>(accountEndpoints.updateMe, payload),
 
+  verifyIdCard: (payload: VerifyIdCardPayload) =>
+    http.post<VerifyIdCardResponse>(accountEndpoints.verifyIdCard, payload),
+
   deleteAccount: () =>
     http.delete<{ success: true }>(accountEndpoints.deleteAccount, {
       confirmation: "DELETE",
     }),
 
-  requestRole: (role: RequestableRole) =>
-    http.post<RequestRoleResponse>(accountEndpoints.role(role)),
+  requestRole: (role: RequestableRole, payload: RequestRolePayload) =>
+    http.post<RequestRoleResponse>(accountEndpoints.role(role), payload),
+
+  myRoleRequests: () =>
+    http.get<ListRoleRequestsResponse>(accountEndpoints.myRoleRequests),
 
   listRoleRequests: () =>
     http.get<ListRoleRequestsResponse>(accountEndpoints.adminRoleRequests),

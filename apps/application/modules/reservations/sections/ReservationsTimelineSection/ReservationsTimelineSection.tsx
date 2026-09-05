@@ -1,11 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button, Chip, Skeleton, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { SwipeableList } from "@repo/ui/swipeable-list";
 import { RequestFailureState } from "@/components/request-failure-state";
+import {
+  SortBottomSheet,
+  type SortOption,
+} from "@/components/sort-bottom-sheet";
 
 import {
   durationMinutes,
@@ -132,6 +137,20 @@ export function ReservationsTimelineSection({
   cancelLabel,
 }: ReservationsTimelineSectionProps) {
   const styles = reservationsTimelineSectionStyles();
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortValue = sortNewestFirst ? "newest" : "oldest";
+  const sortOptions: ReadonlyArray<SortOption<"newest" | "oldest">> = [
+    {
+      value: "newest",
+      label: newestFirstLabel,
+      icon: "sort-descending",
+    },
+    {
+      value: "oldest",
+      label: oldestFirstLabel,
+      icon: "sort-ascending",
+    },
+  ];
 
   return (
     <section className={styles.root()}>
@@ -141,7 +160,7 @@ export function ReservationsTimelineSection({
             variant="ghost"
             size="sm"
             className={styles.sort()}
-            onPress={onToggleSort}
+            onPress={() => setSortOpen(true)}
           >
             {sortNewestFirst ? newestFirstLabel : oldestFirstLabel}
             <Icon
@@ -218,7 +237,7 @@ export function ReservationsTimelineSection({
             className="gap-5"
             itemClassName="rounded-[1.25rem] bg-surface-secondary"
             surfaceClassName="rounded-[1.25rem] bg-surface"
-            railClassName="rounded-[1.35rem] bg-surface-secondary"
+            railClassName="rounded-[1.35rem] bg-surface-secondary [direction:ltr]"
             items={items.map((item) => ({
               id: item.id,
               content: (
@@ -269,6 +288,18 @@ export function ReservationsTimelineSection({
           />
         </div>
       )}
+
+      <SortBottomSheet
+        open={sortOpen}
+        onOpenChange={setSortOpen}
+        value={sortValue}
+        onApply={(nextValue) => {
+          if (nextValue !== sortValue) onToggleSort();
+        }}
+        title="مرتب‌سازی رزروها"
+        description="رزروها را از جدیدترین یا قدیمی‌ترین مورد نمایش دهید."
+        options={sortOptions}
+      />
     </section>
   );
 }

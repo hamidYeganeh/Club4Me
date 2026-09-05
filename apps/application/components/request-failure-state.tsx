@@ -2,6 +2,7 @@
 
 import { Button, Typography } from "@heroui/react";
 import { Icon, type IconName } from "@theme/icon";
+import Image from "next/image";
 
 import { cn } from "@/lib/cn";
 import {
@@ -29,6 +30,8 @@ export function RequestFailureState({
   className?: string;
 }) {
   const failure = getRequestFailurePresentation(error);
+  const showServerIllustration =
+    failure.kind === "server-error" || failure.kind === "timeout";
 
   return (
     <div
@@ -41,9 +44,23 @@ export function RequestFailureState({
         className,
       )}
     >
-      <span className="flex size-12 items-center justify-center rounded-2xl bg-danger/12 text-danger">
-        <Icon name={icons[failure.kind]} size={24} />
-      </span>
+      {showServerIllustration ? (
+        <Image
+          src="/server-unavailable.png"
+          alt=""
+          width={750}
+          height={560}
+          unoptimized
+          className={cn(
+            "h-auto max-w-full object-contain",
+            compact ? "w-40" : "w-64",
+          )}
+        />
+      ) : (
+        <span className="flex size-12 items-center justify-center rounded-2xl bg-danger/12 text-danger">
+          <Icon name={icons[failure.kind]} size={24} />
+        </span>
+      )}
       <div>
         <Typography type={compact ? "body" : "h5"} weight="bold">
           {failure.title}

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 
 import { AppError } from "../../common/errors/app.exception";
+import { toLocalIranianPhone } from "../../common/utils/phone.util";
 import type { UserRole } from "../../lib/roles";
 import type { PublicUser } from "../users/mappers/user.mapper";
 import type {
@@ -15,6 +16,7 @@ import {
 import { AuthSessionsService } from "./services/auth-sessions.service";
 import { OtpService } from "./services/otp.service";
 import { TokenService, type TokenPair } from "./services/token.service";
+import { AppConfigService } from "../../config/app-config.service";
 
 export type AuthResult = TokenPair & {
   user: PublicUser;
@@ -34,6 +36,7 @@ export class AuthService {
     private readonly otpService: OtpService,
     private readonly tokenService: TokenService,
     private readonly sessions: AuthSessionsService,
+    private readonly config: AppConfigService,
     @Inject(SMS_PROVIDER) private readonly smsProvider: SmsProvider,
   ) {}
 
@@ -248,9 +251,94 @@ export class AuthService {
       genderDescription?: string;
       activityLevel?: UserActivityLevel;
       idCard?: string;
+      avatarUrl?: string;
     },
   ): Promise<PublicUser> {
     return this.usersService.updateProfile(userId, profile);
+  }
+
+  async verifyIdCard(phone: string, idCard: string): Promise<{ match: true }> {
+    const match = await this.verifyIdCardWithApiIr(phone, idCard);
+    if (!match) {
+      throw new AppError(
+        400,
+        "ID_CARD_MISMATCH",
+        "National ID does not match the provided phone number",
+      );
+    }
+    return { match: true };
+  }
+
+  private async verifyIdCardWithApiIr(
+    phone: string,
+    idCard: string,
+  ): Promise<boolean> {
+    const apiKey = this.config.env.APIIR_KEY;
+    if (!apiKey) {
+      throw new AppError(
+        500,
+        "ID_CARD_VERIFICATION_KEY_MISSING",
+        "APIIR_KEY is missing",
+      );
+    }
+
+    let response: Response;
+    const normalizedApiKey = apiKey.startsWith("Bearer ")
+      ? apiKey.slice(7).trim()
+      : apiKey;
+
+    try {
+      response = await fetch("https://s.api.ir/api/sw1/Shahkar", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${normalizedApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nationalCode: idCard,
+          mobile: toLocalIranianPhone(phone),
+        }),
+      });
+    } catch {
+      throw new AppError(
+        502,
+        "ID_CARD_VERIFICATION_FAILED",
+        "ID card verification request failed",
+      );
+    }
+
+    const payload: {
+      success?: boolean;
+      data?: unknown;
+      message?: string;
+      code?: string;
+    } = await response.json().catch(() => {
+      throw new AppError(
+        502,
+        "ID_CARD_VERIFICATION_FAILED",
+        "Invalid response from verification service",
+      );
+    });
+
+    if (!response.ok || payload.success !== true) {
+      throw new AppError(
+        502,
+        "ID_CARD_VERIFICATION_FAILED",
+        String(
+          payload.message ?? payload.code ?? "ID card verification failed",
+        ),
+      );
+    }
+
+    if (typeof payload.data !== "boolean") {
+      throw new AppError(
+        502,
+        "ID_CARD_VERIFICATION_FAILED",
+        "Verification service returned unexpected data",
+      );
+    }
+
+    return payload.data;
   }
 
   private async requirePortalUser(

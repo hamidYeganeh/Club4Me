@@ -31,6 +31,7 @@ import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGate
 import { ReservationResultScreen } from "@modules/reservations/components/ReservationResultScreen";
 import { ReservationReviewScreen } from "@modules/reservations/components/ReservationReviewScreen";
 import { CoachReservationSuccessScreen } from "@modules/reservations/components/CoachReservationSuccessScreen";
+import { DetailSocialSection, coachSocialLinks } from "@modules/discovery/components/DetailSocialSection";
 import { DetailFaqSection } from "@modules/discovery/components/DetailFaqSection";
 import { DetailGallerySection } from "@modules/discovery/components/DetailGallerySection";
 import { CoachTrainingStylesSection } from "@modules/discovery/components/CoachTrainingStylesSection";
@@ -299,6 +300,7 @@ function CoachDetails({ id }: { id: string }) {
         </Card>
       ) : null}
       <CoachExperienceSection summary={coach.experienceSummary} items={coach.experience} />
+      <DetailSocialSection items={coachSocialLinks(coach.contact ?? {})} />
       <DetailFaqSection items={coach.faqs} />
       <Card className="app-card app-stack-card p-5 shadow-none">
         <div className="flex items-center justify-between gap-4">

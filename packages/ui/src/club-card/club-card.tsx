@@ -29,7 +29,7 @@ export function ClubCard({
   href,
   onFavoritePress,
   onSharePress,
-  favoriteAriaLabel = "Add to favorites",
+  favoriteAriaLabel = "Save club",
   shareAriaLabel = "Share club",
   className,
 }: ClubCardProps) {
@@ -115,7 +115,7 @@ export function ClubCard({
                 className={styles.iconButton()}
                 onPress={onFavoritePress}
               >
-                <Icon name="heart" size={19} />
+                <Icon name="bookmark" size={19} />
               </Button>
             ) : null}
           </div>

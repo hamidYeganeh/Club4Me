@@ -109,6 +109,7 @@ export class UsersRepository {
       genderDescription?: string;
       activityLevel?: UserActivityLevel;
       idCard?: string;
+      avatarUrl?: string;
     },
   ): Promise<PublicUser> {
     if (!Types.ObjectId.isValid(userId)) {
@@ -118,11 +119,9 @@ export class UsersRepository {
       profile.gender && profile.gender !== "other"
         ? { $set: profile, $unset: { genderDescription: 1 } }
         : { $set: profile };
-    const user = await this.userModel.findByIdAndUpdate(
-      userId,
-      update,
-      { new: true },
-    );
+    const user = await this.userModel.findByIdAndUpdate(userId, update, {
+      new: true,
+    });
     if (!user) throw new AppError(404, "USER_NOT_FOUND", "User not found");
     return toPublicUser(user);
   }

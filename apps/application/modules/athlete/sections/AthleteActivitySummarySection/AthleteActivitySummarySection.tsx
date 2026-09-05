@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useAthleteClubClasses, useFavorites, useMyReservations } from "@api";
+import { useAthleteClubClasses, useSavedItems, useMyReservations } from "@api";
 import { Skeleton, Typography } from "@heroui/react";
 import { Icon, type IconName } from "@theme/icon";
 
@@ -15,7 +15,7 @@ type SummaryItem = {
 export function AthleteActivitySummarySection() {
   const reservations = useMyReservations();
   const clubClasses = useAthleteClubClasses();
-  const favorites = useFavorites();
+  const favorites = useSavedItems();
 
   const reservationCount = reservations.isError
     ? undefined
@@ -48,7 +48,7 @@ export function AthleteActivitySummarySection() {
       href: "/athlete/favorites",
       label: "ذخیره‌شده",
       value: favorites.isPending ? null : favoriteCount,
-      icon: "heart",
+      icon: "bookmark",
     },
   ];
 

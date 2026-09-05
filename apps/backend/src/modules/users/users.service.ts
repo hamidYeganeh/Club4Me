@@ -3,10 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { AppError } from "../../common/errors/app.exception";
 import { toPublicUser, type PublicUser } from "./mappers/user.mapper";
 import { UsersRepository } from "./users.repository";
-import type {
-  UserActivityLevel,
-  UserGender,
-} from "./schemas/user.schema";
+import type { UserActivityLevel, UserGender } from "./schemas/user.schema";
 
 @Injectable()
 export class UsersService {
@@ -38,6 +35,7 @@ export class UsersService {
       genderDescription?: string;
       activityLevel?: UserActivityLevel;
       idCard?: string;
+      avatarUrl?: string;
     },
   ): Promise<PublicUser> {
     return this.usersRepository.updateProfile(userId, profile);

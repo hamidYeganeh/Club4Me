@@ -1,6 +1,7 @@
 "use client";
 
-import Image from "next/image";
+import { ClubEmptyState } from "@modules/discovery/components/ClubEmptyState";
+
 import { Button, Typography } from "@heroui/react";
 import { useCatalogClasses } from "@api/discovery";
 import { usePublicClubClasses } from "@api";
@@ -40,7 +41,7 @@ export function ClubClassesSection({ clubId }: { clubId: string }) {
         </div>
       ) : null}
 
-      {classes.isError ? (
+      {classes.isError || businessClasses.isError ? (
         <div className="app-surface mt-4 rounded-[1.35rem] p-5 text-center">
           <Typography type="body-sm" color="muted">
             دریافت کلاس‌های باشگاه انجام نشد.
@@ -49,7 +50,10 @@ export function ClubClassesSection({ clubId }: { clubId: string }) {
             size="sm"
             variant="secondary"
             className="mt-3"
-            onPress={() => void classes.refetch()}
+            onPress={() => {
+              void classes.refetch();
+              void businessClasses.refetch();
+            }}
           >
             تلاش دوباره
           </Button>
@@ -62,20 +66,11 @@ export function ClubClassesSection({ clubId }: { clubId: string }) {
       !businessClasses.isError &&
       items.length === 0 &&
       businessItems.length === 0 ? (
-        <div className="app-surface mt-4 flex min-h-60 flex-col items-center justify-center rounded-[1.5rem] px-5 py-7 text-center">
-          <Image
-            src="/discovery/no-slots.png"
-            alt=""
-            width={192}
-            height={128}
-            className="h-28 w-auto object-contain opacity-90 drop-shadow-lg"
+        <div className="mt-4">
+          <ClubEmptyState
+            title="هنوز کلاسی منتشر نشده است"
+            description="برنامه کلاس‌های این باشگاه پس از انتشار اینجا نمایش داده می‌شود."
           />
-          <Typography type="h6" className="mt-3">
-            هنوز کلاسی منتشر نشده است
-          </Typography>
-          <Typography type="body-sm" color="muted">
-            برنامه کلاس‌های این باشگاه پس از انتشار اینجا نمایش داده می‌شود.
-          </Typography>
         </div>
       ) : null}
 

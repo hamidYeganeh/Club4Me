@@ -4,6 +4,7 @@ import { Model, Types } from "mongoose";
 
 import { AppError } from "../../common/errors/app.exception";
 import type { RequestableRole } from "../../lib/roles";
+import type { RoleRequestDetails } from "./dto/create-role-request.dto";
 import {
   toPublicRoleRequest,
   type PublicRoleRequest,
@@ -18,6 +19,7 @@ type CreateRoleRequestInput = {
   userId: string;
   phone: string;
   role: RequestableRole;
+  details: RoleRequestDetails;
 };
 
 @Injectable()
@@ -35,6 +37,7 @@ export class RoleRequestsRepository {
       .findOne({
         userId,
         role: input.role,
+        details: input.details,
         status: "pending",
       })
       .exec();
@@ -81,6 +84,15 @@ export class RoleRequestsRepository {
       .find()
       .sort({ createdAt: -1 })
       .limit(limit)
+      .exec();
+
+    return requests.map(toPublicRoleRequest);
+  }
+
+  async listForUser(userId: string): Promise<PublicRoleRequest[]> {
+    const requests = await this.roleRequestModel
+      .find({ userId: toObjectId(userId) })
+      .sort({ createdAt: -1 })
       .exec();
 
     return requests.map(toPublicRoleRequest);

@@ -8,7 +8,7 @@ export const profileEditGeneralSectionStyles = tv({
     list: "flex flex-col gap-5",
     field: "flex w-full flex-col gap-2",
     label: "text-sm font-bold text-foreground",
-    row: "app-surface flex h-14 w-full items-center gap-3 rounded-[1.15rem] px-3.5 text-start text-base text-foreground outline-none transition-colors hover:bg-surface-secondary/70 focus-visible:ring-2 focus-visible:ring-focus",
+    row: "app-surface !h-14 w-full justify-start gap-3 rounded-[1.15rem] px-3.5 text-start text-base font-normal text-foreground outline-none transition-colors hover:bg-surface-secondary/70 focus-visible:ring-2 focus-visible:ring-focus",
     value: "min-w-0 flex-1 truncate",
     empty: "text-muted",
     suffix: "ms-auto shrink-0 text-muted",

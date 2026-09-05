@@ -7,6 +7,9 @@ export type AccountApiErrorKey =
   | "otpInvalid"
   | "otpExpired"
   | "smsFailed"
+  | "idCardMismatch"
+  | "idCardVerificationFailed"
+  | "idCardVerificationUnavailable"
   | "invalidCredentials"
   | "passwordNotSet"
   | "userNotFound"
@@ -36,6 +39,17 @@ export function getAccountApiErrorMessage(
 
     if (error.code === "SMS_FAILED" || error.code === "SMS_NOT_CONFIGURED") {
       return t("smsFailed");
+    }
+
+    if (error.code === "ID_CARD_MISMATCH") {
+      return t("idCardMismatch");
+    }
+
+    if (
+      error.code === "ID_CARD_VERIFICATION_FAILED" ||
+      error.code === "ID_CARD_VERIFICATION_KEY_MISSING"
+    ) {
+      return t("idCardVerificationFailed");
     }
 
     if (error.code === "INVALID_CREDENTIALS") {

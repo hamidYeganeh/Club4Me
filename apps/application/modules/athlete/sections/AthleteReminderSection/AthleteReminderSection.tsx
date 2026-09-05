@@ -1,7 +1,12 @@
 "use client";
 
 import { useMyReservations, type SessionReservation } from "@api";
+import {
+  clearAndroidReminderWidget,
+  updateAndroidReminderWidget,
+} from "@/lib/reminder-widget";
 import { ReminderCard } from "@ui/reminder-card";
+import { useEffect } from "react";
 
 import { athleteReminderSectionStyles } from "./AthleteReminderSection.styles";
 
@@ -45,7 +50,7 @@ export function AthleteReminderSection() {
         !["failed", "refunded"].includes(item.paymentStatus) &&
         Number.isFinite(startsAt) &&
         Number.isFinite(endsAt) &&
-        endsAt >= receivedAt
+        startsAt > receivedAt
       );
     })
     .sort(
@@ -53,6 +58,26 @@ export function AthleteReminderSection() {
         new Date(left.sessionStartsAt).getTime() -
         new Date(right.sessionStartsAt).getTime(),
     )[0];
+
+  useEffect(() => {
+    if (reservations.isPending || reservations.isError) return;
+
+    if (!nextReservation) {
+      void clearAndroidReminderWidget()?.catch(() => undefined);
+      return;
+    }
+
+    const startsAt = new Date(nextReservation.sessionStartsAt);
+    const endsAt = new Date(nextReservation.sessionEndsAt);
+    const participantLabel = `${nextReservation.participantCount.toLocaleString("fa-IR")} نفر`;
+
+    void updateAndroidReminderWidget({
+      date: persianDateFormatter.format(startsAt),
+      time: `${persianWeekdayFormatter.format(startsAt)}، ساعت ${persianTimeFormatter.format(startsAt)} تا ${persianTimeFormatter.format(endsAt)}`,
+      meta: `${nextReservation.sessionTitle} · ${reservationTypeLabels[nextReservation.sessionType]} · ${participantLabel}`,
+      startsAtEpochMs: startsAt.getTime(),
+    })?.catch(() => undefined);
+  }, [nextReservation, reservations.isError, reservations.isPending]);
 
   if (!nextReservation) return null;
 

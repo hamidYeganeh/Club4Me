@@ -2,6 +2,7 @@ import type { Swiper as SwiperType } from "swiper";
 
 export type DiscoveryClubsDetailHeroSectionProps = {
   clubId: string;
+  favoriteId: string;
   name: string;
   location: string;
   statusLabel: string;

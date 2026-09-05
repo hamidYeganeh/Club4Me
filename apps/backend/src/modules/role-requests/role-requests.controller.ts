@@ -13,6 +13,7 @@ import {
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import type { AuthTokenPayload } from "../auth/services/token.service";
+import { CreateRoleRequestDto } from "./dto/create-role-request.dto";
 import { ReviewRoleRequestDto } from "./dto/review-role-request.dto";
 import { RoleRequestsService } from "./role-requests.service";
 
@@ -26,8 +27,15 @@ export class RoleRequestsController {
   requestRole(
     @CurrentUser() user: AuthTokenPayload,
     @Param("role") role: string,
+    @Body() body: CreateRoleRequestDto,
   ) {
-    return this.roleRequestsService.requestRole(user.sub, role);
+    return this.roleRequestsService.requestRole(user.sub, role, body.details);
+  }
+
+  @Get("role-requests")
+  @UseGuards(JwtAuthGuard)
+  listMyRoleRequests(@CurrentUser() user: AuthTokenPayload) {
+    return this.roleRequestsService.listForUser(user.sub);
   }
 }
 

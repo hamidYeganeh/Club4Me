@@ -8,6 +8,13 @@ const ownerRequest: PublicRoleRequest = {
   userId: "507f1f77bcf86cd799439012",
   phone: "+989121234567",
   role: "owner",
+  details: {
+    displayName: "مالک تست",
+    city: "تهران",
+    businessName: "باشگاه تست",
+    businessType: "باشگاه",
+    description: "مدیریت یک مجموعه ورزشی فعال را بر عهده دارم.",
+  },
   status: "approved",
   createdAt: "2026-09-03T00:00:00.000Z",
   updatedAt: "2026-09-03T00:00:00.000Z",

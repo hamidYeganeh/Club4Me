@@ -2,6 +2,10 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 
+import {
+  Article,
+  type ArticleDocument,
+} from "../articles/schemas/article.schema";
 import { AppError } from "../../common/errors/app.exception";
 import { Club, type ClubDocument } from "../clubs/schemas/club.schema";
 import {
@@ -21,6 +25,8 @@ export class FavoritesService {
   constructor(
     @InjectModel(Favorite.name)
     private readonly favorites: Model<FavoriteDocument>,
+    @InjectModel(Article.name)
+    private readonly articles: Model<ArticleDocument>,
     @InjectModel(Club.name) private readonly clubs: Model<ClubDocument>,
     @InjectModel(Coach.name) private readonly coaches: Model<CoachDocument>,
     @InjectModel(TrainingClass.name)
@@ -79,6 +85,11 @@ export class FavoritesService {
     type: FavoriteEntityType,
     id: Types.ObjectId,
   ) {
+    if (type === "article") {
+      if (!(await this.articles.exists({ _id: id, status: "published" })))
+        this.notFound();
+      return;
+    }
     if (type === "class") {
       const trainingClass = await this.classes.findOne({
         _id: id,

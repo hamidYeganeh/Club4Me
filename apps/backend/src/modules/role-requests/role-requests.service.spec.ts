@@ -16,6 +16,20 @@ import {
 } from "./schemas/role-request.schema";
 
 describe("RoleRequestsService", () => {
+  const coachDetails = {
+    displayName: "مربی تست",
+    city: "تهران",
+    experienceYears: 5,
+    specialty: "بدنسازی",
+    description: "سابقه کافی برای درخواست نقش مربی دارم.",
+  };
+  const ownerDetails = {
+    displayName: "مالک تست",
+    city: "تهران",
+    businessName: "باشگاه تست",
+    businessType: "باشگاه ورزشی",
+    description: "مدیریت یک مجموعه ورزشی فعال را بر عهده دارم.",
+  };
   jest.setTimeout(60_000);
   let mongo: MongoMemoryServer;
   let usersRepository: UsersRepository;
@@ -69,7 +83,11 @@ describe("RoleRequestsService", () => {
 
   it("creates a pending coach request for an athlete", async () => {
     const user = await usersRepository.findOrCreateByPhone("+989121234567");
-    const request = await roleRequestsService.requestRole(user.id, "coach");
+    const request = await roleRequestsService.requestRole(
+      user.id,
+      "coach",
+      coachDetails,
+    );
 
     expect(request).toMatchObject({
       userId: user.id,
@@ -86,8 +104,13 @@ describe("RoleRequestsService", () => {
       userId: user.id,
       phone: user.phone,
       role: "owner",
+      details: ownerDetails,
     });
-    const second = await roleRequestsService.requestRole(user.id, "owner");
+    const second = await roleRequestsService.requestRole(
+      user.id,
+      "owner",
+      ownerDetails,
+    );
 
     expect(second.id).toBe(first.id);
     expect(await roleRequestModel.countDocuments()).toBe(1);
@@ -97,7 +120,7 @@ describe("RoleRequestsService", () => {
     const user = await usersRepository.findOrCreateByPhone("+989121234569");
 
     await expect(
-      roleRequestsService.requestRole(user.id, "athlete"),
+      roleRequestsService.requestRole(user.id, "athlete", ownerDetails),
     ).rejects.toMatchObject({
       status: 400,
       code: "ROLE_REQUEST_INVALID",
@@ -106,7 +129,11 @@ describe("RoleRequestsService", () => {
 
   it("approves an owner request and grants the owner role", async () => {
     const user = await usersRepository.findOrCreateByPhone("+989121234570");
-    const request = await roleRequestsService.requestRole(user.id, "owner");
+    const request = await roleRequestsService.requestRole(
+      user.id,
+      "owner",
+      ownerDetails,
+    );
 
     const reviewed = await roleRequestsService.decideForAdmin(
       ["admin"],
@@ -123,7 +150,11 @@ describe("RoleRequestsService", () => {
 
   it("rejects an owner request without granting the role", async () => {
     const user = await usersRepository.findOrCreateByPhone("+989121234571");
-    const request = await roleRequestsService.requestRole(user.id, "owner");
+    const request = await roleRequestsService.requestRole(
+      user.id,
+      "owner",
+      ownerDetails,
+    );
 
     const reviewed = await roleRequestsService.decideForAdmin(
       ["admin"],
@@ -139,7 +170,11 @@ describe("RoleRequestsService", () => {
 
   it("does not allow a reviewed request to be decided again", async () => {
     const user = await usersRepository.findOrCreateByPhone("+989121234572");
-    const request = await roleRequestsService.requestRole(user.id, "owner");
+    const request = await roleRequestsService.requestRole(
+      user.id,
+      "owner",
+      ownerDetails,
+    );
     await roleRequestsService.decideForAdmin(["admin"], request.id, "approved");
 
     await expect(
@@ -152,7 +187,11 @@ describe("RoleRequestsService", () => {
 
   it("requires the admin role to review requests", async () => {
     const user = await usersRepository.findOrCreateByPhone("+989121234573");
-    const request = await roleRequestsService.requestRole(user.id, "owner");
+    const request = await roleRequestsService.requestRole(
+      user.id,
+      "owner",
+      ownerDetails,
+    );
 
     await expect(
       roleRequestsService.decideForAdmin(["athlete"], request.id, "approved"),
@@ -161,7 +200,11 @@ describe("RoleRequestsService", () => {
 
   it("restores a request to pending when granting the role fails", async () => {
     const user = await usersRepository.findOrCreateByPhone("+989121234574");
-    const request = await roleRequestsService.requestRole(user.id, "owner");
+    const request = await roleRequestsService.requestRole(
+      user.id,
+      "owner",
+      ownerDetails,
+    );
     await userModel.deleteOne({ _id: user.id });
 
     await expect(

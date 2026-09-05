@@ -12,27 +12,35 @@ import type {
 } from "./favorites.dto";
 
 const endpoints = {
-  list: "/favorites",
+  list: "/saves",
   item: (entityType: FavoriteEntityType, entityId: string) =>
-    `/favorites/${entityType}/${entityId}`,
+    `/saves/${entityType}/${entityId}`,
+};
+
+export const savesClient = {
+  list: () => http.get<FavoritesResponse>(endpoints.list),
+  save: (entityType: FavoriteEntityType, entityId: string) =>
+    http.put<Favorite>(endpoints.item(entityType, entityId)),
+  remove: (entityType: FavoriteEntityType, entityId: string) =>
+    http.delete<{ success: true }>(endpoints.item(entityType, entityId)),
 };
 
 const queries = { all: () => ["favorites"] as const };
 
-export function useFavorites(enabled = true) {
+export function useSavedItems(enabled = true) {
   return useQuery({
     queryKey: queries.all(),
-    queryFn: () => http.get<FavoritesResponse>(endpoints.list),
+    queryFn: savesClient.list,
     enabled: enabled && Boolean(tokenStore.get()),
   });
 }
 
-export function useToggleFavorite(
+export function useToggleSave(
   entityType: FavoriteEntityType,
   entityId: string,
 ) {
   const queryClient = useQueryClient();
-  const favorites = useFavorites();
+  const favorites = useSavedItems();
   const active = Boolean(
     favorites.data?.items.some(
       (item) => item.entityType === entityType && item.entityId === entityId,
@@ -41,14 +49,20 @@ export function useToggleFavorite(
   const mutation = useMutation({
     mutationFn: async () => {
       if (active) {
-        await http.delete<{ success: true }>(
-          endpoints.item(entityType, entityId),
-        );
+        await savesClient.remove(entityType, entityId);
       } else {
-        await http.put<Favorite>(endpoints.item(entityType, entityId));
+        return savesClient.save(entityType, entityId);
       }
     },
-    onSuccess: async () => {
+    onSuccess: async (savedItem) => {
+      queryClient.setQueryData<FavoritesResponse>(queries.all(), (previous) => {
+        if (!previous) return previous;
+        const items = previous.items.filter(
+          (item) =>
+            item.entityType !== entityType || item.entityId !== entityId,
+        );
+        return { items: savedItem ? [savedItem, ...items] : items };
+      });
       if (!active) {
         trackFavoriteAdded({
           favorite_type: entityType,
@@ -61,3 +75,7 @@ export function useToggleFavorite(
   });
   return { active, isLoading: favorites.isLoading, mutation };
 }
+
+// Compatibility exports for older consumers.
+export const useFavorites = useSavedItems;
+export const useToggleFavorite = useToggleSave;

@@ -59,7 +59,7 @@ const trackSchemas = [
     event: z.literal("favorite.added"),
     properties: z
       .object({
-        favorite_type: z.enum(["club", "coach", "class"]),
+        favorite_type: z.enum(["club", "coach", "class", "article"]),
         favorite_id: objectId,
         club_id: objectId.optional(),
       })

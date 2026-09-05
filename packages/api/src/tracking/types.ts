@@ -52,7 +52,7 @@ export interface PaymentSucceededEvent {
 }
 
 export interface FavoriteAddedEvent {
-  favorite_type: "club" | "coach" | "class";
+  favorite_type: "club" | "coach" | "class" | "article";
   favorite_id: string;
   club_id?: string;
 }

@@ -11,7 +11,9 @@ import type {
   LoginPayload,
   RefreshSessionPayload,
   RequestableRole,
+  RequestRolePayload,
   RequestOtpPayload,
+  VerifyIdCardPayload,
   ReviewRoleRequestPayload,
   SetPasswordPayload,
   UpdateAccountMePayload,
@@ -43,6 +45,13 @@ export function useRequestOtp() {
   return useMutation({
     mutationFn: (payload: RequestOtpPayload) =>
       accountClient.requestOtp(payload),
+  });
+}
+
+export function useVerifyIdCard() {
+  return useMutation({
+    mutationFn: (payload: VerifyIdCardPayload) =>
+      accountClient.verifyIdCard(payload),
   });
 }
 
@@ -179,8 +188,28 @@ export function useUpdateAccountMe() {
 }
 
 export function useRequestRole() {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (role: RequestableRole) => accountClient.requestRole(role),
+    mutationFn: ({
+      role,
+      payload,
+    }: {
+      role: RequestableRole;
+      payload: RequestRolePayload;
+    }) => accountClient.requestRole(role, payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: accountQueries.myRoleRequests(),
+      });
+    },
+  });
+}
+
+export function useMyRoleRequests(enabled = true) {
+  return useQuery({
+    queryKey: accountQueries.myRoleRequests(),
+    queryFn: () => accountClient.myRoleRequests(),
+    enabled: enabled && Boolean(tokenStore.get()),
   });
 }
 

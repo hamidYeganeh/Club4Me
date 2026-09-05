@@ -1,8 +1,5 @@
 import type { AccountUser } from "@api/account";
 
-import { PROFILE_EDIT_FIELDS } from "./profile.constants";
-import type { ProfileEditField, ProfileRole } from "./profile.types";
-
 export function getProfileDisplayName(
   user: AccountUser | null | undefined,
   fallback: string,
@@ -34,34 +31,9 @@ export function getProfileInitials(name: string): string {
     .join("");
 }
 
-export function isProfileEditField(value: string): value is ProfileEditField {
-  return PROFILE_EDIT_FIELDS.includes(value as ProfileEditField);
-}
-
-export function getProfileEditFieldParams(): Array<{ field: ProfileEditField }> {
-  return PROFILE_EDIT_FIELDS.map((field) => ({ field }));
-}
-
-export function getProfileEditHref(role: ProfileRole, field: ProfileEditField): string {
-  return `/${role}/profile/edit/${field}`;
-}
-
-export function getProfileEditFieldLabelKey(
-  field: ProfileEditField,
-): "editName" | "editGender" | "editIdCard" | "editBirthdate" {
-  switch (field) {
-    case "name":
-      return "editName";
-    case "gender":
-      return "editGender";
-    case "id-card":
-      return "editIdCard";
-    case "birthdate":
-      return "editBirthdate";
-  }
-}
-
-export function formatProfileBirthdate(value: string | undefined): string | null {
+export function formatProfileBirthdate(
+  value: string | undefined,
+): string | null {
   if (!value) {
     return null;
   }

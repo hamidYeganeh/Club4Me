@@ -1,7 +1,12 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
 
-export const FAVORITE_ENTITY_TYPES = ["club", "coach", "class"] as const;
+export const FAVORITE_ENTITY_TYPES = [
+  "club",
+  "coach",
+  "class",
+  "article",
+] as const;
 export type FavoriteEntityType = (typeof FAVORITE_ENTITY_TYPES)[number];
 
 @Schema({ collection: "favorites", timestamps: true })

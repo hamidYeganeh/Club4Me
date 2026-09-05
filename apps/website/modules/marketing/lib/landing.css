@@ -1,0 +1,306 @@
+.landing-smooth-wrapper {
+  /* Align with @repo/theme + mobile surfaces */
+  --brand: var(--accent);
+  --brand-foreground: var(--accent-foreground);
+  --brand-light: color-mix(in oklab, var(--accent) 75%, white);
+  --accent-teal: var(--stats-blue);
+  --surface-soft: var(--surface-secondary);
+  --surface-card: var(--surface);
+  --ink: var(--foreground);
+  --ink-soft: var(--muted);
+  --ghost: color-mix(in oklab, var(--muted) 45%, var(--border));
+  --hairline: var(--separator);
+  --radius-card: var(--surface-radius);
+  --radius-card-lg: calc(var(--surface-radius) + 0.5rem);
+  --radius-pill: 62.5rem;
+  --ease-landing: var(--ease-app);
+  --dur-landing: var(--duration-moderate);
+  --dur-landing-reveal: 0.7s;
+
+  /*
+   * Dark editorial bands — mirror mobile “ink surface” pattern:
+   * light: foreground plate + background text
+   * dark: near-black plate + foreground text
+   */
+  --brand-deep: var(--foreground);
+  --on-brand: var(--background);
+  --on-brand-muted: color-mix(in oklab, var(--background) 72%, transparent);
+  --glass-fill: color-mix(in oklab, var(--background) 14%, transparent);
+  --glass-border: color-mix(in oklab, var(--background) 22%, transparent);
+}
+
+/* Gym4Me landing — theme + mobile design-system tokens */
+
+html.landing-page {
+  font-size: 16px;
+}
+
+/*
+ * Fluid rem only on tablet/desktop. Phone stays at 16px so Tailwind
+ * clamps and svh layout stay predictable (the old 4.44vw scale blew
+ * type up to ~28px at 640px and shrank tablet type below 12px).
+ */
+@media (min-width: 768px) and (max-width: 1440px) {
+  html.landing-page {
+    font-size: clamp(15px, 1.111111vw, 16px);
+  }
+}
+
+@media (min-width: 1441px) and (max-width: 1920px) {
+  html.landing-page {
+    font-size: 0.833333vw;
+  }
+}
+
+/*
+ * ScrollSmoother only runs ≥768px (see landing-scroll.tsx).
+ * On mobile, overflow:hidden + html/body h-full traps content and kills
+ * native document scroll — keep the clip desktop-only and let the
+ * document grow with content.
+ */
+.landing-smooth-wrapper {
+  background: var(--background);
+}
+
+@media (max-width: 767px) {
+  html.landing-page,
+  html.landing-page body {
+    height: auto;
+    min-height: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .landing-smooth-wrapper {
+    overflow: hidden;
+  }
+}
+
+.landing-smooth-content {
+  width: 100%;
+}
+
+.landing-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1440px;
+}
+
+.landing-shell {
+  /* Align with @repo/theme + mobile surfaces */
+  --brand: var(--accent);
+  --brand-foreground: var(--accent-foreground);
+  --brand-light: color-mix(in oklab, var(--accent) 75%, white);
+  --accent-teal: var(--stats-blue);
+  --surface-soft: var(--surface-secondary);
+  --surface-card: var(--surface);
+  --ink: var(--foreground);
+  --ink-soft: var(--muted);
+  --ghost: color-mix(in oklab, var(--muted) 45%, var(--border));
+  --hairline: var(--separator);
+  --radius-card: var(--surface-radius);
+  --radius-card-lg: calc(var(--surface-radius) + 0.5rem);
+  --radius-pill: 62.5rem;
+  --ease-landing: var(--ease-app);
+  --dur-landing: var(--duration-moderate);
+  --dur-landing-reveal: 0.7s;
+
+  /*
+   * Dark editorial bands — mirror mobile “ink surface” pattern:
+   * light: foreground plate + background text
+   * dark: near-black plate + foreground text
+   */
+  --brand-deep: var(--foreground);
+  --on-brand: var(--background);
+  --on-brand-muted: color-mix(in oklab, var(--background) 72%, transparent);
+  --glass-fill: color-mix(in oklab, var(--background) 14%, transparent);
+  --glass-border: color-mix(in oklab, var(--background) 22%, transparent);
+
+  width: 100%;
+  overflow-x: clip;
+  background: var(--background);
+  color: var(--foreground);
+  padding: 0.5rem;
+  font-family: var(--font-sans), Tahoma, ui-sans-serif, system-ui, sans-serif;
+}
+
+.dark .landing-shell,
+.dark .landing-smooth-wrapper,
+[data-theme="dark"] .landing-shell {
+  --brand-deep: color-mix(in oklab, var(--background) 35%, black);
+  --on-brand: var(--foreground);
+  --on-brand-muted: color-mix(in oklab, var(--foreground) 68%, transparent);
+  --glass-fill: color-mix(in oklab, var(--foreground) 10%, transparent);
+  --glass-border: color-mix(in oklab, var(--foreground) 16%, transparent);
+  --brand-light: color-mix(in oklab, var(--accent) 80%, white);
+  --ghost: color-mix(in oklab, var(--muted) 40%, var(--border));
+  --surface-soft: var(--surface-secondary);
+}
+
+@media (min-width: 640px) {
+  .landing-shell {
+    padding: 0.75rem;
+  }
+}
+
+.landing-shell :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.landing-shell button {
+  cursor: pointer;
+}
+
+.landing-shell img {
+  display: block;
+  max-width: 100%;
+}
+
+.landing-dark {
+  background: var(--brand-deep);
+  color: var(--on-brand);
+}
+
+/* Soft surface sections — match mobile card language */
+.landing-surface {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.landing-clip {
+  overflow: hidden;
+  display: block;
+  padding-bottom: 0.14em;
+}
+
+.landing-clip--word {
+  padding-bottom: 0.12em;
+}
+
+.landing-clip-inner {
+  display: inline-block;
+  transform: translateY(115%);
+  opacity: 0;
+  will-change: transform, opacity;
+  transition:
+    transform var(--dur-landing-reveal) var(--ease-landing),
+    opacity var(--dur-landing-reveal) var(--ease-landing);
+}
+
+.landing-clip-inner.is-in {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-clip-inner {
+    transform: none;
+    opacity: 1;
+    transition: none;
+  }
+}
+
+.landing-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+html.landing-scroll-lock,
+html.landing-scroll-lock body {
+  overflow: hidden !important;
+}
+
+@keyframes landing-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.landing-card-crossfade {
+  animation: landing-card-in 0.7s var(--ease-app) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-card-crossfade {
+    animation: none;
+  }
+}
+
+.landing-arrow-nudge {
+  transition: transform var(--dur-landing) var(--ease-landing);
+}
+
+[dir="rtl"] .landing-arrow-nudge.is-on {
+  transform: translateX(-0.5rem);
+}
+[dir="ltr"] .landing-arrow-nudge.is-on {
+  transform: translateX(0.5rem);
+}
+
+/* Legacy sports/clubs inherit theme surfaces cleanly */
+.landing-shell .landing-legacy {
+  isolation: isolate;
+}
+
+.landing-shell .landing-legacy .landing-sports-section,
+.landing-shell .landing-legacy .landing-clubs-section {
+  border-radius: inherit;
+}
+
+/* Native scrolling keeps the original animation layout without ScrollSmoother. */
+.landing-smooth-wrapper {
+  overflow: visible;
+}
+.landing-hero-carousel {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.landing-hero-carousel > * {
+  scroll-snap-align: start;
+}
+.landing-hero-carousel::-webkit-scrollbar {
+  display: none;
+}
+.landing-shell {
+  --surface-radius: 1.5rem;
+  --font-iran-sans-x: var(--font-sans);
+}
+.landing-smooth-wrapper {
+  --surface-radius: 1.5rem;
+  --ease-app: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-fast: 150ms;
+  --duration-moderate: 300ms;
+  --stats-red: var(--danger);
+  --stats-orange: var(--warning);
+  --stats-yellow: var(--warning);
+  --stats-blue: var(--accent);
+  --stats-purple: var(--accent);
+  --stats-green: var(--success);
+  --stats-foreground: var(--foreground);
+  --eclipse: var(--background);
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-smooth-wrapper *,
+  .landing-smooth-wrapper *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}

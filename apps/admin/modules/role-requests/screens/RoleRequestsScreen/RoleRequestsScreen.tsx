@@ -170,6 +170,40 @@ export function RoleRequestsScreen() {
                       dir: "ltr",
                     },
                     { label: "نقش درخواستی", value: t(selected.role) },
+                    {
+                      label: "نام متقاضی",
+                      value: selected.details.displayName,
+                    },
+                    { label: "شهر فعالیت", value: selected.details.city },
+                    ...(selected.role === "coach"
+                      ? [
+                          {
+                            label: "تخصص ورزشی",
+                            value: selected.details.specialty ?? "—",
+                          },
+                          {
+                            label: "سابقه مربیگری",
+                            value:
+                              selected.details.experienceYears === undefined
+                                ? "—"
+                                : `${selected.details.experienceYears.toLocaleString("fa-IR")} سال`,
+                          },
+                          {
+                            label: "مدارک و گواهی‌ها",
+                            value: selected.details.credentials || "—",
+                          },
+                        ]
+                      : [
+                          {
+                            label: "نام مجموعه",
+                            value: selected.details.businessName ?? "—",
+                          },
+                          {
+                            label: "نوع مجموعه",
+                            value: selected.details.businessType ?? "—",
+                          },
+                        ]),
+                    { label: "توضیحات", value: selected.details.description },
                     { label: "وضعیت", value: t(selected.status) },
                     {
                       label: "زمان درخواست",

@@ -57,13 +57,13 @@ export function ProfileHeroSection({ role }: ProfileHeroSectionProps) {
             <Avatar className={styles.avatar()}>
               <Avatar.Image
                 alt={t("avatarAlt", { name })}
-                src={PROFILE_AVATAR_SRC}
+                src={me.data?.avatarUrl ?? PROFILE_AVATAR_SRC}
               />
               <Avatar.Fallback className="overflow-hidden p-0">
                 {/* Avatar fallback supports runtime and local asset URLs. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={PROFILE_AVATAR_SRC}
+                  src={me.data?.avatarUrl ?? PROFILE_AVATAR_SRC}
                   alt=""
                   className="size-full object-cover"
                 />

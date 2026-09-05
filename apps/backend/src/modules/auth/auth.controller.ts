@@ -21,6 +21,7 @@ import { RequestOtpDto } from "./dto/request-otp.dto";
 import { SetPasswordDto } from "./dto/set-password.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { DeleteAccountDto } from "./dto/delete-account.dto";
+import { VerifyIdCardDto } from "./dto/verify-id-card.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { AuthService } from "./auth.service";
 import type { AuthTokenPayload } from "./services/token.service";
@@ -113,6 +114,15 @@ export class AuthController {
     @Body() body: UpdateProfileDto,
   ) {
     return this.authService.updateProfile(user.sub, body);
+  }
+
+  @Post("me/verify-id-card")
+  @UseGuards(JwtAuthGuard)
+  verifyIdCard(
+    @CurrentUser() user: AuthTokenPayload,
+    @Body() body: VerifyIdCardDto,
+  ) {
+    return this.authService.verifyIdCard(user.phone, body.idCard);
   }
 
   @Delete()

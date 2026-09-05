@@ -68,7 +68,7 @@ const values = {
   KAVENEGAR_PAYMENT_FAILED_TEMPLATE: "gym4mepaymentfailed",
   KAVENEGAR_WAITLIST_TEMPLATE: "gym4mewaitlist",
   CORS_ORIGINS:
-    "https://gym4me.ir,https://www.gym4me.ir,https://app.gym4me.ir,https://admin.gym4me.ir",
+    "https://gym4me.ir,https://www.gym4me.ir,https://app.gym4me.ir,https://admin.gym4me.ir,https://business.gym4me.ir",
   NEXT_PUBLIC_API_URL: "https://api.gym4me.ir/api/v1",
   NEXT_PUBLIC_WEBSITE_URL: "https://gym4me.ir",
   NEXT_PUBLIC_APP_RELEASE: release,
@@ -79,7 +79,7 @@ const values = {
   NEXT_PUBLIC_SENTRY_DSN: sentryDsn,
   NEXT_PUBLIC_TINYMCE_API_KEY: adminInput.NEXT_PUBLIC_TINYMCE_API_KEY || "",
   NEXT_PUBLIC_API_TIMEOUT_MS: "15000",
-  NEXT_PUBLIC_BASE_PATH: "/business",
+  NEXT_PUBLIC_BASE_PATH: "",
 };
 
 const temporary = `${target}.tmp`;

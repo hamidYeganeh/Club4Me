@@ -1,5 +1,7 @@
 "use client";
 
+import { ClubEmptyState } from "@modules/discovery/components/ClubEmptyState";
+
 import { useEffect, useRef, useState } from "react";
 import { Button, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
@@ -213,6 +215,12 @@ export function DiscoveryClubsDetailBodySection({
         <Typography type="h5" className={styles.aboutTitle()}>
           {t("aboutTitle")}
         </Typography>
+        {!about.trim() ? (
+          <ClubEmptyState
+            title="هنوز توضیحی درباره باشگاه ثبت نشده است"
+            description="معرفی باشگاه پس از تکمیل اینجا نمایش داده می‌شود."
+          />
+        ) : null}
         <Typography
           type="body-sm"
           color="muted"
@@ -388,7 +396,17 @@ function FacilityCarousel({
   onItemPress: (item: DiscoveryFacilityItem) => void;
 }) {
   if (items.length === 0) {
-    return null;
+    return (
+      <div className={styles.facilitySection()}>
+        <Typography type="h5" className={styles.facilityTitle()}>
+          {title}
+        </Typography>
+        <ClubEmptyState
+          title={`هنوز ${title} ثبت نشده است`}
+          description="اطلاعات این بخش پس از تکمیل توسط باشگاه اینجا نمایش داده می‌شود."
+        />
+      </div>
+    );
   }
 
   return (

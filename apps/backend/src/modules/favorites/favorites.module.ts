@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 
+import { Article, ArticleSchema } from "../articles/schemas/article.schema";
 import { AuthModule } from "../auth/auth.module";
 import { Club, ClubSchema } from "../clubs/schemas/club.schema";
 import {
@@ -17,6 +18,7 @@ import { Favorite, FavoriteSchema } from "./schemas/favorite.schema";
   imports: [
     AuthModule,
     MongooseModule.forFeature([
+      { name: Article.name, schema: ArticleSchema },
       { name: Favorite.name, schema: FavoriteSchema },
       { name: Club.name, schema: ClubSchema },
       { name: Coach.name, schema: CoachSchema },

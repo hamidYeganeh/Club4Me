@@ -26,6 +26,7 @@ export function AccountAuthRolesScreen() {
   const [hasToken, setHasToken] = useState<boolean | null>(null);
   const me = useAccountMe(hasToken === true);
   const isFirstTime = searchParams.get("firstTime") === "1";
+  const isManaging = searchParams.get("manage") === "1";
   const roles = useMemo(
     () => (me.data ? getApplicationRoles(me.data.roles) : []),
     [me.data],
@@ -48,10 +49,15 @@ export function AccountAuthRolesScreen() {
   useEffect(() => {
     if (me.data && !me.data.hasPassword) {
       router.replace(SET_PASSWORD_PATH);
-    } else if (me.data?.hasPassword && !isFirstTime && roles.length === 1) {
+    } else if (
+      me.data?.hasPassword &&
+      !isFirstTime &&
+      !isManaging &&
+      roles.length === 1
+    ) {
       router.replace(getRolePath(roles[0]));
     }
-  }, [isFirstTime, me.data, roles, router]);
+  }, [isFirstTime, isManaging, me.data, roles, router]);
 
   if (
     hasToken === null ||
@@ -60,7 +66,7 @@ export function AccountAuthRolesScreen() {
     me.isLoading ||
     !me.data ||
     !me.data.hasPassword ||
-    (!isFirstTime && roles.length === 1)
+    (!isFirstTime && !isManaging && roles.length === 1)
   ) {
     return <AuthScreenSkeleton />;
   }
@@ -69,19 +75,24 @@ export function AccountAuthRolesScreen() {
     <AuthScreen>
       <AccountAuthOtpHeaderSection
         backLabel={tCommon("back")}
-        href="/auth"
+        href={isManaging ? `/${roles[0] ?? "athlete"}/profile` : "/auth"}
         overlay
         transparent
       />
       <AccountAuthRolesCopySection
-        title={t("title")}
-        subtitle={t("subtitle")}
+        title={isManaging ? "نقش‌های من" : t("title")}
+        subtitle={
+          isManaging
+            ? "نقش فعال خود را ببینید یا برای نقش تازه درخواست ثبت کنید."
+            : t("subtitle")
+        }
       />
       <AccountAuthRolesOptionsSection
         athleteLabel={t("athlete")}
         coachLabel={t("coach")}
         ownerLabel={t("owner")}
-        availableRoles={isFirstTime ? undefined : roles}
+        grantedRoles={roles}
+        isFirstTime={isFirstTime}
         onSelectRole={(role) => {
           const path = getRolePath(role);
           if (path.startsWith("http")) {

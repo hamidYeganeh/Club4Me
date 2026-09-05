@@ -1,6 +1,11 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import { http } from "../../http/client";
 
@@ -659,6 +664,15 @@ export function useCoachClassEnrollments(classId: string) {
     queryKey: ["coach", "classes", classId, "enrollments"],
     queryFn: () => client.classEnrollments(classId),
     enabled: Boolean(classId),
+  });
+}
+
+export function useCoachEnrollmentQueries(classIds: string[]) {
+  return useQueries({
+    queries: classIds.map((classId) => ({
+      queryKey: ["coach", "classes", classId, "enrollments"],
+      queryFn: () => client.classEnrollments(classId),
+    })),
   });
 }
 

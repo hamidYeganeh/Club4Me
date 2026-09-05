@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { toast } from "@heroui/react";
 import { useMarkNotificationRead, useNotifications } from "@api";
 import { Icon, type IconName } from "@theme/icon";
 import { ThemeToggle } from "@theme/theme-toggle";
@@ -63,6 +64,9 @@ function relativeTime(value: string) {
 }
 
 export function NotificationsScreen() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const role = pathname.startsWith("/coach") ? "coach" : "athlete";
   const [filter, setFilter] = useState<NotificationFilter>("unread");
   const notifications = useNotifications();
   const markRead = useMarkNotificationRead();
@@ -89,6 +93,7 @@ export function NotificationsScreen() {
       <SecondaryHeader
         title="اعلان‌ها"
         showFilter={false}
+        backHref={`/${role}/profile`}
         action={<ThemeToggle className="border-0 bg-transparent" />}
       />
 
@@ -109,9 +114,7 @@ export function NotificationsScreen() {
               type="button"
               aria-pressed={filter === value}
               className={`min-h-12 rounded-[1.1rem] px-3 text-sm font-bold transition-all ${
-                filter === value
-                  ? "bg-surface text-foreground"
-                  : "text-muted"
+                filter === value ? "bg-surface text-foreground" : "text-muted"
               }`}
               onClick={() => setFilter(value)}
             >
@@ -143,12 +146,21 @@ export function NotificationsScreen() {
                   </h2>
                   <div className="space-y-3">
                     {items.map((item) => (
-                      <Link
+                      <button
+                        type="button"
                         key={item.id}
-                        href={item.href ?? "#"}
-                        className="app-card flex min-h-28 items-start gap-3 p-4 no-underline"
-                        onClick={() => {
-                          if (!item.readAt) void markRead.mutateAsync(item.id);
+                        className="app-card flex min-h-28 w-full items-start gap-3 p-4 text-start"
+                        onClick={async () => {
+                          if (!item.readAt) {
+                            try {
+                              await markRead.mutateAsync(item.id);
+                            } catch {
+                              toast.danger(
+                                "ثبت وضعیت اعلان انجام نشد؛ دوباره تلاش کنید",
+                              );
+                            }
+                          }
+                          if (item.href) router.push(item.href);
                         }}
                       >
                         <span className="flex size-12 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-muted shadow-sm">
@@ -179,7 +191,7 @@ export function NotificationsScreen() {
                             {item.body}
                           </span>
                         </span>
-                      </Link>
+                      </button>
                     ))}
                   </div>
                 </section>

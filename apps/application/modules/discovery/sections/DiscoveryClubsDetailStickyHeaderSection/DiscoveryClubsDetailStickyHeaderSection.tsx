@@ -1,5 +1,6 @@
 "use client";
 
+import { SaveButton } from "@/components/save-button";
 import { useRouter } from "next/navigation";
 import { Button, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
@@ -11,8 +12,7 @@ import type { DiscoveryClubsDetailStickyHeaderSectionProps } from "./DiscoveryCl
 export function DiscoveryClubsDetailStickyHeaderSection({
   visible,
   name,
-  favorited = false,
-  onFavoritePress,
+  favoriteId,
 }: DiscoveryClubsDetailStickyHeaderSectionProps) {
   const t = useTranslations("discovery.clubDetail");
   const router = useRouter();
@@ -31,17 +31,11 @@ export function DiscoveryClubsDetailStickyHeaderSection({
           <Icon name="chevron-right" size="lg" />
         </Button>
 
-        <Typography type="h6" truncate className={styles.title()}>{name}</Typography>
+        <Typography type="h6" truncate className={styles.title()}>
+          {name}
+        </Typography>
 
-        <Button
-          isIconOnly
-          aria-label={favorited ? t("unfavorite") : t("favorite")}
-          variant="secondary"
-          size="lg"
-          onPress={onFavoritePress}
-        >
-          <Icon name="heart" size="lg" className={styles.favoriteIcon()} />
-        </Button>
+        <SaveButton entityType="club" entityId={favoriteId} />
       </div>
     </header>
   );

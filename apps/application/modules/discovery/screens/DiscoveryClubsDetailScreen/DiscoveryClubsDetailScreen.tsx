@@ -2,12 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  tokenStore,
-  trackDiscoveryClubViewed,
-  usePublicClub,
-  useToggleFavorite,
-} from "@api";
+import { tokenStore, trackDiscoveryClubViewed, usePublicClub } from "@api";
 import { useCatalogClub } from "@api/discovery";
 import type { Swiper as SwiperType } from "swiper";
 import { useTranslations } from "next-intl";
@@ -22,6 +17,7 @@ import { ClubClassesSection } from "@modules/discovery/sections/ClubClassesSecti
 import { ClubBenefitProductsSection } from "@modules/discovery/sections/ClubBenefitProductsSection";
 import { iconNames, type IconName } from "@theme/icon";
 import { RequestFailureState } from "@/components/request-failure-state";
+import { DetailSocialSection } from "@modules/discovery/components/DetailSocialSection";
 import { DetailFaqSection } from "@modules/discovery/components/DetailFaqSection";
 import { DetailGallerySection } from "@modules/discovery/components/DetailGallerySection";
 import { ReportBottomSheet } from "@modules/reports/components/ReportBottomSheet";
@@ -65,7 +61,6 @@ export function DiscoveryClubsDetailScreen({
   const catalogClub = useCatalogClub(clubId);
   const persistedId = catalogClub.data?.id ?? "";
   const publicClub = usePublicClub(persistedId);
-  const favorite = useToggleFavorite("club", persistedId);
   const t = useTranslations("discovery.clubDetail");
   const [heroElement, setHeroElement] = useState<HTMLElement | null>(null);
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
@@ -187,21 +182,15 @@ export function DiscoveryClubsDetailScreen({
   ];
 
   return (
-    <main className="relative flex min-h-dvh w-full max-w-full flex-col overflow-x-clip bg-background pb-[calc(14rem+env(safe-area-inset-bottom))]">
+    <main className="relative flex min-h-dvh w-full max-w-full shrink-0 flex-col overflow-x-clip [&>*]:shrink-0 bg-background pb-[calc(14rem+env(safe-area-inset-bottom))]">
       <DiscoveryClubsDetailStickyHeaderSection
         visible={stickyHeaderVisible}
         name={club.name}
-        favorited={favorite.active}
-        onFavoritePress={() => {
-          if (!persistedId || !tokenStore.get()) {
-            router.push("/auth");
-            return;
-          }
-          favorite.mutation.mutate();
-        }}
+        favoriteId={persistedId}
       />
 
       <DiscoveryClubsDetailHeroSection
+        favoriteId={persistedId}
         sectionRef={setHeroElement}
         clubId={clubId}
         name={club.name}
@@ -233,6 +222,7 @@ export function DiscoveryClubsDetailScreen({
 
       <div className="px-5 pb-6">
         <DetailGallerySection
+          showEmpty
           images={club.images}
           viewAllHref={`/discovery/clubs/${clubId}/gallery`}
         />
@@ -247,7 +237,8 @@ export function DiscoveryClubsDetailScreen({
       <ClubBenefitProductsSection clubId={club.id} />
 
       <section className="px-5">
-        <DetailFaqSection items={data.faqs} />
+        <DetailSocialSection items={data.socialMedia} />
+        <DetailFaqSection showEmpty items={data.faqs} />
       </section>
 
       <ClubReservationsAndReviewsSection clubId={club.id} />
@@ -282,7 +273,6 @@ export function DiscoveryClubsDetailScreen({
         targetType="club"
         targetId={club.id}
       />
-
     </main>
   );
 }

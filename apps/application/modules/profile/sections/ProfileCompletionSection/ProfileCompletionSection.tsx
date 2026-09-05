@@ -7,7 +7,7 @@ import { Icon } from "@theme/icon";
 
 import type { ProfileRole } from "../../profile.types";
 
-const profileFieldCount = 5;
+const profileFieldCount = 6;
 
 export function ProfileCompletionSection({ role }: { role: ProfileRole }) {
   const me = useAccountMe();
@@ -16,6 +16,7 @@ export function ProfileCompletionSection({ role }: { role: ProfileRole }) {
     me.data?.lastName?.trim(),
     me.data?.birthdate,
     me.data?.gender,
+    me.data?.activityLevel,
     me.data?.idCard?.trim(),
   ].filter(Boolean).length;
   const remainingFields = profileFieldCount - completedFields;
@@ -40,7 +41,7 @@ export function ProfileCompletionSection({ role }: { role: ProfileRole }) {
           </div>
           <Skeleton className="h-9 w-16 shrink-0 rounded-xl" />
         </div>
-        <div className="mt-5 grid grid-cols-5 gap-2">
+        <div className="mt-5 grid grid-cols-6 gap-2">
           {Array.from({ length: profileFieldCount }).map((_, index) => (
             <Skeleton key={index} className="h-1.5 rounded-full" />
           ))}
@@ -78,7 +79,7 @@ export function ProfileCompletionSection({ role }: { role: ProfileRole }) {
       </div>
 
       <div
-        className="mt-5 grid grid-cols-5 gap-2"
+        className="mt-5 grid grid-cols-6 gap-2"
         role="progressbar"
         aria-label="میزان تکمیل پروفایل"
         aria-valuemin={0}
@@ -89,9 +90,7 @@ export function ProfileCompletionSection({ role }: { role: ProfileRole }) {
           <span
             key={index}
             className={`h-1.5 rounded-full transition-colors ${
-              index < completedFields
-                ? "bg-accent"
-                : "bg-surface-tertiary"
+              index < completedFields ? "bg-accent" : "bg-surface-tertiary"
             }`}
           />
         ))}

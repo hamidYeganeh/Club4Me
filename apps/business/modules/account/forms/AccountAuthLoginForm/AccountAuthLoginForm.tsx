@@ -17,6 +17,7 @@ import { useTranslations } from "next-intl";
 import { Controller, useForm } from "react-hook-form";
 
 import { Form, FormFieldset, FormTextField } from "@/components/form";
+import { SmoothInputGroupInput } from "@repo/ui/smooth-input";
 import { getAccountApiErrorMessage } from "@/lib/account-api-error";
 import { formatIranianPhoneDisplay, toE164IranianPhone } from "@/lib/phone";
 
@@ -120,7 +121,7 @@ export function AccountAuthLoginForm({
               <InputGroup.Prefix className={styles.prefix()}>
                 <Icon name="telephone-1" size={18} />
               </InputGroup.Prefix>
-              <InputGroup.Input
+              <SmoothInputGroupInput
                 className={styles.input()}
                 inputMode="tel"
                 autoComplete="tel"
@@ -145,7 +146,7 @@ export function AccountAuthLoginForm({
               <InputGroup.Prefix className={styles.prefix()}>
                 <Icon name="lock-1" size={18} />
               </InputGroup.Prefix>
-              <InputGroup.Input
+              <SmoothInputGroupInput
                 className={styles.input()}
                 type={passwordVisible ? "text" : "password"}
                 autoComplete="current-password"
