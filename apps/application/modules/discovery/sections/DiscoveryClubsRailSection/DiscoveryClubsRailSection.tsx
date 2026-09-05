@@ -7,6 +7,7 @@ import { ClubCard } from "@ui/club-card";
 import { useTranslations } from "next-intl";
 
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
+import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 import { formatClubCityDistrict } from "@modules/discovery/discovery.formatters";
 
 import { discoveryClubsRailSectionStyles } from "./DiscoveryClubsRailSection.styles";
@@ -53,7 +54,15 @@ export function DiscoveryClubsRailSection({
   }
 
   if (!isPending && !isError && visible.length === 0) {
-    return null;
+    return (
+      <DiscoveryEmptySection
+        title={title}
+        subtitle={subtitle}
+        icon={icon}
+        viewAllLabel={t("seeAll")}
+        viewAllUrl={seeAllHref}
+      />
+    );
   }
 
   return (

@@ -1,6 +1,10 @@
 import type { UserRole } from "../../../lib/roles";
 import { toIso } from "../../../lib/time";
-import type { UserDocument } from "../schemas/user.schema";
+import type {
+  UserActivityLevel,
+  UserDocument,
+  UserGender,
+} from "../schemas/user.schema";
 
 export type PublicUser = {
   id: string;
@@ -8,6 +12,10 @@ export type PublicUser = {
   firstName?: string;
   lastName?: string;
   birthdate?: string;
+  gender?: UserGender;
+  genderDescription?: string;
+  activityLevel?: UserActivityLevel;
+  idCard?: string;
   roles: UserRole[];
   status: "active" | "suspended" | "deleted";
   hasPassword: boolean;
@@ -28,6 +36,18 @@ export function toPublicUser(user: UserDocument): PublicUser {
     ...(user.birthdate === undefined || user.birthdate === null
       ? {}
       : { birthdate: user.birthdate }),
+    ...(user.gender === undefined || user.gender === null
+      ? {}
+      : { gender: user.gender }),
+    ...(user.genderDescription === undefined || user.genderDescription === null
+      ? {}
+      : { genderDescription: user.genderDescription }),
+    ...(user.activityLevel === undefined || user.activityLevel === null
+      ? {}
+      : { activityLevel: user.activityLevel }),
+    ...(user.idCard === undefined || user.idCard === null
+      ? {}
+      : { idCard: user.idCard }),
     roles: user.roles ?? [],
     status: user.status,
     hasPassword: Boolean(user.passwordHash),

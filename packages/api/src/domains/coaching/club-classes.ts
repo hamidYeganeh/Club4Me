@@ -18,6 +18,7 @@ export type PublicClubClass = {
   clubId: string;
   title: string;
   description: string;
+  faqs: Array<{ question: string; answer: string }>;
   sport: string;
   level: string;
   model: "group" | "private" | "course" | "single" | "open";
@@ -147,24 +148,6 @@ export function useEnrollInClubClass() {
   });
 }
 
-export function useResolveClubClassPayment() {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      enrollmentId,
-      result,
-    }: {
-      enrollmentId: string;
-      result: "approve" | "reject";
-    }) =>
-      http.patch<AthleteClubClassEnrollment>(
-        `/athlete/club-classes/enrollments/${enrollmentId}/payment`,
-        { result },
-      ),
-    onSuccess: () => client.invalidateQueries({ queryKey: athleteKey }),
-  });
-}
-
 export function useCancelClubClassEnrollment() {
   const client = useQueryClient();
   return useMutation({
@@ -289,6 +272,13 @@ export function useCreateCoachCalendarFeed() {
         "/coach/club-classes/calendar-feed",
         {},
       ),
+  });
+}
+
+export function useRevokeCoachCalendarFeed() {
+  return useMutation({
+    mutationFn: () =>
+      http.delete<{ revoked: boolean }>("/coach/club-classes/calendar-feed"),
   });
 }
 

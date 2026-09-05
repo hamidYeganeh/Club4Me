@@ -30,6 +30,15 @@ export function useAccountMe(enabled = true) {
   });
 }
 
+export function useAccountProfileChoices(enabled = true) {
+  return useQuery({
+    queryKey: accountQueries.profileChoices(),
+    queryFn: () => accountClient.profileChoices(),
+    enabled: enabled && Boolean(tokenStore.get()),
+    staleTime: 30 * 60_000,
+  });
+}
+
 export function useRequestOtp() {
   return useMutation({
     mutationFn: (payload: RequestOtpPayload) =>

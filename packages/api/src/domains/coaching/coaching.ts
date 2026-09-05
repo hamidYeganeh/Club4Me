@@ -12,6 +12,21 @@ export type CoachProfile = {
   shortBio: string;
   bio: string;
   experienceYears: number;
+  galleryMediaIds: string[];
+  specialties: Array<{ title: string; description: string; icon?: string }>;
+  trainingStyles: Array<{
+    title: string;
+    description: string;
+    imageMediaId?: string;
+  }>;
+  experienceSummary: string;
+  experience: Array<{
+    title: string;
+    organization?: string;
+    period?: string;
+    description?: string;
+  }>;
+  faqs: Array<{ question: string; answer: string }>;
   languages: string[];
   serviceModes: string[];
   contact: Record<string, unknown>;
@@ -21,15 +36,49 @@ export type CoachProfile = {
   rejectionReason: string | null;
 };
 
+export type CoachMedia = { id: string; url: string; mimeType: string };
+
 export type CoachClass = {
   id: string;
+  ownerCoachId: string;
+  offeringId?: string;
+  clubId?: string;
+  courtId?: string;
   title: string;
   slug: string;
   description: string;
+  sportId: string;
+  coachAssignments: Array<{
+    coachId: string;
+    role: "primary" | "assistant";
+  }>;
+  deliveryMode: "club" | "online" | "home" | "outdoor";
+  venue?: {
+    clubId?: string;
+    courtId?: string;
+    address?: string;
+    onlineUrl?: string;
+  };
+  skillLevelId?: string;
+  minAge?: number;
+  maxAge?: number;
   capacity: number;
   enrollmentCount: number;
+  registrationStartAt?: string;
+  registrationEndAt?: string;
   courseStartAt: string;
   courseEndAt: string;
+  plannedSessionCount?: number;
+  price: { amount: number; currency: string };
+  enrollmentMode: "automatic" | "requires_approval";
+  coverMediaId?: string;
+  galleryMediaIds: string[];
+  tags: string[];
+  prerequisites: string[];
+  faqs: Array<{ question: string; answer: string }>;
+  requiredEquipmentIds: string[];
+  amenityIds: string[];
+  cancellationPolicy: Record<string, unknown> | null;
   status:
     | "draft"
     | "published"
@@ -39,6 +88,7 @@ export type CoachClass = {
     | "cancelled"
     | "archived";
   clubApprovalStatus: string;
+  createdAt: string;
   updatedAt: string;
 };
 
@@ -220,6 +270,7 @@ export type CreateCoachClassPayload = {
   galleryMediaIds: string[];
   tags: string[];
   prerequisites: string[];
+  faqs: Array<{ question: string; answer: string }>;
   requiredEquipmentIds: string[];
   amenityIds: string[];
 };
@@ -232,6 +283,31 @@ export type CoachSport = {
   experienceYears: number;
   certificateMediaIds: string[];
   achievements: string[];
+};
+
+export type CoachAvailabilityRule = {
+  id: string;
+  dayOfWeek: number;
+  startMinute: number;
+  endMinute: number;
+  deliveryModes: Array<"online" | "in_person" | "at_athlete" | "at_coach">;
+  clubId?: string | null;
+  validFrom: string;
+  validUntil?: string | null;
+};
+
+export type CoachAvailabilityException = {
+  id: string;
+  date: string;
+  type: "unavailable" | "custom_available";
+  startMinute?: number;
+  endMinute?: number;
+  reason?: string;
+};
+
+export type CoachAvailability = {
+  rules: CoachAvailabilityRule[];
+  exceptions: CoachAvailabilityException[];
 };
 
 const client = {
@@ -293,6 +369,19 @@ const client = {
       status,
     }),
   calendar: () => http.get<{ items: CoachSession[] }>("/coach/calendar"),
+  availability: () => http.get<CoachAvailability>("/coach/availability"),
+  replaceAvailability: (rules: Array<Omit<CoachAvailabilityRule, "id">>) =>
+    http.put<CoachAvailability>("/coach/availability", { rules }),
+  addAvailabilityException: (payload: Omit<CoachAvailabilityException, "id">) =>
+    http.post<CoachAvailabilityException>(
+      "/coach/availability/exceptions",
+      payload,
+    ),
+  rescheduleSession: (
+    sessionId: string,
+    payload: { startAt: string; endAt: string },
+  ) =>
+    http.post<CoachSession>(`/coach/sessions/${sessionId}/reschedule`, payload),
   createSession: (payload: CreateCoachSessionPayload) =>
     http.post<CoachSession>("/coach/sessions", {
       timezone: "Asia/Tehran",
@@ -382,6 +471,16 @@ export function useUpdateCoachProfile() {
     mutationFn: client.updateProfile,
     onSuccess: async () =>
       queryClient.invalidateQueries({ queryKey: ["coach"] }),
+  });
+}
+
+export function useCreateCoachMedia() {
+  return useMutation({
+    mutationFn: (url: string) =>
+      http.post<CoachMedia>("/business/media", {
+        url,
+        mimeType: "image/external",
+      }),
   });
 }
 
@@ -478,6 +577,47 @@ export function useCoachCalendar() {
   return useQuery({
     queryKey: ["coach", "calendar"],
     queryFn: client.calendar,
+  });
+}
+
+export function useCoachAvailability() {
+  return useQuery({
+    queryKey: ["coach", "availability"],
+    queryFn: client.availability,
+  });
+}
+
+export function useReplaceCoachAvailability() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: client.replaceAvailability,
+    onSuccess: async () =>
+      queryClient.invalidateQueries({ queryKey: ["coach", "availability"] }),
+  });
+}
+
+export function useAddCoachAvailabilityException() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: client.addAvailabilityException,
+    onSuccess: async () =>
+      queryClient.invalidateQueries({ queryKey: ["coach", "availability"] }),
+  });
+}
+
+export function useRescheduleCoachSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      ...payload
+    }: {
+      sessionId: string;
+      startAt: string;
+      endAt: string;
+    }) => client.rescheduleSession(sessionId, payload),
+    onSuccess: async () =>
+      queryClient.invalidateQueries({ queryKey: ["coach", "calendar"] }),
   });
 }
 

@@ -206,12 +206,16 @@ export class NotificationsService {
     userId: string | Types.ObjectId;
     payoutId: string | Types.ObjectId;
     amount: number;
-    status: "requested" | "paid" | "rejected";
+    status: "requested" | "under_review" | "paid" | "rejected" | "cancelled";
   }) {
     const copy = {
       requested: {
         title: "درخواست تسویه ثبت شد",
         body: `درخواست برداشت ${input.amount.toLocaleString("fa-IR")} ریال ثبت شد.`,
+      },
+      under_review: {
+        title: "درخواست تسویه در حال بررسی است",
+        body: `درخواست برداشت ${input.amount.toLocaleString("fa-IR")} ریال در حال بررسی است.`,
       },
       paid: {
         title: "تسویه پرداخت شد",
@@ -220,6 +224,10 @@ export class NotificationsService {
       rejected: {
         title: "درخواست تسویه رد شد",
         body: `درخواست برداشت ${input.amount.toLocaleString("fa-IR")} ریال رد شد.`,
+      },
+      cancelled: {
+        title: "درخواست تسویه لغو شد",
+        body: `درخواست برداشت ${input.amount.toLocaleString("fa-IR")} ریال لغو و موجودی آزاد شد.`,
       },
     }[input.status];
     return this.notifyUser({
@@ -250,6 +258,29 @@ export class NotificationsService {
       template: this.config.env.KAVENEGAR_SUPPORT_TEMPLATE,
       tokens: { token: shortId(input.ticketId), token10: input.status },
     });
+  }
+
+  async notifySupportEscalated(input: {
+    userIds: Array<string | Types.ObjectId>;
+    ticketId: string | Types.ObjectId;
+    subject: string;
+    level: number;
+  }) {
+    await Promise.all(
+      input.userIds.map((userId) =>
+        this.notifyUser({
+          userId,
+          type: "support_sla_escalated",
+          title: `هشدار SLA پشتیبانی - سطح ${input.level}`,
+          body: `پاسخ اولیه تیکت «${input.subject}» از SLA عبور کرده است.`,
+          href: `/support/${String(input.ticketId)}`,
+          tokens: {
+            token: shortId(input.ticketId),
+            token10: String(input.level),
+          },
+        }),
+      ),
+    );
   }
 
   notifyWaitlistSeatAvailable(input: {

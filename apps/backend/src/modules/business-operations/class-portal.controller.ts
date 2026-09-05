@@ -22,11 +22,7 @@ import {
   UpdateClassSessionDto,
 } from "./business-classes.dto";
 import { BusinessClassPortalService } from "./class-portal.service";
-import {
-  ClassCheckInDto,
-  GenerateClassCheckInDto,
-  ResolveBusinessClassPaymentDto,
-} from "./class-portal.dto";
+import { ClassCheckInDto, GenerateClassCheckInDto } from "./class-portal.dto";
 
 @Controller("api/v1/discovery/business-classes")
 export class PublicBusinessClassesController {
@@ -94,15 +90,6 @@ export class AthleteBusinessClassesController {
       body.sessionId,
       body.credential,
     );
-  }
-
-  @Patch("enrollments/:enrollmentId/payment")
-  payment(
-    @CurrentUser() user: AuthTokenPayload,
-    @Param("enrollmentId") enrollmentId: string,
-    @Body() body: ResolveBusinessClassPaymentDto,
-  ) {
-    return this.service.resolvePayment(user.sub, enrollmentId, body.result);
   }
 
   @Post("enrollments/:enrollmentId/cancel")

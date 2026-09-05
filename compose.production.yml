@@ -2,8 +2,14 @@ name: club4me
 
 x-app: &app
   restart: unless-stopped
+  stop_grace_period: 20s
   security_opt:
     - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
   networks:
     - frontend
 
@@ -11,27 +17,59 @@ services:
   mongodb:
     image: mongo:7
     restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 64000
+        hard: 64000
+    env_file: .env.production
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     volumes:
       - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      test:
+        [
+          "CMD-SHELL",
+          'mongosh --quiet --username "$$MONGO_INITDB_ROOT_USERNAME" --password "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "quit(db.adminCommand({ ping: 1 }).ok ? 0 : 2)"',
+        ]
       interval: 10s
       timeout: 5s
       retries: 12
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
     networks:
       - backend
 
   redis:
     image: redis:7.4-alpine
-    command: ["redis-server", "--appendonly", "yes"]
+    env_file: .env.production
+    command:
+      [
+        "sh",
+        "-c",
+        'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"',
+      ]
     restart: unless-stopped
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test:
+        [
+          "CMD-SHELL",
+          'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG',
+        ]
       interval: 10s
       timeout: 5s
       retries: 12
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
     networks:
       - backend
 
@@ -39,13 +77,23 @@ services:
     <<: *app
     image: ${CLUB4ME_BACKEND_IMAGE:-club4me-backend:latest}
     env_file: .env.production
+    environment:
+      NODE_OPTIONS: "--dns-result-order=ipv4first --tls-max-v1.2"
+    volumes:
+      - ./.secrets/firebase-service-account.json:/run/secrets/firebase-service-account.json:ro
     depends_on:
       mongodb:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:7088/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:7088/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       retries: 8
@@ -61,7 +109,13 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:7080/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:7080/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       retries: 8
@@ -74,7 +128,13 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:7081/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:7081/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       retries: 8
@@ -87,7 +147,13 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:7082/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:7082/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       retries: 8
@@ -100,7 +166,13 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:7083/business/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:7083/business/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       retries: 8
@@ -126,8 +198,16 @@ services:
     volumes:
       - ./deploy/gateway.nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /opt/gym4me-runtime/acme:/var/www/certbot:ro
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "-qO-",
+          "--header=Host: gym4me.ir",
+          "http://127.0.0.1/health",
+        ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -142,4 +222,3 @@ networks:
 volumes:
   mongo_data:
   redis_data:
-

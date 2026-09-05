@@ -6,7 +6,7 @@ import {
   useCreateBenefitProduct,
   useUpdateBenefitProduct,
 } from "@api";
-import { useBusinessClubs } from "@api/business";
+import { useBusinessClubMemberships, useBusinessClubs, useInviteBusinessClubMember } from "@api/business";
 import { Button, Card, Chip, Spinner, toast } from "@heroui/react";
 import { type FormEvent, useState } from "react";
 
@@ -20,6 +20,8 @@ export function MembershipProductsScreen() {
   const products = useBusinessBenefitProducts(clubId);
   const create = useCreateBenefitProduct(clubId);
   const update = useUpdateBenefitProduct(clubId);
+  const team = useBusinessClubMemberships(clubId);
+  const inviteMember = useInviteBusinessClubMember(clubId);
   const [type, setType] = useState<BenefitProduct["type"]>("session_pack");
   const [open, setOpen] = useState(false);
 
@@ -46,6 +48,23 @@ export function MembershipProductsScreen() {
       toast.success("محصول عضویت ساخته شد");
     } catch {
       toast.danger("ساخت محصول انجام نشد");
+    }
+  };
+
+  const invite = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    try {
+      await inviteMember.mutateAsync({
+        userId: String(data.get("userId")),
+        role: String(data.get("role")) as "manager" | "receptionist" | "finance" | "coach",
+        permissions: data.getAll("permissions").map(String),
+      });
+      form.reset();
+      toast.success("دعوت همکاری ثبت شد");
+    } catch {
+      toast.danger("ثبت دعوت انجام نشد؛ شناسه کاربر را بررسی کنید");
     }
   };
 
@@ -176,6 +195,23 @@ export function MembershipProductsScreen() {
             </form>
           </Card>
         ) : null}
+        <Card className="mt-5 rounded-2xl border border-border bg-surface p-5">
+          <h2 className="text-lg font-semibold">اعضای تیم باشگاه</h2>
+          <form className="mt-4 grid gap-3 md:grid-cols-[1fr_12rem_auto]" onSubmit={invite}>
+            <input required name="userId" minLength={24} maxLength={24} className={input} placeholder="شناسه ۲۴ کاراکتری کاربر" dir="ltr" />
+            <select name="role" className={input} defaultValue="manager">
+              <option value="manager">مدیر</option><option value="receptionist">پذیرش</option><option value="finance">مالی</option><option value="coach">مربی</option>
+            </select>
+            <Button type="submit" variant="secondary" isPending={inviteMember.isPending} isDisabled={!clubId}>ارسال دعوت</Button>
+            <div className="flex flex-wrap gap-4 text-sm md:col-span-3">
+              {[['members','اعضا'],['reservations','رزروها'],['finance','مالی'],['classes','کلاس‌ها']].map(([value,label]) => <label key={value} className="flex items-center gap-2"><input type="checkbox" name="permissions" value={value} />{label}</label>)}
+            </div>
+          </form>
+          <div className="mt-4 grid gap-2">
+            {(team.data?.items ?? []).map((member) => <div key={member.id} className="flex items-center justify-between rounded-xl bg-surface-secondary p-3 text-sm"><span dir="ltr">{member.userId}</span><div className="flex gap-2"><Chip size="sm">{member.role}</Chip><Chip size="sm" color={member.status === "accepted" ? "success" : member.status === "invited" ? "warning" : "default"}>{member.status}</Chip></div></div>)}
+            {!team.isPending && !team.data?.items.length ? <p className="text-sm text-muted">عضوی ثبت نشده است.</p> : null}
+          </div>
+        </Card>
         <div className="mt-5">
           {products.isPending ? (
             <div className="flex justify-center py-16">

@@ -30,6 +30,7 @@ export interface BottomSheetProps {
   defaultSnap?: number;
   title?: string;
   description?: string;
+  headerAction?: ReactNode;
   children?: ReactNode;
   className?: string;
   contentClassName?: string;
@@ -43,6 +44,7 @@ export function BottomSheet({
   defaultSnap = 0,
   title,
   description,
+  headerAction,
   children,
   className,
   contentClassName,
@@ -169,7 +171,7 @@ export function BottomSheet({
             }
             style={heightStyle}
             className={cn(
-              "fixed inset-x-0 bottom-0 z-[1001] mx-auto flex w-full max-w-xl flex-col rounded-t-[3rem] bg-surface text-surface-foreground shadow-[0_-18px_0_-10px_color-mix(in_oklch,var(--surface)_96%,transparent),0_-34px_0_-22px_color-mix(in_oklch,var(--surface)_88%,transparent),0_-28px_70px_rgba(0,0,0,0.22)] will-change-transform",
+              "fixed inset-x-0 bottom-0 z-[1001] mx-auto flex w-full max-w-xl flex-col rounded-t-[3rem] bg-surface text-surface-foreground will-change-transform",
               className,
             )}
             role="dialog"
@@ -186,7 +188,8 @@ export function BottomSheet({
                 <div className="h-1.5 w-12 rounded-full bg-foreground/15" />
               </div>
               {title || description ? (
-                <div className="mt-3 w-full text-start">
+                <div className="mt-3 flex w-full items-start gap-3 text-start">
+                  <div className="min-w-0 flex-1">
                   {title ? (
                     <h2 id={titleId} className="text-xl font-semibold">
                       {title}
@@ -199,6 +202,10 @@ export function BottomSheet({
                     >
                       {description}
                     </p>
+                  ) : null}
+                  </div>
+                  {headerAction ? (
+                    <div className="shrink-0">{headerAction}</div>
                   ) : null}
                 </div>
               ) : null}

@@ -55,7 +55,7 @@ export function DiscoveryBannersSection({
     <section
       className={styles.root({ className })}
       aria-labelledby={titleId}
-      aria-label={titleId ? undefined : title ?? "بنرها"}
+      aria-label={titleId ? undefined : (title ?? "بنرها")}
     >
       {title ? (
         <DiscoverySectionHeader
@@ -88,10 +88,15 @@ export function DiscoveryBannersSection({
       >
         {items.map((item, index) => {
           const key = item.id ?? `${item.imageUrl}-${index}`;
+          const imageUrl = item.imageUrl.includes("images.unsplash.com")
+            ? index % 2 === 0
+              ? "/welcome/introduce/discover-iran-v2.png"
+              : "/welcome/introduce/book-iran-v2.png"
+            : item.imageUrl;
           const card = (
             <>
               <FallbackImage
-                src={item.imageUrl}
+                src={imageUrl}
                 alt={item.title}
                 fill
                 unoptimized

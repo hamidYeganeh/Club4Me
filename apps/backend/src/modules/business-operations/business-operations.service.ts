@@ -65,6 +65,10 @@ export class BusinessOperationsService {
     return oid(clubId);
   }
 
+  async authorizeExport(ownerId: string, clubId: string) {
+    await this.club(ownerId, clubId);
+  }
+
   async exportData(
     ownerId: string,
     clubId: string,
@@ -722,7 +726,7 @@ async function exportResult(
     filename: `${kind}-${new Date().toISOString().slice(0, 10)}.csv`,
     mimeType: "text/csv;charset=utf-8",
     content,
-    encoding: "utf8",
+    encoding: "utf8" as const,
     templateVersion: 1,
   };
 }
@@ -779,7 +783,7 @@ async function xlsxResult(
     mimeType:
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     content: Buffer.from(buffer).toString("base64"),
-    encoding: "base64",
+    encoding: "base64" as const,
     templateVersion: 1,
   };
 }

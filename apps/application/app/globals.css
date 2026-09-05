@@ -6,10 +6,38 @@
 @import "@repo/theme/theme-transition.css";
 @import "@neshan-maps-platform/maplibre-sdk/style.css";
 
+@custom-variant dark (&:is(.dark *));
+
 @source "../../../packages/ui/src";
 
 @theme inline {
   --animate-line-shadow: line-shadow 15s linear infinite;
+  --color-chart-scale-pattern-color: var(--chart-scale-pattern-color);
+  --color-chart-scale-05: var(--chart-scale-05);
+  --color-chart-scale-04: var(--chart-scale-04);
+  --color-chart-scale-03: var(--chart-scale-03);
+  --color-chart-scale-02: var(--chart-scale-02);
+  --color-chart-scale-01: var(--chart-scale-01);
+  --color-chart-label: var(--chart-label);
+  --color-chart-marker-foreground: var(--chart-marker-foreground);
+  --color-chart-marker-border: var(--chart-marker-border);
+  --color-chart-marker-background: var(--chart-marker-background);
+  --color-chart-tooltip-muted: var(--chart-tooltip-muted);
+  --color-chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --color-chart-tooltip-background: var(--chart-tooltip-background);
+  --chart-brush-border: var(--chart-brush-border);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-crosshair: var(--chart-crosshair);
+  --chart-line-secondary: var(--chart-line-secondary);
+  --chart-line-primary: var(--chart-line-primary);
+  --color-chart-foreground-muted: var(--chart-foreground-muted);
+  --color-chart-foreground: var(--chart-foreground);
+  --color-chart-background: var(--chart-background);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
 }
 
 @keyframes line-shadow {
@@ -41,10 +69,6 @@
 
   body {
     @apply h-full bg-background text-foreground;
-    background-image:
-      radial-gradient(circle at 92% 4%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 27rem),
-      radial-gradient(circle at 8% 92%, color-mix(in oklch, var(--accent) 8%, transparent), transparent 24rem);
-    background-attachment: fixed;
   }
 
   input,
@@ -72,7 +96,7 @@
   }
 
   .app-header {
-    @apply fixed inset-x-0 top-0 z-40 mx-auto flex h-[calc(72px+env(safe-area-inset-top))] w-full max-w-xl items-center gap-3 border-b border-white/7 bg-background/72 px-5 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] shadow-[0_12px_32px_color-mix(in_oklch,var(--background)_55%,transparent)] backdrop-blur-xl;
+    @apply fixed inset-x-0 top-0 z-40 mx-auto flex h-[calc(72px+env(safe-area-inset-top))] w-full max-w-xl items-center gap-3 border-b border-white/7 bg-background/72 px-5 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] backdrop-blur-xl;
   }
 
   .app-header-spacer {
@@ -84,11 +108,11 @@
   }
 
   .app-card {
-    @apply rounded-[1.35rem] border border-white/7 bg-surface/78 shadow-[0_14px_34px_color-mix(in_oklch,var(--background)_45%,transparent)] backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-300 ease-out hover:border-accent/30 active:scale-[0.985];
+    @apply rounded-[1.35rem] border border-white/7 bg-surface/78 backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-300 ease-out hover:border-accent/30 active:scale-[0.985];
   }
 
   .app-icon-button {
-    @apply flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-[1rem] border border-white/8 bg-surface/72 text-foreground shadow-[0_8px_22px_color-mix(in_oklch,var(--background)_45%,transparent)] backdrop-blur-xl transition-transform duration-200 active:scale-95;
+    @apply flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-[1rem] border border-white/8 bg-surface/72 text-foreground backdrop-blur-xl transition-transform duration-200 active:scale-95;
   }
 
   .app-field {
@@ -120,4 +144,33 @@ html[data-magicui-theme-vt="active"]::view-transition-group(root) {
 
 html[data-magicui-theme-vt="active"]::view-transition-new(root) {
   clip-path: var(--magicui-theme-vt-clip-from);
+}
+
+:root {
+  --chart-1: var(--accent);
+  --chart-2: color-mix(in oklch, var(--accent) 78%, var(--surface));
+  --chart-3: color-mix(in oklch, var(--accent) 58%, var(--surface));
+  --chart-4: color-mix(in oklch, var(--accent) 38%, var(--surface));
+  --chart-5: color-mix(in oklch, var(--accent) 18%, var(--surface));
+  --chart-background: var(--surface);
+  --chart-foreground: var(--foreground);
+  --chart-foreground-muted: var(--muted);
+  --chart-line-primary: var(--chart-1);
+  --chart-line-secondary: var(--chart-2);
+  --chart-crosshair: var(--accent);
+  --chart-grid: var(--border);
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: color-mix(in oklch, var(--background) 88%, transparent);
+  --chart-tooltip-foreground: var(--foreground);
+  --chart-tooltip-muted: var(--muted);
+  --chart-marker-background: var(--surface-secondary);
+  --chart-marker-border: var(--border);
+  --chart-marker-foreground: var(--foreground);
+  --chart-label: var(--muted);
+  --chart-scale-01: var(--surface-tertiary);
+  --chart-scale-02: color-mix(in oklch, var(--accent) 22%, var(--surface));
+  --chart-scale-03: color-mix(in oklch, var(--accent) 44%, var(--surface));
+  --chart-scale-04: color-mix(in oklch, var(--accent) 68%, var(--surface));
+  --chart-scale-05: var(--accent);
+  --chart-scale-pattern-color: var(--surface);
 }

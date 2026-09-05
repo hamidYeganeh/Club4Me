@@ -6,7 +6,7 @@ export const discoveryBannersSectionStyles = tv({
     swiper:
       "w-full [&_.swiper-pagination]:bottom-3 [&_.swiper-pagination-bullet]:h-2 [&_.swiper-pagination-bullet]:w-2 [&_.swiper-pagination-bullet]:bg-white/50 [&_.swiper-pagination-bullet-active]:w-6 [&_.swiper-pagination-bullet-active]:rounded-full [&_.swiper-pagination-bullet-active]:bg-white",
     slide: "h-auto",
-    card: "group relative block w-full overflow-hidden rounded-[1.5rem] bg-surface shadow-[0_14px_30px_color-mix(in_oklch,var(--background)_45%,transparent)] outline-none focus-visible:ring-2 focus-visible:ring-focus",
+    card: "group relative block w-full overflow-hidden rounded-[1.5rem] bg-surface outline-none focus-visible:ring-2 focus-visible:ring-focus",
     image:
       "object-cover saturate-75 contrast-110 transition-transform duration-700 ease-out group-hover:scale-105 group-hover:saturate-100",
     overlay:

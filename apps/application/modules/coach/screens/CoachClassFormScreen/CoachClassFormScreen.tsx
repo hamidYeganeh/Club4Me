@@ -10,6 +10,12 @@ import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPage
 
 const input =
   "h-12 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm outline-none focus:border-accent";
+const parseFaqRows = (value: string) =>
+  value
+    .split("\n")
+    .map((row) => row.split("|").map((part) => part.trim()))
+    .filter(([question, answer]) => Boolean(question && answer))
+    .map(([question, answer]) => ({ question: question!, answer: answer! }));
 
 export function CoachClassFormScreen() {
   const router = useRouter();
@@ -29,6 +35,7 @@ export function CoachClassFormScreen() {
   const [daysOfWeek, setDaysOfWeek] = useState<number[]>([]);
   const [startTime, setStartTime] = useState("18:00");
   const [durationMinutes, setDurationMinutes] = useState(60);
+  const [faqs, setFaqs] = useState("");
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -53,6 +60,7 @@ export function CoachClassFormScreen() {
         galleryMediaIds: [],
         tags: [],
         prerequisites: [],
+        faqs: parseFaqRows(faqs),
         requiredEquipmentIds: [],
         amenityIds: [],
       });
@@ -113,6 +121,14 @@ export function CoachClassFormScreen() {
                 </option>
               ))}
             </select>
+          </Field>
+          <Field label="سوالات متداول">
+            <textarea
+              value={faqs}
+              onChange={(event) => setFaqs(event.target.value)}
+              className={`${input} min-h-24 py-3`}
+              placeholder="هر خط: سوال | پاسخ"
+            />
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="شیوه برگزاری">

@@ -76,14 +76,19 @@ export class CreateDiscountDto {
           message: "Percent discount cannot exceed 100",
         });
       }
-      if (value.funding.reduce((sum, item) => sum + item.percentage, 0) !== 100) {
+      if (
+        value.funding.reduce((sum, item) => sum + item.percentage, 0) !== 100
+      ) {
         context.addIssue({
           code: "custom",
           path: ["funding"],
           message: "Funding percentages must add up to 100",
         });
       }
-      if (new Set(value.funding.map((item) => item.source)).size !== value.funding.length) {
+      if (
+        new Set(value.funding.map((item) => item.source)).size !==
+        value.funding.length
+      ) {
         context.addIssue({
           code: "custom",
           path: ["funding"],

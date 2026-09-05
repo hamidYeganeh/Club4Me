@@ -1,14 +1,16 @@
 "use client";
 
-import { Spinner, toast } from "@heroui/react";
+import { Button, Spinner, toast } from "@heroui/react";
 import {
   useArticle,
   useArticleCategories,
+  useDeleteArticle,
   useUpdateArticle,
 } from "@api/articles";
 import { ApiError } from "@api";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 import { ButtonLink } from "@/components/button-link";
 import {
@@ -22,9 +24,24 @@ type ArticlesEditScreenProps = {
 
 export function ArticlesEditScreen({ articleId }: ArticlesEditScreenProps) {
   const t = useTranslations("articlesPage");
+  const router = useRouter();
   const article = useArticle(articleId);
   const categories = useArticleCategories();
   const updateArticle = useUpdateArticle();
+  const deleteArticle = useDeleteArticle();
+
+  const handleDelete = async () => {
+    if (!window.confirm("این مقاله برای همیشه حذف شود؟")) return;
+    try {
+      await deleteArticle.mutateAsync(articleId);
+      toast.success("مقاله حذف شد");
+      router.replace("/articles");
+    } catch (error) {
+      toast.danger("حذف مقاله انجام نشد", {
+        description: error instanceof ApiError ? error.message : undefined,
+      });
+    }
+  };
 
   const handleSubmit = async (values: ArticlesEditorFormValues) => {
     try {
@@ -36,6 +53,7 @@ export function ArticlesEditScreen({ articleId }: ArticlesEditScreenProps) {
         slug: values.slug || undefined,
         excerpt: values.excerpt,
         bodyHtml: values.bodyHtml,
+        coverImageUrl: values.coverImageUrl,
         status: values.status,
       });
       toast.success(t("saveSuccess"));
@@ -73,6 +91,14 @@ export function ArticlesEditScreen({ articleId }: ArticlesEditScreenProps) {
           <Icon name="arrow-right" size="md" />
         </ButtonLink>
         <h1 className="text-2xl font-semibold">{t("edit")}</h1>
+        <Button
+          variant="danger-soft"
+          className="ms-auto"
+          isPending={deleteArticle.isPending}
+          onPress={() => void handleDelete()}
+        >
+          حذف مقاله
+        </Button>
       </div>
 
       <ArticlesEditorForm
@@ -84,6 +110,7 @@ export function ArticlesEditScreen({ articleId }: ArticlesEditScreenProps) {
           slug: article.data.slug,
           excerpt: article.data.excerpt,
           bodyHtml: article.data.bodyHtml,
+          coverImageUrl: article.data.coverImageUrl,
           status: article.data.status,
         }}
         categories={categories.data?.items ?? []}

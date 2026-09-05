@@ -15,6 +15,12 @@ export class BusinessTrainingClass {
   clubId: Types.ObjectId;
   @Prop({ required: true, trim: true, maxlength: 140 }) title: string;
   @Prop({ trim: true, maxlength: 3000, default: "" }) description: string;
+  @Prop({
+    type: [{ question: String, answer: String }],
+    default: [],
+    _id: false,
+  })
+  faqs: Array<{ question: string; answer: string }>;
   @Prop({ trim: true, maxlength: 120, default: "" }) sport: string;
   @Prop({ trim: true, maxlength: 80, default: "" }) level: string;
   @Prop({

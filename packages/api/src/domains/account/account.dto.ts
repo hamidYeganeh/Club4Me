@@ -4,7 +4,21 @@ export type RequestableRole = "coach" | "owner";
 
 export type RoleRequestStatus = "pending" | "approved" | "rejected";
 
-export type AccountGender = "female" | "male";
+export type AccountGender = "female" | "male" | "other";
+
+export type AccountActivityLevel = "very-active" | "normal" | "very-lazy";
+
+export type AccountProfileChoice<T extends string> = {
+  value: T;
+  label: string;
+  description?: string;
+  requiresDescription?: boolean;
+};
+
+export type AccountProfileChoicesResponse = {
+  genders: AccountProfileChoice<AccountGender>[];
+  activityLevels: AccountProfileChoice<AccountActivityLevel>[];
+};
 
 export type AccountRoleRequest = {
   id: string;
@@ -35,6 +49,8 @@ export type AccountUser = {
   lastName?: string;
   birthdate?: string;
   gender?: AccountGender;
+  genderDescription?: string;
+  activityLevel?: AccountActivityLevel;
   idCard?: string;
   roles: UserRole[];
   hasPassword: boolean;
@@ -47,6 +63,8 @@ export type UpdateAccountMePayload = {
   lastName?: string;
   birthdate?: string;
   gender?: AccountGender;
+  genderDescription?: string;
+  activityLevel?: AccountActivityLevel;
   idCard?: string;
 };
 

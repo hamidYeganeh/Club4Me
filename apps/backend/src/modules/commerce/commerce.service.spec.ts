@@ -16,7 +16,10 @@ describe("CommerceService", () => {
       amount: 100_000,
       grossAmount: 100_000,
       discountAmount: 0,
+      platformFundedDiscount: 0,
+      providerFundedDiscount: 0,
       walletAmount: 0,
+      walletReservationKey: "",
       platformFee: 10_000,
       refundedAmount: 0,
       idempotencyKey: "checkout-key-123",
@@ -65,6 +68,7 @@ describe("CommerceService", () => {
         refundPurchase: jest.fn(),
         finalizeReservation: jest.fn(),
       } as never,
+      { finalizeEnrollmentPayment: jest.fn() } as never,
     );
     const callback = provider.createCallback({
       intentId: String(intent._id),

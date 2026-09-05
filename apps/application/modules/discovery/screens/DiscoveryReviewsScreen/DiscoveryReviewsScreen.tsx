@@ -1,231 +1,63 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button, Card, Typography } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { useClubReviews, usePublicClub } from "@api";
-import { useCatalogClub } from "@api/discovery";
-import { Icon } from "@theme/icon";
-
+import { useCatalogClass, useCatalogClub, useCatalogCoach } from "@api/discovery";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
-import { ReviewListSkeleton } from "@/components/loading-skeletons";
+import { ReviewCard, ReviewersCard, ReviewSummary, type ReviewCardItem } from "@modules/discovery/components/reviews";
+import { ReviewListSkeleton, ReviewsPageSkeleton } from "@/components/loading-skeletons";
 
 type ReviewFilter = "recent" | "positive" | "negative";
-
-type ReviewItem = {
-  id: string;
-  author: string;
-  rating: number;
-  body: string;
-  createdAt: string;
-};
-
+type ReviewTarget = "club" | "coach" | "class";
 const filters: Array<{ id: ReviewFilter; label: string }> = [
   { id: "recent", label: "جدیدترین" },
   { id: "positive", label: "مثبت" },
   { id: "negative", label: "منفی" },
 ];
 
-function formatRelativeDate(value: string) {
-  const days = Math.max(
-    1,
-    Math.floor((Date.now() - new Date(value).getTime()) / 86_400_000),
-  );
-  if (days < 7) return `${days.toLocaleString("fa-IR")} روز پیش`;
-  const weeks = Math.floor(days / 7);
-  if (weeks < 5) return `${weeks.toLocaleString("fa-IR")} هفته پیش`;
-  const months = Math.floor(days / 30);
-  return `${months.toLocaleString("fa-IR")} ماه پیش`;
-}
-
-function RatingDistribution({ reviews }: { reviews: ReviewItem[] }) {
-  const counts = [5, 4, 3, 2, 1].map(
-    (rating) =>
-      reviews.filter((review) => Math.round(review.rating) === rating).length,
-  );
-  const max = Math.max(...counts, 1);
-
-  return (
-    <div className="flex min-w-0 flex-1 flex-col gap-2" dir="ltr">
-      {counts.map((count, index) => {
-        const rating = 5 - index;
-        return (
-          <div
-            key={rating}
-            className="grid grid-cols-[12px_18px_1fr] items-center gap-2"
-          >
-            <span className="text-xs tabular-nums text-muted">{rating}</span>
-            <Icon name="star-full" size={14} className="text-accent" />
-            <div className="h-2 overflow-hidden rounded-full bg-surface-tertiary">
-              <div
-                className="h-full rounded-full bg-accent transition-[width] duration-500"
-                style={{ width: `${(count / max) * 100}%` }}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-export function DiscoveryReviewsScreen({
-  type,
-  id,
-}: {
-  type: "club" | "coach";
-  id: string;
-}) {
+export function DiscoveryReviewsScreen({ type, id }: { type: ReviewTarget; id: string }) {
   const catalogClub = useCatalogClub(type === "club" ? id : "");
+  const coach = useCatalogCoach(type === "coach" ? id : "");
+  const classItem = useCatalogClass(type === "class" ? id : "");
   const clubId = type === "club" ? (catalogClub.data?.id ?? "") : "";
   const clubReviews = useClubReviews(clubId);
   const club = usePublicClub(clubId);
   const [filter, setFilter] = useState<ReviewFilter>("recent");
-  const entityName = type === "club" ? (club.data?.name ?? "باشگاه") : "مربی";
-  const apiItems: ReviewItem[] = (clubReviews.data?.items ?? []).map(
-    (review) => ({
-      id: review.id,
-      author: "کاربر جیم‌فورمی",
-      rating: review.rating,
-      body: review.body,
-      createdAt: review.createdAt,
-    }),
-  );
-  const reviews = apiItems;
-  const average = clubReviews.data?.averageRating ?? 0;
-  const reviewCount = clubReviews.data?.reviewsCount ?? 0;
-
+  const entityName = type === "club" ? (club.data?.name ?? catalogClub.data?.name ?? "باشگاه") : type === "coach" ? (coach.data?.displayName ?? "مربی") : (classItem.data?.title ?? "کلاس");
+  const reviews: ReviewCardItem[] = (clubReviews.data?.items ?? []).map((review) => ({
+    id: review.id, author: "کاربر کلاب‌فورمی", rating: review.rating, title: review.title,
+    body: review.body, createdAt: review.createdAt, verified: true,
+  }));
+  const average = type === "club" ? (clubReviews.data?.averageRating ?? 0) : type === "coach" ? (coach.data?.averageRating ?? 0) : 0;
+  const reviewCount = type === "club" ? (clubReviews.data?.reviewsCount ?? 0) : type === "coach" ? (coach.data?.reviewsCount ?? 0) : 0;
+  const distribution = [5, 4, 3, 2, 1].map((rating) => reviews.filter((review) => Math.round(review.rating) === rating).length);
   const visibleReviews = useMemo(() => {
-    const sorted = [...reviews].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    if (filter === "positive")
-      return sorted.filter((review) => review.rating >= 4);
-    if (filter === "negative")
-      return sorted.filter((review) => review.rating <= 2);
+    const sorted = [...reviews].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    if (filter === "positive") return sorted.filter((review) => review.rating >= 4);
+    if (filter === "negative") return sorted.filter((review) => review.rating <= 2);
     return sorted;
   }, [filter, reviews]);
+  const isPagePending = type === "club" ? catalogClub.isPending || (Boolean(clubId) && (clubReviews.isPending || club.isPending)) : type === "coach" ? coach.isPending : classItem.isPending;
+  if (isPagePending) return <ReviewsPageSkeleton />;
 
   return (
     <main className="min-h-dvh w-full max-w-full overflow-x-hidden bg-transparent pb-[calc(2rem+env(safe-area-inset-bottom))]">
       <SecondaryHeader title={`نظر کاربران ${entityName}`} />
-
       <section className="space-y-5 px-4 pt-5">
-        <Card className="app-card app-reveal p-5 shadow-none">
-          <div className="flex items-center gap-6">
-            <div className="w-28 shrink-0 text-center">
-              <Typography
-                type="h1"
-                weight="bold"
-                className="leading-none tabular-nums"
-              >
-                {average.toLocaleString("fa-IR", {
-                  minimumFractionDigits: 1,
-                  maximumFractionDigits: 1,
-                })}
-              </Typography>
-              <div
-                className="mt-3 flex justify-center gap-0.5"
-                dir="ltr"
-                aria-label={`${average} از ۵`}
-              >
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Icon
-                    key={star}
-                    name="star-full"
-                    size={15}
-                    className={
-                      star <= Math.round(average)
-                        ? "text-accent"
-                        : "text-surface-tertiary"
-                    }
-                  />
-                ))}
-              </div>
-              <Typography type="body-xs" color="muted" className="mt-2">
-                {reviewCount.toLocaleString("fa-IR")} نظر
-              </Typography>
-            </div>
-            <RatingDistribution reviews={reviews} />
-          </div>
-        </Card>
-
-        <div
-          className="app-surface app-reveal grid grid-flow-dense grid-cols-3 rounded-[1.2rem] p-1"
-          role="group"
-          aria-label="فیلتر نظرها"
-        >
-          {filters.map((item) => (
-            <Button
-              key={item.id}
-              variant={filter === item.id ? "secondary" : "ghost"}
-              size="sm"
-              aria-pressed={filter === item.id}
-              onPress={() => setFilter(item.id)}
-              className={
-                filter === item.id
-                  ? "bg-surface text-foreground shadow-sm"
-                  : "text-muted"
-              }
-            >
-              {item.label}
-            </Button>
-          ))}
+        <ReviewSummary type={type} average={average} count={reviewCount} distribution={distribution} />
+        <ReviewersCard count={reviewCount} href={`/discovery/${type === "class" ? "classes" : `${type}s`}/${id}/reviews/new`} />
+        <div className="pt-2">
+          <h2 className="text-lg font-black text-foreground">نظر کاربران</h2>
+          <p className="mt-1 text-xs text-muted">تجربه‌های واقعی اعضای کلاب‌فورمی</p>
         </div>
-
-        {clubReviews.isPending && Boolean(clubId) ? (
-          <ReviewListSkeleton count={3} />
-        ) : (
+        <div className="app-surface grid grid-cols-3 rounded-[1.2rem] p-1" role="group" aria-label="فیلتر نظرها">
+          {filters.map((item) => <Button key={item.id} variant={filter === item.id ? "secondary" : "ghost"} size="sm" aria-pressed={filter === item.id} onPress={() => setFilter(item.id)} className={filter === item.id ? "bg-surface text-foreground shadow-sm" : "text-muted"}>{item.label}</Button>)}
+        </div>
+        {clubReviews.isPending && Boolean(clubId) ? <ReviewListSkeleton count={3} /> : (
           <div className="space-y-3">
-            {visibleReviews.map((review) => (
-              <Card
-                key={review.id}
-                className="app-card app-stack-card p-5 shadow-none"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground">
-                    {review.author.slice(0, 1)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <Typography
-                      type="body-sm"
-                      weight="bold"
-                      className="truncate text-base"
-                    >
-                      {review.author}
-                    </Typography>
-                    <div className="mt-1 flex items-center gap-2 text-sm text-muted">
-                      <span className="inline-flex items-center gap-1 font-bold text-accent">
-                        <Icon name="star-full" size={15} />
-                        {review.rating.toLocaleString("fa-IR")}
-                      </span>
-                      <span aria-hidden>·</span>
-                      <span>{formatRelativeDate(review.createdAt)}</span>
-                    </div>
-                  </div>
-                  <Button
-                    isIconOnly
-                    variant="ghost"
-                    size="sm"
-                    aria-label="گزینه‌های نظر"
-                  >
-                    <Icon name="kebab" size={20} />
-                  </Button>
-                </div>
-                <Typography
-                  type="body-sm"
-                  color="muted"
-                  className="mt-4 leading-7"
-                >
-                  {review.body}
-                </Typography>
-              </Card>
-            ))}
-            {visibleReviews.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-border px-6 py-12 text-center text-sm text-muted">
-                نظری در این دسته وجود ندارد.
-              </div>
-            ) : null}
+            {visibleReviews.map((review) => <ReviewCard key={review.id} review={review} />)}
+            {!visibleReviews.length ? <div className="rounded-3xl border border-dashed border-border px-6 py-12 text-center"><p className="font-bold text-foreground">هنوز نظری ثبت نشده</p><p className="mt-2 text-sm text-muted">اولین نفری باشید که تجربه‌اش را به اشتراک می‌گذارد.</p></div> : null}
           </div>
         )}
       </section>

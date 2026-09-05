@@ -4,44 +4,62 @@ import type {
   DiscoveryArticleItem,
   DiscoveryClubItem,
   DiscoveryCoachItem,
-  PublicCatalogClass,
   DiscoverySection,
+  DiscoverySportItem,
+  PublicCatalogClass,
 } from "@api/discovery";
-import { ArticleCard } from "@ui/article-card";
-import { ClubCard } from "@ui/club-card";
-import { CoachCard } from "@ui/coach-card";
-import { useLocale } from "next-intl";
-import { FreeMode } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { getLocaleDirection } from "@/lib/locale-direction";
-import { DiscoverySectionHeader } from "../../components/DiscoverySectionHeader";
-import { DiscoveryResultCard } from "../../components/DiscoveryResultCard";
+import { DiscoveryArticlesRailSection } from "@modules/discovery/sections/DiscoveryArticlesRailSection";
 import {
   DiscoveryBannersSection,
   parseDiscoveryBannersLayout,
-} from "../DiscoveryBannersSection";
-import "swiper/css";
-import "swiper/css/free-mode";
+} from "@modules/discovery/sections/DiscoveryBannersSection";
+import { DiscoveryClassesRailSection } from "@modules/discovery/sections/DiscoveryClassesRailSection";
+import { DiscoveryClubsRailSection } from "@modules/discovery/sections/DiscoveryClubsRailSection";
+import { DiscoveryCoachesRailSection } from "@modules/discovery/sections/DiscoveryCoachesRailSection";
+import { DiscoverySportsRailSection } from "@modules/discovery/sections/DiscoverySportsRailSection";
+import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
+
+const sectionDestinations: Record<DiscoverySection["type"], string> = {
+  banners: "/discovery/search",
+  clubs: "/discovery/clubs",
+  coaches: "/discovery/coaches",
+  classes: "/discovery/classes",
+  sports: "/discovery/search",
+  articles: "/discovery/articles",
+};
+
+const sectionIcons = {
+  banners: "magnifying-glass",
+  clubs: "building-1",
+  coaches: "medal",
+  classes: "academic-cap",
+  sports: "soccer",
+  articles: "book-open",
+} as const;
 
 export function DiscoveryDynamicSection({
   section,
 }: {
   section: DiscoverySection;
 }) {
-  const direction = getLocaleDirection(useLocale());
+  const title = section.appearance.showHeader ? section.title : "";
+  const subtitle = section.appearance.showHeader ? section.subtitle : "";
+  const viewAllUrl = section.appearance.showViewAll
+    ? section.viewAllUrl || sectionDestinations[section.type]
+    : "";
+  const viewAllLabel = section.appearance.showViewAll
+    ? section.viewAllLabel || "مشاهده همه"
+    : "";
+
   if (!section.items.length) {
     return (
-      <section className="flex flex-col gap-4">
-        <DiscoverySectionHeader
-          title={section.title}
-          subtitle={section.subtitle}
-          viewAllLabel={section.viewAllLabel}
-          viewAllUrl={section.viewAllUrl}
-        />
-        <p className="rounded-2xl bg-surface p-5 text-center text-sm text-muted">
-          هنوز محتوایی برای این بخش ثبت نشده است.
-        </p>
-      </section>
+      <DiscoveryEmptySection
+        title={title}
+        subtitle={subtitle}
+        icon={sectionIcons[section.type]}
+        viewAllLabel={viewAllLabel}
+        viewAllUrl={viewAllUrl}
+      />
     );
   }
 
@@ -52,10 +70,10 @@ export function DiscoveryDynamicSection({
     return (
       <DiscoveryBannersSection
         id={section.id}
-        title={section.title}
-        subtitle={section.subtitle}
-        viewAllLabel={section.viewAllLabel}
-        viewAllUrl={section.viewAllUrl}
+        title={title}
+        subtitle={subtitle}
+        viewAllLabel={viewAllLabel}
+        viewAllUrl={viewAllUrl}
         items={section.items}
         aspectRatio={aspectRatio}
         slidesPerView={slidesPerView}
@@ -63,99 +81,107 @@ export function DiscoveryDynamicSection({
     );
   }
 
-  const header = (
-    <DiscoverySectionHeader
-      title={section.title}
-      subtitle={section.subtitle}
-      viewAllLabel={section.viewAllLabel}
-      viewAllUrl={section.viewAllUrl}
-    />
-  );
+  if (section.type === "clubs") {
+    const editorial =
+      section.layout.includes("editorial") ||
+      section.key.includes("top-rated") ||
+      section.key.includes("popular");
+    const accent =
+      section.layout.includes("accent") || section.key.includes("nearby");
+    const clubs = (section.items as DiscoveryClubItem[]).map((club) => ({
+      ...club,
+      imageUrl: club.imageUrl ?? "/discovery/locations/city-modern.jpg",
+    }));
+    return (
+      <DiscoveryClubsRailSection
+        id={section.id}
+        title={title}
+        subtitle={subtitle}
+        icon={editorial ? "medal" : "weight"}
+        seeAllHref={viewAllUrl}
+        items={clubs}
+        tone={accent ? "accent" : "surface"}
+        cardVariant={editorial ? "editorial" : "compact"}
+      />
+    );
+  }
 
+  if (section.type === "coaches") {
+    const coaches = (section.items as DiscoveryCoachItem[]).map((coach) => ({
+      ...coach,
+      imageUrl: coach.imageUrl ?? "/profile/avatar.jpg",
+    }));
+    return (
+      <DiscoveryCoachesRailSection
+        id={section.id}
+        title={title}
+        subtitle={subtitle}
+        icon="medal"
+        seeAllHref={viewAllUrl}
+        seeAllLabel={viewAllLabel}
+        items={coaches}
+        cardType={
+          section.layout.includes("compact") || section.key.includes("new-")
+            ? "compact"
+            : "normal"
+        }
+      />
+    );
+  }
+
+  if (section.type === "classes") {
+    const classes = (section.items as PublicCatalogClass[]).map((item) => ({
+      ...item,
+      imageUrl: item.imageUrl ?? "/welcome/introduce/progress-iran-v2.png",
+    }));
+    return (
+      <DiscoveryClassesRailSection
+        id={section.id}
+        title={title}
+        subtitle={subtitle}
+        icon="academic-cap"
+        seeAllHref={viewAllUrl}
+        seeAllLabel={viewAllLabel}
+        items={classes}
+      />
+    );
+  }
+
+  if (section.type === "sports") {
+    return (
+      <DiscoverySportsRailSection
+        id={section.id}
+        title={title}
+        subtitle={subtitle}
+        seeAllHref={viewAllUrl}
+        seeAllLabel={viewAllLabel}
+        items={section.items as DiscoverySportItem[]}
+      />
+    );
+  }
+
+  const articles = (section.items as DiscoveryArticleItem[]).map((article) => ({
+    ...article,
+    coverImageUrl:
+      article.coverImageUrl ?? "/welcome/introduce/discover-iran-v2.png",
+  }));
   return (
-    <section className="flex flex-col gap-4">
-      {header}
-      <div dir={direction}>
-        <Swiper
-          dir={direction}
-          modules={[FreeMode]}
-          freeMode
-          slidesPerView="auto"
-          spaceBetween={12}
-          className="w-full"
-        >
-          {section.items.map((item) => (
-            <SwiperSlide
-              key={item.id}
-              className="!w-[78vw] max-w-[300px]"
-              dir={direction}
-            >
-              {section.type === "clubs"
-                ? (() => {
-                    const club = item as DiscoveryClubItem;
-                    return (
-                      <ClubCard
-                        variant="compact"
-                        title={club.name}
-                        rating={club.averageRating}
-                        reviewsCount={club.reviewsCount}
-                        href={`/discovery/clubs/${club.slug}`}
-                      />
-                    );
-                  })()
-                : section.type === "coaches"
-                  ? (() => {
-                      const coach = item as DiscoveryCoachItem;
-                      return (
-                        <CoachCard
-                          type="normal"
-                          title={coach.displayName}
-                          imageUrl={coach.imageUrl}
-                          supportingText={coach.shortBio}
-                          rating={coach.averageRating}
-                          reviewsCount={coach.reviewsCount}
-                          href={`/discovery/coaches/${coach.slug}`}
-                          stats={[
-                            {
-                              id: "experience",
-                              label: `${coach.experienceYears} سال تجربه`,
-                            },
-                          ]}
-                        />
-                      );
-                    })()
-                  : section.type === "classes"
-                    ? (() => {
-                        const trainingClass = item as PublicCatalogClass;
-                        return (
-                          <DiscoveryResultCard
-                            title={trainingClass.title}
-                            subtitle={trainingClass.description}
-                            imageUrl={trainingClass.imageUrl}
-                            badge="کلاس"
-                            href={`/discovery/classes/${trainingClass.slug}`}
-                          />
-                        );
-                      })()
-                    : (() => {
-                        const article = item as DiscoveryArticleItem;
-                        return (
-                          <ArticleCard
-                            title={article.title}
-                            description={article.excerpt}
-                            coverImageUrl={article.coverImageUrl}
-                            authorName={article.authorName}
-                            readTime=""
-                            tags={[]}
-                            orientation="vertical"
-                            href={`/discovery/articles/${article.slug}`}
-                          />
-                        );
-                      })()}
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </div>
-    </section>
+    <DiscoveryArticlesRailSection
+      id={section.id}
+      title={title}
+      subtitle={subtitle}
+      icon="sparkle-1"
+      seeAllHref={viewAllUrl}
+      seeAllLabel={viewAllLabel}
+      items={articles}
+      cardVariant={{
+        orientation:
+          section.layout.includes("horizontal") ||
+          section.key.includes("library")
+            ? "horizontal"
+            : "vertical",
+        outlined: section.layout.includes("outline"),
+      }}
+    />
   );
 }

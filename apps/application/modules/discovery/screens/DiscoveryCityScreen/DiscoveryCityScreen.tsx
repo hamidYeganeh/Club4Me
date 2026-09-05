@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, Card, Typography } from "@heroui/react";
+import { Button, Card, Skeleton, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { useCatalogClubs, usePublicCatalogResource } from "@api/discovery";
 
@@ -13,6 +13,8 @@ import {
   CityDetailSkeleton,
   DiscoveryResultCardSkeleton,
 } from "@/components/loading-skeletons";
+import { DiscoveryEmptyPage } from "@modules/discovery/components/DiscoveryEmptyPage";
+import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 
 export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
   const router = useRouter();
@@ -32,13 +34,14 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
     Boolean(city),
   );
 
-  if (cities.isPending)
-    return <CityDetailSkeleton />;
+  if (cities.isPending) return <CityDetailSkeleton />;
   if (!city)
     return (
-      <main className={styles.root()}>
-        <div className={styles.empty()}>این شهر پیدا نشد.</div>
-      </main>
+      <DiscoveryEmptyPage
+        headerTitle="شهر"
+        title="این شهر پیدا نشد"
+        description="هنوز شهری با این مشخصات برای نمایش وجود ندارد."
+      />
     );
 
   return (
@@ -67,9 +70,20 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
           </Button>
         </div>
         <div className={styles.heroCopy()}>
-          <Typography type="body-sm" weight="bold" className={styles.eyebrow()}>
-            {(clubs.data?.total ?? 0).toLocaleString("fa-IR")} باشگاه
-          </Typography>
+          {clubs.isPending ? (
+            <Skeleton
+              className="h-4 w-20 rounded-lg"
+              aria-label="در حال بارگذاری تعداد باشگاه‌ها"
+            />
+          ) : (
+            <Typography
+              type="body-sm"
+              weight="bold"
+              className={styles.eyebrow()}
+            >
+              {(clubs.data?.total ?? 0).toLocaleString("fa-IR")} باشگاه
+            </Typography>
+          )}
           <Typography
             id="city-title"
             type="h2"
@@ -88,11 +102,25 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
           <Typography id="districts-title" type="h4" weight="bold">
             مناطق {city.name}
           </Typography>
-          <Typography type="body-sm" color="muted">
-            {(districts.data?.total ?? 0).toLocaleString("fa-IR")} منطقه
-          </Typography>
+          {districts.isPending ? (
+            <Skeleton
+              className="h-4 w-16 rounded-lg"
+              aria-label="در حال بارگذاری تعداد مناطق"
+            />
+          ) : (
+            <Typography type="body-sm" color="muted">
+              {(districts.data?.total ?? 0).toLocaleString("fa-IR")} منطقه
+            </Typography>
+          )}
         </div>
         {districts.isPending ? <DiscoveryResultCardSkeleton count={4} /> : null}
+        {!districts.isPending && (districts.data?.items.length ?? 0) === 0 ? (
+          <DiscoveryEmptySection
+            title={`منطقه‌ای در ${city.name} پیدا نشد`}
+            subtitle="با اضافه شدن مناطق جدید، آن‌ها را اینجا خواهی دید."
+            icon="pin-1"
+          />
+        ) : null}
         <div className={styles.list()}>
           {(districts.data?.items ?? []).map((district) => (
             <Card key={district.id} className={styles.card()}>

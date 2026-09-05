@@ -5,7 +5,12 @@ const SESSION_ID = "66d600000000000000000001";
 const RESERVATION_ID = "66d700000000000000000001";
 const INTENT_ID = "66d800000000000000000001";
 
-type SearchMode = "success" | "server-error" | "permission-denied" | "timeout";
+type SearchMode =
+  | "success"
+  | "offline"
+  | "server-error"
+  | "permission-denied"
+  | "timeout";
 
 export type MockApiState = ReturnType<typeof createMockApiState>;
 
@@ -81,6 +86,9 @@ export async function installApiMock(page: Page, state: MockApiState) {
     }
 
     if (path === "/discovery/catalog/search" && method === "GET") {
+      if (state.searchMode === "offline") {
+        return route.abort("internetdisconnected");
+      }
       if (state.searchMode === "timeout") {
         await new Promise((resolve) => setTimeout(resolve, 900));
       }
@@ -207,7 +215,7 @@ export async function installApiMock(page: Page, state: MockApiState) {
       });
     }
 
-    if (path === "/discovery" && method === "GET") {
+    if (path === "/discovery/sections" && method === "GET") {
       return success(route, []);
     }
 
@@ -386,7 +394,10 @@ function reservationFixture(
 function success(route: Route, data: unknown, status = 200) {
   return route.fulfill({
     status,
-    contentType: "application/json",
+    headers: {
+      "Cache-Control": "no-store",
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ data, meta: { version: "v1" } }),
   });
 }
@@ -394,7 +405,10 @@ function success(route: Route, data: unknown, status = 200) {
 function failure(route: Route, status: number, code: string, message: string) {
   return route.fulfill({
     status,
-    contentType: "application/json",
+    headers: {
+      "Cache-Control": "no-store",
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ error: { code, message } }),
   });
 }

@@ -59,6 +59,11 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
               label: "بسته‌ها و عضویت",
             },
             {
+              href: "/reviews",
+              icon: "star-full",
+              label: "نظرهای باشگاه",
+            },
+            {
               href: "/data",
               icon: "database",
               label: "ورود و خروج داده",

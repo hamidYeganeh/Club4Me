@@ -5,6 +5,14 @@ import type { UserRole } from "../../../lib/roles";
 
 export const USER_STATUSES = ["active", "suspended", "deleted"] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
+export const USER_GENDERS = ["female", "male", "other"] as const;
+export type UserGender = (typeof USER_GENDERS)[number];
+export const USER_ACTIVITY_LEVELS = [
+  "very-active",
+  "normal",
+  "very-lazy",
+] as const;
+export type UserActivityLevel = (typeof USER_ACTIVITY_LEVELS)[number];
 
 @Schema({
   collection: "users",
@@ -22,6 +30,18 @@ export class User {
 
   @Prop()
   birthdate?: string;
+
+  @Prop({ type: String, enum: USER_GENDERS })
+  gender?: UserGender;
+
+  @Prop({ trim: true, maxlength: 300 })
+  genderDescription?: string;
+
+  @Prop({ type: String, enum: USER_ACTIVITY_LEVELS })
+  activityLevel?: UserActivityLevel;
+
+  @Prop({ trim: true, maxlength: 10 })
+  idCard?: string;
 
   @Prop({ type: [String], default: ["athlete"] })
   roles: UserRole[];

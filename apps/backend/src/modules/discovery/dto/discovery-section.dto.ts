@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { MAX_INLINE_IMAGE_URL_LENGTH } from "../../media/media.constants";
+
 import {
   DISCOVERY_SELECTION_MODES,
   DISCOVERY_SECTION_TYPES,
@@ -7,12 +9,23 @@ import {
 } from "../schemas/discovery-section.schema";
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, "Invalid object id");
+const imageUrl = z
+  .string()
+  .trim()
+  .max(MAX_INLINE_IMAGE_URL_LENGTH)
+  .refine(
+    (value) =>
+      (value.startsWith("data:image/") && value.includes(";base64,")) ||
+      z.url().safeParse(value).success,
+    "Invalid image URL",
+  );
 const filters = z
   .object({
     cityIds: z.array(objectId).max(50).optional(),
     sportIds: z.array(objectId).max(50).optional(),
     clubTypeIds: z.array(objectId).max(50).optional(),
     categoryIds: z.array(objectId).max(50).optional(),
+    categoryCodes: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
     tags: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
     audience: z
       .array(z.enum(["men", "women", "mixed", "children", "family"]))
@@ -36,7 +49,7 @@ const selection = z.object({
 const banner = z.object({
   title: z.string().trim().min(1).max(160),
   subtitle: z.string().trim().max(300).default(""),
-  imageUrl: z.string().trim().url().max(1000),
+  imageUrl,
   actionLabel: z.string().trim().max(120).default(""),
   actionUrl: z.string().trim().max(1000).default(""),
 });

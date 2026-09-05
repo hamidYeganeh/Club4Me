@@ -16,16 +16,29 @@ import {
   useUpdateClubStudent,
   useUpsertClubAttendance,
   type BusinessClub,
+  type ClubAttendanceRecord,
+  type ClubBranch,
+  type ClubCoachProfile,
+  type ClubManualPayment,
   type ClubStudent,
 } from "@api/business";
-import { usePayoutBalance, usePayouts, useRequestPayout } from "@api";
+import {
+  type Payout,
+  useCancelPayout,
+  usePayoutBalance,
+  usePayouts,
+  useRequestPayout,
+} from "@api";
 import { Button, Card, Chip, Spinner, toast } from "@heroui/react";
 import { Icon } from "@theme/icon";
+import { EntityDetailsModal } from "@ui/entity-details-modal";
 import { FormEvent, ReactNode, useMemo, useState } from "react";
 
 const inputClass =
   "h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm outline-none transition focus:border-accent";
 const textareaClass = `${inputClass} h-24 py-3`;
+const iranPhonePattern = "(?:\\+98|0)?9\\d{9}";
+const ibanPattern = "IR\\d{24}";
 const today = () => new Date().toISOString().slice(0, 10);
 const formatDate = (value: string | null) =>
   value
@@ -117,6 +130,24 @@ function Loading() {
   );
 }
 
+function QueryError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="grid min-h-56 place-items-center rounded-2xl border border-danger/20 bg-danger/5 p-8 text-center">
+      <div>
+        <p className="text-sm text-danger">دریافت اطلاعات انجام نشد.</p>
+        <Button
+          className="mt-3"
+          size="sm"
+          variant="secondary"
+          onPress={onRetry}
+        >
+          تلاش دوباره
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="grid gap-1.5 text-sm">
@@ -140,6 +171,7 @@ export function StudentsScreen() {
   const create = useCreateClubStudent(clubId);
   const update = useUpdateClubStudent(clubId);
   const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<ClubStudent | null>(null);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -147,7 +179,7 @@ export function StudentsScreen() {
       await create.mutateAsync({
         firstName: String(data.get("firstName")),
         lastName: String(data.get("lastName")),
-        phone: String(data.get("phone")),
+        phone: String(data.get("phone")).trim(),
         sport: String(data.get("sport")),
         membershipTitle: String(data.get("membershipTitle")),
         membershipEndsAt: data.get("membershipEndsAt")
@@ -174,7 +206,11 @@ export function StudentsScreen() {
             value={clubId}
             onChange={setClubId}
           />
-          <Button variant="primary" onPress={() => setOpen((value) => !value)}>
+          <Button
+            variant="primary"
+            isDisabled={!clubId}
+            onPress={() => setOpen((value) => !value)}
+          >
             <Icon name="plus" />
             افزودن شاگرد
           </Button>
@@ -207,7 +243,13 @@ export function StudentsScreen() {
               <input
                 required
                 name="phone"
+                type="tel"
                 inputMode="tel"
+                autoComplete="tel"
+                maxLength={13}
+                pattern={iranPhonePattern}
+                title="شماره موبایل را مانند 09121234567 یا +989121234567 وارد کنید."
+                dir="ltr"
                 className={inputClass}
               />
             </Field>
@@ -255,6 +297,8 @@ export function StudentsScreen() {
       <div className="mt-5">
         {students.isPending ? (
           <Loading />
+        ) : students.isError ? (
+          <QueryError onRetry={() => void students.refetch()} />
         ) : (students.data?.items.length ?? 0) === 0 ? (
           <Empty
             title="هنوز شاگردی ثبت نشده"
@@ -291,29 +335,42 @@ export function StudentsScreen() {
                       <StatusChip active={student.status === "active"} />
                     </td>
                     <td className="p-4">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        isPending={update.isPending}
-                        onPress={() =>
-                          update
-                            .mutateAsync({
-                              id: student.id,
-                              payload: {
-                                status:
-                                  student.status === "active"
-                                    ? "inactive"
-                                    : "active",
-                              },
-                            })
-                            .then(() => toast.success("وضعیت شاگرد تغییر کرد"))
-                            .catch(() => toast.danger("تغییر وضعیت انجام نشد"))
-                        }
-                      >
-                        {student.status === "active"
-                          ? "غیرفعال کردن"
-                          : "فعال کردن"}
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onPress={() => setSelected(student)}
+                        >
+                          جزئیات
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          isPending={update.isPending}
+                          onPress={() =>
+                            update
+                              .mutateAsync({
+                                id: student.id,
+                                payload: {
+                                  status:
+                                    student.status === "active"
+                                      ? "inactive"
+                                      : "active",
+                                },
+                              })
+                              .then(() =>
+                                toast.success("وضعیت شاگرد تغییر کرد"),
+                              )
+                              .catch(() =>
+                                toast.danger("تغییر وضعیت انجام نشد"),
+                              )
+                          }
+                        >
+                          {student.status === "active"
+                            ? "غیرفعال کردن"
+                            : "فعال کردن"}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -322,6 +379,49 @@ export function StudentsScreen() {
           </div>
         )}
       </div>
+      <EntityDetailsModal
+        isOpen={Boolean(selected)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelected(null);
+        }}
+        title={
+          selected
+            ? `${selected.firstName} ${selected.lastName}`
+            : "جزئیات شاگرد"
+        }
+        description="پرونده، عضویت و تاریخچه این شاگرد در باشگاه انتخاب‌شده"
+        sections={
+          selected
+            ? [
+                {
+                  items: [
+                    { label: "شناسه پرونده", value: selected.id, dir: "ltr" },
+                    { label: "شماره تماس", value: selected.phone, dir: "ltr" },
+                    { label: "رشته", value: selected.sport },
+                    { label: "عنوان عضویت", value: selected.membershipTitle },
+                    {
+                      label: "پایان عضویت",
+                      value: formatDate(selected.membershipEndsAt),
+                    },
+                    {
+                      label: "وضعیت",
+                      value: selected.status === "active" ? "فعال" : "غیرفعال",
+                    },
+                    { label: "یادداشت", value: selected.notes, wide: true },
+                    {
+                      label: "ایجاد پرونده",
+                      value: formatDate(selected.createdAt),
+                    },
+                    {
+                      label: "آخرین تغییر",
+                      value: formatDate(selected.updatedAt),
+                    },
+                  ],
+                },
+              ]
+            : []
+        }
+      />
     </Page>
   );
 }
@@ -332,6 +432,7 @@ export function CoachesScreen() {
   const create = useCreateClubCoach(clubId);
   const update = useUpdateClubCoach(clubId);
   const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<ClubCoachProfile | null>(null);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -339,7 +440,7 @@ export function CoachesScreen() {
       await create.mutateAsync({
         firstName: String(data.get("firstName")),
         lastName: String(data.get("lastName")),
-        phone: String(data.get("phone")),
+        phone: String(data.get("phone")).trim(),
         specialties: String(data.get("specialties"))
           .split(/[،,]/)
           .map((v) => v.trim())
@@ -366,7 +467,11 @@ export function CoachesScreen() {
             value={clubId}
             onChange={setClubId}
           />
-          <Button variant="primary" onPress={() => setOpen((v) => !v)}>
+          <Button
+            variant="primary"
+            isDisabled={!clubId}
+            onPress={() => setOpen((v) => !v)}
+          >
             <Icon name="plus" />
             افزودن مربی
           </Button>
@@ -396,7 +501,18 @@ export function CoachesScreen() {
               />
             </Field>
             <Field label="شماره تماس">
-              <input required name="phone" className={inputClass} />
+              <input
+                required
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                maxLength={13}
+                pattern={iranPhonePattern}
+                title="شماره موبایل را مانند 09121234567 یا +989121234567 وارد کنید."
+                dir="ltr"
+                className={inputClass}
+              />
             </Field>
             <Field label="تخصص‌ها">
               <input
@@ -437,6 +553,8 @@ export function CoachesScreen() {
       <div className="mt-5">
         {coaches.isPending ? (
           <Loading />
+        ) : coaches.isError ? (
+          <QueryError onRetry={() => void coaches.refetch()} />
         ) : (coaches.data?.items.length ?? 0) === 0 ? (
           <Empty
             title="مربی‌ای ثبت نشده"
@@ -469,28 +587,78 @@ export function CoachesScreen() {
                 <p className="mt-3 text-sm">
                   {coach.employmentType || "نوع همکاری ثبت نشده"}
                 </p>
-                <Button
-                  className="mt-4"
-                  size="sm"
-                  variant="ghost"
-                  isPending={update.isPending}
-                  onPress={() =>
-                    update.mutateAsync({
-                      id: coach.id,
-                      payload: {
-                        status:
-                          coach.status === "active" ? "inactive" : "active",
-                      },
-                    })
-                  }
-                >
-                  {coach.status === "active" ? "پایان همکاری" : "شروع همکاری"}
-                </Button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onPress={() => setSelected(coach)}
+                  >
+                    جزئیات
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    isPending={update.isPending}
+                    onPress={() =>
+                      update.mutateAsync({
+                        id: coach.id,
+                        payload: {
+                          status:
+                            coach.status === "active" ? "inactive" : "active",
+                        },
+                      })
+                    }
+                  >
+                    {coach.status === "active" ? "پایان همکاری" : "شروع همکاری"}
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
         )}
       </div>
+      <EntityDetailsModal
+        isOpen={Boolean(selected)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelected(null);
+        }}
+        title={
+          selected
+            ? `${selected.firstName} ${selected.lastName}`
+            : "جزئیات مربی"
+        }
+        description="اطلاعات همکاری و تخصص‌های مربی در باشگاه انتخاب‌شده"
+        sections={
+          selected
+            ? [
+                {
+                  items: [
+                    { label: "شناسه مربی", value: selected.id, dir: "ltr" },
+                    { label: "شماره تماس", value: selected.phone, dir: "ltr" },
+                    {
+                      label: "تخصص‌ها",
+                      value: selected.specialties.join("، "),
+                    },
+                    { label: "نوع همکاری", value: selected.employmentType },
+                    {
+                      label: "وضعیت",
+                      value: selected.status === "active" ? "فعال" : "غیرفعال",
+                    },
+                    { label: "یادداشت", value: selected.notes, wide: true },
+                    {
+                      label: "زمان ثبت",
+                      value: formatDate(selected.createdAt),
+                    },
+                    {
+                      label: "آخرین تغییر",
+                      value: formatDate(selected.updatedAt),
+                    },
+                  ],
+                },
+              ]
+            : []
+        }
+      />
     </Page>
   );
 }
@@ -503,8 +671,12 @@ export function PaymentsScreen() {
   const payoutBalance = usePayoutBalance("club", clubId);
   const payouts = usePayouts();
   const requestPayout = useRequestPayout();
+  const cancelPayout = useCancelPayout();
   const [open, setOpen] = useState(false);
   const [payoutOpen, setPayoutOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] =
+    useState<ClubManualPayment | null>(null);
+  const [selectedPayout, setSelectedPayout] = useState<Payout | null>(null);
   const studentMap = useMemo(
     () =>
       new Map(
@@ -545,7 +717,7 @@ export function PaymentsScreen() {
         providerType: "club",
         providerId: clubId,
         amount: Number(data.get("amount")),
-        iban: String(data.get("iban")).replaceAll(" ", "").toUpperCase(),
+        iban: String(data.get("iban")).replaceAll(" ", "").trim().toUpperCase(),
       });
       event.currentTarget.reset();
       setPayoutOpen(false);
@@ -604,25 +776,53 @@ export function PaymentsScreen() {
                 className="flex items-center justify-between gap-3"
               >
                 <span>{formatMoney(payout.amount)} ریال</span>
-                <Chip
-                  color={
-                    payout.status === "paid"
-                      ? "success"
-                      : payout.status === "rejected"
-                        ? "danger"
-                        : "warning"
-                  }
-                  size="sm"
-                >
-                  {
+                <div className="flex items-center gap-2">
+                  <Chip
+                    color={
+                      payout.status === "paid"
+                        ? "success"
+                        : payout.status === "rejected"
+                          ? "danger"
+                          : "warning"
+                    }
+                    size="sm"
+                  >
                     {
-                      requested: "در انتظار",
-                      paid: "پرداخت‌شده",
-                      rejected: "ردشده",
-                      cancelled: "لغوشده",
-                    }[payout.status]
-                  }
-                </Chip>
+                      {
+                        requested: "در انتظار",
+                        under_review: "در حال بررسی",
+                        paid: "پرداخت‌شده",
+                        rejected: "ردشده",
+                        cancelled: "لغوشده",
+                      }[payout.status]
+                    }
+                  </Chip>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onPress={() => setSelectedPayout(payout)}
+                  >
+                    جزئیات
+                  </Button>
+                  {payout.status === "requested" ? (
+                    <Button
+                      size="sm"
+                      variant="danger-soft"
+                      isPending={cancelPayout.isPending}
+                      onPress={async () => {
+                        if (!window.confirm("درخواست تسویه لغو شود؟")) return;
+                        try {
+                          await cancelPayout.mutateAsync(payout.id);
+                          toast.success("درخواست لغو و موجودی آزاد شد");
+                        } catch {
+                          toast.danger("لغو درخواست تسویه ناموفق بود");
+                        }
+                      }}
+                    >
+                      لغو
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             ))}
             {!payouts.data?.items.length ? (
@@ -640,6 +840,8 @@ export function PaymentsScreen() {
                 name="amount"
                 type="number"
                 min="1"
+                step="1"
+                inputMode="numeric"
                 max={payoutBalance.data?.availableAmount ?? 0}
                 className={inputClass}
               />
@@ -649,6 +851,11 @@ export function PaymentsScreen() {
                 required
                 name="iban"
                 dir="ltr"
+                inputMode="numeric"
+                maxLength={26}
+                pattern={ibanPattern}
+                title="شماره شبا باید با IR شروع شود و پس از آن دقیقاً ۲۴ رقم داشته باشد."
+                autoComplete="off"
                 placeholder="IR000000000000000000000000"
                 className={inputClass}
               />
@@ -697,7 +904,9 @@ export function PaymentsScreen() {
             <Field label="مبلغ (ریال)">
               <input
                 required
-                min="0"
+                min="1"
+                step="1"
+                inputMode="numeric"
                 name="amount"
                 type="number"
                 className={inputClass}
@@ -747,6 +956,8 @@ export function PaymentsScreen() {
       <div className="mt-5">
         {payments.isPending ? (
           <Loading />
+        ) : payments.isError ? (
+          <QueryError onRetry={() => void payments.refetch()} />
         ) : (payments.data?.items.length ?? 0) === 0 ? (
           <Empty
             title="پرداختی ثبت نشده"
@@ -762,6 +973,7 @@ export function PaymentsScreen() {
                   <th className="p-4">نوع</th>
                   <th className="p-4">مبلغ</th>
                   <th className="p-4">تاریخ</th>
+                  <th className="p-4">عملیات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -782,6 +994,15 @@ export function PaymentsScreen() {
                       {formatMoney(payment.amount)} ریال
                     </td>
                     <td className="p-4">{formatDate(payment.paidAt)}</td>
+                    <td className="p-4">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onPress={() => setSelectedPayment(payment)}
+                      >
+                        جزئیات
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -789,6 +1010,119 @@ export function PaymentsScreen() {
           </div>
         )}
       </div>
+      <EntityDetailsModal
+        isOpen={Boolean(selectedPayment)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelectedPayment(null);
+        }}
+        title={selectedPayment?.title ?? "جزئیات پرداخت"}
+        description="اطلاعات کامل دریافت ثبت‌شده در باشگاه"
+        sections={
+          selectedPayment
+            ? [
+                {
+                  items: [
+                    {
+                      label: "شناسه پرداخت",
+                      value: selectedPayment.id,
+                      dir: "ltr",
+                    },
+                    {
+                      label: "شاگرد",
+                      value:
+                        studentMap.get(selectedPayment.studentId) ??
+                        "شاگرد حذف‌شده",
+                    },
+                    {
+                      label: "شناسه شاگرد",
+                      value: selectedPayment.studentId,
+                      dir: "ltr",
+                    },
+                    { label: "نوع", value: selectedPayment.type },
+                    {
+                      label: "مبلغ",
+                      value: `${formatMoney(selectedPayment.amount)} ${selectedPayment.currency}`,
+                    },
+                    { label: "روش پرداخت", value: selectedPayment.method },
+                    {
+                      label: "تاریخ پرداخت",
+                      value: formatDate(selectedPayment.paidAt),
+                    },
+                    {
+                      label: "ثبت‌کننده",
+                      value: selectedPayment.recordedBy,
+                      dir: "ltr",
+                    },
+                    {
+                      label: "یادداشت",
+                      value: selectedPayment.notes,
+                      wide: true,
+                    },
+                    {
+                      label: "زمان ثبت",
+                      value: formatDate(selectedPayment.createdAt),
+                    },
+                  ],
+                },
+              ]
+            : []
+        }
+      />
+      <EntityDetailsModal
+        isOpen={Boolean(selectedPayout)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelectedPayout(null);
+        }}
+        title="جزئیات درخواست تسویه"
+        description="وضعیت درخواست و اطلاعات بررسی ادمین"
+        sections={
+          selectedPayout
+            ? [
+                {
+                  items: [
+                    {
+                      label: "شناسه تسویه",
+                      value: selectedPayout.id,
+                      dir: "ltr",
+                    },
+                    {
+                      label: "مبلغ",
+                      value: `${formatMoney(selectedPayout.amount)} ریال`,
+                    },
+                    {
+                      label: "شماره شبا",
+                      value: selectedPayout.iban,
+                      dir: "ltr",
+                    },
+                    { label: "وضعیت", value: selectedPayout.status },
+                    {
+                      label: "یادداشت ادمین",
+                      value: selectedPayout.reviewNote,
+                      wide: true,
+                    },
+                    {
+                      label: "شماره پیگیری بانکی",
+                      value: selectedPayout.bankReference,
+                      dir: "ltr",
+                    },
+                    {
+                      label: "زمان درخواست",
+                      value: formatDate(selectedPayout.createdAt),
+                    },
+                    {
+                      label: "زمان بررسی",
+                      value: formatDate(selectedPayout.reviewedAt),
+                    },
+                    {
+                      label: "زمان پرداخت",
+                      value: formatDate(selectedPayout.paidAt),
+                    },
+                  ],
+                },
+              ]
+            : []
+        }
+      />
     </Page>
   );
 }
@@ -800,29 +1134,35 @@ export function AttendanceScreen() {
   const records = useClubAttendance(clubId, date);
   const upsert = useUpsertClubAttendance(clubId);
   const [sessionTitle, setSessionTitle] = useState("تمرین عمومی");
+  const [selected, setSelected] = useState<ClubAttendanceRecord | null>(null);
   const recordMap = useMemo(
     () =>
       new Map(
         (records.data?.items ?? [])
           .filter((item) => item.sessionTitle === sessionTitle)
-          .map((item) => [item.studentId, item.status]),
+          .map((item) => [item.studentId, item]),
       ),
     [records.data?.items, sessionTitle],
   );
   const mark = (
     student: ClubStudent,
     status: "present" | "absent" | "excused",
-  ) =>
-    upsert
+  ) => {
+    if (sessionTitle.trim().length < 2) {
+      toast.danger("عنوان سانس باید حداقل ۲ نویسه باشد");
+      return;
+    }
+    return upsert
       .mutateAsync({
         studentId: student.id,
         date: new Date(`${date}T12:00:00.000Z`).toISOString(),
-        sessionTitle,
+        sessionTitle: sessionTitle.trim(),
         status,
         notes: "",
       })
       .then(() => toast.success(`حضور ${student.firstName} ثبت شد`))
       .catch(() => toast.danger("ثبت حضور انجام نشد"));
+  };
   return (
     <Page
       title="حضور و غیاب"
@@ -840,6 +1180,7 @@ export function AttendanceScreen() {
           <Field label="تاریخ">
             <input
               type="date"
+              required
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className={inputClass}
@@ -847,6 +1188,9 @@ export function AttendanceScreen() {
           </Field>
           <Field label="عنوان سانس">
             <input
+              required
+              minLength={2}
+              maxLength={120}
               value={sessionTitle}
               onChange={(e) => setSessionTitle(e.target.value)}
               className={inputClass}
@@ -857,6 +1201,13 @@ export function AttendanceScreen() {
       <div className="mt-5">
         {students.isPending || records.isPending ? (
           <Loading />
+        ) : students.isError || records.isError ? (
+          <QueryError
+            onRetry={() => {
+              void students.refetch();
+              void records.refetch();
+            }}
+          />
         ) : (students.data?.items.length ?? 0) === 0 ? (
           <Empty
             title="شاگرد فعالی وجود ندارد"
@@ -884,23 +1235,47 @@ export function AttendanceScreen() {
                       </p>
                     </div>
                     <div className="flex gap-2">
+                      {current ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onPress={() => setSelected(current)}
+                        >
+                          جزئیات
+                        </Button>
+                      ) : null}
                       <Button
                         size="sm"
-                        variant={current === "present" ? "primary" : "ghost"}
+                        variant={
+                          current?.status === "present" ? "primary" : "ghost"
+                        }
+                        isDisabled={
+                          upsert.isPending || sessionTitle.trim().length < 2
+                        }
                         onPress={() => mark(student, "present")}
                       >
                         حاضر
                       </Button>
                       <Button
                         size="sm"
-                        variant={current === "absent" ? "danger" : "ghost"}
+                        variant={
+                          current?.status === "absent" ? "danger" : "ghost"
+                        }
+                        isDisabled={
+                          upsert.isPending || sessionTitle.trim().length < 2
+                        }
                         onPress={() => mark(student, "absent")}
                       >
                         غایب
                       </Button>
                       <Button
                         size="sm"
-                        variant={current === "excused" ? "secondary" : "ghost"}
+                        variant={
+                          current?.status === "excused" ? "secondary" : "ghost"
+                        }
+                        isDisabled={
+                          upsert.isPending || sessionTitle.trim().length < 2
+                        }
                         onPress={() => mark(student, "excused")}
                       >
                         موجه
@@ -912,6 +1287,43 @@ export function AttendanceScreen() {
           </div>
         )}
       </div>
+      <EntityDetailsModal
+        isOpen={Boolean(selected)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelected(null);
+        }}
+        title="جزئیات حضور و غیاب"
+        description="رکورد ثبت‌شده برای شاگرد و سانس انتخاب‌شده"
+        sections={
+          selected
+            ? [
+                {
+                  items: [
+                    { label: "شناسه رکورد", value: selected.id, dir: "ltr" },
+                    {
+                      label: "شناسه شاگرد",
+                      value: selected.studentId,
+                      dir: "ltr",
+                    },
+                    { label: "عنوان سانس", value: selected.sessionTitle },
+                    { label: "تاریخ", value: formatDate(selected.date) },
+                    { label: "وضعیت", value: selected.status },
+                    {
+                      label: "ثبت‌کننده",
+                      value: selected.recordedBy,
+                      dir: "ltr",
+                    },
+                    { label: "یادداشت", value: selected.notes, wide: true },
+                    {
+                      label: "آخرین تغییر",
+                      value: formatDate(selected.updatedAt),
+                    },
+                  ],
+                },
+              ]
+            : []
+        }
+      />
     </Page>
   );
 }
@@ -922,14 +1334,15 @@ export function BranchesScreen() {
   const create = useCreateClubBranch(clubId);
   const update = useUpdateClubBranch(clubId);
   const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<ClubBranch | null>(null);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     try {
       await create.mutateAsync({
-        name: String(data.get("name")),
-        address: String(data.get("address")),
-        phone: String(data.get("phone")),
+        name: String(data.get("name")).trim(),
+        address: String(data.get("address")).trim(),
+        phone: String(data.get("phone")).trim(),
         timezone: "Asia/Tehran",
         status: "active",
       });
@@ -951,7 +1364,11 @@ export function BranchesScreen() {
             value={clubId}
             onChange={setClubId}
           />
-          <Button variant="primary" onPress={() => setOpen((v) => !v)}>
+          <Button
+            variant="primary"
+            isDisabled={!clubId}
+            onPress={() => setOpen((v) => !v)}
+          >
             <Icon name="plus" />
             ساخت شعبه
           </Button>
@@ -971,7 +1388,17 @@ export function BranchesScreen() {
               />
             </Field>
             <Field label="شماره تماس">
-              <input name="phone" className={inputClass} />
+              <input
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                maxLength={13}
+                pattern={iranPhonePattern}
+                title="شماره موبایل را مانند 09121234567 یا +989121234567 وارد کنید."
+                dir="ltr"
+                className={inputClass}
+              />
             </Field>
             <div className="md:col-span-2">
               <Field label="نشانی">
@@ -1005,6 +1432,8 @@ export function BranchesScreen() {
       <div className="mt-5">
         {branches.isPending ? (
           <Loading />
+        ) : branches.isError ? (
+          <QueryError onRetry={() => void branches.refetch()} />
         ) : (branches.data?.items.length ?? 0) === 0 ? (
           <Empty
             title="شعبه‌ای ساخته نشده"
@@ -1030,28 +1459,74 @@ export function BranchesScreen() {
                 <p className="mt-2 text-sm tabular-nums">
                   {branch.phone || "شماره تماس ثبت نشده"}
                 </p>
-                <Button
-                  className="mt-4"
-                  size="sm"
-                  variant="ghost"
-                  isPending={update.isPending}
-                  onPress={() =>
-                    update.mutateAsync({
-                      id: branch.id,
-                      payload: {
-                        status:
-                          branch.status === "active" ? "inactive" : "active",
-                      },
-                    })
-                  }
-                >
-                  {branch.status === "active" ? "تعطیل کردن" : "فعال کردن"}
-                </Button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onPress={() => setSelected(branch)}
+                  >
+                    جزئیات
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    isPending={update.isPending}
+                    onPress={() =>
+                      update.mutateAsync({
+                        id: branch.id,
+                        payload: {
+                          status:
+                            branch.status === "active" ? "inactive" : "active",
+                        },
+                      })
+                    }
+                  >
+                    {branch.status === "active" ? "تعطیل کردن" : "فعال کردن"}
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
         )}
       </div>
+      <EntityDetailsModal
+        isOpen={Boolean(selected)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelected(null);
+        }}
+        title={selected?.name ?? "جزئیات شعبه"}
+        description="اطلاعات تماس، نشانی و وضعیت شعبه"
+        sections={
+          selected
+            ? [
+                {
+                  items: [
+                    { label: "شناسه شعبه", value: selected.id, dir: "ltr" },
+                    { label: "نشانی", value: selected.address, wide: true },
+                    { label: "شماره تماس", value: selected.phone, dir: "ltr" },
+                    {
+                      label: "منطقه زمانی",
+                      value: selected.timezone,
+                      dir: "ltr",
+                    },
+                    {
+                      label: "وضعیت",
+                      value: selected.status === "active" ? "فعال" : "غیرفعال",
+                    },
+                    {
+                      label: "زمان ثبت",
+                      value: formatDate(selected.createdAt),
+                    },
+                    {
+                      label: "آخرین تغییر",
+                      value: formatDate(selected.updatedAt),
+                    },
+                  ],
+                },
+              ]
+            : []
+        }
+      />
     </Page>
   );
 }

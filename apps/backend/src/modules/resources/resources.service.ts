@@ -11,6 +11,7 @@ import {
 
 import { AppError } from "../../common/errors/app.exception";
 import { slugify } from "../articles/lib/slugify";
+import { MAX_INLINE_IMAGE_URL_LENGTH } from "../media/media.constants";
 import type { CreateResourceDto, UpdateResourceDto } from "./dto/resource.dto";
 import {
   getServerResource,
@@ -754,6 +755,12 @@ function isMissingSeedValue(value: unknown): boolean {
   );
 }
 function isValidResourceUrl(value: string): boolean {
+  if (
+    value.startsWith("data:image/") &&
+    value.includes(";base64,") &&
+    value.length <= MAX_INLINE_IMAGE_URL_LENGTH
+  )
+    return true;
   if (value.startsWith("/") && !value.startsWith("//")) return true;
   try {
     const parsed = new URL(value);

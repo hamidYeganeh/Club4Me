@@ -8,7 +8,7 @@ export const discoveryClubSlotsScreenStyles = tv({
     cover:
       "absolute inset-0 h-full w-full bg-cover bg-center bg-fixed will-change-transform",
     coverFallback:
-      "absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_35%_28%,color-mix(in_oklch,var(--accent)_28%,transparent),transparent_28rem),linear-gradient(145deg,var(--surface-secondary),var(--background))] text-accent/70",
+      "absolute inset-0 grid place-items-center bg-linear-[145deg] from-surface-secondary to-background text-accent/70",
     overlay: "pointer-events-none absolute inset-0 z-[1]",
     grain:
       "pointer-events-none absolute inset-0 z-[2] opacity-[0.14] mix-blend-overlay [background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22 opacity=%220.55%22/%3E%3C/svg%3E')]",
@@ -49,7 +49,7 @@ export const discoveryClubSlotsScreenStyles = tv({
     dateTabsListContainer: "rounded-none bg-transparent p-0",
     dateTabsList: "flex w-max gap-2 rounded-none border-0 bg-transparent p-0",
     dateTab:
-      "group flex min-h-[4.55rem] min-w-[4.15rem] flex-col items-center justify-center gap-1 rounded-[1.15rem] border border-transparent bg-surface-tertiary px-3 py-2.5 text-foreground opacity-100 transition-[transform,border-color,background-color,color] duration-300 ease-out data-[hovered=true]:scale-[1.03] data-[selected=true]:border-foreground/80 data-[selected=true]:bg-surface",
+      "group flex min-h-[4.55rem] min-w-[4.15rem] flex-col items-center justify-center gap-1 rounded-[1.15rem] border border-transparent bg-surface-tertiary px-3 py-2.5 text-foreground opacity-100 transition-[transform,background-color,color] duration-300 ease-out data-[hovered=true]:scale-[1.03] data-[selected=true]:border-transparent data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground",
     dateTabIndicator: "hidden",
     dateRadio: "group",
     dateContent:
@@ -57,7 +57,7 @@ export const discoveryClubSlotsScreenStyles = tv({
     dateContentSelected: "border-foreground/80 bg-surface text-foreground",
     dateDay: "text-2xl font-black tabular-nums leading-none tracking-tight",
     dateWeekday:
-      "text-base font-medium text-muted transition-colors group-data-[selected=true]:text-foreground/75",
+      "text-base font-medium text-muted transition-colors group-data-[selected=true]:text-accent-foreground/80",
     timeRadio: "group",
     timeArea: "min-h-36",
     timeScroller: "w-full pb-1",
@@ -66,7 +66,7 @@ export const discoveryClubSlotsScreenStyles = tv({
     timeEmptyImage: "size-16 object-contain",
     timeContent:
       "w-full rounded-2xl border border-transparent bg-surface-tertiary px-4 py-3 text-center text-base font-semibold tracking-tight text-foreground/55 transition-[transform,border-color,background-color,color] duration-300 ease-out group-data-[hovered=true]:scale-[1.02]",
-    timeContentSelected: "border-foreground/80 bg-surface text-foreground",
+    timeContentSelected: "border-transparent bg-accent text-accent-foreground",
     footer: "mt-auto flex items-end justify-between gap-4 pt-4",
     footerSticky:
       "sticky bottom-0 border-t border-foreground/10 bg-surface backdrop-blur-2xl",

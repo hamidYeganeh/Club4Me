@@ -1,6 +1,11 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import { discoveryClient } from "./discovery.client";
 import type {
@@ -19,6 +24,27 @@ export function useClubs(params?: ListClubsParams) {
   return useQuery({
     queryKey: discoveryQueries.clubs.list(params),
     queryFn: ({ signal }) => discoveryClient.listClubs(params, signal),
+  });
+}
+
+export function useInfiniteClubs(
+  params?: Omit<ListClubsParams, "page" | "limit">,
+) {
+  return useInfiniteQuery({
+    queryKey: [...discoveryQueries.clubs.all(), "infinite", params],
+    initialPageParam: 1,
+    queryFn: ({ pageParam, signal }) =>
+      discoveryClient.listClubs(
+        { ...params, page: pageParam, limit: 20 },
+        signal,
+      ),
+    getNextPageParam: (lastPage, pages) => {
+      const loaded = pages.reduce(
+        (total, page) => total + page.items.length,
+        0,
+      );
+      return loaded < lastPage.total ? lastPage.page + 1 : undefined;
+    },
   });
 }
 

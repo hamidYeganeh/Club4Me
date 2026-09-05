@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { Button, Switch, toast } from "@heroui/react";
+import { Button, Skeleton, Switch, toast } from "@heroui/react";
 import {
   useDeleteAccount,
+  useLogout,
   useNotificationPreferences,
   useUpdateNotificationPreferences,
   trackNotificationPreferenceChanged,
@@ -61,6 +62,7 @@ export function AppSettingsScreen({ role }: Props) {
   const preferences = useNotificationPreferences();
   const updatePreferences = useUpdateNotificationPreferences();
   const deleteAccount = useDeleteAccount();
+  const logout = useLogout();
   const [pushState, setPushState] = useState<
     "enabled" | "disabled" | "denied" | "unsupported"
   >("disabled");
@@ -140,6 +142,16 @@ export function AppSettingsScreen({ role }: Props) {
     }
   };
 
+  const signOut = async () => {
+    try {
+      await logout.mutateAsync();
+      router.replace("/auth");
+    } catch (error) {
+      const failure = getRequestFailurePresentation(error);
+      toast.danger(failure.title, { description: failure.description });
+    }
+  };
+
   const openExternal = (path: string) =>
     void openExternalUrl(`${WEBSITE_URL}${path}`);
 
@@ -181,17 +193,34 @@ export function AppSettingsScreen({ role }: Props) {
             title={item.title}
             description={item.description}
           >
-            <Switch
-              isSelected={preferences.data?.[item.key] ?? false}
-              isDisabled={preferences.isPending || updatePreferences.isPending}
-              onChange={(enabled) => void togglePreference(item.key, enabled)}
-              aria-label={item.title}
-            />
+            {preferences.isPending ? (
+              <Skeleton
+                className="h-7 w-12 shrink-0 rounded-full"
+                aria-label={`در حال بارگذاری ${item.title}`}
+              />
+            ) : (
+              <Switch
+                isSelected={preferences.data?.[item.key] ?? false}
+                isDisabled={updatePreferences.isPending}
+                onChange={(enabled) => void togglePreference(item.key, enabled)}
+                aria-label={item.title}
+              />
+            )}
           </SettingRow>
         ))}
       </SettingsSection>
 
       <SettingsSection title="حریم خصوصی و پشتیبانی">
+        <LinkRow
+          title="کیف پول و دعوت دوستان"
+          onPress={() => router.push(`/${role}/benefits`)}
+        />
+        {role === "coach" ? (
+          <LinkRow
+            title="زمان‌های در دسترس مربی"
+            onPress={() => router.push("/coach/availability")}
+          />
+        ) : null}
         <LinkRow
           title="سیاست حریم خصوصی"
           onPress={() => openExternal("/privacy")}
@@ -216,6 +245,14 @@ export function AppSettingsScreen({ role }: Props) {
 
       <SettingsSection title="حساب کاربری">
         <div className="p-4">
+          <Button
+            variant="secondary"
+            className="mb-3 w-full"
+            isDisabled={logout.isPending}
+            onPress={() => void signOut()}
+          >
+            {logout.isPending ? "در حال خروج…" : "خروج از حساب"}
+          </Button>
           <Button
             variant="danger"
             className="w-full"

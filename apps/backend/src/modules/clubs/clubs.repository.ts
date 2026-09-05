@@ -223,6 +223,12 @@ function toPersistence(input: Partial<ClubFields>): Record<string, unknown> {
     }));
   }
   if (input.rules !== undefined) result.rules = uniqueText(input.rules, false);
+  if (input.faqs !== undefined) {
+    result.faqs = input.faqs.map((item) => ({
+      question: item.question.trim(),
+      answer: item.answer.trim(),
+    }));
+  }
   if (input.location !== undefined) {
     result.geo = {
       countryId: new Types.ObjectId(input.location.countryId),

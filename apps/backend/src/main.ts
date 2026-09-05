@@ -20,6 +20,10 @@ async function bootstrap() {
       release: env.release,
       sendDefaultPii: false,
     });
+  } else if (process.env.NODE_ENV === "production") {
+    Logger.warn(
+      "Sentry is not configured; production error reporting is disabled",
+    );
   }
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get(AppConfigService);

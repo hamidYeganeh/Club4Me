@@ -3,7 +3,7 @@ import { tv } from "tailwind-variants";
 export const landingHeaderSectionStyles = tv({
   slots: {
     root: "pointer-events-none sticky top-4 z-20 px-4",
-    bar: "pointer-events-auto relative z-40 mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 rounded-full border border-border bg-surface/80 px-2 pe-2 ps-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl",
+    bar: "pointer-events-auto relative z-40 mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 rounded-full border border-border bg-surface/80 px-2 pe-2 ps-3 backdrop-blur-xl",
     brand: "flex shrink-0 items-center gap-2 rounded-full pe-2",
     brandMark:
       "flex size-9 items-center justify-center rounded-full bg-accent text-accent-foreground",

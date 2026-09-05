@@ -1,4 +1,4 @@
-import { DiscoveryCategoryScreen } from "@modules/discovery/screens/DiscoveryCategoryScreen";
+import { redirect } from "next/navigation";
 import { getDiscoverySlugParams } from "@/lib/discovery-static-params";
 
 type PageProps = { params: Promise<{ typeId: string }> };
@@ -10,5 +10,5 @@ export function generateStaticParams() {
 }
 export default async function ClubTypePage({ params }: PageProps) {
   const { typeId } = await params;
-  return <DiscoveryCategoryScreen type="club-types" id={typeId} />;
+  redirect(`/discovery/clubs?club_types=${encodeURIComponent(typeId)}`);
 }

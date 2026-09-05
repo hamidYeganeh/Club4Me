@@ -5,6 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { tokenStore } from "@api/http";
 
 import { getAppRouteRedirect, hasSeenWelcome } from "@/lib/welcome-onboarding";
+import {
+  AuthScreenSkeleton,
+  DashboardPageSkeleton,
+  RouteLoadingSkeleton,
+} from "@/components/loading-skeletons";
 
 type AppRouteGateProps = {
   children: ReactNode;
@@ -34,7 +39,13 @@ export function AppRouteGate({ children }: AppRouteGateProps) {
   }, [redirectTo, router]);
 
   if (!mounted || redirectTo) {
-    return null;
+    if (pathname.startsWith("/auth") || pathname.startsWith("/welcome")) {
+      return <AuthScreenSkeleton />;
+    }
+    if (pathname.startsWith("/athlete") || pathname.startsWith("/coach")) {
+      return <DashboardPageSkeleton />;
+    }
+    return <RouteLoadingSkeleton />;
   }
 
   return children;

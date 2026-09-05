@@ -1,25 +1,17 @@
-"use client";
-
-import { Typography } from "@heroui/react";
 import { ThemeToggle } from "@theme/theme-toggle";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
-import { athleteScreenHeaderSectionStyles } from "./AthleteScreenHeaderSection.styles";
 import type { AthleteScreenHeaderSectionProps } from "./AthleteScreenHeaderSection.types";
 
 export function AthleteScreenHeaderSection({
   title,
 }: AthleteScreenHeaderSectionProps) {
-  const styles = athleteScreenHeaderSectionStyles();
-
   return (
-    <>
-      <header className={styles.root()}>
-        <Typography type="h4" className={styles.title()}>
-          {title}
-        </Typography>
-        <ThemeToggle />
-      </header>
-      <div aria-hidden className={styles.spacer()} />
-    </>
+    <SecondaryHeader
+      title={title}
+      showBack={false}
+      showFilter={false}
+      action={<ThemeToggle className="border-0 bg-transparent" />}
+    />
   );
 }

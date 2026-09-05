@@ -14,6 +14,7 @@ export function createArticlesEditorFormSchema(messages: Messages) {
     slug: z.string().trim(),
     excerpt: z.string().trim().max(500),
     bodyHtml: z.string(),
+    coverImageUrl: z.string(),
     status: z.enum(["draft", "published"]),
   });
 }

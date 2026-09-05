@@ -76,18 +76,7 @@ export function DiscoverySectionHeader({
         >
           {viewAllLabel}
         </ButtonLink>
-      ) : (
-        <span
-          aria-hidden
-          className={`mt-1 inline-flex size-8 items-center justify-center rounded-full ${
-            accent
-              ? "bg-[#24272c]/10 text-[#24272c]"
-              : "bg-accent/15 text-accent"
-          }`}
-        >
-          <Icon name="sparkle-1" size={16} />
-        </span>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -98,6 +98,9 @@ export class CommerceService {
       reservation?.sessionTitle ??
       (purchase ? `خرید مزایا ${String(purchase._id)}` : undefined) ??
       classEnrollment!.title;
+    const session = reservation
+      ? await this.sessions.findById(reservation.sessionId)
+      : null;
     if (grossAmount <= 0) {
       throw new AppError(
         409,
@@ -109,14 +112,35 @@ export class CommerceService {
     const walletReservationKey = `payment-wallet-${input.idempotencyKey}`;
     try {
       const discount = input.couponCode
-        ? await this.benefits.reserveDiscount(
-            userId,
-            input.couponCode,
-            input.referenceType,
-            input.referenceId,
+        ? await this.benefits.reserveDiscount(userId, input.couponCode, {
+            referenceType: input.referenceType,
+            referenceId,
             grossAmount,
-            clubId,
-          )
+            scopeValues: {
+              club: [String(clubId)],
+              coach: [
+                ...(session?.coachId ? [String(session.coachId)] : []),
+                ...(classEnrollment?.coachId
+                  ? [String(classEnrollment.coachId)]
+                  : []),
+              ],
+              class: [
+                ...(session?.classId ? [String(session.classId)] : []),
+                ...(classEnrollment?.classId
+                  ? [String(classEnrollment.classId)]
+                  : []),
+              ],
+              sport: classEnrollment?.sport
+                ? [classEnrollment.sport.trim().toLocaleLowerCase("fa-IR")]
+                : [],
+              product: purchase ? [String(purchase.productId)] : [],
+              session_type: reservation
+                ? [reservation.sessionType]
+                : classEnrollment
+                  ? ["class"]
+                  : [],
+            },
+          })
         : null;
       const discountAmount = discount?.amount ?? 0;
       const walletAmount = Math.min(
@@ -144,7 +168,10 @@ export class CommerceService {
         grossAmount,
         discountAmount,
         walletAmount,
-        platformFee: Math.round((grossAmount * PLATFORM_FEE_PERCENT) / 100),
+        platformFee: Math.min(
+          Math.round((grossAmount * PLATFORM_FEE_PERCENT) / 100),
+          grossAmount - (discount?.providerFundedAmount ?? 0),
+        ),
         platformFundedDiscount: discount?.platformFundedAmount ?? 0,
         providerFundedDiscount: discount?.providerFundedAmount ?? 0,
         discountCampaignId: discount?.campaignId ?? null,
@@ -283,6 +310,20 @@ export class CommerceService {
     const walletRefund =
       targetWalletRefund - (intent.refundedWalletAmount ?? 0);
     const discountReversal = grossRefund - gatewayRefund - walletRefund;
+    const targetTotalDiscountReversal =
+      cumulativeGrossRefund - targetGatewayRefund - targetWalletRefund;
+    const targetProviderDiscountReversal = Math.round(
+      ((intent.providerFundedDiscount ?? 0) * cumulativeGrossRefund) /
+        intent.grossAmount,
+    );
+    const targetPlatformDiscountReversal =
+      targetTotalDiscountReversal - targetProviderDiscountReversal;
+    const platformDiscountReversal =
+      targetPlatformDiscountReversal -
+      (intent.refundedPlatformFundedDiscount ?? 0);
+    const providerDiscountReversal =
+      targetProviderDiscountReversal -
+      (intent.refundedProviderFundedDiscount ?? 0);
     const targetFeeReversal = Math.round(
       (intent.platformFee * cumulativeGrossRefund) / intent.grossAmount,
     );
@@ -290,7 +331,8 @@ export class CommerceService {
       (intent.platformFee * intent.refundedAmount) / intent.grossAmount,
     );
     const feeReversal = targetFeeReversal - previousFeeReversal;
-    const providerReversal = grossRefund - feeReversal;
+    const providerReversal =
+      grossRefund - feeReversal - providerDiscountReversal;
 
     if (providerReversal > 0) {
       const account = await this.settlementAccounts.findOneAndUpdate(
@@ -363,14 +405,14 @@ export class CommerceService {
             },
           ]
         : []),
-      ...(discountReversal
+      ...(platformDiscountReversal
         ? [
             {
               transactionId,
               account: "promotion_expense" as const,
               ownerId: null,
               direction: "credit" as const,
-              amount: discountReversal,
+              amount: platformDiscountReversal,
               sourceType: "refund" as const,
               sourceId: intent._id,
               idempotencyKey: input.idempotencyKey,
@@ -391,22 +433,34 @@ export class CommerceService {
       (intent.refundedWalletAmount ?? 0) + walletRefund;
     intent.refundedDiscountAmount =
       (intent.refundedDiscountAmount ?? 0) + discountReversal;
+    intent.refundedPlatformFundedDiscount =
+      (intent.refundedPlatformFundedDiscount ?? 0) + platformDiscountReversal;
+    intent.refundedProviderFundedDiscount =
+      (intent.refundedProviderFundedDiscount ?? 0) + providerDiscountReversal;
     intent.status =
       intent.refundedAmount === intent.grossAmount
         ? "refunded"
         : "partially_refunded";
     await intent.save();
-    await this.reservations.updateOne(
-      { _id: intent.referenceId },
-      {
-        $set: {
-          paymentStatus: intent.status === "refunded" ? "refunded" : "paid",
-          refundAmount: intent.refundedAmount,
+    if (intent.referenceType === "reservation") {
+      await this.reservations.updateOne(
+        { _id: intent.referenceId },
+        {
+          $set: {
+            paymentStatus: intent.status === "refunded" ? "refunded" : "paid",
+            refundAmount: intent.refundedAmount,
+          },
         },
-      },
-    );
+      );
+    }
     if (intent.referenceType === "benefit_purchase") {
       await this.entitlements.refundPurchase(intent.referenceId);
+    }
+    if (
+      intent.referenceType === "business_class_enrollment" &&
+      intent.status === "refunded"
+    ) {
+      await this.classPortal.refundEnrollmentPayment(intent.referenceId);
     }
     return paymentDto(intent);
   }
@@ -529,30 +583,37 @@ export class CommerceService {
             },
           ]
         : []),
-      ...(paid.discountAmount
+      ...(paid.platformFundedDiscount
         ? [
             {
               transactionId,
               account: "promotion_expense" as const,
               ownerId: null,
               direction: "debit" as const,
-              amount: paid.discountAmount,
+              amount: paid.platformFundedDiscount,
               sourceType: "payment" as const,
               sourceId: paid._id,
               idempotencyKey: paid.idempotencyKey,
             },
           ]
         : []),
-      {
-        transactionId,
-        account: "provider_payable",
-        ownerId: paid.clubId,
-        direction: "credit",
-        amount: paid.grossAmount - paid.platformFee,
-        sourceType: "payment",
-        sourceId: paid._id,
-        idempotencyKey: paid.idempotencyKey,
-      },
+      ...(paid.grossAmount - paid.platformFee - paid.providerFundedDiscount > 0
+        ? [
+            {
+              transactionId,
+              account: "provider_payable" as const,
+              ownerId: paid.clubId,
+              direction: "credit" as const,
+              amount:
+                paid.grossAmount -
+                paid.platformFee -
+                paid.providerFundedDiscount,
+              sourceType: "payment" as const,
+              sourceId: paid._id,
+              idempotencyKey: paid.idempotencyKey,
+            },
+          ]
+        : []),
       ...(paid.platformFee
         ? [
             {
@@ -570,7 +631,12 @@ export class CommerceService {
     ]);
     await this.settlementAccounts.updateOne(
       { providerId: paid.clubId },
-      { $inc: { availableAmount: paid.grossAmount - paid.platformFee } },
+      {
+        $inc: {
+          availableAmount:
+            paid.grossAmount - paid.platformFee - paid.providerFundedDiscount,
+        },
+      },
       { upsert: true },
     );
     const reservation =
@@ -597,9 +663,22 @@ export class CommerceService {
       String(paid.userId),
       paid.referenceId,
       true,
+      paid.walletReservationKey,
     );
     if (paid.referenceType === "benefit_purchase") {
       await this.entitlements.finalizePurchase(paid.referenceId, true);
+    }
+    if (paid.referenceType === "business_class_enrollment") {
+      const enrollment = await this.classPortal.finalizeEnrollmentPayment(
+        paid.referenceId,
+        true,
+      );
+      await this.notifications.notifyBookingConfirmed({
+        userId: paid.userId,
+        bookingId: paid.referenceId,
+        title: enrollment.title,
+        href: `/athlete/classes/${String(paid.referenceId)}`,
+      });
     }
     await this.benefits.settleReferral(String(paid.userId));
     return paymentDto(paid);
@@ -652,9 +731,21 @@ export class CommerceService {
       String(failed.userId),
       failed.referenceId,
       false,
+      failed.walletReservationKey,
     );
     if (failed.referenceType === "benefit_purchase") {
       await this.entitlements.finalizePurchase(failed.referenceId, false);
+    }
+    if (failed.referenceType === "business_class_enrollment") {
+      const enrollment = await this.classPortal.finalizeEnrollmentPayment(
+        failed.referenceId,
+        false,
+      );
+      await this.notifications.notifyPaymentFailed({
+        userId: failed.userId,
+        paymentId: failed._id,
+        title: enrollment.title,
+      });
     }
     return paymentDto(failed);
   }
@@ -714,7 +805,9 @@ function paymentDto(intent: PaymentIntentDocument) {
     refundedWalletAmount: intent.refundedWalletAmount ?? 0,
     refundedDiscountAmount: intent.refundedDiscountAmount ?? 0,
     status: intent.status,
-    checkoutUrl: `/payments/mock/${intent.authority}`,
+    platformFundedDiscount: intent.platformFundedDiscount ?? 0,
+    providerFundedDiscount: intent.providerFundedDiscount ?? 0,
+    checkoutUrl: intent.checkoutUrl || `/payments/mock/${intent.authority}`,
     returnUrl: intent.returnUrl,
     paidAt: intent.paidAt?.toISOString() ?? null,
     reconciledAt: intent.reconciledAt?.toISOString() ?? null,

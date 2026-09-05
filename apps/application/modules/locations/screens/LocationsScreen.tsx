@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSetDefaultUserLocation, useUserLocations, type UserLocation } from "@api/locations";
-import { Typography } from "@heroui/react";
+import { useDeleteUserLocation, useSetDefaultUserLocation, useUserLocations, type UserLocation } from "@api/locations";
+import { toast, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { BottomSheet } from "@/components/motion/bottom-sheet";
 import { LocationCardsSkeleton } from "@/components/loading-skeletons";
@@ -13,6 +13,7 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
   const router = useRouter();
   const locations = useUserLocations();
   const setDefault = useSetDefaultUserLocation();
+  const deleteLocation = useDeleteUserLocation();
   const items = locations.data?.items ?? [];
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState(false);
@@ -30,6 +31,17 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
       close();
     } catch {
       setSaveError(true);
+    }
+  }
+
+  async function removeLocation(location: UserLocation) {
+    if (!window.confirm(`لوکیشن «${location.title}» حذف شود؟`)) return;
+    try {
+      await deleteLocation.mutateAsync(location.id);
+      if (selectedId === location.id) setSelectedId(null);
+      toast.success("لوکیشن حذف شد");
+    } catch {
+      toast.danger("حذف لوکیشن انجام نشد");
     }
   }
 
@@ -77,6 +89,8 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
                   selected={location.id === effectiveSelectedId}
                   onSelect={() => setSelectedId(location.id)}
                   editHref={`/${role}/profile/locations/${location.id}/edit`}
+                  onDelete={() => void removeLocation(location)}
+                  deleting={deleteLocation.isPending}
                 />
               ))}
             </div>
@@ -97,7 +111,7 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
           type="button"
           onClick={() => void updateLocation()}
           disabled={!selected || locations.isLoading || setDefault.isPending}
-          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent font-bold text-accent-foreground shadow-[0_12px_30px_color-mix(in_oklch,var(--accent)_22%,transparent)] transition-transform active:scale-[0.98] disabled:opacity-50"
+          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent font-bold text-accent-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
         >
           {setDefault.isPending ? "در حال به‌روزرسانی..." : "به‌روزرسانی"}
           {!setDefault.isPending ? <Icon name="check" size={20} /> : null}
@@ -107,15 +121,18 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
   );
 }
 
-function LocationOption({ location, selected, onSelect, editHref }: { location: UserLocation; selected: boolean; onSelect: () => void; editHref: string }) {
+function LocationOption({ location, selected, onSelect, editHref, onDelete, deleting }: { location: UserLocation; selected: boolean; onSelect: () => void; editHref: string; onDelete: () => void; deleting: boolean }) {
   return (
-    <div className={`relative flex min-h-28 items-center gap-4 rounded-[1.5rem] border p-4 transition-[border-color,background-color,transform,box-shadow] active:scale-[0.99] ${selected ? "border-accent bg-accent/7 shadow-[0_8px_24px_color-mix(in_oklch,var(--accent)_10%,transparent)]" : "border-border bg-surface-secondary/55"}`}>
+    <div className={`relative flex min-h-28 items-center gap-4 rounded-[1.5rem] border p-4 transition-[border-color,background-color,transform,box-shadow] active:scale-[0.99] ${selected ? "border-accent bg-accent/7" : "border-border bg-surface-secondary/55"}`}>
       <button type="button" role="radio" aria-checked={selected} onClick={onSelect} className="absolute inset-0 rounded-[1.5rem]" aria-label={`${location.title}، ${location.address}`} />
       <span className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${selected ? "bg-accent/12 text-accent" : "bg-surface text-muted"}`}><Icon name="map-pin-1" size={24} /></span>
       <div className="min-w-0 flex-1">
         <Typography type="body" weight="bold" className="truncate">{location.title}</Typography>
         <Typography type="body-sm" color="muted" className="mt-1 line-clamp-2 leading-6">{location.address}</Typography>
-        <Link href={editHref} className="relative z-10 mt-1 inline-block text-xs font-semibold text-accent">ویرایش</Link>
+        <div className="relative z-10 mt-1 flex gap-3 text-xs font-semibold">
+          <Link href={editHref} className="text-accent">ویرایش</Link>
+          <button type="button" disabled={deleting} onClick={onDelete} className="text-danger disabled:opacity-50">حذف</button>
+        </div>
       </div>
       <span aria-hidden className={`flex size-7 shrink-0 items-center justify-center rounded-lg border ${selected ? "border-accent bg-accent text-accent-foreground" : "border-border bg-surface"}`}>
         {selected ? <Icon name="check" size={16} /> : null}

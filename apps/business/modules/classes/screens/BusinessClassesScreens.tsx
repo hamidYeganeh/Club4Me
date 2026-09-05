@@ -12,6 +12,7 @@ import {
   useClubStudents,
   useCreateBusinessClass,
   useCreateBusinessCalendarFeed,
+  useRevokeBusinessCalendarFeed,
   useEnrollStudentInBusinessClass,
   useRecordBusinessClassAttendance,
   useRegenerateBusinessClassSessions,
@@ -53,6 +54,12 @@ const dateTime = (value: string) =>
     timeStyle: "short",
   }).format(new Date(value));
 const money = (value: number) => new Intl.NumberFormat("fa-IR").format(value);
+const parseFaqRows = (value: string) =>
+  value
+    .split("\n")
+    .map((row) => row.split("|").map((part) => part.trim()))
+    .filter(([question, answer]) => Boolean(question && answer))
+    .map(([question, answer]) => ({ question: question!, answer: answer! }));
 const modelLabels: Record<BusinessClassModel, string> = {
   group: "گروهی",
   private: "خصوصی",
@@ -266,6 +273,7 @@ function ClassForm({
     const payload: BusinessClassPayload = {
       title: String(data.get("title")),
       description: String(data.get("description")),
+      faqs: parseFaqRows(String(data.get("faqs") ?? "")),
       sport: String(data.get("sport")),
       level: String(data.get("level")),
       model,
@@ -464,6 +472,18 @@ function ClassForm({
                 name="description"
                 defaultValue={initial?.description}
                 className={`${input} h-24 py-3`}
+              />
+            </Field>
+          </div>
+          <div className="md:col-span-2 lg:col-span-3">
+            <Field label="سوالات متداول">
+              <textarea
+                name="faqs"
+                defaultValue={initial?.faqs
+                  ?.map((item) => `${item.question} | ${item.answer}`)
+                  .join("\n")}
+                className={`${input} min-h-28 py-3`}
+                placeholder="هر خط: سوال | پاسخ"
               />
             </Field>
           </div>
@@ -683,6 +703,7 @@ export function BusinessClassDetailScreen({
   const updateSession = useUpdateBusinessClassSession(clubId, classId);
   const regenerate = useRegenerateBusinessClassSessions(clubId, classId);
   const calendarFeed = useCreateBusinessCalendarFeed(clubId);
+  const revokeCalendarFeed = useRevokeBusinessCalendarFeed(clubId);
   const [showEnroll, setShowEnroll] = useState(false);
   const [chosenSession, setChosenSession] = useState("");
   const sessionId =
@@ -799,6 +820,24 @@ export function BusinessClassDetailScreen({
             }}
           >
             تقویم اشتراکی
+          </Button>
+          <Button
+            variant="danger-soft"
+            isPending={revokeCalendarFeed.isPending}
+            onPress={async () => {
+              try {
+                const result = await revokeCalendarFeed.mutateAsync();
+                toast.success(
+                  result.revoked
+                    ? "دسترسی تقویم لغو شد"
+                    : "لینک فعالی برای لغو وجود ندارد",
+                );
+              } catch {
+                toast.danger("لغو دسترسی تقویم انجام نشد");
+              }
+            }}
+          >
+            لغو لینک تقویم
           </Button>
         </div>
       }

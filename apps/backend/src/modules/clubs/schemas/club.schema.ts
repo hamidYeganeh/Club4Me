@@ -202,6 +202,13 @@ export class Club {
   @Prop({ type: [String], default: [] })
   rules: string[];
 
+  @Prop({
+    type: [{ question: String, answer: String }],
+    default: [],
+    _id: false,
+  })
+  faqs: Array<{ question: string; answer: string }>;
+
   @Prop({ type: ClubGeo })
   geo?: ClubGeo;
 

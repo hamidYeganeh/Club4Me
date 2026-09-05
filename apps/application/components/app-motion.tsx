@@ -30,11 +30,7 @@ export function AppMotion() {
 
           gsap.registerPlugin(ScrollTrigger);
           animationContext = gsap.context(() => {
-            const discoveryScroller = isDiscovery
-              ? document.querySelector<HTMLElement>("main.app-page")
-              : null;
-            const scroller: HTMLElement | string =
-              discoveryScroller ?? ".app-scroll-root";
+            const scroller = ".app-scroll-root";
 
             if (isDiscovery && progressRef.current) {
               gsap.fromTo(
@@ -161,7 +157,7 @@ export function AppMotion() {
     >
       <div
         ref={progressRef}
-        className="h-full origin-left bg-accent shadow-[0_0_12px_color-mix(in_oklch,var(--accent)_70%,transparent)] rtl:origin-right"
+        className="h-full origin-left bg-accent rtl:origin-right"
       />
     </div>
   );

@@ -44,8 +44,16 @@ export class PushNotificationsService {
       resolve(".secrets/firebase-service-account.json"),
       resolve("apps/backend/.secrets/firebase-service-account.json"),
     ].find((path) => existsSync(path));
-    const serviceAccountPath =
-      env.FIREBASE_SERVICE_ACCOUNT_PATH || localCredentialPath;
+    const configuredCredentialPath = env.FIREBASE_SERVICE_ACCOUNT_PATH?.trim();
+    if (
+      configuredCredentialPath &&
+      !existsSync(resolve(configuredCredentialPath))
+    ) {
+      throw new Error(
+        `Firebase service account file does not exist: ${configuredCredentialPath}`,
+      );
+    }
+    const serviceAccountPath = configuredCredentialPath || localCredentialPath;
     const fileCredential = serviceAccountPath
       ? readServiceAccount(serviceAccountPath)
       : null;

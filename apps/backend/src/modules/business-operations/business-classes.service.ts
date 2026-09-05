@@ -606,6 +606,7 @@ function classDto(item: BusinessTrainingClassDocument) {
     ...base(item),
     title: item.title,
     description: item.description,
+    faqs: item.faqs ?? [],
     sport: item.sport,
     level: item.level,
     model: item.classModel,

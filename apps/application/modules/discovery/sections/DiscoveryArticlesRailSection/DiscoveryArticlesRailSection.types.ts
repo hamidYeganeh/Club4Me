@@ -18,4 +18,5 @@ export type DiscoveryArticlesRailSectionProps = {
   items: DiscoveryArticleItem[];
   cardVariant?: DiscoveryArticlesCardVariant;
   className?: string;
+  isLoading?: boolean;
 };

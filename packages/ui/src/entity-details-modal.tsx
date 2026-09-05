@@ -40,9 +40,7 @@ export function EntityDetailsModal({
           <Modal.Header>
             <Modal.Heading>{title}</Modal.Heading>
             {description ? (
-              <p className="mt-1 text-sm leading-6 text-muted">
-                {description}
-              </p>
+              <p className="mt-1 text-sm leading-6 text-muted">{description}</p>
             ) : null}
           </Modal.Header>
           <Modal.Body className="space-y-5">

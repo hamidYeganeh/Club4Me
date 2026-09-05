@@ -1,6 +1,10 @@
 export { accountClient } from "./account.client";
 export type {
   AccountMeResponse,
+  AccountActivityLevel,
+  AccountGender,
+  AccountProfileChoice,
+  AccountProfileChoicesResponse,
   AccountRoleRequest,
   AccountUser,
   AuthSessionResponse,
@@ -31,6 +35,7 @@ export type {
 export { accountEndpoints } from "./account.endpoints";
 export {
   useAccountMe,
+  useAccountProfileChoices,
   useAdminRoleRequests,
   useConfirmForgotPassword,
   useConfirmOtp,

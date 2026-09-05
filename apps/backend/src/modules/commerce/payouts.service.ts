@@ -87,14 +87,28 @@ export class PayoutsService {
         "Available payout balance changed; please retry",
       );
     }
-    const item = await this.payouts.create({
-      requestedBy: oid(userId),
-      providerType: input.providerType,
-      providerId: oid(current.providerId),
-      amount: input.amount,
-      iban: input.iban,
-      status: "requested",
-    });
+    let item: PayoutRequestDocument;
+    try {
+      item = await this.payouts.create({
+        requestedBy: oid(userId),
+        providerType: input.providerType,
+        providerId: oid(current.providerId),
+        amount: input.amount,
+        iban: input.iban,
+        status: "requested",
+      });
+    } catch (error) {
+      await this.accounts.updateOne(
+        { providerId: oid(current.providerId) },
+        {
+          $inc: {
+            reservedAmount: -input.amount,
+            availableAmount: input.amount,
+          },
+        },
+      );
+      throw error;
+    }
     await this.notifications.notifyPayoutStatus({
       userId,
       payoutId: item._id,
@@ -115,7 +129,13 @@ export class PayoutsService {
 
   async review(adminId: string, payoutId: string, input: ReviewPayoutDto) {
     const payout = await this.payouts.findOneAndUpdate(
-      { _id: oid(payoutId), status: "requested" },
+      {
+        _id: oid(payoutId),
+        status:
+          input.status === "under_review"
+            ? "requested"
+            : { $in: ["requested", "under_review"] },
+      },
       {
         $set: {
           status: input.status,
@@ -134,6 +154,15 @@ export class PayoutsService {
         "PAYOUT_NOT_PENDING",
         "Payout request is not pending",
       );
+    }
+    if (input.status === "under_review") {
+      await this.notifications.notifyPayoutStatus({
+        userId: payout.requestedBy,
+        payoutId: payout._id,
+        amount: payout.amount,
+        status: "under_review",
+      });
+      return payoutDto(payout);
     }
     if (input.status === "paid") {
       const transactionId = randomUUID();
@@ -179,6 +208,41 @@ export class PayoutsService {
       payoutId: payout._id,
       amount: payout.amount,
       status: input.status,
+    });
+    return payoutDto(payout);
+  }
+
+  async cancel(userId: string, payoutId: string) {
+    const payout = await this.payouts.findOneAndUpdate(
+      {
+        _id: oid(payoutId),
+        requestedBy: oid(userId),
+        status: "requested",
+      },
+      { $set: { status: "cancelled" } },
+      { new: true },
+    );
+    if (!payout) {
+      throw new AppError(
+        409,
+        "PAYOUT_NOT_CANCELLABLE",
+        "Payout request cannot be cancelled",
+      );
+    }
+    await this.accounts.updateOne(
+      { providerId: payout.providerId },
+      {
+        $inc: {
+          reservedAmount: -payout.amount,
+          availableAmount: payout.amount,
+        },
+      },
+    );
+    await this.notifications.notifyPayoutStatus({
+      userId: payout.requestedBy,
+      payoutId: payout._id,
+      amount: payout.amount,
+      status: "cancelled",
     });
     return payoutDto(payout);
   }

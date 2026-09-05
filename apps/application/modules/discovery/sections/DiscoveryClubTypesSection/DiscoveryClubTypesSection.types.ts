@@ -11,4 +11,8 @@ export type DiscoveryClubTypeItem = {
 export type DiscoveryClubTypesSectionProps = {
   items?: DiscoveryClubTypeItem[];
   enabled?: boolean;
+  title?: string;
+  subtitle?: string;
+  seeAllHref?: string;
+  seeAllLabel?: string;
 };

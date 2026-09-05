@@ -6,8 +6,10 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from "@nestjs/common";
+import type { Response } from "express";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -23,14 +25,19 @@ import {
   UpdateStudentDto,
   UpsertAttendanceDto,
   ImportOperationsDto,
+  QueueOperationsExportDto,
 } from "./business-operations.dto";
 import { BusinessOperationsService } from "./business-operations.service";
+import { OperationsExportService } from "./operations-export.service";
 
 @Controller("api/v1/business/clubs/:clubId/operations")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles("owner")
 export class BusinessOperationsController {
-  constructor(private readonly service: BusinessOperationsService) {}
+  constructor(
+    private readonly service: BusinessOperationsService,
+    private readonly exports: OperationsExportService,
+  ) {}
 
   @Get("students") listStudents(
     @CurrentUser() user: AuthTokenPayload,
@@ -142,6 +149,41 @@ export class BusinessOperationsController {
     @Query("format") format?: string,
   ) {
     return this.service.exportData(user.sub, clubId, kind, format);
+  }
+
+  @Post("exports")
+  queueExport(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Body() body: QueueOperationsExportDto,
+  ) {
+    return this.exports.queue(user.sub, clubId, body);
+  }
+
+  @Get("exports/:jobId")
+  getExport(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("jobId") jobId: string,
+  ) {
+    return this.exports.get(user.sub, clubId, jobId);
+  }
+
+  @Get("exports/:jobId/download")
+  async downloadExport(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("jobId") jobId: string,
+    @Res() response: Response,
+  ) {
+    const file = await this.exports.download(user.sub, clubId, jobId);
+    if (file.url) return response.redirect(302, file.url);
+    response.setHeader("Content-Type", file.mimeType);
+    response.setHeader(
+      "Content-Disposition",
+      `attachment; filename*=UTF-8''${encodeURIComponent(file.filename)}`,
+    );
+    response.send(file.content);
   }
 
   @Post("import")

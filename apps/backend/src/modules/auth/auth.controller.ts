@@ -100,6 +100,12 @@ export class AuthController {
     return this.authService.getMe(user.sub);
   }
 
+  @Get("me/choices")
+  @UseGuards(JwtAuthGuard)
+  profileChoices() {
+    return this.authService.getProfileChoices();
+  }
+
   @Patch("me")
   @UseGuards(JwtAuthGuard)
   updateProfile(

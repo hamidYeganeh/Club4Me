@@ -8,7 +8,8 @@ export type PaymentIntent = {
   id: string;
   provider: "mock";
   authority: string;
-  referenceType: "reservation" | "benefit_purchase";
+  referenceType:
+    "reservation" | "benefit_purchase" | "business_class_enrollment";
   referenceId: string;
   amount: number;
   grossAmount: number;
@@ -33,7 +34,7 @@ export type Payout = {
   providerId: string;
   amount: number;
   iban: string;
-  status: "requested" | "paid" | "rejected" | "cancelled";
+  status: "requested" | "under_review" | "paid" | "rejected" | "cancelled";
   reviewNote: string;
   bankReference: string | null;
   reviewedAt: string | null;
@@ -49,9 +50,40 @@ export type PayoutBalance = {
   availableAmount: number;
 };
 
+export type WalletTransaction = {
+  id: string;
+  type: "credit" | "reserve" | "consume" | "release" | "expire";
+  amount: number;
+  source: "refund" | "promotion" | "referral" | "admin" | "payment";
+  expiresAt: string | null;
+  note: string;
+  createdAt: string;
+};
+
+export type BenefitsWallet = {
+  availableAmount: number;
+  reservedAmount: number;
+  transactions: WalletTransaction[];
+};
+
 export const commerceClient = {
+  benefitsWallet: () => http.get<BenefitsWallet>("/benefits/wallet"),
+  referralCode: () => http.get<{ code: string }>("/benefits/referral-code"),
+  redeemReferral: (code: string) =>
+    http.post<{ status: "pending" | "rewarded" | "rejected" }>(
+      "/benefits/referrals/redeem",
+      { code },
+    ),
+  quoteDiscount: (payload: { code: string; referenceId: string }) =>
+    http.post<{
+      campaignId: string;
+      code: string;
+      amount: number;
+      payableAmount: number;
+    }>("/benefits/discounts/quote", payload),
   createIntent: (payload: {
-    referenceType: "reservation" | "benefit_purchase";
+    referenceType:
+      "reservation" | "benefit_purchase" | "business_class_enrollment";
     referenceId: string;
     idempotencyKey: string;
     returnUrl: string;
@@ -73,6 +105,8 @@ export const commerceClient = {
     amount: number;
     iban: string;
   }) => http.post<Payout>("/payouts", payload),
+  cancelPayout: (payoutId: string) =>
+    http.post<Payout>(`/payouts/${payoutId}/cancel`, {}),
   listAdminPayouts: (status?: string) =>
     http.get<{ items: Payout[] }>(
       `/admin/payments/payouts${status ? `?status=${encodeURIComponent(status)}` : ""}`,
@@ -80,7 +114,7 @@ export const commerceClient = {
   reviewPayout: (
     payoutId: string,
     payload: {
-      status: "paid" | "rejected";
+      status: "under_review" | "paid" | "rejected";
       note: string;
       bankReference?: string;
     },
@@ -108,11 +142,55 @@ export const commerceClient = {
     minOrderAmount: number;
     budget: number;
     perUserLimit: number;
+    usageLimit?: number | null;
     clubIds: string[];
+    scopeType?:
+      | "global"
+      | "club"
+      | "coach"
+      | "class"
+      | "sport"
+      | "product"
+      | "session_type";
+    scopeIds?: string[];
+    funding?: Array<{
+      source: "platform" | "provider";
+      percentage: number;
+    }>;
+    firstPurchaseOnly?: boolean;
+    referredOnly?: boolean;
+    eligibleUserIds?: string[];
     startsAt: string;
     endsAt: string;
   }) => http.post("/admin/benefits/discounts", payload),
 };
+
+export function useBenefitsWallet() {
+  return useQuery({
+    queryKey: ["benefits", "wallet"],
+    queryFn: commerceClient.benefitsWallet,
+  });
+}
+
+export function useReferralCode() {
+  return useQuery({
+    queryKey: ["benefits", "referral-code"],
+    queryFn: commerceClient.referralCode,
+  });
+}
+
+export function useRedeemReferral() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: commerceClient.redeemReferral,
+    onSuccess: async () =>
+      queryClient.invalidateQueries({ queryKey: ["benefits"] }),
+  });
+}
+
+export function useQuoteDiscount() {
+  return useMutation({ mutationFn: commerceClient.quoteDiscount });
+}
 
 export function useCreatePaymentIntent() {
   return useMutation({ mutationFn: commerceClient.createIntent });
@@ -160,6 +238,15 @@ export function useRequestPayout() {
   });
 }
 
+export function useCancelPayout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: commerceClient.cancelPayout,
+    onSuccess: async () =>
+      queryClient.invalidateQueries({ queryKey: ["payouts"] }),
+  });
+}
+
 export function useAdminPayouts(status?: string) {
   return useQuery({
     queryKey: ["admin", "payouts", status],
@@ -175,7 +262,7 @@ export function useReviewPayout() {
       ...payload
     }: {
       payoutId: string;
-      status: "paid" | "rejected";
+      status: "under_review" | "paid" | "rejected";
       note: string;
       bankReference?: string;
     }) => commerceClient.reviewPayout(payoutId, payload),

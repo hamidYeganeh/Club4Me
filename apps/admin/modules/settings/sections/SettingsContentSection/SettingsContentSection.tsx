@@ -1,86 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Avatar, Button, Card, Chip, Input, Switch } from "@heroui/react";
+import { Avatar, Button, Card, Chip, Input, toast } from "@heroui/react";
+import { useAdminMe, useLogout } from "@api/admin";
 import { Icon } from "@theme/icon";
-import {
-  imageUploaderAccept,
-  Uploader,
-  type UploaderLabels,
-} from "@ui/uploader";
-import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 import { settingsContentSectionStyles } from "./SettingsContentSection.styles";
 import type { SettingsContentSectionProps } from "./SettingsContentSection.types";
 
-const defaultAvatar = "https://picsum.photos/seed/gym4me-admin/240/240";
-
 export function SettingsContentSection({
-  name,
-  email,
-  phone,
   proLabel,
-  shareLabel,
-  viewProfileLabel,
   personalTitle,
   personalHint,
   fullName,
-  emailLabel,
   phoneLabel,
   accountType,
-  regular,
-  changeAvatar,
-  paymentsTitle,
-  paymentsHint,
-  autoPayout,
 }: SettingsContentSectionProps) {
   const styles = settingsContentSectionStyles();
-  const t = useTranslations("uploader");
-  const [avatarSrc, setAvatarSrc] = useState(defaultAvatar);
-  const labels: UploaderLabels = {
-    clickToUpload: t("clickToUpload"),
-    dropHint: t("dropHint"),
-    formats: t("formats"),
-    progress: t("progress"),
-    success: t("success"),
-    error: t("error"),
-    retry: t("retry"),
-    remove: t("remove"),
-    dropzoneAria: t("dropzoneAria"),
-  };
-
-  useEffect(() => {
-    return () => {
-      if (avatarSrc.startsWith("blob:")) {
-        URL.revokeObjectURL(avatarSrc);
-      }
-    };
-  }, [avatarSrc]);
+  const me = useAdminMe();
+  const logout = useLogout();
+  const router = useRouter();
+  const user = me.data;
+  const name = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || user?.phone || "—";
+  const roles = user?.roles.map((role) => role === "admin" ? "مدیر" : role).join("، ") || "—";
+  const createdAt = user?.createdAt
+    ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "long" }).format(new Date(user.createdAt))
+    : "—";
 
   return (
     <main className={styles.root()}>
       <div className={styles.cover()}>
-        {/* Remote demo artwork is intentionally rendered without Next image optimization. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          alt=""
-          src="https://picsum.photos/seed/gym4me-cover/1400/420"
-          className={styles.coverImage()}
-        />
-        <Button
-          isIconOnly
-          aria-label={changeAvatar}
-          className={styles.edit()}
-          variant="secondary"
-        >
-          <Icon name="pencil-1" />
-        </Button>
+        <div className="size-full bg-gradient-to-l from-accent/30 via-surface-secondary to-surface" />
       </div>
 
       <div className={styles.identity()}>
         <div className={styles.person()}>
           <Avatar className="size-24 ring-4 ring-background">
-            <Avatar.Image alt={name} src={avatarSrc} />
             <Avatar.Fallback>{name.slice(0, 1)}</Avatar.Fallback>
           </Avatar>
           <div>
@@ -90,18 +45,8 @@ export function SettingsContentSection({
                 {proLabel}
               </Chip>
             </div>
-            <p className={styles.email()}>{email}</p>
+            <p className={styles.email()}>{user?.phone ?? "—"}</p>
           </div>
-        </div>
-        <div className={styles.actions()}>
-          <Button variant="secondary">
-            <Icon name="share-1" />
-            {shareLabel}
-          </Button>
-          <Button variant="primary">
-            <Icon name="user" />
-            {viewProfileLabel}
-          </Button>
         </div>
       </div>
 
@@ -113,15 +58,17 @@ export function SettingsContentSection({
             <Icon name="user" className="text-muted" />
             <Input
               aria-label={fullName}
-              defaultValue={name}
+              value={name}
+              readOnly
               variant="secondary"
             />
           </label>
           <label className={styles.field()}>
-            <Icon name="paper-plane-horizontal" className="text-muted" />
+            <Icon name="calendar-1" className="text-muted" />
             <Input
-              aria-label={emailLabel}
-              defaultValue={email}
+              aria-label="تاریخ عضویت"
+              value={createdAt}
+              readOnly
               variant="secondary"
             />
           </label>
@@ -129,7 +76,8 @@ export function SettingsContentSection({
             <Icon name="flag-1" className="text-muted" />
             <Input
               aria-label={phoneLabel}
-              defaultValue={phone}
+              value={user?.phone ?? "—"}
+              readOnly
               variant="secondary"
             />
           </label>
@@ -137,41 +85,14 @@ export function SettingsContentSection({
             <Icon name="identity-card-1" className="text-muted" />
             <Input
               aria-label={accountType}
-              defaultValue={regular}
+              value={roles}
+              readOnly
               variant="secondary"
             />
           </label>
         </div>
-        <div className="mt-5">
-          <Uploader
-            multiple={false}
-            accept={imageUploaderAccept}
-            labels={labels}
-            onDrop={(files) => {
-              const file = files[0];
-              if (!file) {
-                return;
-              }
-              const nextSrc = URL.createObjectURL(file);
-              setAvatarSrc((current) => {
-                if (current.startsWith("blob:")) {
-                  URL.revokeObjectURL(current);
-                }
-                return nextSrc;
-              });
-            }}
-          />
-        </div>
       </Card>
-
-      <Card variant="transparent" className={styles.card()}>
-        <h2 className="text-lg font-semibold">{paymentsTitle}</h2>
-        <p className="mt-1 text-sm text-muted">{paymentsHint}</p>
-        <div className={styles.payout()}>
-          <span>{autoPayout}</span>
-          <Switch defaultSelected aria-label={autoPayout} />
-        </div>
-      </Card>
+      <Button variant="danger-soft" isPending={logout.isPending} onPress={() => void logout.mutateAsync().then(() => router.replace("/auth")).catch(() => toast.danger("خروج از حساب انجام نشد"))}>خروج از حساب</Button>
     </main>
   );
 }

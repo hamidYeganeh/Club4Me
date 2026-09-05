@@ -225,7 +225,10 @@ export class BenefitsService {
     }
     if (
       campaign.firstPurchaseOnly &&
-      (await this.paymentIntents.exists({ userId: oid(userId), status: "paid" }))
+      (await this.paymentIntents.exists({
+        userId: oid(userId),
+        status: "paid",
+      }))
     ) {
       throw new AppError(
         409,
@@ -271,8 +274,8 @@ export class BenefitsService {
         "Discount budget is exhausted",
       );
     const platformPercentage =
-      campaign.funding.find((item) => item.source === "platform")
-        ?.percentage ?? 100;
+      campaign.funding.find((item) => item.source === "platform")?.percentage ??
+      100;
     const platformFundedAmount = Math.round(
       (amount * platformPercentage) / 100,
     );
@@ -523,17 +526,10 @@ export class BenefitsService {
 }
 
 export type DiscountReferenceType =
-  | "reservation"
-  | "benefit_purchase"
-  | "business_class_enrollment";
+  "reservation" | "benefit_purchase" | "business_class_enrollment";
 
 export type DiscountScopeType =
-  | "club"
-  | "coach"
-  | "class"
-  | "sport"
-  | "product"
-  | "session_type";
+  "club" | "coach" | "class" | "sport" | "product" | "session_type";
 
 export type DiscountContext = {
   referenceType: DiscountReferenceType;

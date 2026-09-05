@@ -12,4 +12,7 @@ export type DiscoveryClubsLocationItem = {
 export type DiscoveryClubsLocationsSectionProps = {
   items?: DiscoveryClubsLocationItem[];
   seeAllHref?: string;
+  title?: string;
+  subtitle?: string;
+  isLoading?: boolean;
 };

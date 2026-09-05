@@ -128,9 +128,7 @@ export class DiscountRedemption {
     default: "reservation",
   })
   referenceType:
-    | "reservation"
-    | "benefit_purchase"
-    | "business_class_enrollment";
+    "reservation" | "benefit_purchase" | "business_class_enrollment";
   @Prop({
     type: String,
     enum: ["reserved", "consumed", "released"],

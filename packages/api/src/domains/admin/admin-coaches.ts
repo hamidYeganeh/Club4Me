@@ -10,10 +10,30 @@ export type AdminCoach = {
   displayName: string;
   slug: string;
   shortBio: string;
+  bio: string;
+  avatarMediaId?: string;
+  coverMediaId?: string;
+  galleryMediaIds: string[];
+  trainingStyles: Array<{
+    title: string;
+    description: string;
+    imageMediaId?: string;
+  }>;
+  experienceSummary: string;
+  experienceYears: number;
+  languages: string[];
   serviceModes: string[];
+  minAcceptedAge?: number;
+  maxAcceptedAge?: number;
+  geo?: Record<string, unknown>;
+  travelRadiusKm: number;
+  contact: Record<string, unknown>;
   reviewStatus: "draft" | "pending_review" | "approved" | "rejected";
   visibility: "hidden" | "public";
   rejectionReason: string | null;
+  averageRating: number;
+  reviewsCount: number;
+  createdAt: string;
   updatedAt: string;
 };
 

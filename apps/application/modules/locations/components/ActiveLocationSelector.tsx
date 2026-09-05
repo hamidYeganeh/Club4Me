@@ -9,6 +9,7 @@ import { Icon } from "@theme/icon";
 import { BottomSheet } from "@/components/motion/bottom-sheet";
 import { RequestFailureState } from "@/components/request-failure-state";
 import { LocationCardsSkeleton } from "@/components/loading-skeletons";
+import { getQueryFailure } from "@/lib/request-failure";
 import { useActiveLocation } from "../active-location";
 
 export function ActiveLocationSelector({
@@ -16,11 +17,12 @@ export function ActiveLocationSelector({
 }: {
   variant?: "compact" | "search";
 }) {
-  const locations = useUserLocations();
-  const { active, selectSaved } = useActiveLocation();
   const [open, setOpen] = useState(false);
+  const locations = useUserLocations(open);
+  const { active, selectSaved } = useActiveLocation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const items = locations.data?.items ?? [];
+  const failure = getQueryFailure(locations.error, locations.fetchStatus);
   const title =
     active?.kind === "saved"
       ? active.location.title
@@ -89,12 +91,12 @@ export function ActiveLocationSelector({
           aria-label="انتخاب لوکیشن"
           className="flex flex-col gap-3 pt-4"
         >
-          {locations.isLoading ? (
+          {locations.isLoading && !failure ? (
             <LocationCardsSkeleton count={2} />
-          ) : locations.isError ? (
+          ) : failure ? (
             <RequestFailureState
               compact
-              error={locations.error}
+              error={failure}
               onRetry={() => void locations.refetch()}
             />
           ) : items.length === 0 ? (
@@ -118,7 +120,7 @@ export function ActiveLocationSelector({
                   onClick={() => setSelectedId(location.id)}
                   className={`flex min-h-28 items-center gap-4 rounded-[1.5rem] border p-4 text-start transition-[border-color,background-color,transform,box-shadow] active:scale-[0.99] ${
                     isSelected
-                      ? "border-accent bg-accent/7 shadow-[0_8px_24px_color-mix(in_oklch,var(--accent)_10%,transparent)]"
+                      ? "border-accent bg-accent/7"
                       : "border-border bg-surface-secondary/55"
                   }`}
                 >
@@ -161,7 +163,7 @@ export function ActiveLocationSelector({
           type="button"
           onClick={updateLocation}
           disabled={!selected || locations.isLoading}
-          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent font-bold text-accent-foreground shadow-[0_12px_30px_color-mix(in_oklch,var(--accent)_22%,transparent)] transition-transform active:scale-[0.98] disabled:opacity-50"
+          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent font-bold text-accent-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
         >
           به‌روزرسانی <Icon name="check" size={20} />
         </button>

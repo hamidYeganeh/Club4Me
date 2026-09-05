@@ -1,0 +1,1 @@
+export { DiscoveryHomeCatalogSections } from "./DiscoveryHomeCatalogSections";

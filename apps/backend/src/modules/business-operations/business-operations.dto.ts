@@ -177,3 +177,20 @@ export class ImportOperationsDto {
   rows?: Array<Record<string, unknown>>;
   contentBase64?: string;
 }
+
+export class QueueOperationsExportDto {
+  static schema = z
+    .object({
+      kind: z.enum([
+        "students",
+        "coaches",
+        "classes",
+        "payments",
+        "attendance",
+      ]),
+      format: z.enum(["csv", "xlsx"]),
+    })
+    .strict();
+  kind: "students" | "coaches" | "classes" | "payments" | "attendance";
+  format: "csv" | "xlsx";
+}

@@ -6,10 +6,7 @@ import type { ReminderCardProps } from "./reminder-card.types";
 export function ReminderCard({
   date,
   time,
-  joinedCount,
-  interestedCount,
-  joinedLabel = "joined",
-  interestedLabel = "interested",
+  meta,
   icon = "calendar-1",
   href,
   onPress,
@@ -17,7 +14,6 @@ export function ReminderCard({
 }: ReminderCardProps) {
   const isInteractive = Boolean(href || onPress);
   const styles = reminderCardStyles({ interactive: isInteractive });
-  const meta = `${joinedCount} ${joinedLabel} · ${interestedCount} ${interestedLabel}`;
   const label = `${date}. ${time}. ${meta}`;
 
   const body = (

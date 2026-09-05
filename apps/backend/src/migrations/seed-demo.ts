@@ -39,7 +39,7 @@ const ids = {
   review: id("66d600000000000000000005"),
 };
 
-const DEMO_PASSWORD = "Demo@1405";
+const LOCAL_DEMO_PASSWORD = "Demo@1405";
 
 function addDays(value: Date, days: number, hour: number, minute = 0) {
   const result = new Date(value);
@@ -68,10 +68,18 @@ async function seed(): Promise<void> {
   loadDotenv({ path: ".env" });
   const uri = process.env.MONGODB_URL;
   if (!uri) throw new Error("MONGODB_URL is required");
+  const demoPassword =
+    process.env.SEED_DEMO_PASSWORD?.trim() || LOCAL_DEMO_PASSWORD;
+  if (
+    process.env.NODE_ENV === "production" &&
+    demoPassword === LOCAL_DEMO_PASSWORD
+  ) {
+    throw new Error("SEED_DEMO_PASSWORD is required in production");
+  }
 
   await mongoose.connect(uri);
   const now = new Date();
-  const passwordHash = await hashPassword(DEMO_PASSWORD);
+  const passwordHash = await hashPassword(demoPassword);
 
   const users = [
     {
@@ -402,6 +410,34 @@ async function seed(): Promise<void> {
       avatarMediaId: ids.coachMedia,
       coverMediaId: ids.coachMedia,
       galleryMediaIds: [],
+      trainingStyles: [
+        {
+          title: "تمرین قدرتی دقیق",
+          description: "تمرکز بر تمرین‌های کاربردی، اصلاح فرم و افزایش تدریجی فشار",
+          imageMediaId: ids.coachMedia,
+        },
+        {
+          title: "آمادگی جسمانی منظم",
+          description: "برنامه ساختاریافته، انضباط تمرینی و پیگیری مداوم پیشرفت",
+          imageMediaId: ids.coachMedia,
+        },
+      ],
+      experienceSummary:
+        "بیش از ۱۰ سال تجربه در تمرین‌های قدرتی، اصلاح فرم و برنامه‌ریزی شخصی برای ورزشکاران با سطوح مختلف.",
+      experience: [
+        {
+          title: "دوره تخصصی مربیگری فیتنس",
+          organization: "آکادمی ملی ورزش",
+          period: "۱۳۹۵",
+          description: "آموزش علمی تمرین قدرتی و طراحی برنامه",
+        },
+        {
+          title: "مربی ارشد فیتنس",
+          organization: "باشگاه کلاب‌فورمی",
+          period: "۱۳۹۸ تا امروز",
+          description: "همراهی ورزشکاران و توسعه برنامه‌های شخصی",
+        },
+      ],
       experienceYears: 10,
       languages: ["فارسی"],
       serviceModes: ["club", "online"],
@@ -793,7 +829,11 @@ async function seed(): Promise<void> {
   }
 
   console.log("Demo seed is ready.");
-  console.log(`Password for all demo accounts: ${DEMO_PASSWORD}`);
+  console.log(
+    process.env.NODE_ENV === "production"
+      ? "Demo password was read from SEED_DEMO_PASSWORD."
+      : `Local demo password: ${LOCAL_DEMO_PASSWORD}`,
+  );
   console.log("Athlete: 09120000001 | Coach: 09120000003");
   console.log("Owner: 09120000004 | Admin: 09120000005");
   await mongoose.disconnect();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Typography } from "@heroui/react";
+import { Button, Skeleton, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import {
   useCatalogClubs,
@@ -16,6 +16,7 @@ import { DiscoveryResultCardSkeleton } from "@/components/loading-skeletons";
 import { DiscoveryResultCard } from "@modules/discovery/components/DiscoveryResultCard";
 import { DiscoverySearchField } from "@modules/discovery/components/DiscoverySearchField";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
+import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 import { DiscoveryClubsCatalogSections } from "@modules/discovery/sections/DiscoveryClubsCatalogSections";
 import {
   getActiveCoordinates,
@@ -48,7 +49,8 @@ export function DiscoveryClubsScreen({
     !browse?.sort &&
     !browse?.sportId &&
     !browse?.nearby &&
-    !browse?.clubTypeId;
+    !browse?.clubTypeId &&
+    !browse?.clubTypeSlug;
   const regions = usePublicCatalogResource(
     "location",
     "city-region",
@@ -61,11 +63,24 @@ export function DiscoveryClubsScreen({
     undefined,
     !showRails,
   );
-  const clubs = useCatalogClubs(filters, !showRails);
-  const clubTypes = useCatalogClubTypes(Boolean(browse?.clubTypeId));
-  const selectedTypeName = clubTypes.data?.items.find(
-    (entry) => entry.id === browse?.clubTypeId,
-  )?.name;
+  const clubTypes = useCatalogClubTypes(
+    Boolean(browse?.clubTypeId || browse?.clubTypeSlug),
+  );
+  const selectedClubType = clubTypes.data?.items.find(
+    (entry) =>
+      entry.id === browse?.clubTypeId || entry.slug === browse?.clubTypeSlug,
+  );
+  const isResolvingClubType = Boolean(
+    browse?.clubTypeSlug && !selectedClubType,
+  );
+  const effectiveFilters = selectedClubType
+    ? { ...filters, clubTypeId: selectedClubType.id }
+    : filters;
+  const clubs = useCatalogClubs(
+    effectiveFilters,
+    !showRails && !isResolvingClubType,
+  );
+  const selectedTypeName = selectedClubType?.name;
   const visible = clubs.data?.items ?? [];
   const sportFilters = sports.data?.items ?? [];
 
@@ -186,20 +201,32 @@ export function DiscoveryClubsScreen({
             ))}
           </div>
           <div className={styles.resultsBar()}>
-            <Typography type="body-sm" weight="bold">
-              {t("resultsCount", {
-                count: (clubs.data?.total ?? visible.length).toLocaleString(
-                  "fa-IR",
-                ),
-              })}
-            </Typography>
+            {clubs.isPending ? (
+              <Skeleton
+                className="h-4 w-24 rounded-lg"
+                aria-label="در حال بارگذاری تعداد باشگاه‌ها"
+              />
+            ) : (
+              <Typography type="body-sm" weight="bold">
+                {t("resultsCount", {
+                  count: (clubs.data?.total ?? visible.length).toLocaleString(
+                    "fa-IR",
+                  ),
+                })}
+              </Typography>
+            )}
             <Typography type="body-xs" color="muted">
               {t("sortSuggested")}
             </Typography>
           </div>
           <div className={styles.list()}>
-            {clubs.isPending ? (
-              <DiscoveryResultCardSkeleton count={4} />
+            {clubs.isPending ? <DiscoveryResultCardSkeleton count={4} /> : null}
+            {!clubs.isPending && !clubs.isError && visible.length === 0 ? (
+              <DiscoveryEmptySection
+                title="باشگاهی پیدا نشد"
+                subtitle="هنوز باشگاه فعالی برای این شهر یا دسته‌بندی وجود ندارد."
+                icon="building-1"
+              />
             ) : null}
             {visible.map((club) => (
               <DiscoveryResultCard

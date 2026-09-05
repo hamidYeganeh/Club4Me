@@ -2,7 +2,7 @@ import { tv } from "tailwind-variants";
 
 export const reservationsHeaderSectionStyles = tv({
   slots: {
-    root: "border-b border-white/7 bg-background/82 px-5 py-4 shadow-[0_12px_30px_color-mix(in_oklch,var(--background)_55%,transparent)] backdrop-blur-xl",
+    root: "border-b border-white/7 bg-background/82 px-5 py-4 backdrop-blur-xl",
     calendar: "flex size-10 items-center justify-center text-foreground",
     dates: "flex snap-x snap-mandatory flex-nowrap gap-2 pb-1",
     dateButton:

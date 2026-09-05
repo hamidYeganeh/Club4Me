@@ -38,6 +38,9 @@ export class CoachesService {
     const coach = await this.getOrCreateDocument(userId);
     const mediaIds = [
       ...(input.galleryMediaIds ?? []),
+      ...(input.trainingStyles ?? []).flatMap((item) =>
+        item.imageMediaId ? [item.imageMediaId] : [],
+      ),
       ...(input.avatarMediaId ? [input.avatarMediaId] : []),
       ...(input.coverMediaId ? [input.coverMediaId] : []),
     ];
@@ -50,6 +53,14 @@ export class CoachesService {
     }
     if (input.galleryMediaIds) {
       payload.galleryMediaIds = uniqueObjectIds(input.galleryMediaIds);
+    }
+    if (input.trainingStyles) {
+      payload.trainingStyles = input.trainingStyles.map((item) => ({
+        ...item,
+        ...(item.imageMediaId
+          ? { imageMediaId: objectId(item.imageMediaId) }
+          : {}),
+      }));
     }
     if (input.geo !== undefined) {
       payload.geo = input.geo

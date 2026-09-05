@@ -36,6 +36,7 @@ export type ClubReview = {
   rating: number;
   title?: string;
   body: string;
+  ownerResponse?: { body: string; respondedAt: string; respondedBy: string };
   createdAt: string;
   updatedAt: string;
 };

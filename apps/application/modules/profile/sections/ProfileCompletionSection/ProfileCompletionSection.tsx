@@ -51,7 +51,7 @@ export function ProfileCompletionSection({ role }: { role: ProfileRole }) {
 
   return (
     <section
-      className="app-reveal overflow-hidden rounded-[1.35rem] border border-accent/20 bg-linear-to-l from-accent/14 via-surface/88 to-surface/75 p-5 shadow-[0_14px_34px_color-mix(in_oklch,var(--accent)_9%,transparent)]"
+      className="app-reveal overflow-hidden rounded-[1.35rem] border border-accent/20 bg-linear-to-l from-accent/14 via-surface/88 to-surface/75 p-5"
       aria-labelledby="profile-completion-title"
     >
       <div className="flex items-start gap-4">

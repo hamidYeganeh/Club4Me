@@ -53,3 +53,18 @@ export function useCreateClubReview(clubId: string) {
     },
   });
 }
+
+export function useRespondToClubReview(clubId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ reviewId, body }: { reviewId: string; body: string }) =>
+      http.patch<ClubReview>(
+        `/business/clubs/${clubId}/reviews/${reviewId}/response`,
+        { body },
+      ),
+    onSuccess: async () =>
+      queryClient.invalidateQueries({
+        queryKey: ["public", "clubs", clubId, "reviews"],
+      }),
+  });
+}

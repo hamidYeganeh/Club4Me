@@ -16,6 +16,7 @@ export class UpdateClubDto implements Partial<ClubFields> {
   name?: ClubFields["name"];
   shortDescription?: ClubFields["shortDescription"];
   description?: ClubFields["description"];
+  faqs?: ClubFields["faqs"];
   logoMediaId?: ClubFields["logoMediaId"];
   coverMediaId?: ClubFields["coverMediaId"];
   gallery?: ClubFields["gallery"];

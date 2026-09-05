@@ -7,6 +7,7 @@ import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
 
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
+import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 import { resolveClubTypeIcon } from "@modules/discovery/discovery-icons";
 
 import { discoveryClubTypesSectionStyles } from "./DiscoveryClubTypesSection.styles";
@@ -28,6 +29,10 @@ function chunkTypes(items: DiscoveryClubTypeItem[], size: number) {
 export function DiscoveryClubTypesSection({
   items,
   enabled = true,
+  title,
+  subtitle,
+  seeAllHref = "/discovery/clubs",
+  seeAllLabel,
 }: DiscoveryClubTypesSectionProps) {
   const t = useTranslations("discovery.clubs");
   const styles = discoveryClubTypesSectionStyles();
@@ -39,7 +44,7 @@ export function DiscoveryClubTypesSection({
       name: type.name,
       clubsCount: type.clubsCount,
       icon: resolveClubTypeIcon(type.code, type.icon),
-      href: `/discovery/club-types/${type.slug}`,
+      href: `/discovery/clubs?club_types=${encodeURIComponent(type.slug)}`,
     }),
   );
   const visible = items ?? live;
@@ -50,6 +55,18 @@ export function DiscoveryClubTypesSection({
     return null;
   }
 
+  if (!isPending && visible.length === 0) {
+    return (
+      <DiscoveryEmptySection
+        title={title ?? t("clubTypesTitle")}
+        subtitle={subtitle ?? t("clubTypesSubtitle")}
+        icon="building-1"
+        viewAllLabel={seeAllLabel ?? t("seeAll")}
+        viewAllUrl={seeAllHref}
+      />
+    );
+  }
+
   return (
     <section
       className={styles.root()}
@@ -57,9 +74,11 @@ export function DiscoveryClubTypesSection({
     >
       <DiscoverySectionHeader
         id="discovery-club-types-title"
-        title={t("clubTypesTitle")}
-        subtitle={t("clubTypesSubtitle")}
+        title={title ?? t("clubTypesTitle")}
+        subtitle={subtitle ?? t("clubTypesSubtitle")}
         icon="building-1"
+        viewAllLabel={seeAllLabel ?? t("seeAll")}
+        viewAllUrl={seeAllHref}
       />
 
       {isPending ? (

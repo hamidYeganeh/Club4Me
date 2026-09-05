@@ -18,6 +18,9 @@ import {
 } from "./class-portal.controller";
 import { BusinessClassPortalService } from "./class-portal.service";
 import { ClassRemindersService } from "./class-reminders.service";
+import { ExportStorageService } from "./export-storage.service";
+import { OperationsExportService } from "./operations-export.service";
+import { AuditLog, AuditLogSchema } from "../audit/schemas/audit-log.schema";
 import {
   ClubAttendance,
   ClubAttendanceSchema,
@@ -46,6 +49,10 @@ import {
   BusinessCalendarFeed,
   BusinessCalendarFeedSchema,
 } from "./schemas/training-class.schema";
+import {
+  OperationsExportJob,
+  OperationsExportJobSchema,
+} from "./schemas/operations-export.schema";
 
 @Module({
   imports: [
@@ -76,6 +83,8 @@ import {
         schema: BusinessClassCheckInCredentialSchema,
       },
       { name: BusinessCalendarFeed.name, schema: BusinessCalendarFeedSchema },
+      { name: OperationsExportJob.name, schema: OperationsExportJobSchema },
+      { name: AuditLog.name, schema: AuditLogSchema },
     ]),
   ],
   controllers: [
@@ -91,6 +100,8 @@ import {
     BusinessClassesService,
     BusinessClassPortalService,
     ClassRemindersService,
+    ExportStorageService,
+    OperationsExportService,
   ],
   exports: [BusinessOperationsService, BusinessClassPortalService],
 })

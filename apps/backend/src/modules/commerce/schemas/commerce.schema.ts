@@ -13,9 +13,7 @@ export class PaymentIntent {
     required: true,
   })
   referenceType:
-    | "reservation"
-    | "benefit_purchase"
-    | "business_class_enrollment";
+    "reservation" | "benefit_purchase" | "business_class_enrollment";
   @Prop({ type: Types.ObjectId, required: true, index: true })
   referenceId: Types.ObjectId;
   @Prop({ type: Number, required: true, min: 1 }) amount: number;
@@ -26,9 +24,10 @@ export class PaymentIntent {
   @Prop({ type: String, enum: ["mock"], default: "mock", required: true })
   provider: "mock";
   @Prop({ type: String, required: true, unique: true }) authority: string;
-  @Prop({ type: String, required: true }) checkoutUrl: string;
+  @Prop({ type: String, default: "" }) checkoutUrl: string;
   @Prop({ type: String, default: null }) providerReference: string | null;
   @Prop({ type: String, required: true }) idempotencyKey: string;
+  @Prop({ type: String, default: "" }) walletReservationKey: string;
   @Prop({ type: String, required: true }) returnUrl: string;
   @Prop({
     type: String,
@@ -43,6 +42,10 @@ export class PaymentIntent {
   @Prop({ type: Number, default: 0, min: 0 }) refundedDiscountAmount: number;
   @Prop({ type: Number, default: 0, min: 0 }) platformFundedDiscount: number;
   @Prop({ type: Number, default: 0, min: 0 }) providerFundedDiscount: number;
+  @Prop({ type: Number, default: 0, min: 0 })
+  refundedPlatformFundedDiscount: number;
+  @Prop({ type: Number, default: 0, min: 0 })
+  refundedProviderFundedDiscount: number;
   @Prop({ type: Types.ObjectId, ref: "DiscountCampaign", default: null })
   discountCampaignId: Types.ObjectId | null;
   @Prop({ type: String, default: null }) providerRefundId: string | null;
@@ -130,12 +133,7 @@ export class PayoutRequest {
     default: "requested",
     index: true,
   })
-  status:
-    | "requested"
-    | "under_review"
-    | "paid"
-    | "rejected"
-    | "cancelled";
+  status: "requested" | "under_review" | "paid" | "rejected" | "cancelled";
   @Prop({ type: Types.ObjectId, ref: "User", default: null })
   reviewedBy: Types.ObjectId | null;
   @Prop({ type: String, default: "" }) reviewNote: string;

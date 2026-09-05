@@ -73,6 +73,19 @@ export function getRequestFailurePresentation(
   };
 }
 
+export function getQueryFailure(
+  error: unknown,
+  fetchStatus: "fetching" | "paused" | "idle",
+): unknown | null {
+  if (error) return error;
+  if (fetchStatus === "paused") {
+    return new ApiError("Request paused while offline", {
+      code: "NETWORK_ERROR",
+    });
+  }
+  return null;
+}
+
 function getBrowserOnlineState(): boolean | undefined {
   return typeof navigator === "undefined" ? undefined : navigator.onLine;
 }

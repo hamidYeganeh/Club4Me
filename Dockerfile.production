@@ -1,6 +1,6 @@
 FROM node:24-bookworm-slim AS dependencies
 WORKDIR /app
-ENV NODE_OPTIONS=--dns-result-order=ipv4first
+ENV NODE_OPTIONS="--dns-result-order=ipv4first --tls-max-v1.2"
 COPY package.json package-lock.json ./
 COPY apps/website/package.json apps/website/package.json
 COPY apps/application/package.json apps/application/package.json
@@ -13,7 +13,15 @@ COPY packages/i18n/package.json packages/i18n/package.json
 COPY packages/theme/package.json packages/theme/package.json
 COPY packages/typescript-config/package.json packages/typescript-config/package.json
 COPY packages/ui/package.json packages/ui/package.json
-RUN npm ci --force --fetch-retries=5 --fetch-retry-maxtimeout=120000
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --force --prefer-offline --fetch-retries=5 --fetch-retry-maxtimeout=120000
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --global npm@11.12.1 --prefer-offline --fetch-retries=5 --fetch-retry-maxtimeout=120000
+
+FROM dependencies AS backend-builder
+WORKDIR /app
+COPY . .
+RUN npm run build --workspace=backend
 
 FROM dependencies AS builder
 WORKDIR /app
@@ -23,12 +31,16 @@ ARG NEXT_PUBLIC_WEBSITE_URL=https://gym4me.ir
 ARG NEXT_PUBLIC_APP_RELEASE=production
 ARG NEXT_PUBLIC_TINYMCE_API_KEY=
 ARG NEXT_PUBLIC_NESHAN_MAP_KEY=
+ARG NEXT_PUBLIC_SENTRY_DSN=
+ARG NEXT_PUBLIC_API_TIMEOUT_MS=15000
 ARG NEXT_PUBLIC_BASE_PATH=/business
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_WEBSITE_URL=$NEXT_PUBLIC_WEBSITE_URL \
     NEXT_PUBLIC_APP_RELEASE=$NEXT_PUBLIC_APP_RELEASE \
     NEXT_PUBLIC_TINYMCE_API_KEY=$NEXT_PUBLIC_TINYMCE_API_KEY \
     NEXT_PUBLIC_NESHAN_MAP_KEY=$NEXT_PUBLIC_NESHAN_MAP_KEY \
+    NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN \
+    NEXT_PUBLIC_API_TIMEOUT_MS=$NEXT_PUBLIC_API_TIMEOUT_MS \
     NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
 RUN npm run build
 
@@ -76,9 +88,11 @@ CMD ["node", "apps/business/server.js"]
 
 FROM node:24-bookworm-slim AS backend-dependencies
 WORKDIR /app
-ENV NODE_OPTIONS=--dns-result-order=ipv4first
+ENV NODE_OPTIONS="--dns-result-order=ipv4first --tls-max-v1.2"
 COPY apps/backend/package.json ./package.json
-RUN npm install --omit=dev --ignore-scripts
+RUN --mount=type=cache,target=/root/.npm \
+    npm pkg delete devDependencies \
+    && npm install --omit=dev --ignore-scripts --package-lock=false --prefer-offline --fetch-retries=5 --fetch-retry-maxtimeout=120000
 
 FROM node:24-bookworm-slim AS backend
 ENV NODE_ENV=production
@@ -86,7 +100,7 @@ WORKDIR /app
 RUN groupadd --system --gid 1001 nodejs \
     && useradd --system --uid 1001 --gid nodejs backend
 COPY --from=backend-dependencies --chown=backend:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=backend:nodejs /app/apps/backend/dist ./dist
+COPY --from=backend-builder --chown=backend:nodejs /app/apps/backend/dist ./dist
 USER backend
 EXPOSE 7088
 CMD ["node", "dist/main.js"]

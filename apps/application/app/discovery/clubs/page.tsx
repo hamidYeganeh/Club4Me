@@ -25,6 +25,7 @@ function toBrowse(params: Pick<URLSearchParams, "get">): DiscoveryClubsBrowse {
     sort: sort === "rating" || sort === "newest" ? sort : undefined,
     sportId: params.get("sportId") ?? undefined,
     clubTypeId: params.get("clubTypeId") ?? undefined,
+    clubTypeSlug: params.get("club_types") ?? undefined,
     nearby: params.get("nearby") === "1",
   };
 }

@@ -14,7 +14,7 @@ import {
   toast,
 } from "@heroui/react";
 import { useAdminClasses, useDisableAdminClass } from "@api/admin";
-import type { CoachClass } from "@api/coaching";
+import type { CoachClass } from "@api";
 import { EntityDetailsModal } from "@ui/entity-details-modal";
 
 const statuses = {
@@ -194,6 +194,21 @@ export function ClassesScreen() {
                   title: "شناسه و وضعیت",
                   items: [
                     { label: "شناسه کلاس", value: selected.id, dir: "ltr" },
+                    {
+                      label: "شناسه مربی مالک",
+                      value: selected.ownerCoachId,
+                      dir: "ltr",
+                    },
+                    {
+                      label: "شناسه باشگاه",
+                      value: selected.clubId,
+                      dir: "ltr",
+                    },
+                    {
+                      label: "شناسه رشته",
+                      value: selected.sportId,
+                      dir: "ltr",
+                    },
                     { label: "نامک", value: selected.slug, dir: "ltr" },
                     { label: "وضعیت", value: statuses[selected.status] },
                     {
@@ -217,6 +232,36 @@ export function ClassesScreen() {
                     {
                       label: "ثبت‌نام‌شده",
                       value: selected.enrollmentCount.toLocaleString("fa-IR"),
+                    },
+                    {
+                      label: "نوع برگزاری",
+                      value: selected.deliveryMode,
+                    },
+                    {
+                      label: "هزینه",
+                      value: `${selected.price.amount.toLocaleString("fa-IR")} ${selected.price.currency}`,
+                    },
+                    { label: "شیوه ثبت‌نام", value: selected.enrollmentMode },
+                    {
+                      label: "مربی‌ها",
+                      value: selected.coachAssignments
+                        .map((item) => `${item.coachId} (${item.role})`)
+                        .join("، "),
+                      wide: true,
+                    },
+                    { label: "برچسب‌ها", value: selected.tags.join("، ") },
+                    {
+                      label: "پیش‌نیازها",
+                      value: selected.prerequisites.join("، "),
+                      wide: true,
+                    },
+                    {
+                      label: "مکان برگزاری",
+                      value: selected.venue
+                        ? JSON.stringify(selected.venue)
+                        : null,
+                      dir: "ltr",
+                      wide: true,
                     },
                   ],
                 },
@@ -243,6 +288,13 @@ export function ClassesScreen() {
                         dateStyle: "medium",
                         timeStyle: "short",
                       }).format(new Date(selected.updatedAt)),
+                    },
+                    {
+                      label: "زمان ایجاد",
+                      value: new Intl.DateTimeFormat("fa-IR", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(selected.createdAt)),
                     },
                   ],
                 },

@@ -7,6 +7,7 @@ import { ArticleCard } from "@ui/article-card";
 
 import { getLocaleDirection } from "@/lib/locale-direction";
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
+import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 
 import { discoveryArticlesRailSectionStyles } from "./DiscoveryArticlesRailSection.styles";
 import type { DiscoveryArticlesRailSectionProps } from "./DiscoveryArticlesRailSection.types";
@@ -24,6 +25,7 @@ export function DiscoveryArticlesRailSection({
   items,
   cardVariant = { orientation: "vertical", outlined: false },
   className,
+  isLoading = false,
 }: DiscoveryArticlesRailSectionProps) {
   const t = useTranslations("discovery.home");
   const direction = getLocaleDirection(useLocale());
@@ -31,8 +33,18 @@ export function DiscoveryArticlesRailSection({
   const styles = discoveryArticlesRailSectionStyles({ orientation });
   const titleId = `discovery-articles-rail-${id}`;
 
+  if (isLoading) return null;
+
   if (items.length === 0) {
-    return null;
+    return (
+      <DiscoveryEmptySection
+        title={title}
+        subtitle={subtitle}
+        icon={icon}
+        viewAllLabel={seeAllLabel ?? t("seeAll")}
+        viewAllUrl={seeAllHref}
+      />
+    );
   }
 
   return (

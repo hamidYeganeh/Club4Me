@@ -8,7 +8,12 @@ import { hashPassword, verifyPassword } from "../../common/utils/password.util";
 import { toLocalIranianPhone } from "../../common/utils/phone.util";
 import type { UserRole } from "../../lib/roles";
 import { toPublicUser, type PublicUser } from "./mappers/user.mapper";
-import { User, type UserDocument } from "./schemas/user.schema";
+import {
+  User,
+  type UserActivityLevel,
+  type UserDocument,
+  type UserGender,
+} from "./schemas/user.schema";
 
 const PASSWORD_HASH_SELECT = "+passwordHash";
 
@@ -74,6 +79,10 @@ export class UsersRepository {
     return users.map(toPublicUser);
   }
 
+  async findIdsByRole(role: UserRole): Promise<Types.ObjectId[]> {
+    return this.userModel.distinct("_id", { roles: role, status: "active" });
+  }
+
   async updateStatus(
     userId: string,
     status: "active" | "suspended",
@@ -92,14 +101,26 @@ export class UsersRepository {
 
   async updateProfile(
     userId: string,
-    profile: { firstName: string; lastName: string },
+    profile: {
+      firstName?: string;
+      lastName?: string;
+      birthdate?: string;
+      gender?: UserGender;
+      genderDescription?: string;
+      activityLevel?: UserActivityLevel;
+      idCard?: string;
+    },
   ): Promise<PublicUser> {
     if (!Types.ObjectId.isValid(userId)) {
       throw new AppError(404, "USER_NOT_FOUND", "User not found");
     }
+    const update =
+      profile.gender && profile.gender !== "other"
+        ? { $set: profile, $unset: { genderDescription: 1 } }
+        : { $set: profile };
     const user = await this.userModel.findByIdAndUpdate(
       userId,
-      { $set: profile },
+      update,
       { new: true },
     );
     if (!user) throw new AppError(404, "USER_NOT_FOUND", "User not found");
@@ -140,6 +161,10 @@ export class UsersRepository {
           firstName: 1,
           lastName: 1,
           birthdate: 1,
+          gender: 1,
+          genderDescription: 1,
+          activityLevel: 1,
+          idCard: 1,
           passwordHash: 1,
         },
       },

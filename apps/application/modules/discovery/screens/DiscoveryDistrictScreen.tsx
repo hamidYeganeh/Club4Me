@@ -3,6 +3,7 @@
 import { usePublicCatalogResource } from "@api/discovery";
 import { DiscoveryClubsScreen } from "@modules/discovery/screens/DiscoveryClubsScreen";
 import { ListPageSkeleton } from "@/components/loading-skeletons";
+import { DiscoveryEmptyPage } from "@modules/discovery/components/DiscoveryEmptyPage";
 
 export function DiscoveryDistrictScreen({
   citySlug,
@@ -30,9 +31,11 @@ export function DiscoveryDistrictScreen({
   }
   if (!city || !district) {
     return (
-      <main className="grid min-h-dvh place-items-center p-6 text-sm text-muted">
-        این منطقه پیدا نشد.
-      </main>
+      <DiscoveryEmptyPage
+        headerTitle="منطقه"
+        title="این منطقه پیدا نشد"
+        description="هنوز منطقه‌ای با این مشخصات برای نمایش وجود ندارد."
+      />
     );
   }
   return (

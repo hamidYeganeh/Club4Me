@@ -4,6 +4,7 @@ export type DiscoveryClubsBrowse = {
   sort?: "newest" | "rating";
   sportId?: string;
   clubTypeId?: string;
+  clubTypeSlug?: string;
   nearby?: boolean;
 };
 

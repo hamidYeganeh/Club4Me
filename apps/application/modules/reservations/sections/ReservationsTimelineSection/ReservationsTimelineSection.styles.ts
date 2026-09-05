@@ -12,11 +12,11 @@ export const reservationsTimelineSectionStyles = tv({
     empty: "flex min-h-[calc(100dvh-15rem)] flex-1 flex-col items-center justify-center px-2 pb-[calc(2rem+env(safe-area-inset-bottom))] text-center",
     emptyVisual: "relative isolate mb-2 grid w-full max-w-[17rem] place-items-center",
     emptyGlow: "absolute bottom-[10%] -z-10 h-12 w-3/4 rounded-full bg-accent/18 blur-2xl",
-    emptyImage: "size-full object-contain drop-shadow-[0_18px_28px_color-mix(in_oklch,var(--background)_45%,transparent)]",
+    emptyImage: "size-full object-contain",
     emptyCopy: "mt-1 flex flex-col items-center gap-2",
     emptyTitle: "text-balance text-2xl leading-9 font-black text-foreground",
     emptyDescription: "max-w-[28ch] text-sm leading-6 text-muted",
-    explore: "mt-7 flex min-h-14 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent px-5 text-base font-black text-accent-foreground shadow-[0_14px_34px_color-mix(in_oklch,var(--accent)_24%,transparent)] transition-transform active:scale-[0.985]",
+    explore: "mt-7 flex min-h-14 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent px-5 text-base font-black text-accent-foreground transition-transform active:scale-[0.985]",
     skeleton: "h-[4.75rem] rounded-[1.35rem] border border-white/7 bg-surface/72",
   },
 });

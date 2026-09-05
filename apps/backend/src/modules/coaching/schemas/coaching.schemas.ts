@@ -48,6 +48,48 @@ export class Coach {
   @Prop({ type: Types.ObjectId, ref: "Media" }) coverMediaId?: Types.ObjectId;
   @Prop({ type: [Types.ObjectId], ref: "Media", default: [] })
   galleryMediaIds: Types.ObjectId[];
+  @Prop({
+    type: [{ title: String, description: String, icon: String }],
+    default: [],
+    _id: false,
+  })
+  specialties: Array<{ title: string; description: string; icon?: string }>;
+  @Prop({
+    type: [{ title: String, description: String, imageMediaId: Types.ObjectId }],
+    default: [],
+    _id: false,
+  })
+  trainingStyles: Array<{
+    title: string;
+    description: string;
+    imageMediaId?: Types.ObjectId;
+  }>;
+  @Prop({ trim: true, maxlength: 1500, default: "" })
+  experienceSummary: string;
+  @Prop({
+    type: [
+      {
+        title: String,
+        organization: String,
+        period: String,
+        description: String,
+      },
+    ],
+    default: [],
+    _id: false,
+  })
+  experience: Array<{
+    title: string;
+    organization?: string;
+    period?: string;
+    description?: string;
+  }>;
+  @Prop({
+    type: [{ question: String, answer: String }],
+    default: [],
+    _id: false,
+  })
+  faqs: Array<{ question: string; answer: string }>;
   @Prop({ min: 0, max: 80, default: 0 }) experienceYears: number;
   @Prop({ type: [String], default: [] }) languages: string[];
   @Prop({ type: [String], enum: DELIVERY_MODES, default: [] })
@@ -174,6 +216,12 @@ export class SessionVenue {
 export class TrainingClass {
   @Prop({ type: Types.ObjectId, ref: Coach.name, required: true })
   ownerCoachId: Types.ObjectId;
+  @Prop({
+    type: [{ question: String, answer: String }],
+    default: [],
+    _id: false,
+  })
+  faqs: Array<{ question: string; answer: string }>;
   @Prop({ type: Types.ObjectId, ref: CoachOffering.name })
   offeringId?: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: "Club" }) clubId?: Types.ObjectId;

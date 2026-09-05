@@ -41,6 +41,22 @@ jobs:
       - run: npm run check-types
       - run: npm run lint
       - run: npm test -w apps/backend -- --runInBand
+      - name: Validate production configuration contract
+        env:
+          MONGODB_URL: mongodb+srv://ci:ci@mongo.example/gym4me
+          REDIS_URL: rediss://ci:ci@redis.example:6380
+          JWT_SECRET: ci-production-jwt-secret-with-32-characters
+          MOCK_PAYMENT_CALLBACK_SECRET: ci-payment-callback-secret-with-32-characters
+          EXPORT_STORAGE_DRIVER: gcs
+          EXPORT_GCS_BUCKET: gym4me-ci-exports
+          APP_RELEASE: ci-production-contract
+          SENTRY_DSN: https://public@example.ingest.sentry.io/1
+          FIREBASE_PROJECT_ID: gym4me-ci
+          FIREBASE_CLIENT_EMAIL: firebase-admin@example.iam.gserviceaccount.com
+          FIREBASE_PRIVATE_KEY: ci-private-key
+          KAVENEGAR_API_KEY: ci-kavenegar-key
+          CORS_ORIGINS: https://gym4me.example
+        run: npm run validate:production -w apps/backend
       - name: Bootstrap backend and verify health checks
         env:
           NODE_ENV: test

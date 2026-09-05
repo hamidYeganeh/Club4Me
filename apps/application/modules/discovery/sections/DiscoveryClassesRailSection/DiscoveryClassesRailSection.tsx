@@ -7,6 +7,7 @@ import { useCatalogClasses, type PublicCatalogClass } from "@api/discovery";
 
 import { FallbackImage } from "@/components/FallbackImage";
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
+import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 
 import { discoveryClassesRailSectionStyles } from "./DiscoveryClassesRailSection.styles";
 import type { DiscoveryClassesRailSectionProps } from "./DiscoveryClassesRailSection.types";
@@ -29,8 +30,16 @@ export function DiscoveryClassesRailSection({
   const visible: PublicCatalogClass[] = items ?? query.data?.items ?? [];
   const titleId = `discovery-classes-rail-${id}`;
 
-  if (visible.length === 0) {
-    return null;
+  if (!query.isPending && visible.length === 0) {
+    return (
+      <DiscoveryEmptySection
+        title={title}
+        subtitle={subtitle}
+        icon={icon}
+        viewAllLabel={seeAllLabel ?? tHome("seeAll")}
+        viewAllUrl={seeAllHref}
+      />
+    );
   }
 
   return (

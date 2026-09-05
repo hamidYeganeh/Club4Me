@@ -18,7 +18,7 @@ import { MediaService } from "./media.service";
 
 @Controller("api/v1/business/media")
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles("owner")
+@Roles("owner", "coach")
 export class MediaController {
   constructor(private readonly service: MediaService) {}
 

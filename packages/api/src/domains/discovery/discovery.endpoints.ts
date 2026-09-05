@@ -1,5 +1,5 @@
 export const discoveryEndpoints = {
-  feed: "/discovery",
+  feed: "/discovery/sections",
   catalogClubs: "/discovery/catalog/clubs",
   catalogClub: (identifier: string) => `/discovery/catalog/clubs/${identifier}`,
   catalogCoaches: "/discovery/catalog/coaches",

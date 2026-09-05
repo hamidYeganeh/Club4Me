@@ -1,7 +1,15 @@
 "use client";
 
 import { useDeferredValue, useState } from "react";
-import { Button, Card, Chip, Input, Spinner, Table, toast } from "@heroui/react";
+import {
+  Button,
+  Card,
+  Chip,
+  Input,
+  Spinner,
+  Table,
+  toast,
+} from "@heroui/react";
 import {
   type AdminUser,
   useAdminUsers,
@@ -102,7 +110,9 @@ export function UsersScreen() {
                       <Table.Cell>
                         <Chip
                           size="sm"
-                          color={user.status === "active" ? "success" : "danger"}
+                          color={
+                            user.status === "active" ? "success" : "danger"
+                          }
                         >
                           {user.status === "active" ? "فعال" : "تعلیق"}
                         </Chip>
@@ -123,7 +133,9 @@ export function UsersScreen() {
                             onPress={() =>
                               void changeStatus(
                                 user.id,
-                                user.status === "active" ? "suspended" : "active",
+                                user.status === "active"
+                                  ? "suspended"
+                                  : "active",
                               )
                             }
                           >
@@ -146,8 +158,9 @@ export function UsersScreen() {
         }}
         title={
           selected
-            ? [selected.firstName, selected.lastName].filter(Boolean).join(" ") ||
-              "کاربر بدون نام"
+            ? [selected.firstName, selected.lastName]
+                .filter(Boolean)
+                .join(" ") || "کاربر بدون نام"
             : "جزئیات کاربر"
         }
         description="اطلاعات هویتی، سطح دسترسی و تاریخچه حساب"
@@ -158,7 +171,11 @@ export function UsersScreen() {
                   title: "حساب",
                   items: [
                     { label: "شناسه کاربر", value: selected.id, dir: "ltr" },
-                    { label: "شماره موبایل", value: selected.phone, dir: "ltr" },
+                    {
+                      label: "شماره موبایل",
+                      value: selected.phone,
+                      dir: "ltr",
+                    },
                     { label: "نام", value: selected.firstName },
                     { label: "نام خانوادگی", value: selected.lastName },
                     { label: "نقش‌ها", value: selected.roles.join("، ") },

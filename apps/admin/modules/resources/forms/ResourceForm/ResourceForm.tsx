@@ -26,10 +26,12 @@ import {
   useResources,
   useUpdateResource,
 } from "@api/resources";
-import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
+import { Controller, useForm, type Resolver } from "react-hook-form";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { z } from "zod";
+
+import { MediaUploaderField } from "@/components/media-uploader-field";
 
 type FormValue = string | boolean;
 type FormValues = Record<string, FormValue>;
@@ -41,7 +43,7 @@ const commonFields: readonly ResourceFieldDefinition[] = [
   { name: "slug", label: "اسلاگ", kind: "text" },
   { name: "description", label: "توضیحات", kind: "textarea" },
   { name: "icon", label: "آیکن", kind: "text" },
-  { name: "imageUrl", label: "آدرس تصویر", kind: "url" },
+  { name: "imageUrl", label: "تصویر", kind: "url" },
   { name: "aliases", label: "نام‌های جایگزین", kind: "string-list" },
   { name: "sortOrder", label: "ترتیب نمایش", kind: "number", required: true },
 ];
@@ -243,12 +245,10 @@ export function ResourceForm({
   const create = useCreateResource();
   const update = useUpdateResource();
   const mutationPending = create.isPending || update.isPending;
-  const { control, handleSubmit, reset, setValue } = useForm<FormValues>({
+  const { control, handleSubmit, reset } = useForm<FormValues>({
     resolver: zodResolver(schema) as Resolver<FormValues>,
     defaultValues: defaultValues(fields, record),
   });
-  const imageUrl = useWatch({ control, name: "imageUrl" });
-
   useEffect(
     () => reset(defaultValues(fields, record)),
     [fields, record, reset, isOpen],
@@ -302,8 +302,11 @@ export function ResourceForm({
 
   return (
     <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="blur">
-      <Modal.Container size="lg" scroll="inside">
-        <Modal.Dialog>
+      <Modal.Container size="lg" scroll="inside" className="px-3 py-5 sm:px-6">
+        <Modal.Dialog
+          className="overflow-hidden rounded-[1.75rem]"
+          style={{ maxWidth: "48rem" }}
+        >
           <Modal.CloseTrigger />
           <Modal.Header>
             <Modal.Heading>
@@ -316,7 +319,7 @@ export function ResourceForm({
             <form
               id="resource-form"
               onSubmit={handleSubmit(submit)}
-              className="grid gap-4 sm:grid-cols-2"
+              className="grid gap-x-5 gap-y-5 sm:grid-cols-2"
             >
               {fields.map((field) => (
                 <Controller
@@ -324,6 +327,16 @@ export function ResourceForm({
                   name={field.name}
                   control={control}
                   render={({ field: controlled, fieldState }) => {
+                    if (field.name === "imageUrl")
+                      return (
+                        <MediaUploaderField
+                          label={field.label}
+                          value={String(controlled.value ?? "")}
+                          disabled={mutationPending}
+                          onChange={controlled.onChange}
+                        />
+                      );
+
                     const multiline =
                       field.kind === "textarea" || field.kind === "string-list";
 
@@ -369,7 +382,7 @@ export function ResourceForm({
                                 controlled.onChange(key);
                             }}
                           >
-                            <Label className="text-sm font-medium">
+                            <Label className="text-sm font-semibold">
                               {field.label}
                               {field.required ? " *" : ""}
                             </Label>
@@ -403,7 +416,7 @@ export function ResourceForm({
                     if (multiline)
                       return (
                         <div className="space-y-1.5 sm:col-span-2">
-                          <Label className="text-sm font-medium">
+                          <Label className="text-sm font-semibold">
                             {field.label}
                             {field.required ? " *" : ""}
                           </Label>
@@ -415,7 +428,7 @@ export function ResourceForm({
                             onChange={(event) =>
                               controlled.onChange(event.target.value)
                             }
-                            className="rounded-xl border border-border bg-surface-secondary px-3 py-2 text-sm"
+                            className="w-full rounded-xl border border-border bg-surface-secondary px-3 py-2 text-sm"
                           />
                           {fieldState.error?.message ? (
                             <span className="block text-xs text-danger">
@@ -435,7 +448,7 @@ export function ResourceForm({
                         onBlur={controlled.onBlur}
                         onChange={controlled.onChange}
                       >
-                        <Label className="text-sm font-medium">
+                        <Label className="text-sm font-semibold">
                           {field.label}
                           {field.required ? " *" : ""}
                         </Label>
@@ -482,24 +495,6 @@ export function ResourceForm({
                   </Switch>
                 )}
               />
-              {String(imageUrl ?? "") && (
-                <div className="flex items-end gap-3 sm:col-span-2">
-                  {/* Dynamic admin previews may be blob/data URLs. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={String(imageUrl)}
-                    alt={t("imagePreview")}
-                    className="h-28 w-40 rounded-xl object-cover"
-                  />
-                  <Button
-                    type="button"
-                    variant="tertiary"
-                    onPress={() => setValue("imageUrl", "")}
-                  >
-                    {t("removeImage")}
-                  </Button>
-                </div>
-              )}
             </form>
           </Modal.Body>
           <Modal.Footer>

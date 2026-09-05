@@ -105,7 +105,7 @@ export function ProfileEditFieldScreen({
     }
   };
 
-  if (me.isLoading || !isInitialized) {
+  if (me.isLoading || (!me.isError && !isInitialized)) {
     return <FormPageSkeleton fields={field === "name" ? 2 : 1} />;
   }
 

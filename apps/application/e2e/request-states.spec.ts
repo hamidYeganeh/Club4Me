@@ -55,13 +55,19 @@ test("timeout پیام کندی مستقل دارد", async ({ page }) => {
 });
 
 test("offline از خطای سرور جداست", async ({ page, context }) => {
-  const state = createMockApiState();
+  const state = createMockApiState("server-error");
   await installApiMock(page, state);
   await setBrowserSession(page);
 
   await page.goto("/discovery/search");
+  const search = page.getByLabel("جست‌وجو در دیسکاوری");
+  await expect(search).toBeVisible();
   await context.setOffline(true);
-  await page.getByLabel("جست‌وجو در دیسکاوری").fill("یوگا");
+  await page.evaluate(() => window.dispatchEvent(new Event("offline")));
+  await expect(
+    page.getByText("اینترنت قطع است؛ بعضی اطلاعات ممکن است به‌روز نباشند."),
+  ).toBeVisible();
+  await search.fill("آفلاین");
 
   await expect(page.locator('[data-state="offline"]')).toBeVisible();
   await context.setOffline(false);

@@ -1,0 +1,1 @@
+export { DiscoveryProvinceScreen } from "./DiscoveryProvinceScreen";

@@ -7,6 +7,7 @@ import { CoachCard } from "@ui/coach-card";
 
 import { getLocaleDirection } from "@/lib/locale-direction";
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
+import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 
 import { discoveryCoachesRailSectionStyles } from "./DiscoveryCoachesRailSection.styles";
 import type { DiscoveryCoachesRailSectionProps } from "./DiscoveryCoachesRailSection.types";
@@ -24,14 +25,25 @@ export function DiscoveryCoachesRailSection({
   items,
   cardType = "normal",
   className,
+  isLoading = false,
 }: DiscoveryCoachesRailSectionProps) {
   const t = useTranslations("discovery.home");
   const direction = getLocaleDirection(useLocale());
   const styles = discoveryCoachesRailSectionStyles();
   const titleId = `discovery-coaches-rail-${id}`;
 
+  if (isLoading) return null;
+
   if (items.length === 0) {
-    return null;
+    return (
+      <DiscoveryEmptySection
+        title={title}
+        subtitle={subtitle}
+        icon={icon}
+        viewAllLabel={seeAllLabel ?? t("seeAll")}
+        viewAllUrl={seeAllHref}
+      />
+    );
   }
 
   return (

@@ -17,9 +17,7 @@ export class CreatePaymentIntentDto {
     .strict();
 
   referenceType:
-    | "reservation"
-    | "benefit_purchase"
-    | "business_class_enrollment";
+    "reservation" | "benefit_purchase" | "business_class_enrollment";
   referenceId: string;
   idempotencyKey: string;
   returnUrl: string;

@@ -14,11 +14,11 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
 
   return (
     <PanelFrame
+      className="admin-panel"
       rail={
         <PanelRailSection
           addHref="/"
           addLabel={t("panel.add")}
-          avatarSrc="https://picsum.photos/seed/gym4me-admin/160/160"
           avatarAlt={t("adminDashboard.profileName")}
           badge="2"
           items={[

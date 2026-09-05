@@ -1,5 +1,9 @@
 .git
 .github
+.artifacts
+.secrets
+**/.secrets
+**/google-services.json
 .turbo
 .telemetry
 node_modules
@@ -13,4 +17,3 @@ apps/application/android
 apps/application/ios
 *.log
 *.tsbuildinfo
-

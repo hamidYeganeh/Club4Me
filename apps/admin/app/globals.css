@@ -9,13 +9,76 @@
 
 @layer base {
   body {
+    --field-control-height: 2.75rem;
     @apply bg-background text-foreground min-h-full;
   }
 }
 
 @layer components {
+  .admin-panel {
+    background: var(--background);
+  }
+
+  .admin-panel main {
+    width: 100%;
+    max-width: 100rem;
+    margin-inline: auto;
+  }
+
+  .admin-panel main h1 {
+    @apply text-balance tracking-[-0.035em];
+  }
+
+  .admin-panel :where(button, a, input, textarea, [role="button"]) {
+    @apply transition-[color,background-color,border-color,box-shadow,transform] duration-200;
+  }
+
+  .admin-panel :where(button, a, [role="button"]):active {
+    transform: translateY(1px);
+  }
+
+  .admin-panel :where(input, textarea):focus-visible {
+    @apply ring-2 ring-accent/35 ring-offset-2 ring-offset-background;
+  }
+
   .release-input {
-    @apply h-11 w-full rounded-xl border border-border bg-surface-secondary px-4 text-sm outline-none transition-colors focus:border-accent;
+    @apply h-12 w-full rounded-xl border border-border/80 bg-surface-secondary/80 px-4 text-sm outline-none transition-colors focus:border-accent;
+  }
+
+  /* Modals render in a portal, so these belong to the admin root rather than
+     `.admin-panel`. This keeps every admin form compact and consistent. */
+  .modal__dialog {
+    @apply border border-border/80 bg-surface/95 p-0 shadow-2xl backdrop-blur-2xl;
+  }
+
+  .modal__header {
+    @apply border-b border-border/70 px-5 py-4 pe-16 sm:px-6;
+  }
+
+  .modal__heading {
+    @apply text-lg font-semibold tracking-[-0.02em];
+  }
+
+  .modal__body {
+    @apply m-0 w-full p-5 text-foreground sm:p-6;
+  }
+
+  .modal__body form,
+  .modal__body :where(.textfield, .textarea, .select__trigger) {
+    @apply w-full;
+  }
+
+  .modal__footer {
+    @apply mt-0 border-t border-border/70 bg-surface-secondary/35 px-5 py-4 sm:px-6;
+  }
+
+  .modal__header + .modal__body,
+  .modal__body + .modal__footer {
+    margin-top: 0;
+  }
+
+  .admin-media-uploader > div > div:first-child {
+    min-height: 9rem;
   }
 }
 

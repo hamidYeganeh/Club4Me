@@ -217,6 +217,15 @@ export const ClubFieldsObjectSchema = z
       )
       .optional(),
     rules: z.array(z.string().trim().min(2).max(300)).max(50).optional(),
+    faqs: z
+      .array(
+        z.object({
+          question: z.string().trim().min(2).max(240),
+          answer: z.string().trim().min(2).max(2000),
+        }),
+      )
+      .max(30)
+      .optional(),
     location: z
       .object({
         countryId: objectId,

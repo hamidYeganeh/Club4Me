@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
 
+import { MAX_INLINE_IMAGE_URL_LENGTH } from "../../media/media.constants";
+
 export const ARTICLE_STATUSES = ["draft", "published"] as const;
 export type ArticleStatus = (typeof ARTICLE_STATUSES)[number];
 
@@ -32,7 +34,7 @@ export class Article {
   @Prop({ required: true, default: "" })
   bodyHtml: string;
 
-  @Prop({ trim: true })
+  @Prop({ trim: true, maxlength: MAX_INLINE_IMAGE_URL_LENGTH })
   coverImageUrl?: string;
 
   @Prop({

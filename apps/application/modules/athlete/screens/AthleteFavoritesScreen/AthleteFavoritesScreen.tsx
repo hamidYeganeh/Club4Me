@@ -12,26 +12,28 @@ import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPage
 import { DiscoveryResultCard } from "@modules/discovery/components/DiscoveryResultCard";
 import { RequestFailureState } from "@/components/request-failure-state";
 import { DiscoveryResultCardSkeleton } from "@/components/loading-skeletons";
+import { getQueryFailure } from "@/lib/request-failure";
 
 export function AthleteFavoritesScreen() {
   const favorites = useFavorites();
   const items = favorites.data?.items ?? [];
+  const failure = getQueryFailure(favorites.error, favorites.fetchStatus);
   return (
     <main className="flex min-h-dvh flex-col gap-6 px-5 pb-[calc(6.25rem+env(safe-area-inset-bottom))]">
       <DiscoveryPageHeader
         title="علاقه‌مندی‌ها"
         description="باشگاه‌ها، مربی‌ها و کلاس‌هایی که ذخیره کرده‌ای."
       />
-      {favorites.isLoading ? (
+      {favorites.isLoading && !failure ? (
         <DiscoveryResultCardSkeleton count={4} />
       ) : null}
-      {favorites.isError ? (
+      {failure ? (
         <RequestFailureState
-          error={favorites.error}
+          error={failure}
           onRetry={() => void favorites.refetch()}
         />
       ) : null}
-      {!favorites.isLoading && !favorites.isError && items.length === 0 ? (
+      {!favorites.isLoading && !failure && items.length === 0 ? (
         <Typography type="body-sm" color="muted" className="py-16 text-center">
           هنوز موردی را ذخیره نکرده‌ای.
         </Typography>

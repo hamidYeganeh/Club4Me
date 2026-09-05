@@ -2,6 +2,7 @@ import { http } from "../../http/client";
 import { accountEndpoints } from "./account.endpoints";
 import type {
   AccountMeResponse,
+  AccountProfileChoicesResponse,
   ListRoleRequestsResponse,
   RequestableRole,
   RequestRoleResponse,
@@ -53,6 +54,9 @@ export const accountClient = {
   logout: () => http.post<LogoutResponse>(accountEndpoints.logout),
 
   me: () => http.get<AccountMeResponse>(accountEndpoints.me),
+
+  profileChoices: () =>
+    http.get<AccountProfileChoicesResponse>(accountEndpoints.profileChoices),
 
   updateMe: (payload: UpdateAccountMePayload) =>
     http.patch<AccountMeResponse>(accountEndpoints.updateMe, payload),

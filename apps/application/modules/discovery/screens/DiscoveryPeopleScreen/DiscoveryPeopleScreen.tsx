@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@heroui/react";
+import { Button, Skeleton } from "@heroui/react";
 import { useCoachSections, useCoaches } from "@api/discovery";
 import { useTranslations } from "next-intl";
 
@@ -35,22 +35,36 @@ export function DiscoveryPeopleScreen() {
       {sections.data?.map((section) => (
         <DiscoveryDynamicSection key={section.id} section={section} />
       ))}
-      {sections.isLoading ? (
-        <SectionSkeleton cards={2} />
-      ) : null}
+      {sections.isLoading ? <SectionSkeleton cards={2} /> : null}
       {sections.isError ? (
         <Button variant="secondary" onPress={() => void sections.refetch()}>
           دریافت دوباره بخش‌های مربی‌ها
         </Button>
       ) : null}
 
-      <DiscoverySectionHeader
-        title="همه مربی‌ها"
-        subtitle={t("resultsCount", {
-          count: (result.data?.total ?? coaches.length).toLocaleString("fa-IR"),
-        })}
-        icon="user"
-      />
+      {result.isLoading ? (
+        <div
+          className="flex items-center gap-3"
+          aria-busy="true"
+          aria-label="در حال بارگذاری مربی‌ها"
+        >
+          <Skeleton className="size-10 shrink-0 rounded-2xl" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-5 w-28 rounded-lg" />
+            <Skeleton className="h-3 w-20 rounded-lg" />
+          </div>
+        </div>
+      ) : (
+        <DiscoverySectionHeader
+          title="همه مربی‌ها"
+          subtitle={t("resultsCount", {
+            count: (result.data?.total ?? coaches.length).toLocaleString(
+              "fa-IR",
+            ),
+          })}
+          icon="user"
+        />
+      )}
       <div className="flex flex-col gap-3">
         {coaches.map((coach) => (
           <DiscoveryResultCard

@@ -8,6 +8,7 @@
     "start": "node --env-file=.env dist/main.js",
     "start:prod": "node --env-file=.env dist/main.js",
     "start:ci": "node dist/main.js",
+    "validate:production": "NODE_ENV=production ts-node src/config/validate-production.ts",
     "lint": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"eslint.config.mjs\"",
     "check-types": "node ../../node_modules/typescript/bin/tsc --noEmit",
     "test": "jest",

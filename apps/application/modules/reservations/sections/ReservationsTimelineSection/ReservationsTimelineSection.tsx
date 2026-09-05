@@ -84,15 +84,12 @@ function ReservationTimelineRow({
               <span className={styles.metaDivider()} aria-hidden />
               <span className={styles.metaItem()}>
                 <Icon name="wallet" size={15} className={styles.metaAccent()} />
-                <strong>
-                  {paymentStatusLabel(item.paymentStatus)}
-                </strong>
+                <strong>{paymentStatusLabel(item.paymentStatus)}</strong>
               </span>
             </div>
           </div>
         </Button>
       </div>
-
     </div>
   );
 }
@@ -249,10 +246,17 @@ export function ReservationsTimelineSection({
               rightActions: [
                 {
                   id: "cancel",
-                  label: item.status === "reserved" ? cancelLabel : statusLabel(item.status),
+                  label:
+                    item.status === "reserved"
+                      ? cancelLabel
+                      : statusLabel(item.status),
                   icon: (
                     <Icon
-                      name={item.status === "reserved" ? "calendar-plus" : "calendar-check"}
+                      name={
+                        item.status === "reserved"
+                          ? "calendar-plus"
+                          : "calendar-check"
+                      }
                       size={19}
                     />
                   ),

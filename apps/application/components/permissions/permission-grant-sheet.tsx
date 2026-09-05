@@ -87,7 +87,7 @@ export function PermissionGrantSheet({
         </div>
 
         <Button
-          className="mt-6 w-full bg-accent font-bold text-accent-foreground shadow-[0_12px_30px_color-mix(in_oklch,var(--accent)_25%,transparent)]"
+          className="mt-6 w-full bg-accent font-bold text-accent-foreground"
           isDisabled={pending}
           onPress={() => void onGrant()}
         >

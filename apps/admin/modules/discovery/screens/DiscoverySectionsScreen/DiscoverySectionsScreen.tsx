@@ -19,12 +19,15 @@ import {
   useAdminDiscoverySections,
   useDeleteDiscoverySection,
   useDiscoveryOptions,
+  useImportDefaultDiscoverySections,
   useReorderDiscoverySections,
   useSaveDiscoverySection,
 } from "@api/admin";
 import type { DiscoverySectionSort } from "@api/admin";
 import { Icon } from "@theme/icon";
 import { useState } from "react";
+
+import { MediaUploaderField } from "@/components/media-uploader-field";
 
 const empty: SaveDiscoverySection = {
   key: "",
@@ -61,11 +64,27 @@ export function DiscoverySectionsScreen() {
   const save = useSaveDiscoverySection();
   const remove = useDeleteDiscoverySection();
   const reorder = useReorderDiscoverySections();
+  const importDefaults = useImportDefaultDiscoverySections();
   const [editing, setEditing] = useState<DiscoverySectionConfiguration | null>(
     null,
   );
   const [creating, setCreating] = useState(false);
   const items = list.data?.items ?? [];
+
+  const handleImportDefaults = async () => {
+    try {
+      const result = await importDefaults.mutateAsync();
+      if (!result.created) {
+        toast.success("همه سکشن‌های پیش‌فرض از قبل موجودند");
+        return;
+      }
+      toast.success(
+        `${result.created} سکشن پیش‌فرض اضافه شد${result.existing ? `؛ ${result.existing} سکشن از قبل موجود بود` : ""}`,
+      );
+    } catch {
+      toast.danger("درون‌ریزی سکشن‌های پیش‌فرض ناموفق بود");
+    }
+  };
 
   const move = async (index: number, delta: number) => {
     const target = index + delta;
@@ -77,17 +96,29 @@ export function DiscoverySectionsScreen() {
 
   return (
     <main className="min-w-0 flex-1 overflow-auto p-4 lg:p-6" dir="rtl">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">چیدمان دیسکاوری</h1>
           <p className="mt-1 text-sm text-muted">
             سکشن‌ها، محتوای آن‌ها و ترتیب نمایش در اپ را مدیریت کنید.
           </p>
         </div>
-        <Button onPress={() => setCreating(true)}>
-          <Icon name="plus-fat" />
-          سکشن جدید
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            isPending={importDefaults.isPending}
+            onPress={() => void handleImportDefaults()}
+          >
+            <Icon name="database" />
+            {importDefaults.isPending
+              ? "در حال درون‌ریزی…"
+              : "درون‌ریزی داده‌های پیش‌فرض"}
+          </Button>
+          <Button onPress={() => setCreating(true)}>
+            <Icon name="plus-fat" />
+            سکشن جدید
+          </Button>
+        </div>
       </div>
       {list.isPending ? (
         <div className="grid place-items-center py-20">
@@ -271,6 +302,10 @@ function SectionEditor({
                     کلاس‌ها
                     <ListBox.ItemIndicator />
                   </ListBox.Item>
+                  <ListBox.Item id="sports" textValue="رشته‌های ورزشی">
+                    رشته‌های ورزشی
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
                   <ListBox.Item id="articles" textValue="مقالات">
                     مقالات
                     <ListBox.ItemIndicator />
@@ -299,6 +334,38 @@ function SectionEditor({
                   </ListBox.Item>
                   <ListBox.Item id="grid" textValue="گرید">
                     گرید
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="compact" textValue="کارت فشرده">
+                    کارت فشرده
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="editorial" textValue="کارت تحریریه‌ای">
+                    کارت تحریریه‌ای
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="horizontal-outline" textValue="افقی خط‌دار">
+                    افقی خط‌دار
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="16/9:1" textValue="بنر عریض ۱۶:۹">
+                    بنر عریض ۱۶:۹
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="16/9:1.2" textValue="بنر عریض نیمه‌نمایان">
+                    بنر عریض نیمه‌نمایان
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="4/3:auto" textValue="بنر افقی ۴:۳">
+                    بنر افقی ۴:۳
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="3/4:auto" textValue="بنر عمودی ۳:۴">
+                    بنر عمودی ۳:۴
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                  <ListBox.Item id="9/16:auto" textValue="استوری ۹:۱۶">
+                    استوری ۹:۱۶
                     <ListBox.ItemIndicator />
                   </ListBox.Item>
                 </ListBox>
@@ -537,59 +604,98 @@ function BannerFields({
   value: SaveDiscoverySection;
   setValue: React.Dispatch<React.SetStateAction<SaveDiscoverySection>>;
 }) {
-  const banner = value.banners[0] ?? {
+  const emptyBanner = {
     title: "",
     subtitle: "",
     imageUrl: "",
     actionLabel: "",
     actionUrl: "",
   };
-  const change = (key: keyof typeof banner, next: string) =>
-    setValue((old) => ({ ...old, banners: [{ ...banner, [key]: next }] }));
+  const change = (index: number, key: keyof typeof emptyBanner, next: string) =>
+    setValue((old) => ({
+      ...old,
+      banners: old.banners.map((banner, bannerIndex) =>
+        bannerIndex === index ? { ...banner, [key]: next } : banner,
+      ),
+    }));
   return (
-    <>
-      <Field label="عنوان بنر">
-        <Input
-          className={input}
-          variant="secondary"
-          value={banner.title}
-          onChange={(e) => change("title", e.target.value)}
-        />
-      </Field>
-      <Field label="تصویر بنر">
-        <Input
-          dir="ltr"
-          className={input}
-          variant="secondary"
-          value={banner.imageUrl}
-          onChange={(e) => change("imageUrl", e.target.value)}
-        />
-      </Field>
-      <Field label="توضیح بنر" wide>
-        <Input
-          className={input}
-          variant="secondary"
-          value={banner.subtitle}
-          onChange={(e) => change("subtitle", e.target.value)}
-        />
-      </Field>
-      <Field label="متن دکمه بنر">
-        <Input
-          className={input}
-          variant="secondary"
-          value={banner.actionLabel}
-          onChange={(e) => change("actionLabel", e.target.value)}
-        />
-      </Field>
-      <Field label="لینک دکمه بنر">
-        <Input
-          dir="ltr"
-          className={input}
-          variant="secondary"
-          value={banner.actionUrl}
-          onChange={(e) => change("actionUrl", e.target.value)}
-        />
-      </Field>
-    </>
+    <div className="flex flex-col gap-4 sm:col-span-2">
+      {value.banners.map((banner, index) => (
+        <div
+          key={index}
+          className="grid gap-4 rounded-2xl border border-border p-4 sm:grid-cols-2"
+        >
+          <div className="flex items-center justify-between sm:col-span-2">
+            <strong>بنر {index + 1}</strong>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-danger"
+              onPress={() =>
+                setValue((old) => ({
+                  ...old,
+                  banners: old.banners.filter(
+                    (_, bannerIndex) => bannerIndex !== index,
+                  ),
+                }))
+              }
+            >
+              حذف بنر
+            </Button>
+          </div>
+          <Field label="عنوان بنر">
+            <Input
+              className={input}
+              variant="secondary"
+              value={banner.title}
+              onChange={(e) => change(index, "title", e.target.value)}
+            />
+          </Field>
+          <MediaUploaderField
+            label="تصویر بنر"
+            value={banner.imageUrl}
+            onChange={(next) => change(index, "imageUrl", next)}
+          />
+          <Field label="توضیح بنر" wide>
+            <Input
+              className={input}
+              variant="secondary"
+              value={banner.subtitle}
+              onChange={(e) => change(index, "subtitle", e.target.value)}
+            />
+          </Field>
+          <Field label="متن دکمه بنر">
+            <Input
+              className={input}
+              variant="secondary"
+              value={banner.actionLabel}
+              onChange={(e) => change(index, "actionLabel", e.target.value)}
+            />
+          </Field>
+          <Field label="لینک دکمه بنر">
+            <Input
+              dir="ltr"
+              className={input}
+              variant="secondary"
+              value={banner.actionUrl}
+              onChange={(e) => change(index, "actionUrl", e.target.value)}
+            />
+          </Field>
+        </div>
+      ))}
+      <Button
+        variant="secondary"
+        isDisabled={value.banners.length >= 20}
+        onPress={() =>
+          setValue((old) => ({
+            ...old,
+            banners: [...old.banners, { ...emptyBanner }],
+          }))
+        }
+      >
+        <Icon name="plus-fat" />
+        افزودن بنر
+      </Button>
+    </div>
   );
 }

@@ -17,6 +17,7 @@ import { useTranslations } from "next-intl";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { Form, FormFieldset } from "@/components/form";
+import { MediaUploaderField } from "@/components/media-uploader-field";
 import { ArticlesEditorField } from "@modules/articles/components/ArticlesEditorField";
 
 import { createArticlesEditorFormSchema } from "./ArticlesEditorForm.schema";
@@ -67,6 +68,7 @@ export function ArticlesEditorForm({
       slug: defaultValues?.slug ?? "",
       excerpt: defaultValues?.excerpt ?? "",
       bodyHtml: defaultValues?.bodyHtml ?? "",
+      coverImageUrl: defaultValues?.coverImageUrl ?? "",
       status: defaultValues?.status ?? "draft",
     },
     mode: "onSubmit",
@@ -94,6 +96,7 @@ export function ArticlesEditorForm({
       slug: defaultValues.slug ?? "",
       excerpt: defaultValues.excerpt ?? "",
       bodyHtml: defaultValues.bodyHtml ?? "",
+      coverImageUrl: defaultValues.coverImageUrl ?? "",
       status: defaultValues.status ?? "draft",
     });
     slugTouched.current = Boolean(defaultValues.slug);
@@ -262,6 +265,21 @@ export function ArticlesEditorForm({
             )}
           />
         </FormFieldset.Group>
+
+        <Controller
+          name="coverImageUrl"
+          control={form.control}
+          render={({ field }) => (
+            <div className="mt-4">
+              <MediaUploaderField
+                label="تصویر شاخص مقاله"
+                value={field.value}
+                disabled={busy}
+                onChange={field.onChange}
+              />
+            </div>
+          )}
+        />
 
         <Controller
           name="excerpt"

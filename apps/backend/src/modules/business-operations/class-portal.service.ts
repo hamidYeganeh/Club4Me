@@ -532,6 +532,9 @@ export class BusinessClassPortalService {
     return {
       referenceId: item._id,
       clubId: item.clubId,
+      classId: item.classId,
+      coachId: trainingClass.coachProfileId,
+      sport: trainingClass.sport,
       amount: item.agreedPrice,
       title: trainingClass.title,
     };
@@ -562,6 +565,28 @@ export class BusinessClassPortalService {
       item.status = "cancelled";
     }
     await item.save();
+    return athleteEnrollmentDto(item, trainingClass);
+  }
+
+  async refundEnrollmentPayment(enrollmentId: string | Types.ObjectId) {
+    const item = await this.enrollments.findById(enrollmentId);
+    if (!item) throw notFound("CLASS_ENROLLMENT_NOT_FOUND");
+    const trainingClass = await this.classes.findById(item.classId);
+    if (!trainingClass) throw notFound("BUSINESS_CLASS_NOT_FOUND");
+    if (item.paymentStatus === "refunded") {
+      return athleteEnrollmentDto(item, trainingClass);
+    }
+    const releasedSeat = item.status === "active";
+    item.paymentStatus = "refunded";
+    item.status = "cancelled";
+    await item.save();
+    if (releasedSeat) {
+      await this.classes.updateOne(
+        { _id: item.classId, activeEnrollmentCount: { $gt: 0 } },
+        { $inc: { activeEnrollmentCount: -1 } },
+      );
+      await this.offerWaitlist(trainingClass);
+    }
     return athleteEnrollmentDto(item, trainingClass);
   }
 
@@ -1017,6 +1042,7 @@ function classBaseDto(item: BusinessTrainingClassDocument) {
     clubId: String(item.clubId),
     title: item.title,
     description: item.description,
+    faqs: item.faqs ?? [],
     sport: item.sport,
     level: item.level,
     model: item.classModel,

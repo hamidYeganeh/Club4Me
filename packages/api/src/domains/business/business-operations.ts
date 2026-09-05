@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { http } from "../../http/client";
+import { getHttpClient, http } from "../../http/client";
 
 type EntityBase = {
   id: string;
@@ -228,23 +228,56 @@ export type OperationsImportResult = {
   imported: number;
   errors: Array<{ row: number; message: string }>;
 };
+export type OperationsExportJob = {
+  id: string;
+  clubId: string;
+  kind: OperationsDataKind;
+  format: "csv" | "xlsx";
+  status: "queued" | "processing" | "ready" | "failed" | "expired";
+  filename: string | null;
+  mimeType: string | null;
+  sizeBytes: number | null;
+  error: string;
+  downloadPath: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  completedAt: string | null;
+};
 
 export function useExportBusinessOperations(clubId: string) {
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       kind,
       format,
     }: {
       kind: OperationsDataKind;
       format: "csv" | "xlsx";
-    }) =>
-      http.get<{
-        filename: string;
-        mimeType: string;
-        content: string;
-        encoding: "utf8" | "base64";
-        templateVersion: 1;
-      }>(endpoint(clubId, "export"), { kind, format }),
+    }) => {
+      let job = await http.post<OperationsExportJob>(
+        endpoint(clubId, "exports"),
+        { kind, format },
+      );
+      for (let attempt = 0; attempt < 90; attempt += 1) {
+        if (job.status === "failed")
+          throw new Error(job.error || "Export failed");
+        if (job.status === "expired") throw new Error("Export expired");
+        if (job.status === "ready" && job.downloadPath && job.filename) {
+          const response = await getHttpClient().get<Blob>(job.downloadPath, {
+            responseType: "blob",
+          });
+          return {
+            filename: job.filename,
+            mimeType: job.mimeType ?? "application/octet-stream",
+            blob: response.data,
+          };
+        }
+        await delay(1000);
+        job = await http.get<OperationsExportJob>(
+          `${endpoint(clubId, "exports")}/${job.id}`,
+        );
+      }
+      throw new Error("Export timed out");
+    },
   });
 }
 
@@ -265,4 +298,8 @@ export function useImportBusinessOperations(clubId: string) {
         return queryClient.invalidateQueries({ queryKey: keys.root(clubId) });
     },
   });
+}
+
+function delay(milliseconds: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 }

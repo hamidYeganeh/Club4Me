@@ -77,6 +77,7 @@ export type BusinessClub = {
     description?: string;
   }>;
   rules: string[];
+  faqs: Array<{ question: string; answer: string }>;
   location?: ClubLocation;
   socialMedia: Array<{ platform: SocialPlatform; link: string }>;
   clubTypeIds: string[];
@@ -143,6 +144,7 @@ export type CreateBusinessClubPayload = {
     description?: string;
   }>;
   rules?: string[];
+  faqs?: Array<{ question: string; answer: string }>;
   location?: ClubLocation;
   socialMedia?: Array<{ platform: SocialPlatform; link: string }>;
   clubTypeIds?: string[];

@@ -5,9 +5,11 @@ import { http } from "../../http/client";
 
 export type SupportTicket = {
   id: string;
+  requesterId: string;
   subject: string;
   category: "payment" | "reservation" | "account" | "club" | "other";
   preferredContact: "in_app" | "phone";
+  priority: "low" | "normal" | "high" | "urgent";
   status: "open" | "in_progress" | "waiting_for_user" | "resolved" | "closed";
   messages: Array<{
     id: string;
@@ -15,6 +17,25 @@ export type SupportTicket = {
     body: string;
     createdAt: string;
   }>;
+  assigneeId: string | null;
+  internalNotes?: Array<{
+    id: string;
+    authorId: string;
+    body: string;
+    callOutcome:
+      | "contacted"
+      | "no_answer"
+      | "callback_requested"
+      | "resolved_by_call"
+      | null;
+    createdAt: string;
+  }>;
+  slaDueAt: string | null;
+  firstRespondedAt: string | null;
+  slaBreachedAt: string | null;
+  escalationLevel: number;
+  resolvedAt: string | null;
+  createdAt: string;
   updatedAt: string;
 };
 
@@ -35,6 +56,7 @@ export function useCreateSupportTicket() {
       category: SupportTicket["category"];
       message: string;
       preferredContact: SupportTicket["preferredContact"];
+      priority?: SupportTicket["priority"];
     }) => http.post<SupportTicket>("/support/tickets", payload),
     onSuccess: () => client.invalidateQueries({ queryKey: key }),
   });
@@ -78,6 +100,11 @@ export function useUpdateSupportTicket() {
       status: SupportTicket["status"];
       reply?: string;
       assigneeId?: string | null;
+      priority?: SupportTicket["priority"];
+      internalNote?: string;
+      callOutcome?: NonNullable<
+        SupportTicket["internalNotes"]
+      >[number]["callOutcome"];
     }) =>
       http.patch<SupportTicket>(`/admin/support/tickets/${ticketId}`, payload),
     onSuccess: () => client.invalidateQueries({ queryKey: ["admin", ...key] }),

@@ -46,6 +46,14 @@ const platforms: SocialPlatform[] = [
 ];
 
 type FacilityDraft = { quantity: number; description: string };
+
+function parseFaqRows(value: string) {
+  return value
+    .split("\n")
+    .map((row) => row.split("|").map((part) => part.trim()))
+    .filter(([question, answer]) => Boolean(question && answer))
+    .map(([question, answer]) => ({ question: question!, answer: answer! }));
+}
 type FacilityMap = Record<string, FacilityDraft>;
 type GalleryDraft = {
   mediaId?: string;
@@ -92,6 +100,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const [equipment, setEquipment] = useState<FacilityMap>({});
   const [amenities, setAmenities] = useState<FacilityMap>({});
   const [rules, setRules] = useState("");
+  const [faqs, setFaqs] = useState("");
   const [tags, setTags] = useState("");
   const [gallery, setGallery] = useState<GalleryDraft[]>([]);
   const [socialMedia, setSocialMedia] = useState<SocialDraft[]>([]);
@@ -118,6 +127,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const [cancellationRules, setCancellationRules] = useState<
     ClubCancellationRule[]
   >(defaultCancellationRules);
+  const [formError, setFormError] = useState("");
 
   const provinces = useBusinessCatalog(
     "location",
@@ -190,6 +200,9 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
       ),
     );
     setRules(value.rules.join("\n"));
+    setFaqs(
+      value.faqs.map((item) => `${item.question} | ${item.answer}`).join("\n"),
+    );
     setTags(value.tags.join("، "));
     setGallery(
       value.gallery.map((item) => ({
@@ -252,6 +265,63 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
+    const cleanName = name.trim();
+    const minimumAge = minAge === "" ? null : Number(minAge);
+    const maximumAge = maxAge === "" ? null : Number(maxAge);
+    const hasSomeLocation = [
+      countryId,
+      provinceId,
+      cityId,
+      districtId,
+      address,
+      latitude,
+      longitude,
+    ].some((value) => value.trim().length > 0);
+    const hasCompleteLocation = Boolean(
+      countryId &&
+      provinceId &&
+      cityId &&
+      address.trim() &&
+      latitude.trim() &&
+      longitude.trim(),
+    );
+    let validationError = "";
+    if (cleanName.length < 2)
+      validationError = "نام باشگاه باید حداقل ۲ نویسه باشد.";
+    else if (selectedSports.length === 0)
+      validationError = "حداقل یک رشته ورزشی را انتخاب کنید.";
+    else if (audience.length === 0)
+      validationError = "حداقل یک گروه مخاطب را انتخاب کنید.";
+    else if (
+      minimumAge !== null &&
+      maximumAge !== null &&
+      minimumAge > maximumAge
+    )
+      validationError = "حداقل سن نمی‌تواند از حداکثر سن بیشتر باشد.";
+    else if (hasSomeLocation && !hasCompleteLocation)
+      validationError =
+        "برای ثبت مکان، کشور، استان، شهر، نشانی و هر دو مختصات را کامل کنید.";
+    else if (
+      hasCompleteLocation &&
+      (Number(latitude) < -90 || Number(latitude) > 90)
+    )
+      validationError = "عرض جغرافیایی باید بین ۹۰- و ۹۰ باشد.";
+    else if (
+      hasCompleteLocation &&
+      (Number(longitude) < -180 || Number(longitude) > 180)
+    )
+      validationError = "طول جغرافیایی باید بین ۱۸۰- و ۱۸۰ باشد.";
+
+    if (validationError) {
+      setFormError(validationError);
+      requestAnimationFrame(() => {
+        const error = document.getElementById("club-form-error");
+        error?.focus();
+        error?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      return;
+    }
+    setFormError("");
     try {
       const galleryPayload = await Promise.all(
         gallery
@@ -283,7 +353,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
           }),
       );
       const payload = {
-        name: name.trim(),
+        name: cleanName,
         shortDescription: shortDescription.trim(),
         description: description.trim(),
         gallery: galleryPayload,
@@ -310,6 +380,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
           .split("\n")
           .map((item) => item.trim())
           .filter(Boolean),
+        faqs: parseFaqRows(faqs),
         tags: tags
           .split(/[،,]/)
           .map((item) => item.trim())
@@ -319,18 +390,13 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
         audience: audience as Array<
           "men" | "women" | "mixed" | "children" | "family"
         >,
-        minAge: minAge ? Number(minAge) : null,
-        maxAge: maxAge ? Number(maxAge) : null,
+        minAge: minimumAge,
+        maxAge: maximumAge,
         currency,
         taxPercent,
         operationalStatus,
         weeklyHours,
-        ...(countryId &&
-        provinceId &&
-        cityId &&
-        address &&
-        latitude &&
-        longitude
+        ...(hasCompleteLocation
           ? {
               location: {
                 countryId,
@@ -398,6 +464,16 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
           )}
         </div>
         <form onSubmit={save} className="mt-6 space-y-5">
+          {formError ? (
+            <p
+              id="club-form-error"
+              role="alert"
+              tabIndex={-1}
+              className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger outline-none"
+            >
+              {formError}
+            </p>
+          ) : null}
           <Section title={t("basic")}>
             <Field label={t("name")} required>
               <input
@@ -685,6 +761,14 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 placeholder={t("rulesHint")}
               />
             </Field>
+            <Field label="سوالات متداول" wide>
+              <textarea
+                value={faqs}
+                onChange={(e) => setFaqs(e.target.value)}
+                className={textareaClass}
+                placeholder="آیا پارکینگ دارید؟ | بله، پارکینگ اختصاصی در دسترس است."
+              />
+            </Field>
           </Section>
 
           <Section title={t("location")}>
@@ -736,6 +820,8 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 dir="ltr"
                 type="number"
                 step="any"
+                min={-90}
+                max={90}
                 value={latitude}
                 onChange={(e) => setLatitude(e.target.value)}
                 className={inputClass}
@@ -746,6 +832,8 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 dir="ltr"
                 type="number"
                 step="any"
+                min={-180}
+                max={180}
                 value={longitude}
                 onChange={(e) => setLongitude(e.target.value)}
                 className={inputClass}
@@ -754,6 +842,9 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
             <Field label={t("timezone")}>
               <input
                 dir="ltr"
+                required={Boolean(
+                  countryId || provinceId || cityId || address.trim(),
+                )}
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
                 className={inputClass}
@@ -796,6 +887,11 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
             <Field label={t("currency")}>
               <input
                 dir="ltr"
+                required
+                minLength={3}
+                maxLength={3}
+                pattern="[A-Z]{3}"
+                title="کد ارز باید سه حرف بزرگ انگلیسی باشد؛ مانند IRR."
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value.toUpperCase())}
                 className={inputClass}

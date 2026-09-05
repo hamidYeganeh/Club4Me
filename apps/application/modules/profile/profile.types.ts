@@ -1,3 +1,8 @@
 export type ProfileRole = "athlete" | "coach";
 
-export type ProfileEditField = "name" | "gender" | "id-card" | "birthdate";
+export type ProfileEditField =
+  | "name"
+  | "gender"
+  | "activity-level"
+  | "id-card"
+  | "birthdate";

@@ -1,4 +1,5 @@
 import { Icon } from "@theme/icon";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { landingFooterSectionStyles } from "./LandingFooterSection.styles";
@@ -32,6 +33,18 @@ export async function LandingFooterSection() {
           <a href="#join" className={styles.navLink()}>
             {t("nav.membership")}
           </a>
+          <Link href="/privacy" className={styles.navLink()}>
+            حریم خصوصی
+          </Link>
+          <Link href="/terms" className={styles.navLink()}>
+            قوانین استفاده
+          </Link>
+          <Link href="/account-deletion" className={styles.navLink()}>
+            حذف حساب
+          </Link>
+          <Link href="/support" className={styles.navLink()}>
+            پشتیبانی
+          </Link>
         </div>
 
         <div className={styles.contact()}>

@@ -32,7 +32,10 @@ import { ReservationsTimelineSection } from "../../sections/ReservationsTimeline
 import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGateway";
 import type { ReservationsScreenProps } from "./ReservationsScreen.types";
 import { ReservationActionScreen } from "../../sections/ReservationActionScreen";
-import { getRequestFailurePresentation } from "@/lib/request-failure";
+import {
+  getQueryFailure,
+  getRequestFailurePresentation,
+} from "@/lib/request-failure";
 
 export function ReservationsScreen({ role }: ReservationsScreenProps) {
   const router = useRouter();
@@ -219,6 +222,10 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
   const actionReservation = items.find(
     (item) => item.id === actionReservationId,
   );
+  const loadFailure =
+    getQueryFailure(reservations.error, reservations.fetchStatus) ??
+    getQueryFailure(coachBookings.error, coachBookings.fetchStatus) ??
+    getQueryFailure(classEnrollments.error, classEnrollments.fetchStatus);
 
   if (actionReservation) {
     return (
@@ -263,13 +270,12 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
         items={visibleItems}
         historyMode={showAllHistory}
         isPending={
-          reservations.isPending ||
-          coachBookings.isPending ||
-          classEnrollments.isPending
+          !loadFailure &&
+          (reservations.isPending ||
+            coachBookings.isPending ||
+            classEnrollments.isPending)
         }
-        error={
-          reservations.error ?? coachBookings.error ?? classEnrollments.error
-        }
+        error={loadFailure}
         onRetry={() => {
           void reservations.refetch();
           void coachBookings.refetch();

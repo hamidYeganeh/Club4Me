@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "@heroui/react";
 import {
   tokenStore,
   trackDiscoveryClubViewed,
-  useCreateReport,
   usePublicClub,
   useToggleFavorite,
 } from "@api";
@@ -18,14 +16,20 @@ import { DiscoveryClubsDetailBodySection } from "@modules/discovery/sections/Dis
 import { DiscoveryClubsDetailHeroSection } from "@modules/discovery/sections/DiscoveryClubsDetailHeroSection";
 import { DiscoveryClubsDetailStickyHeaderSection } from "@modules/discovery/sections/DiscoveryClubsDetailStickyHeaderSection";
 import { ClubReservationsAndReviewsSection } from "@modules/discovery/sections/ClubReservationsAndReviewsSection";
+import { ClubSlotsSection } from "@modules/discovery/sections/ClubSlotsSection";
+import { ClubSportsSection } from "@modules/discovery/sections/ClubSportsSection";
 import { ClubClassesSection } from "@modules/discovery/sections/ClubClassesSection";
 import { ClubBenefitProductsSection } from "@modules/discovery/sections/ClubBenefitProductsSection";
 import { iconNames, type IconName } from "@theme/icon";
 import { RequestFailureState } from "@/components/request-failure-state";
+import { DetailFaqSection } from "@modules/discovery/components/DetailFaqSection";
+import { DetailGallerySection } from "@modules/discovery/components/DetailGallerySection";
+import { ReportBottomSheet } from "@modules/reports/components/ReportBottomSheet";
 
 import type { DiscoveryClubsDetailScreenProps } from "./DiscoveryClubsDetailScreen.types";
 import type { DiscoveryFacilityItem } from "@modules/discovery/discovery.types";
 import { DetailPageSkeleton } from "@/components/loading-skeletons";
+import { getQueryFailure } from "@/lib/request-failure";
 
 const ICON_NAME_SET = new Set<string>(iconNames);
 
@@ -62,12 +66,12 @@ export function DiscoveryClubsDetailScreen({
   const persistedId = catalogClub.data?.id ?? "";
   const publicClub = usePublicClub(persistedId);
   const favorite = useToggleFavorite("club", persistedId);
-  const report = useCreateReport();
   const t = useTranslations("discovery.clubDetail");
   const [heroElement, setHeroElement] = useState<HTMLElement | null>(null);
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [mainSwiper, setMainSwiper] = useState<SwiperType | null>(null);
   const [stickyHeaderVisible, setStickyHeaderVisible] = useState(false);
+  const [reportSheetOpen, setReportSheetOpen] = useState(false);
 
   useEffect(() => {
     if (persistedId && tokenStore.get()) {
@@ -92,7 +96,9 @@ export function DiscoveryClubsDetailScreen({
     return () => observer.disconnect();
   }, [heroElement]);
 
-  const loadError = catalogClub.error ?? publicClub.error;
+  const loadError =
+    getQueryFailure(catalogClub.error, catalogClub.fetchStatus) ??
+    getQueryFailure(publicClub.error, publicClub.fetchStatus);
 
   if (loadError) {
     return (
@@ -181,7 +187,7 @@ export function DiscoveryClubsDetailScreen({
   ];
 
   return (
-    <main className="relative flex min-h-dvh flex-col bg-background">
+    <main className="relative flex min-h-dvh w-full max-w-full flex-col overflow-x-clip bg-background pb-[calc(14rem+env(safe-area-inset-bottom))]">
       <DiscoveryClubsDetailStickyHeaderSection
         visible={stickyHeaderVisible}
         name={club.name}
@@ -225,9 +231,24 @@ export function DiscoveryClubsDetailScreen({
         }}
       />
 
+      <div className="px-5 pb-6">
+        <DetailGallerySection
+          images={club.images}
+          viewAllHref={`/discovery/clubs/${clubId}/gallery`}
+        />
+      </div>
+
+      <ClubSportsSection sportIds={data.sportIds} />
+
+      <ClubSlotsSection clubId={club.id} />
+
       <ClubClassesSection clubId={club.id} />
 
       <ClubBenefitProductsSection clubId={club.id} />
+
+      <section className="px-5">
+        <DetailFaqSection items={data.faqs} />
+      </section>
 
       <ClubReservationsAndReviewsSection clubId={club.id} />
 
@@ -251,26 +272,17 @@ export function DiscoveryClubsDetailScreen({
             router.push("/auth");
             return;
           }
-          const details = window
-            .prompt("چه اطلاعاتی در این صفحه نادرست است؟")
-            ?.trim();
-          if (!details) return;
-          report.mutate(
-            {
-              targetType: "club",
-              targetId: club.id,
-              reason: "اطلاعات نادرست",
-              details,
-            },
-            {
-              onSuccess: () => toast.success("گزارش شما ثبت شد"),
-              onError: () => toast.danger("ثبت گزارش ناموفق بود"),
-            },
-          );
+          setReportSheetOpen(true);
         }}
       />
 
-      <div className="h-dvh" />
+      <ReportBottomSheet
+        open={reportSheetOpen}
+        onOpenChange={setReportSheetOpen}
+        targetType="club"
+        targetId={club.id}
+      />
+
     </main>
   );
 }

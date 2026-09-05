@@ -96,6 +96,7 @@ export type DiscoveryClubItem = Pick<Club, "id" | "name" | "slug"> & {
   shortDescription: string;
   logoMediaId: string | null;
   coverMediaId: string | null;
+  imageUrl?: string | null;
   averageRating: number;
   reviewsCount: number;
   sportIds: string[];
@@ -161,6 +162,7 @@ export type DiscoverySection =
   | DiscoverySectionBase<"clubs", DiscoveryClubItem>
   | DiscoverySectionBase<"coaches", DiscoveryCoachItem>
   | DiscoverySectionBase<"classes", PublicCatalogClass>
+  | DiscoverySectionBase<"sports", DiscoverySportItem>
   | DiscoverySectionBase<"articles", DiscoveryArticleItem>;
 
 export type PublicCatalogParams = {
@@ -227,6 +229,22 @@ export type PublicCatalogClubTypesResponse = {
 export type PublicCatalogCoach = DiscoveryCoachItem & {
   imageUrl: string | null;
   contact: Record<string, unknown>;
+  portfolio: Array<{ id: string; url: string }>;
+  specialties: Array<{ title: string; description: string; icon?: string }>;
+  trainingStyles: Array<{
+    title: string;
+    description: string;
+    imageMediaId?: string;
+    imageUrl?: string | null;
+  }>;
+  experienceSummary: string;
+  experience: Array<{
+    title: string;
+    organization?: string;
+    period?: string;
+    description?: string;
+  }>;
+  faqs: Array<{ question: string; answer: string }>;
 };
 
 export type PublicCatalogClass = {
@@ -254,6 +272,7 @@ export type PublicCatalogClass = {
     onlineUrl?: string;
   } | null;
   prerequisites: string[];
+  faqs: Array<{ question: string; answer: string }>;
   status: string;
 };
 
@@ -278,6 +297,14 @@ export type PublicResourceItem = {
   description?: string;
   imageUrl?: string;
   [key: string]: unknown;
+};
+
+export type DiscoverySportItem = PublicResourceItem & {
+  code?: string;
+  slug?: string;
+  icon?: string;
+  categoryId?: string;
+  categoryName?: string;
 };
 
 export type PublicResourcePage = PublicCatalogPage<PublicResourceItem>;

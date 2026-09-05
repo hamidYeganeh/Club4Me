@@ -74,7 +74,10 @@ export function TileGridSkeleton({ count = 4 }: CountProps) {
   return (
     <div className="grid grid-cols-2 gap-3" {...loadingProps}>
       {Array.from({ length: count }).map((_, index) => (
-        <Card key={index} className="app-card min-h-36 rounded-2xl p-4 shadow-none">
+        <Card
+          key={index}
+          className="app-card min-h-36 rounded-2xl p-4 shadow-none"
+        >
           <Skeleton className="size-11 rounded-2xl" />
           <div className="mt-5 space-y-2.5">
             <Skeleton className="h-4 w-3/4 rounded-lg" />
@@ -158,7 +161,10 @@ export function DetailPageSkeleton() {
       <div className="relative -mt-6 space-y-5 rounded-t-[2rem] bg-background px-5 pt-7">
         <div className="grid grid-cols-3 gap-2">
           {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="app-card space-y-2 rounded-2xl p-3 text-center">
+            <div
+              key={index}
+              className="app-card space-y-2 rounded-2xl p-3 text-center"
+            >
               <Skeleton className="mx-auto size-6 rounded-full" />
               <Skeleton className="mx-auto h-4 w-12 rounded-lg" />
               <Skeleton className="mx-auto h-3 w-16 rounded-lg" />
@@ -194,7 +200,10 @@ export function ArticleDetailSkeleton() {
         <Skeleton className="h-3 w-20 rounded-lg" />
         <div className="space-y-3 pt-5">
           {Array.from({ length: 7 }).map((_, index) => (
-            <SkeletonLine key={index} className={index % 3 === 2 ? "w-3/4" : "w-full"} />
+            <SkeletonLine
+              key={index}
+              className={index % 3 === 2 ? "w-3/4" : "w-full"}
+            />
           ))}
         </div>
       </div>
@@ -206,7 +215,10 @@ export function ArticleListSkeleton({ count = 4 }: CountProps) {
   return (
     <div className="grid gap-3" {...loadingProps}>
       {Array.from({ length: count }).map((_, index) => (
-        <Card key={index} className="app-card flex min-h-36 overflow-hidden rounded-2xl p-3 shadow-none">
+        <Card
+          key={index}
+          className="app-card flex min-h-36 overflow-hidden rounded-2xl p-3 shadow-none"
+        >
           <Skeleton className="h-full min-h-28 w-28 shrink-0 rounded-xl" />
           <div className="min-w-0 flex-1 space-y-2.5 p-2">
             <Skeleton className="h-4 w-4/5 rounded-lg" />
@@ -309,7 +321,10 @@ export function FormPageSkeleton({ fields = 5 }: { fields?: number }) {
 
 export function AuthScreenSkeleton() {
   return (
-    <main className="flex min-h-dvh flex-col bg-background px-5 pb-8 pt-[calc(2rem+env(safe-area-inset-top))]" {...loadingProps}>
+    <main
+      className="flex min-h-dvh flex-col bg-background px-5 pb-8 pt-[calc(2rem+env(safe-area-inset-top))]"
+      {...loadingProps}
+    >
       <Skeleton className="size-11 rounded-full" />
       <div className="mx-auto mt-7 w-full max-w-md space-y-6">
         <Skeleton className="mx-auto aspect-[16/9] w-full rounded-[2rem]" />
@@ -331,7 +346,10 @@ export function NotificationListSkeleton({ count = 4 }: CountProps) {
   return (
     <div className="space-y-3" {...loadingProps}>
       {Array.from({ length: count }).map((_, index) => (
-        <Card key={index} className="space-y-3 rounded-3xl bg-surface p-4 shadow-none">
+        <Card
+          key={index}
+          className="space-y-3 rounded-3xl bg-surface p-4 shadow-none"
+        >
           <Skeleton className="h-4 w-2/3 rounded-lg" />
           <SkeletonLine />
           <SkeletonLine className="w-4/5" />
@@ -365,6 +383,40 @@ export function ReviewListSkeleton({ count = 3 }: CountProps) {
   );
 }
 
+export function ReviewsPageSkeleton() {
+  return (
+    <main className="min-h-dvh pb-8" {...loadingProps}>
+      <div className="px-5">
+        <PageHeaderSkeleton />
+      </div>
+      <div className="space-y-5 px-4 pt-5">
+        <Card className="app-card rounded-3xl p-5 shadow-none">
+          <div className="flex items-center gap-6">
+            <div className="w-28 shrink-0 space-y-3 text-center">
+              <Skeleton className="mx-auto h-10 w-16 rounded-xl" />
+              <Skeleton className="mx-auto h-4 w-24 rounded-lg" />
+              <Skeleton className="mx-auto h-3 w-16 rounded-lg" />
+            </div>
+            <div className="flex flex-1 flex-col gap-2.5">
+              {Array.from({ length: 5 }, (_, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Skeleton className="size-3 rounded-full" />
+                  <Skeleton
+                    className="h-2 rounded-full"
+                    style={{ width: `${95 - index * 13}%` }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+        <Skeleton className="h-12 w-full rounded-[1.2rem]" />
+        <ReviewListSkeleton count={3} />
+      </div>
+    </main>
+  );
+}
+
 export function TicketListSkeleton({ count = 3 }: CountProps) {
   return (
     <div className="space-y-4" {...loadingProps}>
@@ -386,7 +438,10 @@ export function LocationCardsSkeleton({ count = 2 }: CountProps) {
   return (
     <div className="flex flex-col gap-3" {...loadingProps}>
       {Array.from({ length: count }).map((_, index) => (
-        <Card key={index} className="app-card min-h-28 rounded-[1.5rem] p-4 shadow-none">
+        <Card
+          key={index}
+          className="app-card min-h-28 rounded-[1.5rem] p-4 shadow-none"
+        >
           <div className="flex items-start gap-3">
             <Skeleton className="size-11 shrink-0 rounded-full" />
             <div className="flex-1 space-y-2.5">
@@ -406,7 +461,10 @@ export function PickerRowsSkeleton({ count = 5 }: CountProps) {
   return (
     <div className="space-y-2 py-3" {...loadingProps}>
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="flex min-h-14 items-center justify-between gap-3 rounded-2xl px-4">
+        <div
+          key={index}
+          className="flex min-h-14 items-center justify-between gap-3 rounded-2xl px-4"
+        >
           <Skeleton className="h-4 w-2/5 rounded-lg" />
           <Skeleton className="size-6 rounded-lg" />
         </div>
@@ -443,7 +501,10 @@ export function SlotBookingSkeleton() {
 
 export function MapResultsSkeleton() {
   return (
-    <div className="absolute inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))]" {...loadingProps}>
+    <div
+      className="absolute inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))]"
+      {...loadingProps}
+    >
       <DiscoveryResultCardSkeleton count={1} />
     </div>
   );

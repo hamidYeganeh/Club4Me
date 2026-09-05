@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { http } from "../../http/client";
 
 export type DiscoverySectionType =
-  "banners" | "clubs" | "coaches" | "classes" | "articles";
+  "banners" | "clubs" | "coaches" | "classes" | "sports" | "articles";
 export type DiscoverySectionSort = "manual" | "newest" | "rating" | "name";
 export type DiscoverySectionAppearance = {
   backgroundColor: string;
@@ -51,11 +51,18 @@ export type SaveDiscoverySection = Omit<
   "id" | "position" | "createdAt" | "updatedAt"
 >;
 
+export type ImportDefaultDiscoverySectionsResult = {
+  created: number;
+  existing: number;
+};
+
 const base = "/admin/discovery/sections";
 export const adminDiscoveryClient = {
   list: () => http.get<{ items: DiscoverySectionConfiguration[] }>(base),
   create: (payload: SaveDiscoverySection) =>
     http.post<DiscoverySectionConfiguration>(base, payload),
+  importDefaults: () =>
+    http.post<ImportDefaultDiscoverySectionsResult>(`${base}/import-defaults`),
   update: (id: string, payload: Partial<SaveDiscoverySection>) =>
     http.patch<DiscoverySectionConfiguration>(`${base}/${id}`, payload),
   remove: (id: string) => http.delete<{ success: true }>(`${base}/${id}`),
@@ -96,6 +103,13 @@ export function useSaveDiscoverySection() {
       id
         ? adminDiscoveryClient.update(id, payload)
         : adminDiscoveryClient.create(payload),
+    onSuccess: () => client.invalidateQueries({ queryKey: key }),
+  });
+}
+export function useImportDefaultDiscoverySections() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: adminDiscoveryClient.importDefaults,
     onSuccess: () => client.invalidateQueries({ queryKey: key }),
   });
 }

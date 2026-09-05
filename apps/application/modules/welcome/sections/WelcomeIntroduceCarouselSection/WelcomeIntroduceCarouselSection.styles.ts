@@ -17,7 +17,7 @@ export const welcomeIntroduceCarouselSectionStyles = tv({
     footer:
       "absolute inset-x-0 bottom-0 z-20 h-[7.5rem] rounded-t-[2.5rem] border-t border-white/7 bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl",
     navNext:
-      "absolute top-4 left-5 z-30 flex size-12 items-center justify-center rounded-[1.1rem] bg-accent text-accent-foreground shadow-[0_10px_28px_color-mix(in_oklch,var(--accent)_35%,transparent)] transition-transform duration-200 ease-out active:scale-95",
+      "absolute top-4 left-5 z-30 flex size-12 items-center justify-center rounded-[1.1rem] bg-accent text-accent-foreground transition-transform duration-200 ease-out active:scale-95",
     navPrev:
       "absolute top-4 right-5 z-30 flex size-12 items-center justify-center rounded-[1.1rem] bg-surface-secondary text-foreground shadow-lg transition-transform duration-200 ease-out active:scale-95",
     pagination:

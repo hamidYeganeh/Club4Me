@@ -13,4 +13,5 @@ export type DiscoveryCoachesRailSectionProps = {
   items: DiscoveryCoachItem[];
   cardType?: CoachCardType;
   className?: string;
+  isLoading?: boolean;
 };

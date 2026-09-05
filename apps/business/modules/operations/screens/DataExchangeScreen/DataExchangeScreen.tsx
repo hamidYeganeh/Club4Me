@@ -28,15 +28,7 @@ export function DataExchangeScreen() {
   const exportFile = async () => {
     try {
       const result = await exporter.mutateAsync({ kind, format });
-      const content =
-        result.encoding === "base64"
-          ? Uint8Array.from(atob(result.content), (value) =>
-              value.charCodeAt(0),
-            )
-          : result.content;
-      const url = URL.createObjectURL(
-        new Blob([content], { type: result.mimeType }),
-      );
+      const url = URL.createObjectURL(result.blob);
       const link = document.createElement("a");
       link.href = url;
       link.download = result.filename;

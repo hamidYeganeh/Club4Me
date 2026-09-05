@@ -127,7 +127,7 @@ export function MainBottomNavigation() {
               isIconOnly
               variant="primary"
               aria-label={t(config.actionLabelKey)}
-              className="size-14 -translate-y-2 rounded-[1.35rem] shadow-[0_8px_28px_color-mix(in_oklch,var(--accent)_42%,transparent)]"
+              className="size-14 -translate-y-2 rounded-[1.35rem]"
             >
               <Icon name="plus-fat" size={26} />
             </ButtonLink>

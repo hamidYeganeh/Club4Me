@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { usePublicCatalogResource } from "@api/discovery";
 
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
+import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 
 import { discoveryClubsLocationsSectionStyles } from "./DiscoveryClubsLocationsSection.styles";
 import type { DiscoveryClubsLocationsSectionProps } from "./DiscoveryClubsLocationsSection.types";
@@ -13,6 +14,9 @@ import type { DiscoveryClubsLocationsSectionProps } from "./DiscoveryClubsLocati
 export function DiscoveryClubsLocationsSection({
   items,
   seeAllHref = "/discovery/cities",
+  title,
+  subtitle,
+  isLoading = false,
 }: DiscoveryClubsLocationsSectionProps) {
   const t = useTranslations("discovery.clubs");
   const styles = discoveryClubsLocationsSectionStyles();
@@ -28,8 +32,18 @@ export function DiscoveryClubsLocationsSection({
       kind: "city" as const,
     }));
 
+  if (isLoading) return null;
+
   if (locations.length === 0) {
-    return null;
+    return (
+      <DiscoveryEmptySection
+        title={title ?? t("locationsTitle")}
+        subtitle={subtitle ?? t("locationsSubtitle")}
+        icon="pin-1"
+        viewAllLabel={t("seeAll")}
+        viewAllUrl={seeAllHref}
+      />
+    );
   }
 
   return (
@@ -39,8 +53,8 @@ export function DiscoveryClubsLocationsSection({
     >
       <DiscoverySectionHeader
         id="discovery-clubs-locations-title"
-        title={t("locationsTitle")}
-        subtitle={t("locationsSubtitle")}
+        title={title ?? t("locationsTitle")}
+        subtitle={subtitle ?? t("locationsSubtitle")}
         icon="pin-1"
         viewAllLabel={t("seeAll")}
         viewAllUrl={seeAllHref}
@@ -51,7 +65,7 @@ export function DiscoveryClubsLocationsSection({
         orientation="horizontal"
         size={48}
         className={styles.scroller()}
-        aria-label={t("locationsTitle")}
+        aria-label={title ?? t("locationsTitle")}
       >
         <div className={styles.track()}>
           {locations.map((location) => (

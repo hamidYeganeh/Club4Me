@@ -12,6 +12,15 @@ const businessClassFields = z
   .object({
     title: z.string().trim().min(2).max(140),
     description: z.string().trim().max(3000).default(""),
+    faqs: z
+      .array(
+        z.object({
+          question: z.string().trim().min(2).max(240),
+          answer: z.string().trim().min(2).max(2000),
+        }),
+      )
+      .max(30)
+      .default([]),
     sport: z.string().trim().max(120).default(""),
     level: z.string().trim().max(80).default(""),
     model: z.enum(["group", "private", "course", "single", "open"]),
@@ -89,6 +98,7 @@ export class CreateBusinessClassDto {
   });
   title: string;
   description: string;
+  faqs?: Array<{ question: string; answer: string }>;
   sport: string;
   level: string;
   model: "group" | "private" | "course" | "single" | "open";
@@ -137,6 +147,7 @@ export class UpdateBusinessClassDto {
     });
   title?: string;
   description?: string;
+  faqs?: Array<{ question: string; answer: string }>;
   sport?: string;
   level?: string;
   model?: CreateBusinessClassDto["model"];

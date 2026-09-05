@@ -8,6 +8,7 @@ import {
   useCoachClubClassAttendance,
   useCoachClubClassEnrollments,
   useCreateCoachCalendarFeed,
+  useRevokeCoachCalendarFeed,
   useGenerateCoachClassCheckIn,
   useRecordCoachClubClassAttendance,
   useUpdateCoachClubClassSession,
@@ -42,6 +43,7 @@ export function CoachClubClassScreen({ classId }: { classId: string }) {
   const record = useRecordCoachClubClassAttendance(classId, sessionId);
   const updateSession = useUpdateCoachClubClassSession(classId);
   const calendarFeed = useCreateCoachCalendarFeed();
+  const revokeCalendarFeed = useRevokeCoachCalendarFeed();
   const generateCheckIn = useGenerateCoachClassCheckIn(classId, sessionId);
   const [credential, setCredential] = useState<{
     code: string;
@@ -160,6 +162,25 @@ export function CoachClubClassScreen({ classId }: { classId: string }) {
           }}
         >
           اشتراک تقویم کلاس‌ها
+        </Button>
+        <Button
+          className="mt-2 w-full"
+          variant="danger-soft"
+          isPending={revokeCalendarFeed.isPending}
+          onPress={async () => {
+            try {
+              const result = await revokeCalendarFeed.mutateAsync();
+              toast.success(
+                result.revoked
+                  ? "دسترسی تقویم لغو شد"
+                  : "لینک فعالی برای لغو وجود ندارد",
+              );
+            } catch {
+              toast.danger("لغو دسترسی تقویم انجام نشد");
+            }
+          }}
+        >
+          لغو لینک تقویم
         </Button>
       </Card>
 

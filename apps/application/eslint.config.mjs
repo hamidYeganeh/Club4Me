@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     "ios/**",
     ".tmp/**",
     "next-env.d.ts",
+    // Vendored source installed from the Bklit UI shadcn registry.
+    "components/charts/**",
   ]),
 ]);
 

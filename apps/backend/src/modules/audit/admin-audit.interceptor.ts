@@ -1,6 +1,7 @@
 import {
   CallHandler,
   ExecutionContext,
+  HttpException,
   Injectable,
   NestInterceptor,
 } from "@nestjs/common";
@@ -30,17 +31,32 @@ export class AdminAuditInterceptor implements NestInterceptor {
       return next.handle();
     }
     const response = context.switchToHttp().getResponse<Response>();
-    return next.handle().pipe(
-      tap(() => {
-        void this.logs.create({
+    const record = (statusCode: number, failed = false) => {
+      void this.logs
+        .create({
           actorId: new Types.ObjectId(request.user!.sub),
           action: `${request.method} ${request.route?.path ?? request.path}`,
           method: request.method,
           path: request.originalUrl.split("?")[0],
-          statusCode: response.statusCode,
-          metadata: { params: request.params },
+          statusCode,
+          metadata: {
+            params: request.params,
+            query: request.query,
+            failed,
+          },
           ip: request.ip,
-        });
+        })
+        .catch(() => undefined);
+    };
+    return next.handle().pipe(
+      tap({
+        next: () => record(response.statusCode),
+        error: (error: unknown) => {
+          record(
+            error instanceof HttpException ? error.getStatus() : 500,
+            true,
+          );
+        },
       }),
     );
   }

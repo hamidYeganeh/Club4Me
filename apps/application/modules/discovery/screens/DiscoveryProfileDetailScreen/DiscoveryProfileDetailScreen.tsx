@@ -1,6 +1,7 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Card, toast, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import {
@@ -9,8 +10,10 @@ import {
   type PublicCatalogClass,
 } from "@api/discovery";
 import {
+  type CoachBooking,
   type CoachSession,
   useBookCoachSession,
+  useCancelCoachBooking,
   useCancelClassEnrollment,
   useEnrollClass,
   useMyClassEnrollments,
@@ -25,6 +28,13 @@ import { ButtonLink } from "@/components/button-link";
 import { FallbackImage } from "@/components/FallbackImage";
 import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
 import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGateway";
+import { ReservationResultScreen } from "@modules/reservations/components/ReservationResultScreen";
+import { ReservationReviewScreen } from "@modules/reservations/components/ReservationReviewScreen";
+import { CoachReservationSuccessScreen } from "@modules/reservations/components/CoachReservationSuccessScreen";
+import { DetailFaqSection } from "@modules/discovery/components/DetailFaqSection";
+import { DetailGallerySection } from "@modules/discovery/components/DetailGallerySection";
+import { CoachTrainingStylesSection } from "@modules/discovery/components/CoachTrainingStylesSection";
+import { CoachExperienceSection } from "@modules/discovery/components/CoachExperienceSection";
 import {
   CompactCardListSkeleton,
   DetailPageSkeleton,
@@ -48,6 +58,7 @@ export function DiscoveryProfileDetailScreen({
 }
 
 function CoachDetails({ id }: { id: string }) {
+  const router = useRouter();
   const query = useCatalogCoach(id);
   const coach = query.data;
   const sessions = usePublicCoachSessions(coach?.slug ?? "");
@@ -55,9 +66,16 @@ function CoachDetails({ id }: { id: string }) {
   const bookClub = useReserveSession();
   const resolveClubPayment = useResolveMockClubPayment();
   const resolveCoachPayment = useResolveMockCoachPayment();
+  const cancelCoachBooking = useCancelCoachBooking();
   const [pendingPayment, setPendingPayment] =
     useState<PendingMockPayment | null>(null);
-  if (query.isLoading) return <Loading />;
+  const [reservationResult, setReservationResult] = useState<
+    "success" | "failed" | null
+  >(null);
+  const [reviewSession, setReviewSession] = useState<CoachSession | null>(null);
+  const [completedBooking, setCompletedBooking] =
+    useState<CoachBooking | null>(null);
+  if (query.isLoading || (coach && sessions.isPending)) return <Loading />;
   if (!coach) return <Missing retry={() => query.refetch()} />;
   const phone = firstString(coach.contact, ["phone", "mobile", "telephone"]);
   const availableSessions = sessions.data?.items ?? [];
@@ -69,6 +87,7 @@ function CoachDetails({ id }: { id: string }) {
           participantCount: 1,
         });
         if (result.paymentStatus === "pending") {
+          setReviewSession(null);
           setPendingPayment({
             source: "club",
             id: result.id,
@@ -80,6 +99,7 @@ function CoachDetails({ id }: { id: string }) {
       } else {
         const result = await book.mutateAsync(session.id);
         if (result.paymentStatus === "pending") {
+          setReviewSession(null);
           setPendingPayment({
             source: "coach",
             id: result.id,
@@ -88,10 +108,15 @@ function CoachDetails({ id }: { id: string }) {
           });
           return;
         }
+        setCompletedBooking(result);
+        setReviewSession(null);
+        return;
       }
-      toast.success("رزرو رایگان شما با موفقیت ثبت شد");
+      setReviewSession(null);
+      setReservationResult("success");
     } catch {
-      toast.danger("رزرو انجام نشد؛ ظرفیت، زمان یا حساب کاربری را بررسی کنید");
+      setReviewSession(null);
+      setReservationResult("failed");
     }
   };
   const finishPayment = async (result: "approve" | "reject") => {
@@ -103,21 +128,116 @@ function CoachDetails({ id }: { id: string }) {
           result,
         });
       } else {
-        await resolveCoachPayment.mutateAsync({
+        const booking = await resolveCoachPayment.mutateAsync({
           bookingId: pendingPayment.id,
           result,
         });
+        if (result === "approve") setCompletedBooking(booking);
       }
       setPendingPayment(null);
       if (result === "approve") {
-        toast.success("پرداخت موفق بود و رزرو قطعی شد");
+        if (pendingPayment.source === "club") setReservationResult("success");
       } else {
-        toast.danger("پرداخت ناموفق بود و ظرفیت رزرو آزاد شد");
+        setReservationResult("failed");
       }
     } catch {
-      toast.danger("ثبت نتیجه پرداخت انجام نشد؛ دوباره تلاش کنید");
+      setPendingPayment(null);
+      setReservationResult("failed");
     }
   };
+  if (completedBooking) {
+    return (
+      <CoachReservationSuccessScreen
+        coach={coach}
+        booking={completedBooking}
+        phone={phone ?? undefined}
+        cancelPending={cancelCoachBooking.isPending}
+        onCall={() => {
+          if (phone) window.location.href = `tel:${phone.replace(/[^+\d]/g, "")}`;
+        }}
+        onReschedule={() => {
+          setCompletedBooking(null);
+          requestAnimationFrame(() => {
+            document
+              .getElementById("coach-sessions")
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        }}
+        onCancel={() => {
+          if (!window.confirm("این رزرو لغو شود؟")) return;
+          void cancelCoachBooking
+            .mutateAsync({
+              bookingId: completedBooking.id,
+              reason: "لغو توسط ورزشکار",
+            })
+            .then(() => {
+              toast.success("رزرو لغو شد و بازپرداخت طبق قوانین محاسبه شد");
+              router.push("/athlete/reservations");
+            })
+            .catch(() => toast.danger("لغو رزرو انجام نشد؛ دوباره تلاش کنید"));
+        }}
+      />
+    );
+  }
+  if (reservationResult) {
+    return (
+      <ReservationResultScreen
+        status={reservationResult}
+        entity={{
+          kind: "coach",
+          title: coach.displayName,
+          subtitle: coach.shortBio || "مربی تأییدشده کلاب‌فورمی",
+          meta: `${coach.averageRating.toLocaleString("fa-IR")} ★ · ${coach.experienceYears.toLocaleString("fa-IR")} سال تجربه`,
+          imageUrl: coach.imageUrl,
+        }}
+        onPrimary={() => {
+          if (reservationResult === "success") {
+            router.push("/athlete/reservations");
+          } else {
+            setReservationResult(null);
+          }
+        }}
+        onSecondary={() =>
+          router.push(
+            reservationResult === "success"
+              ? "/discovery/coaches"
+              : "/athlete/reservations",
+          )
+        }
+      />
+    );
+  }
+  if (reviewSession) {
+    return (
+      <ReservationReviewScreen
+        entity={{
+          kind: "coach",
+          title: coach.displayName,
+          subtitle:
+            reviewSession.offeringTitle ||
+            coach.shortBio ||
+            "مربی تأییدشده کلاب‌فورمی",
+          imageUrl: coach.imageUrl,
+          rating: coach.averageRating,
+          reviewsCount: coach.reviewsCount,
+        }}
+        session={{
+          title: reviewSession.title,
+          startsAt: reviewSession.startAt,
+          endsAt: reviewSession.endAt,
+          deliveryMode: reviewSession.deliveryMode,
+          address: reviewSession.venue?.address,
+          participantCount: 1,
+          amount: reviewSession.price?.amount ?? 0,
+          currency: reviewSession.price?.currency ?? "IRR",
+          cancellationPolicy: reviewSession.cancellationPolicy,
+        }}
+        isPending={book.isPending || bookClub.isPending}
+        onBack={() => setReviewSession(null)}
+        onConfirm={() => void reserve(reviewSession)}
+      />
+    );
+  }
   return (
     <DetailLayout
       title={coach.displayName}
@@ -145,7 +265,55 @@ function CoachDetails({ id }: { id: string }) {
             ? `tel:${phone}`
             : undefined
       }
+      galleryHref={`/discovery/coaches/${id}/gallery`}
     >
+      <DetailGallerySection
+        title="نمونه‌کارها"
+        images={coach.portfolio.map((image) => image.url)}
+        viewAllHref={`/discovery/coaches/${id}/gallery`}
+      />
+      <CoachTrainingStylesSection items={coach.trainingStyles} />
+      {coach.specialties.length ? (
+        <Card className="app-card app-stack-card p-5 shadow-none">
+          <Card.Title>تخصص‌ها</Card.Title>
+          <div className="mt-3 divide-y divide-white/8">
+            {coach.specialties.map((specialty, index) => (
+              <div
+                key={`${specialty.title}-${index}`}
+                className="flex gap-4 py-4"
+              >
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-accent/12 text-accent">
+                  <Icon name="medal" size={22} />
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-foreground">
+                    {specialty.title}
+                  </p>
+                  <p className="mt-1 text-sm leading-7 text-muted">
+                    {specialty.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
+      <CoachExperienceSection summary={coach.experienceSummary} items={coach.experience} />
+      <DetailFaqSection items={coach.faqs} />
+      <Card className="app-card app-stack-card p-5 shadow-none">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <Card.Title>نظر ورزشکاران</Card.Title>
+            <Card.Description className="mt-2 text-muted">
+              {coach.reviewsCount.toLocaleString("fa-IR")} نظر · میانگین {coach.averageRating.toLocaleString("fa-IR")} از ۵
+            </Card.Description>
+          </div>
+          <Icon name="star-full" size={28} className="text-accent" />
+        </div>
+        <ButtonLink href={`/discovery/coaches/${id}/reviews`} variant="secondary" className="mt-4 w-full">
+          مشاهده و ثبت نظر
+        </ButtonLink>
+      </Card>
       <Card
         id="coach-sessions"
         className="app-card app-stack-card scroll-mt-6 p-5 shadow-none"
@@ -192,9 +360,9 @@ function CoachDetails({ id }: { id: string }) {
                       variant="primary"
                       className="mt-2"
                       isPending={book.isPending || bookClub.isPending}
-                      onPress={() => void reserve(session)}
+                      onPress={() => setReviewSession(session)}
                     >
-                      رزرو
+                      ادامه
                     </Button>
                   </div>
                 </div>
@@ -228,7 +396,7 @@ function ClassDetails({ id }: { id: string }) {
   const cancelEnrollment = useCancelClassEnrollment();
   const resolvePayment = useResolveMockClassPayment();
   const [showPayment, setShowPayment] = useState(false);
-  if (query.isLoading) return <Loading />;
+  if (query.isLoading || enrollments.isPending) return <Loading />;
   const item = query.data;
   if (!item) return <Missing retry={() => query.refetch()} />;
   const remaining = Math.max(0, item.capacity - item.enrollmentCount);
@@ -333,7 +501,25 @@ function ClassDetails({ id }: { id: string }) {
         (!enrollment && !registrationOpen)
       }
       actionPending={enroll.isPending || enrollments.isPending}
+      galleryHref={`/discovery/classes/${id}/gallery`}
     >
+      <DetailGallerySection
+        images={item.imageUrl ? [item.imageUrl] : []}
+        viewAllHref={`/discovery/classes/${id}/gallery`}
+      />
+      <DetailFaqSection items={item.faqs} />
+      <Card className="app-card app-stack-card p-5 shadow-none">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <Card.Title>نظر شرکت‌کنندگان</Card.Title>
+            <Card.Description className="mt-2 text-muted">تجربه شرکت در این کلاس را بخوانید یا نظر خودتان را ثبت کنید.</Card.Description>
+          </div>
+          <Icon name="star-full" size={28} className="text-accent" />
+        </div>
+        <ButtonLink href={`/discovery/classes/${id}/reviews`} variant="secondary" className="mt-4 w-full">
+          مشاهده و ثبت نظر
+        </ButtonLink>
+      </Card>
       <Card className="app-card app-stack-card p-5 shadow-none">
         <Card.Title>جزئیات ثبت‌نام</Card.Title>
         <div className="mt-4 grid gap-3 text-sm text-muted">
@@ -397,6 +583,7 @@ function DetailLayout({
   onAction,
   actionDisabled,
   actionPending,
+  galleryHref,
   children,
 }: {
   title: string;
@@ -411,22 +598,75 @@ function DetailLayout({
   onAction?: () => void;
   actionDisabled?: boolean;
   actionPending?: boolean;
+  galleryHref?: string;
   children?: ReactNode;
 }) {
+  const galleryRouter = useRouter();
+  const mediaRef = useRef<HTMLDivElement | null>(null);
+  const pullStartRef = useRef<number | null>(null);
+  const galleryPullRef = useRef(0);
+  const [galleryPull, setGalleryPull] = useState(0);
+
+  useEffect(() => {
+    const media = mediaRef.current;
+    if (!media || !galleryHref) return;
+    const onTouchStart = (event: TouchEvent) => {
+      const scrollRoot = media.closest(".app-scroll-root");
+      if ((scrollRoot?.scrollTop ?? 0) <= 1 && event.touches.length === 1) {
+        pullStartRef.current = event.touches[0]?.clientY ?? null;
+      }
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      const start = pullStartRef.current;
+      const current = event.touches[0]?.clientY;
+      if (start === null || current === undefined) return;
+      const distance = Math.max(0, current - start);
+      if (!distance) return;
+      event.preventDefault();
+      const resisted = Math.min(76, distance * 0.55);
+      galleryPullRef.current = resisted;
+      setGalleryPull(resisted);
+    };
+    const onTouchEnd = () => {
+      if (galleryPullRef.current >= 52) galleryRouter.push(galleryHref);
+      pullStartRef.current = null;
+      galleryPullRef.current = 0;
+      setGalleryPull(0);
+    };
+    media.addEventListener("touchstart", onTouchStart, { passive: true, capture: true });
+    media.addEventListener("touchmove", onTouchMove, { passive: false, capture: true });
+    media.addEventListener("touchend", onTouchEnd, { capture: true });
+    media.addEventListener("touchcancel", onTouchEnd, { capture: true });
+    return () => {
+      media.removeEventListener("touchstart", onTouchStart, { capture: true });
+      media.removeEventListener("touchmove", onTouchMove, { capture: true });
+      media.removeEventListener("touchend", onTouchEnd, { capture: true });
+      media.removeEventListener("touchcancel", onTouchEnd, { capture: true });
+    };
+  }, [galleryHref, galleryRouter]);
+
   return (
     <main className="min-h-dvh w-full max-w-full overflow-x-hidden bg-transparent pb-[calc(7rem+env(safe-area-inset-bottom))]">
       <DiscoveryPageHeader title="" overlay />
-      <div className="app-scroll-media relative aspect-4/5 max-h-[62dvh] overflow-hidden">
-        <FallbackImage
-          src={imageUrl}
-          alt={title}
-          fill
-          priority
-          unoptimized
-          sizes="(max-width: 576px) 100vw, 576px"
-          className="object-cover saturate-75"
-        />
-        <div className="absolute inset-0 bg-linear-to-t from-background via-transparent to-black/20" />
+      <div ref={mediaRef} className="app-scroll-media relative aspect-4/5 max-h-[62dvh] overflow-hidden bg-background">
+        {galleryHref ? (
+          <div className="absolute inset-x-0 top-4 flex flex-col items-center gap-1 text-xs font-bold text-accent" aria-hidden>
+            <Icon name="chevron-down" size={20} className={galleryPull >= 52 ? "rotate-180" : ""} />
+            {galleryPull >= 52 ? "رها کن و گالری را ببین" : "برای دیدن گالری بکش"}
+          </div>
+        ) : null}
+        <div className="absolute inset-0 z-10 transition-transform duration-150 ease-out" style={{ transform: `translateY(${galleryPull}px)` }}>
+          <FallbackImage
+            src={imageUrl}
+            alt={title}
+            fill
+            priority
+            unoptimized
+            sizes="(max-width: 576px) 100vw, 576px"
+            className="object-cover saturate-75"
+          />
+          <div className="absolute inset-0 bg-linear-to-t from-background via-transparent to-black/20" />
+        </div>
       </div>
       <section className="relative -mt-16 flex flex-col gap-6 rounded-t-[2.25rem] border-t border-white/7 bg-background/94 px-5 pt-8 backdrop-blur-xl">
         <div className="app-reveal">

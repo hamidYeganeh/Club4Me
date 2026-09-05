@@ -3,6 +3,10 @@ import { Inject, Injectable } from "@nestjs/common";
 import { AppError } from "../../common/errors/app.exception";
 import type { UserRole } from "../../lib/roles";
 import type { PublicUser } from "../users/mappers/user.mapper";
+import type {
+  UserActivityLevel,
+  UserGender,
+} from "../users/schemas/user.schema";
 import { UsersService } from "../users/users.service";
 import {
   SMS_PROVIDER,
@@ -193,9 +197,58 @@ export class AuthService {
     return this.usersService.findById(userId);
   }
 
+  getProfileChoices() {
+    return {
+      genders: [
+        { value: "female", label: "زن" },
+        { value: "male", label: "مرد" },
+        {
+          value: "other",
+          label: "سایر",
+          description: "هویت جنسیتی خود را بنویسید",
+          requiresDescription: true,
+        },
+      ] satisfies Array<{
+        value: UserGender;
+        label: string;
+        description?: string;
+        requiresDescription?: boolean;
+      }>,
+      activityLevels: [
+        {
+          value: "very-active",
+          label: "بسیار فعال",
+          description: "هر روز ورزش می‌کنم",
+        },
+        {
+          value: "normal",
+          label: "معمولی",
+          description: "هفته‌ای یک یا دو بار ورزش می‌کنم",
+        },
+        {
+          value: "very-lazy",
+          label: "کم‌تحرک",
+          description: "به‌ندرت ورزش می‌کنم",
+        },
+      ] satisfies Array<{
+        value: UserActivityLevel;
+        label: string;
+        description: string;
+      }>,
+    };
+  }
+
   updateProfile(
     userId: string,
-    profile: { firstName: string; lastName: string },
+    profile: {
+      firstName?: string;
+      lastName?: string;
+      birthdate?: string;
+      gender?: UserGender;
+      genderDescription?: string;
+      activityLevel?: UserActivityLevel;
+      idCard?: string;
+    },
   ): Promise<PublicUser> {
     return this.usersService.updateProfile(userId, profile);
   }

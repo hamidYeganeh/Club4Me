@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Avatar, Button, Card, Chip, Input, Switch } from "@heroui/react";
+import { Avatar, Button, Card, Chip, Input, Switch, toast } from "@heroui/react";
+import { useLogout } from "@api/business";
 import { Icon } from "@theme/icon";
 import {
   imageUploaderAccept,
@@ -9,6 +10,7 @@ import {
   type UploaderLabels,
 } from "@ui/uploader";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 import { settingsContentSectionStyles } from "./SettingsContentSection.styles";
 import type { SettingsContentSectionProps } from "./SettingsContentSection.types";
@@ -35,6 +37,8 @@ export function SettingsContentSection({
   autoPayout,
 }: SettingsContentSectionProps) {
   const styles = settingsContentSectionStyles();
+  const logout = useLogout();
+  const router = useRouter();
   const t = useTranslations("uploader");
   const [avatarSrc, setAvatarSrc] = useState(defaultAvatar);
   const labels: UploaderLabels = {
@@ -172,6 +176,7 @@ export function SettingsContentSection({
           <Switch defaultSelected aria-label={autoPayout} />
         </div>
       </Card>
+      <Button variant="danger-soft" isPending={logout.isPending} onPress={() => void logout.mutateAsync().then(() => router.replace("/auth")).catch(() => toast.danger("خروج از حساب انجام نشد"))}>خروج از حساب</Button>
     </main>
   );
 }

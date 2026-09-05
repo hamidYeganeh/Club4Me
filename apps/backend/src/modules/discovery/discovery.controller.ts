@@ -27,14 +27,26 @@ export class DiscoveryFeedController {
     return this.service.getFeed();
   }
 
+  @Get("sections") getSections() {
+    return this.service.getFeed();
+  }
+
   @Get("catalog/club-types")
   listClubTypes() {
     return this.service.listPublicClubTypes();
   }
 
   @Get("catalog/clubs")
-  listClubs(@Query() query: Record<string, string | undefined>) {
+  listCatalogClubs(@Query() query: Record<string, string | undefined>) {
     return this.service.listPublicClubs(query);
+  }
+
+  @Get("clubs")
+  listClubs(@Query() query: Record<string, string | undefined>) {
+    return this.service.listPublicClubs({
+      ...query,
+      limit: query.limit ?? "20",
+    });
   }
 
   @Get("catalog/clubs/:identifier")
@@ -106,6 +118,11 @@ export class AdminDiscoveryController {
     @Body() body: CreateDiscoverySectionDto,
   ) {
     return this.service.create(user.roles, body);
+  }
+  @Post("import-defaults") importDefaults(
+    @CurrentUser() user: AuthTokenPayload,
+  ) {
+    return this.service.importDefaults(user.roles);
   }
   @Patch("reorder") reorder(
     @CurrentUser() user: AuthTokenPayload,

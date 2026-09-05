@@ -11,7 +11,7 @@ export const accountAuthOtpHeaderSectionStyles = tv({
       true: {
         root: "pointer-events-none border-transparent bg-transparent shadow-none backdrop-blur-none",
         spacer: "hidden",
-        back: "pointer-events-auto border-white/8 bg-surface/72 text-foreground shadow-[0_8px_22px_color-mix(in_oklch,var(--background)_45%,transparent)] backdrop-blur-xl",
+        back: "pointer-events-auto border-white/8 bg-surface/72 text-foreground backdrop-blur-xl",
       },
     },
     transparent: {

@@ -111,9 +111,7 @@ export function ClubsScreen() {
                                 isPending={
                                   reviewingId === club.id && review.isPending
                                 }
-                                onPress={() =>
-                                  void decide(club.id, "approved")
-                                }
+                                onPress={() => void decide(club.id, "approved")}
                               >
                                 {t("approve")}
                               </Button>
@@ -121,9 +119,7 @@ export function ClubsScreen() {
                                 size="sm"
                                 variant="secondary"
                                 isDisabled={review.isPending}
-                                onPress={() =>
-                                  void decide(club.id, "rejected")
-                                }
+                                onPress={() => void decide(club.id, "rejected")}
                               >
                                 {t("reject")}
                               </Button>
@@ -153,20 +149,42 @@ export function ClubsScreen() {
                   title: "شناسه و وضعیت",
                   items: [
                     { label: "شناسه باشگاه", value: selected.id, dir: "ltr" },
-                    { label: "شناسه مالک", value: selected.ownerId, dir: "ltr" },
+                    {
+                      label: "شناسه مالک",
+                      value: selected.ownerId,
+                      dir: "ltr",
+                    },
                     { label: "نامک", value: selected.slug, dir: "ltr" },
                     { label: "وضعیت بررسی", value: t(selected.reviewStatus) },
                     { label: "نمایش عمومی", value: selected.visibility },
-                    { label: "وضعیت عملیاتی", value: selected.operationalStatus },
-                    { label: "علت رد", value: selected.rejectionReason, wide: true },
+                    {
+                      label: "وضعیت عملیاتی",
+                      value: selected.operationalStatus,
+                    },
+                    {
+                      label: "علت رد",
+                      value: selected.rejectionReason,
+                      wide: true,
+                    },
                   ],
                 },
                 {
                   title: "معرفی",
                   items: [
-                    { label: "توضیح کوتاه", value: selected.shortDescription, wide: true },
-                    { label: "توضیحات", value: selected.description, wide: true },
-                    { label: "گروه مخاطب", value: selected.audience.join("، ") },
+                    {
+                      label: "توضیح کوتاه",
+                      value: selected.shortDescription,
+                      wide: true,
+                    },
+                    {
+                      label: "توضیحات",
+                      value: selected.description,
+                      wide: true,
+                    },
+                    {
+                      label: "گروه مخاطب",
+                      value: selected.audience.join("، "),
+                    },
                     {
                       label: "بازه سنی",
                       value:
@@ -175,14 +193,26 @@ export function ClubsScreen() {
                           : `${selected.minAge ?? "—"} تا ${selected.maxAge ?? "—"} سال`,
                     },
                     { label: "تگ‌ها", value: selected.tags.join("، ") },
-                    { label: "قوانین", value: selected.rules.join(" | "), wide: true },
+                    {
+                      label: "قوانین",
+                      value: selected.rules.join(" | "),
+                      wide: true,
+                    },
                   ],
                 },
                 {
                   title: "مکان و امکانات",
                   items: [
-                    { label: "نشانی", value: selected.location?.address, wide: true },
-                    { label: "منطقه زمانی", value: selected.location?.timezone, dir: "ltr" },
+                    {
+                      label: "نشانی",
+                      value: selected.location?.address,
+                      wide: true,
+                    },
+                    {
+                      label: "منطقه زمانی",
+                      value: selected.location?.timezone,
+                      dir: "ltr",
+                    },
                     {
                       label: "مختصات",
                       value: selected.location
@@ -190,10 +220,22 @@ export function ClubsScreen() {
                         : null,
                       dir: "ltr",
                     },
-                    { label: "رشته‌ها", value: selected.sportIds.length.toLocaleString("fa-IR") },
-                    { label: "امکانات", value: selected.amenities.length.toLocaleString("fa-IR") },
-                    { label: "تجهیزات", value: selected.equipment.length.toLocaleString("fa-IR") },
-                    { label: "رسانه‌ها", value: selected.gallery.length.toLocaleString("fa-IR") },
+                    {
+                      label: "رشته‌ها",
+                      value: selected.sportIds.length.toLocaleString("fa-IR"),
+                    },
+                    {
+                      label: "امکانات",
+                      value: selected.amenities.length.toLocaleString("fa-IR"),
+                    },
+                    {
+                      label: "تجهیزات",
+                      value: selected.equipment.length.toLocaleString("fa-IR"),
+                    },
+                    {
+                      label: "رسانه‌ها",
+                      value: selected.gallery.length.toLocaleString("fa-IR"),
+                    },
                   ],
                 },
                 {

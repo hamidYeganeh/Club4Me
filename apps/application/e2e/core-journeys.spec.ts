@@ -36,12 +36,21 @@ test("کشف تا رزرو، پرداخت، اعلان، لغو و refund", asyn
     .click();
   await expect(page).toHaveURL(/\/discovery\/clubs\/energy-plus-demo$/);
 
-  await page.getByRole("button", { name: "رزرو کنید", exact: true }).click();
+  await page
+    .getByRole("button", { name: "همین حالا رزرو کن", exact: true })
+    .click();
   await expect(page).toHaveURL(
     /\/discovery\/clubs\/energy-plus-demo\/slots$/,
   );
 
   await page.getByRole("button", { name: "رزرو کنید", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "مرور رزرو" }),
+  ).toBeVisible();
+  await expect(page.getByText("سانس تست باشگاه", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "ثبت رزرو و ادامه پرداخت" })
+    .click();
   await expect(page.getByText("درگاه پرداخت آزمایشی")).toBeVisible();
   await page.getByRole("button", { name: "پرداخت موفق" }).click();
   await expect(
@@ -57,17 +66,7 @@ test("کشف تا رزرو، پرداخت، اعلان، لغو و refund", asyn
   });
   await expect(reservation).toBeVisible();
 
-  const box = await reservation.boundingBox();
-  expect(box).not.toBeNull();
-  if (!box) return;
-  await page.mouse.move(box.x + box.width * 0.75, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(box.x + box.width * 0.25, box.y + box.height / 2, {
-    steps: 8,
-  });
-  await page.mouse.up();
-
-  await page.getByRole("button", { name: "لغو", exact: true }).click();
+  await page.getByRole("button", { name: "لغو رزرو", exact: true }).click();
   await expect(page.getByRole("heading", { name: "لغو رزرو" })).toBeVisible();
   await page.getByLabel("تغییر برنامه").check();
   await page.getByRole("button", { name: "تأیید لغو رزرو" }).click();

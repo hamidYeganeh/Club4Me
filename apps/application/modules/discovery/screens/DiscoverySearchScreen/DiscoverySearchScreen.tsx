@@ -2,14 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@heroui/react";
-import { useCatalogSearch, type PublicCatalogSearchKind } from "@api/discovery";
+import { Button, SearchField, Skeleton, Typography } from "@heroui/react";
+import {
+  useCatalogSearch,
+  usePublicCatalogResource,
+  type PublicCatalogSearchKind,
+} from "@api/discovery";
 import { Icon } from "@theme/icon";
 
 import { ActiveLocationSelector } from "@modules/locations/components/ActiveLocationSelector";
 import { DiscoveryResultCard } from "@modules/discovery/components/DiscoveryResultCard";
 import { RequestFailureState } from "@/components/request-failure-state";
 import { DiscoveryResultCardSkeleton } from "@/components/loading-skeletons";
+import { getQueryFailure } from "@/lib/request-failure";
 
 const RECENT_SEARCHES_KEY = "gym4me.discovery.recent-searches";
 const kinds = [
@@ -35,11 +40,17 @@ export function DiscoverySearchScreen({
   const [showFilters, setShowFilters] = useState(false);
   const [recent, setRecent] = useState<RecentSearch[]>([]);
   const [deferredQuery, setDeferredQuery] = useState("");
+  const keywords = usePublicCatalogResource(
+    "discovery",
+    "search-keyword",
+    { limit: 8 },
+  );
   const canSearch = deferredQuery.length >= 2;
   const result = useCatalogSearch(
     { q: deferredQuery, kind, limit: 20 },
     canSearch,
   );
+  const failure = getQueryFailure(result.error, result.fetchStatus);
 
   useEffect(() => {
     const normalizedQuery = query.trim();
@@ -107,82 +118,147 @@ export function DiscoverySearchScreen({
       href: `/discovery/classes/${item.slug}`,
     })),
   ];
+  const topics = keywords.data?.items ?? [];
 
   return (
-    <main className="app-page gap-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
-      <div className="flex items-center gap-2" dir="rtl">
-        <button
-          type="button"
+    <main className="app-page gap-6 pt-[calc(env(safe-area-inset-top)+1rem)]">
+      <header
+        className="grid min-h-12 grid-cols-[2.75rem_1fr_2.75rem] items-center"
+        dir="rtl"
+      >
+        <Button
+          isIconOnly
+          variant="ghost"
           aria-label="بازگشت"
-          onClick={() => router.back()}
-          className="flex size-11 shrink-0 items-center justify-center rounded-xl text-foreground transition-colors hover:bg-surface-secondary"
+          onPress={() => router.back()}
+          className="size-11 min-w-11 rounded-xl text-foreground"
         >
           <Icon name="chevron-right" size={24} />
-        </button>
-        <form
-          className="flex h-14 min-w-0 flex-1 items-center gap-3 rounded-[1.15rem] border border-border bg-surface px-4 shadow-sm transition focus-within:border-focus focus-within:ring-3 focus-within:ring-focus/15"
-          onSubmit={(event) => {
-            event.preventDefault();
-            remember();
-          }}
+        </Button>
+        <Typography
+          type="h4"
+          weight="bold"
+          className="text-center tracking-tight text-foreground"
         >
-          <Icon name="magnifying-glass" size={23} className="text-muted" />
-          <input
-            ref={inputRef}
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={placeholderFor(kind)}
-            aria-label="جست‌وجو در دیسکاوری"
-            className="min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted"
-          />
-        </form>
-        <button
-          type="button"
-          aria-label="فیلتر نوع نتیجه"
-          aria-expanded={showFilters}
-          onClick={() => setShowFilters((value) => !value)}
-          className={`flex size-11 shrink-0 items-center justify-center rounded-xl transition-colors ${showFilters || kind ? "bg-accent text-accent-foreground" : "text-foreground hover:bg-surface-secondary"}`}
+          جست‌وجو
+        </Typography>
+        <span aria-hidden className="size-11" />
+      </header>
+
+      <div className="flex flex-col gap-3" dir="rtl">
+        <SearchField
+          fullWidth
+          value={query}
+          onChange={setQuery}
+          onSubmit={() => remember()}
+          aria-label="جست‌وجو در دیسکاوری"
+          className="w-full"
         >
-          <Icon name="funnel-1" size={23} />
-        </button>
+          <SearchField.Group className="flex h-16 w-full items-center gap-3 rounded-[1.35rem] border border-white/10 bg-surface/85 px-4 backdrop-blur-xl transition-[border-color,box-shadow] focus-within:border-focus focus-within:ring-3 focus-within:ring-focus/15">
+            <SearchField.SearchIcon className="size-6 shrink-0 text-muted" />
+            <SearchField.Input
+              ref={inputRef}
+              aria-label="جست‌وجو در دیسکاوری"
+              placeholder={placeholderFor(kind)}
+              className="min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted"
+            />
+            {query ? (
+              <SearchField.ClearButton aria-label="پاک کردن جست‌وجو" />
+            ) : null}
+            <span className="h-7 w-px bg-separator" aria-hidden />
+            <Button
+              isIconOnly
+              variant={showFilters || kind ? "primary" : "ghost"}
+              aria-label="فیلتر نوع نتیجه"
+              aria-expanded={showFilters}
+              onPress={() => setShowFilters((value) => !value)}
+              className="size-10 min-w-10 rounded-xl"
+            >
+              <Icon name="funnel-1" size={21} />
+            </Button>
+          </SearchField.Group>
+        </SearchField>
+
+        {showFilters ? (
+          <div className="app-chip-row app-reveal">
+            {kinds.map((item) => (
+              <Button
+                key={item.label}
+                size="sm"
+                variant="ghost"
+                className={`h-10 shrink-0 rounded-full border px-4 font-bold ${
+                  kind === item.value
+                    ? "border-accent bg-accent text-accent-foreground"
+                    : "border-border bg-surface-secondary/70 text-foreground"
+                }`}
+                onPress={() => setKind(item.value)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
-      {showFilters ? (
-        <div className="app-chip-row app-reveal">
-          {kinds.map((item) => (
-            <Button
-              key={item.label}
-              size="sm"
-              variant={kind === item.value ? "primary" : "secondary"}
-              className="shrink-0"
-              onPress={() => setKind(item.value)}
+      {!canSearch ? (
+        <section className="flex flex-col gap-4" aria-labelledby="topics-title">
+          <Typography id="topics-title" type="h5" weight="bold">
+            موضوعات
+          </Typography>
+          {keywords.isLoading ? (
+            <div
+              className="flex flex-wrap gap-2.5"
+              aria-label="در حال دریافت موضوعات"
             >
-              {item.label}
-            </Button>
-          ))}
-        </div>
+              {Array.from({ length: 6 }, (_, index) => (
+                <Skeleton key={index} className="h-12 w-32 rounded-full" />
+              ))}
+            </div>
+          ) : topics.length ? (
+            <div className="flex flex-wrap gap-2.5">
+              {topics.map((topic) => (
+                <Button
+                  key={topic.id}
+                  variant="ghost"
+                  className="h-12 rounded-full border border-white/10 bg-surface/80 px-4 font-bold text-foreground backdrop-blur-md hover:border-accent/35 hover:bg-accent/8"
+                  onPress={() => {
+                    setQuery(topic.name);
+                    remember(topic.name);
+                  }}
+                >
+                  <span aria-hidden className="text-xl font-medium text-accent">
+                    #
+                  </span>
+                  {topic.name}
+                </Button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted">موضوعی برای نمایش وجود ندارد.</p>
+          )}
+        </section>
       ) : null}
 
-      <ActiveLocationSelector variant="search" />
+      {showFilters ? <ActiveLocationSelector variant="search" /> : null}
 
       {!canSearch ? (
         <section className="pt-2">
           <div className="mb-3 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-foreground">
+            <Typography type="h5" weight="bold">
               جست‌وجوهای اخیر
-            </h1>
+            </Typography>
             {recent.length ? (
-              <button
-                type="button"
-                className="text-sm font-semibold text-accent"
-                onClick={() => {
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-10 px-3 font-semibold text-accent"
+                onPress={() => {
                   setRecent([]);
                   window.localStorage.removeItem(RECENT_SEARCHES_KEY);
                 }}
               >
                 پاک کردن
-              </button>
+              </Button>
             ) : null}
           </div>
           {recent.length ? (
@@ -221,14 +297,19 @@ export function DiscoverySearchScreen({
         </section>
       ) : (
         <section className="flex flex-col gap-3 pt-1">
-          <p className="text-sm text-muted">
-            {result.isLoading
-              ? "در حال جست‌وجو..."
-              : result.isError
+          {result.isLoading && !failure ? (
+            <Skeleton
+              className="h-4 w-24 rounded-lg"
+              aria-label="در حال جست‌وجو"
+            />
+          ) : (
+            <p className="text-sm text-muted">
+              {failure
                 ? "جست‌وجو انجام نشد"
                 : `${(result.data?.total ?? 0).toLocaleString("fa-IR")} نتیجه`}
-          </p>
-          {!result.isError
+            </p>
+          )}
+          {!failure
             ? results.map((item) => (
                 <div
                   key={`${item.badge}-${item.id}`}
@@ -238,16 +319,16 @@ export function DiscoverySearchScreen({
                 </div>
               ))
             : null}
-          {result.isLoading ? (
+          {result.isLoading && !failure ? (
             <DiscoveryResultCardSkeleton count={4} />
           ) : null}
-          {result.isError ? (
+          {failure ? (
             <RequestFailureState
-              error={result.error}
+              error={failure}
               onRetry={() => void result.refetch()}
             />
           ) : null}
-          {!result.isLoading && !result.isError && results.length === 0 ? (
+          {!result.isLoading && !failure && results.length === 0 ? (
             <div className="py-14 text-center">
               <Icon
                 name="file-magnifying-glass"

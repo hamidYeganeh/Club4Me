@@ -3,16 +3,19 @@
 import { useState } from "react";
 import { Button, Card, Chip, Spinner, Table, toast } from "@heroui/react";
 import {
+  type AccountRoleRequest,
   useAdminRoleRequests,
   useReviewRoleRequest,
   type RoleRequestStatus,
 } from "@api/account";
+import { EntityDetailsModal } from "@ui/entity-details-modal";
 import { useTranslations } from "next-intl";
 
 export function RoleRequestsScreen() {
   const t = useTranslations("roleRequestsPage");
   const requests = useAdminRoleRequests();
   const review = useReviewRoleRequest();
+  const [selected, setSelected] = useState<AccountRoleRequest | null>(null);
   const [reviewing, setReviewing] = useState<{
     id: string;
     status: Exclude<RoleRequestStatus, "pending">;
@@ -93,40 +96,47 @@ export function RoleRequestsScreen() {
                         }).format(new Date(item.createdAt))}
                       </Table.Cell>
                       <Table.Cell>
-                        {item.status === "pending" ? (
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              isDisabled={review.isPending}
-                              isPending={
-                                reviewing?.id === item.id &&
-                                reviewing.status === "approved"
-                              }
-                              onPress={() =>
-                                void handleReview(item.id, "approved")
-                              }
-                            >
-                              {t("approve")}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              isDisabled={review.isPending}
-                              isPending={
-                                reviewing?.id === item.id &&
-                                reviewing.status === "rejected"
-                              }
-                              onPress={() =>
-                                void handleReview(item.id, "rejected")
-                              }
-                            >
-                              {t("reject")}
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="text-muted">—</span>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onPress={() => setSelected(item)}
+                          >
+                            جزئیات
+                          </Button>
+                          {item.status === "pending" ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                isDisabled={review.isPending}
+                                isPending={
+                                  reviewing?.id === item.id &&
+                                  reviewing.status === "approved"
+                                }
+                                onPress={() =>
+                                  void handleReview(item.id, "approved")
+                                }
+                              >
+                                {t("approve")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                isDisabled={review.isPending}
+                                isPending={
+                                  reviewing?.id === item.id &&
+                                  reviewing.status === "rejected"
+                                }
+                                onPress={() =>
+                                  void handleReview(item.id, "rejected")
+                                }
+                              >
+                                {t("reject")}
+                              </Button>
+                            </>
+                          ) : null}
+                        </div>
                       </Table.Cell>
                     </Table.Row>
                   ))}
@@ -136,6 +146,51 @@ export function RoleRequestsScreen() {
           </Table>
         )}
       </Card>
+      <EntityDetailsModal
+        isOpen={Boolean(selected)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelected(null);
+        }}
+        title="جزئیات درخواست نقش"
+        description="اطلاعات درخواست‌دهنده و سابقه تصمیم"
+        sections={
+          selected
+            ? [
+                {
+                  items: [
+                    { label: "شناسه درخواست", value: selected.id, dir: "ltr" },
+                    {
+                      label: "شناسه کاربر",
+                      value: selected.userId,
+                      dir: "ltr",
+                    },
+                    {
+                      label: "شماره موبایل",
+                      value: selected.phone,
+                      dir: "ltr",
+                    },
+                    { label: "نقش درخواستی", value: t(selected.role) },
+                    { label: "وضعیت", value: t(selected.status) },
+                    {
+                      label: "زمان درخواست",
+                      value: new Intl.DateTimeFormat("fa-IR", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(selected.createdAt)),
+                    },
+                    {
+                      label: "آخرین تغییر",
+                      value: new Intl.DateTimeFormat("fa-IR", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(selected.updatedAt)),
+                    },
+                  ],
+                },
+              ]
+            : []
+        }
+      />
     </main>
   );
 }

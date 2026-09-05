@@ -84,6 +84,14 @@ export class PayoutsController {
   listMine(@CurrentUser() user: AuthTokenPayload) {
     return this.payouts.listMine(user.sub);
   }
+
+  @Post(":payoutId/cancel")
+  cancel(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("payoutId") payoutId: string,
+  ) {
+    return this.payouts.cancel(user.sub, payoutId);
+  }
 }
 
 @Controller("api/v1/admin/payments")

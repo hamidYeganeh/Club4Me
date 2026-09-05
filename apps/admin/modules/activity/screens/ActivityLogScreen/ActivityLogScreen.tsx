@@ -124,7 +124,10 @@ export function ActivityLogScreen() {
                       <Table.Row key={item.id} id={item.id}>
                         <Table.Cell>
                           <p className="font-medium">{eventLabel(item)}</p>
-                          <p className="mt-1 max-w-md truncate text-xs text-muted" dir="ltr">
+                          <p
+                            className="mt-1 max-w-md truncate text-xs text-muted"
+                            dir="ltr"
+                          >
                             {item.path}
                           </p>
                         </Table.Cell>

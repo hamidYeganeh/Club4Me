@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Button, Card, Chip, Spinner, Table, toast } from "@heroui/react";
-import { useAdminCoaches, useReviewCoach } from "@api/admin";
+import { type AdminCoach, useAdminCoaches, useReviewCoach } from "@api/admin";
+import { EntityDetailsModal } from "@ui/entity-details-modal";
 
 const labels = {
   draft: "پیش‌نویس",
@@ -15,6 +16,7 @@ export function CoachScreen() {
   const coaches = useAdminCoaches();
   const review = useReviewCoach();
   const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<AdminCoach | null>(null);
 
   const decide = async (coachId: string, status: "approved" | "rejected") => {
     const reason =
@@ -26,7 +28,9 @@ export function CoachScreen() {
     setReviewingId(coachId);
     try {
       await review.mutateAsync({ coachId, status, reason });
-      toast.success(status === "approved" ? "مربی تأیید شد" : "پروفایل مربی رد شد");
+      toast.success(
+        status === "approved" ? "مربی تأیید شد" : "پروفایل مربی رد شد",
+      );
     } catch {
       toast.danger("ثبت نتیجه بررسی ناموفق بود");
     } finally {
@@ -38,16 +42,30 @@ export function CoachScreen() {
   return (
     <main className="flex-1 overflow-auto p-4 lg:p-6">
       <h1 className="text-2xl font-semibold">مدیریت مربی‌ها</h1>
-      <Card variant="transparent" className="mt-5 overflow-hidden rounded-[1.75rem] border border-border bg-surface">
+      <Card
+        variant="transparent"
+        className="mt-5 overflow-hidden rounded-[1.75rem] border border-border bg-surface"
+      >
         {coaches.isPending ? (
-          <div className="flex justify-center py-16"><Spinner /></div>
+          <div className="flex justify-center py-16">
+            <Spinner />
+          </div>
         ) : coaches.isError ? (
           <div className="px-6 py-12 text-center text-muted">
             <p>دریافت مربی‌ها ناموفق بود.</p>
-            <Button className="mt-4" size="sm" variant="secondary" onPress={() => coaches.refetch()}>تلاش دوباره</Button>
+            <Button
+              className="mt-4"
+              size="sm"
+              variant="secondary"
+              onPress={() => coaches.refetch()}
+            >
+              تلاش دوباره
+            </Button>
           </div>
         ) : items.length === 0 ? (
-          <p className="px-6 py-12 text-center text-muted">هنوز مربی‌ای ثبت نشده است.</p>
+          <p className="px-6 py-12 text-center text-muted">
+            هنوز مربی‌ای ثبت نشده است.
+          </p>
         ) : (
           <Table>
             <Table.ScrollContainer>
@@ -62,23 +80,71 @@ export function CoachScreen() {
                 <Table.Body>
                   {items.map((coach) => (
                     <Table.Row key={coach.id} id={coach.id}>
-                      <Table.Cell className="font-medium">{coach.displayName || "بدون نام"}</Table.Cell>
-                      <Table.Cell className="text-muted">{coach.serviceModes.join("، ") || "—"}</Table.Cell>
+                      <Table.Cell className="font-medium">
+                        {coach.displayName || "بدون نام"}
+                      </Table.Cell>
+                      <Table.Cell className="text-muted">
+                        {coach.serviceModes.join("، ") || "—"}
+                      </Table.Cell>
                       <Table.Cell>
-                        <Chip color={coach.reviewStatus === "approved" ? "success" : coach.reviewStatus === "rejected" ? "danger" : coach.reviewStatus === "pending_review" ? "warning" : "default"} size="sm">
+                        <Chip
+                          color={
+                            coach.reviewStatus === "approved"
+                              ? "success"
+                              : coach.reviewStatus === "rejected"
+                                ? "danger"
+                                : coach.reviewStatus === "pending_review"
+                                  ? "warning"
+                                  : "default"
+                          }
+                          size="sm"
+                        >
                           {labels[coach.reviewStatus]}
                         </Chip>
                       </Table.Cell>
                       <Table.Cell className="text-muted tabular-nums">
-                        {new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(coach.updatedAt))}
+                        {new Intl.DateTimeFormat("fa-IR", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }).format(new Date(coach.updatedAt))}
                       </Table.Cell>
                       <Table.Cell>
-                        {coach.reviewStatus === "pending_review" ? (
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="primary" isDisabled={review.isPending} isPending={reviewingId === coach.id && review.isPending} onPress={() => void decide(coach.id, "approved")}>تأیید</Button>
-                            <Button size="sm" variant="secondary" isDisabled={review.isPending} onPress={() => void decide(coach.id, "rejected")}>رد</Button>
-                          </div>
-                        ) : <span className="text-muted">—</span>}
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onPress={() => setSelected(coach)}
+                          >
+                            جزئیات
+                          </Button>
+                          {coach.reviewStatus === "pending_review" ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                isDisabled={review.isPending}
+                                isPending={
+                                  reviewingId === coach.id && review.isPending
+                                }
+                                onPress={() =>
+                                  void decide(coach.id, "approved")
+                                }
+                              >
+                                تأیید
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                isDisabled={review.isPending}
+                                onPress={() =>
+                                  void decide(coach.id, "rejected")
+                                }
+                              >
+                                رد
+                              </Button>
+                            </>
+                          ) : null}
+                        </div>
                       </Table.Cell>
                     </Table.Row>
                   ))}
@@ -88,6 +154,116 @@ export function CoachScreen() {
           </Table>
         )}
       </Card>
+      <EntityDetailsModal
+        isOpen={Boolean(selected)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelected(null);
+        }}
+        title={selected?.displayName || "جزئیات مربی"}
+        description="پروفایل کامل مربی برای بررسی و تصمیم‌گیری"
+        sections={
+          selected
+            ? [
+                {
+                  title: "هویت و وضعیت",
+                  items: [
+                    { label: "شناسه مربی", value: selected.id, dir: "ltr" },
+                    {
+                      label: "شناسه کاربر",
+                      value: selected.userId,
+                      dir: "ltr",
+                    },
+                    { label: "نامک", value: selected.slug, dir: "ltr" },
+                    {
+                      label: "وضعیت بررسی",
+                      value: labels[selected.reviewStatus],
+                    },
+                    { label: "نمایش عمومی", value: selected.visibility },
+                    {
+                      label: "دلیل رد",
+                      value: selected.rejectionReason,
+                      wide: true,
+                    },
+                  ],
+                },
+                {
+                  title: "تجربه و معرفی",
+                  items: [
+                    {
+                      label: "معرفی کوتاه",
+                      value: selected.shortBio,
+                      wide: true,
+                    },
+                    { label: "زندگی‌نامه", value: selected.bio, wide: true },
+                    {
+                      label: "سابقه",
+                      value: `${selected.experienceYears.toLocaleString("fa-IR")} سال`,
+                    },
+                    { label: "زبان‌ها", value: selected.languages.join("، ") },
+                    {
+                      label: "شیوه ارائه",
+                      value: selected.serviceModes.join("، "),
+                    },
+                    {
+                      label: "بازه سنی پذیرفته‌شده",
+                      value:
+                        selected.minAcceptedAge == null &&
+                        selected.maxAcceptedAge == null
+                          ? null
+                          : `${selected.minAcceptedAge ?? "—"} تا ${selected.maxAcceptedAge ?? "—"}`,
+                    },
+                    {
+                      label: "شعاع رفت‌وآمد",
+                      value: `${selected.travelRadiusKm.toLocaleString("fa-IR")} کیلومتر`,
+                    },
+                    {
+                      label: "امتیاز و نظرها",
+                      value: `${selected.averageRating.toLocaleString("fa-IR")} از ۵ (${selected.reviewsCount.toLocaleString("fa-IR")} نظر)`,
+                    },
+                  ],
+                },
+                {
+                  title: "اطلاعات تکمیلی",
+                  items: [
+                    {
+                      label: "اطلاعات تماس",
+                      value: JSON.stringify(selected.contact, null, 2),
+                      dir: "ltr",
+                      wide: true,
+                    },
+                    {
+                      label: "محدوده جغرافیایی",
+                      value: selected.geo
+                        ? JSON.stringify(selected.geo, null, 2)
+                        : null,
+                      dir: "ltr",
+                      wide: true,
+                    },
+                    {
+                      label: "تعداد رسانه‌ها",
+                      value:
+                        selected.galleryMediaIds.length.toLocaleString("fa-IR"),
+                    },
+                    {
+                      label: "زمان ثبت",
+                      value: new Intl.DateTimeFormat("fa-IR", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(selected.createdAt)),
+                    },
+                    {
+                      label: "آخرین تغییر",
+                      value: new Intl.DateTimeFormat("fa-IR", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(selected.updatedAt)),
+                    },
+                  ],
+                },
+              ]
+            : []
+        }
+      />
     </main>
   );
 }

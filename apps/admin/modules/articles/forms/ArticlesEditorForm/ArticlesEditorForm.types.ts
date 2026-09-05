@@ -5,6 +5,7 @@ export type ArticlesEditorFormValues = {
   slug: string;
   excerpt: string;
   bodyHtml: string;
+  coverImageUrl: string;
   status: "draft" | "published";
 };
 

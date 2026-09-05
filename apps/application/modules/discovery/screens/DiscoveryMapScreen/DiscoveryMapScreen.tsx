@@ -11,6 +11,7 @@ import { ButtonLink } from "@/components/button-link";
 import { NeshanMap, type NeshanMapMarker } from "@/components/maps/neshan-map";
 import { RequestFailureState } from "@/components/request-failure-state";
 import { MapResultsSkeleton } from "@/components/loading-skeletons";
+import { getQueryFailure } from "@/lib/request-failure";
 import {
   getActiveCoordinates,
   useActiveLocation,
@@ -36,6 +37,7 @@ export function DiscoveryMapScreen() {
         }
       : {}),
   });
+  const failure = getQueryFailure(clubs.error, clubs.fetchStatus);
   const mappable = useMemo(
     () =>
       (clubs.data?.items ?? []).filter(
@@ -94,19 +96,19 @@ export function DiscoveryMapScreen() {
           locateClassName={styles.locate()}
           onMarkerSelect={setSelectedId}
         />
-        {clubs.isLoading ? (
+        {clubs.isLoading && !failure ? (
           <MapResultsSkeleton />
         ) : null}
-        {clubs.isError ? (
+        {failure ? (
           <div className={styles.status()}>
             <RequestFailureState
               compact
-              error={clubs.error}
+              error={failure}
               onRetry={() => void clubs.refetch()}
             />
           </div>
         ) : null}
-        {!clubs.isLoading && !clubs.isError && mappable.length === 0 ? (
+        {!clubs.isLoading && !failure && mappable.length === 0 ? (
           <div className={styles.empty()}>{t("empty")}</div>
         ) : null}
         {selected ? (

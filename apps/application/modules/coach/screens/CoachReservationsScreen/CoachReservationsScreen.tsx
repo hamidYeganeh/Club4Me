@@ -14,6 +14,7 @@ import {
   useCreateCoachSession,
   usePublicCatalogResource,
   useRecordCoachSessionAttendance,
+  useRescheduleCoachSession,
   useUpdateClassEnrollmentStatus,
   useUpdateCoachBookingStatus,
   useUpdateCoachOfferingStatus,
@@ -67,6 +68,7 @@ export function CoachReservationsScreen() {
   const publishOffering = useUpdateCoachOfferingStatus();
   const createSession = useCreateCoachSession();
   const cancelSession = useCancelCoachSession();
+  const rescheduleSession = useRescheduleCoachSession();
   const updateBooking = useUpdateCoachBookingStatus();
 
   const [serviceTitle, setServiceTitle] = useState("");
@@ -170,7 +172,8 @@ export function CoachReservationsScreen() {
     offerings.isPending ||
     calendar.isPending ||
     bookings.isPending ||
-    coachClasses.isPending
+    coachClasses.isPending ||
+    sports.isPending
   ) {
     return <DashboardPageSkeleton />;
   }
@@ -363,24 +366,51 @@ export function CoachReservationsScreen() {
                 </div>
                 {item.managedBy !== "club" &&
                 !["cancelled", "completed"].includes(item.status) ? (
-                  <Button
-                    size="sm"
-                    variant="danger-soft"
-                    isPending={cancelSession.isPending}
-                    onPress={() =>
-                      void cancelSession
-                        .mutateAsync({
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      isPending={rescheduleSession.isPending}
+                      onPress={() => {
+                        const value = window.prompt(
+                          "زمان جدید را با قالب 2026-09-10T18:30 وارد کنید:",
+                        );
+                        if (!value) return;
+                        const start = new Date(value);
+                        const duration = new Date(item.endAt).getTime() - new Date(item.startAt).getTime();
+                        if (Number.isNaN(start.getTime())) {
+                          toast.danger("زمان واردشده معتبر نیست");
+                          return;
+                        }
+                        void rescheduleSession.mutateAsync({
                           sessionId: item.id,
-                          reason: "لغو سانس توسط مربی",
-                        })
-                        .then(() =>
-                          toast.success("سانس و رزروهای فعال لغو شدند"),
-                        )
-                        .catch(() => toast.danger("لغو سانس انجام نشد"))
-                    }
-                  >
-                    لغو
-                  </Button>
+                          startAt: start.toISOString(),
+                          endAt: new Date(start.getTime() + duration).toISOString(),
+                        }).then(() => toast.success("زمان سانس تغییر کرد"))
+                          .catch(() => toast.danger("تغییر زمان سانس انجام نشد"));
+                      }}
+                    >
+                      تغییر زمان
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger-soft"
+                      isPending={cancelSession.isPending}
+                      onPress={() =>
+                        void cancelSession
+                          .mutateAsync({
+                            sessionId: item.id,
+                            reason: "لغو سانس توسط مربی",
+                          })
+                          .then(() =>
+                            toast.success("سانس و رزروهای فعال لغو شدند"),
+                          )
+                          .catch(() => toast.danger("لغو سانس انجام نشد"))
+                      }
+                    >
+                      لغو
+                    </Button>
+                  </div>
                 ) : (
                   <Chip size="sm">
                     {item.managedBy === "club" ? "مدیریت باشگاه" : "لغوشده"}
@@ -410,7 +440,7 @@ export function CoachReservationsScreen() {
             ))}
           </select>
         </label>
-        {classEnrollments.isPending ? (
+        {classEnrollments.isPending && activeClassId ? (
           <div className="mt-4">
             <CompactCardListSkeleton count={3} />
           </div>
@@ -551,7 +581,7 @@ export function CoachReservationsScreen() {
             ))}
           </select>
         </label>
-        {attendance.isPending ? (
+        {attendance.isPending && activeAttendanceSessionId ? (
           <div className="mt-4">
             <CompactCardListSkeleton count={3} />
           </div>

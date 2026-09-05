@@ -3,6 +3,7 @@
 import { usePublicCatalogResource } from "@api/discovery";
 import { DiscoveryClubsScreen } from "@modules/discovery/screens/DiscoveryClubsScreen";
 import { ListPageSkeleton } from "@/components/loading-skeletons";
+import { DiscoveryEmptyPage } from "@modules/discovery/components/DiscoveryEmptyPage";
 
 const resources = {
   "club-types": ["sports", "club-type"],
@@ -26,9 +27,17 @@ export function DiscoveryCategoryScreen({
   }
   if (!item) {
     return (
-      <main className="grid min-h-dvh place-items-center p-6 text-sm text-muted">
-        این دسته‌بندی پیدا نشد.
-      </main>
+      <DiscoveryEmptyPage
+        headerTitle={
+          type === "regions"
+            ? "منطقه شهری"
+            : type === "sports"
+              ? "رشته ورزشی"
+              : "نوع باشگاه"
+        }
+        title="این دسته‌بندی پیدا نشد"
+        description="ممکن است این دسته‌بندی هنوز داده‌ای نداشته باشد یا غیرفعال شده باشد."
+      />
     );
   }
 

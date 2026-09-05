@@ -10,6 +10,10 @@
 - Sentry: یک پروژه Browser و یک پروژه Node بسازید و DSNها را به‌ترتیب در
   `NEXT_PUBLIC_SENTRY_DSN` و `SENTRY_DSN` قرار دهید. DSN رمز محرمانه نیست، اما
   Auth Token مربوط به upload sourcemap باید فقط در CI باشد.
+- Neshan: مقدار `NEXT_PUBLIC_NESHAN_MAP_KEY` را در Secret محیط production قرار
+  دهید و دسترسی آن را به package/domainهای مورد استفاده محدود کنید.
+- GCS: در backend مقدارهای `EXPORT_STORAGE_DRIVER=gcs` و
+  `EXPORT_GCS_BUCKET` را تنظیم و lifecycle حذف exportها را روی bucket فعال کنید.
 
 ## انتشار
 
@@ -31,6 +35,8 @@
   `/account-deletion` قبل از ثبت Store Listing در دسترس عمومی باشند.
 - فرم Data Safety مطابق داده‌های واقعی تکمیل شود: شماره موبایل، موقعیت، محتوای
   کاربر، شناسه دستگاه، تعاملات و داده‌های تشخیصی.
+- پاسخ‌نامه `google-play-data-safety-fa.md` و فرم اجرای
+  `internal-release-test-plan-fa.md` برای همان artifact تکمیل شوند.
 - ابتدا rollout محدود انجام شود؛ نرخ crash و پاسخ API بررسی و سپس rollout کامل
   شود.
 

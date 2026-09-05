@@ -9,6 +9,7 @@ import { Capacitor } from "@capacitor/core";
 import { resolveNativeApiUrl } from "@/lib/native-api-url";
 import { secureTokenStorage } from "@/lib/secure-token-storage";
 import { biometricAuth } from "@/lib/biometric-auth";
+import { RouteLoadingSkeleton } from "@/components/loading-skeletons";
 
 const CONFIGURED_API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:7088/api/v1";
@@ -52,13 +53,10 @@ export function AppApiProvider({ children }: AppApiProviderProps) {
       .finally(() => setStorageReady(true));
   }, [router]);
 
-  if (!storageReady) return null;
+  if (!storageReady) return <RouteLoadingSkeleton />;
 
   return (
-    <ApiProvider
-      baseURL={baseURL}
-      requestTimeoutMs={CONFIGURED_API_TIMEOUT_MS}
-    >
+    <ApiProvider baseURL={baseURL} requestTimeoutMs={CONFIGURED_API_TIMEOUT_MS}>
       {children}
     </ApiProvider>
   );

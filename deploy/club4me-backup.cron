@@ -1,0 +1,1 @@
+20 2 * * * root /opt/club4me/deploy/backup-production.sh >> /var/log/club4me-backup.log 2>&1

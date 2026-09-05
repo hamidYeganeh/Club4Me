@@ -56,7 +56,7 @@ export function AthleteQuickActionsSection() {
             href={action.href}
             className={
               action.featured
-                ? "group col-span-2 flex min-h-32 items-center gap-4 overflow-hidden rounded-[1.35rem] border border-accent/25 bg-accent/12 p-5 text-foreground shadow-[0_14px_34px_color-mix(in_oklch,var(--accent)_10%,transparent)] transition-transform duration-300 active:scale-[0.985]"
+                ? "group col-span-2 flex min-h-32 items-center gap-4 overflow-hidden rounded-[1.35rem] border border-accent/25 bg-accent/12 p-5 text-foreground transition-transform duration-300 active:scale-[0.985]"
                 : "app-card group flex min-h-40 flex-col justify-between p-4 text-foreground"
             }
           >

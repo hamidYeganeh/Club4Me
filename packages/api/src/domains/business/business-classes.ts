@@ -18,6 +18,7 @@ export type BusinessClassStatus =
 export type BusinessTrainingClass = Base & {
   title: string;
   description: string;
+  faqs: Array<{ question: string; answer: string }>;
   sport: string;
   level: string;
   model: BusinessClassModel;
@@ -78,8 +79,8 @@ export type BusinessClassCheckInCredential = {
 export type CalendarFeed = { token: string; feedPath: string };
 export type BusinessClassPayload = Omit<
   BusinessTrainingClass,
-  keyof Base | "enrollmentCount" | "sessionCount"
->;
+  keyof Base | "enrollmentCount" | "sessionCount" | "faqs"
+> & { faqs?: BusinessTrainingClass["faqs"] };
 export type CreateClassEnrollmentPayload = {
   studentId: string;
   status: "active" | "waitlisted";
@@ -159,6 +160,12 @@ export function useCreateBusinessCalendarFeed(clubId: string) {
   return useMutation({
     mutationFn: () =>
       http.post<CalendarFeed>(`${root(clubId)}/calendar-feed`, {}),
+  });
+}
+export function useRevokeBusinessCalendarFeed(clubId: string) {
+  return useMutation({
+    mutationFn: () =>
+      http.delete<{ revoked: boolean }>(`${root(clubId)}/calendar-feed`),
   });
 }
 export function useBusinessClassSessions(clubId: string, classId: string) {

@@ -1,11 +1,14 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, SchemaTypes, Types } from "mongoose";
 
+import { MAX_INLINE_IMAGE_URL_LENGTH } from "../../media/media.constants";
+
 export const DISCOVERY_SECTION_TYPES = [
   "banners",
   "clubs",
   "coaches",
   "classes",
+  "sports",
   "articles",
 ] as const;
 export const DISCOVERY_SELECTION_MODES = ["manual", "query"] as const;
@@ -34,7 +37,8 @@ export class DiscoverySelection {
 export class DiscoveryBanner {
   @Prop({ required: true, trim: true, maxlength: 160 }) title: string;
   @Prop({ trim: true, maxlength: 300, default: "" }) subtitle: string;
-  @Prop({ required: true, trim: true, maxlength: 1000 }) imageUrl: string;
+  @Prop({ required: true, trim: true, maxlength: MAX_INLINE_IMAGE_URL_LENGTH })
+  imageUrl: string;
   @Prop({ trim: true, maxlength: 120, default: "" }) actionLabel: string;
   @Prop({ trim: true, maxlength: 1000, default: "" }) actionUrl: string;
 }

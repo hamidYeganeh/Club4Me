@@ -4,6 +4,7 @@ import { Avatar, Badge, Button } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { cn } from "@theme/cn";
 import { usePathname } from "next/navigation";
+import { useAdminMe } from "@api/admin";
 
 import { ButtonLink } from "@/components/button-link";
 
@@ -25,6 +26,8 @@ export function PanelRailSection({
 }: PanelRailSectionProps) {
   const pathname = usePathname();
   const styles = panelRailSectionStyles();
+  const me = useAdminMe();
+  const accountName = [me.data?.firstName, me.data?.lastName].filter(Boolean).join(" ") || me.data?.phone || avatarAlt;
 
   return (
     <aside className={styles.root()}>
@@ -59,12 +62,12 @@ export function PanelRailSection({
           <Button
             isIconOnly
             variant="tertiary"
-            aria-label={avatarAlt}
+            aria-label={accountName}
             className="rounded-full p-0"
           >
             <Avatar className="size-10">
-              <Avatar.Image alt={avatarAlt} src={avatarSrc} />
-              <Avatar.Fallback>{avatarAlt.slice(0, 1)}</Avatar.Fallback>
+              {avatarSrc ? <Avatar.Image alt={accountName} src={avatarSrc} /> : null}
+              <Avatar.Fallback>{accountName.slice(0, 1)}</Avatar.Fallback>
             </Avatar>
           </Button>
           <Badge color="danger" size="sm">

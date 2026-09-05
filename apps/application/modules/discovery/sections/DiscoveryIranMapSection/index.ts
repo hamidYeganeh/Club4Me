@@ -1,0 +1,1 @@
+export { DiscoveryIranMapSection } from "./DiscoveryIranMapSection";

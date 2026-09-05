@@ -19,6 +19,7 @@ import {
 } from "../coaching/schemas/coaching.schemas";
 import { MediaService } from "../media/media.service";
 import { ResourcesService } from "../resources/resources.service";
+import { DEFAULT_DISCOVERY_SECTIONS } from "./discovery-section.defaults";
 import type {
   CreateDiscoverySectionDto,
   ReorderDiscoverySectionsDto,
@@ -341,20 +342,56 @@ export class DiscoveryFeedService {
 
   private async hydrateMedia<T extends Record<string, unknown>>(items: T[]) {
     const ids = items.flatMap((item) =>
-      [item.imageMediaId, item.coverMediaId, item.avatarMediaId].filter(
-        (value): value is string => typeof value === "string",
-      ),
+      [
+        item.imageMediaId,
+        item.coverMediaId,
+        item.avatarMediaId,
+        ...(Array.isArray(item.galleryMediaIds) ? item.galleryMediaIds : []),
+        ...(Array.isArray(item.trainingStyles)
+          ? item.trainingStyles.map(
+              (style: Record<string, unknown>) => style.imageMediaId,
+            )
+          : []),
+      ].filter((value): value is string => typeof value === "string"),
     );
     const media = await this.media.getReadyByIds(ids);
     const urls = new Map(media.map((item) => [item.id, item.url]));
-    return items.map((item) => ({
-      ...item,
-      imageUrl:
-        urls.get(String(item.imageMediaId ?? "")) ??
-        urls.get(String(item.coverMediaId ?? "")) ??
-        urls.get(String(item.avatarMediaId ?? "")) ??
-        null,
-    }));
+    return items.map((item) => {
+      const galleryIds = Array.isArray(item.galleryMediaIds)
+        ? item.galleryMediaIds.map(String)
+        : [];
+      return {
+        ...item,
+        imageUrl:
+          (typeof item.imageUrl === "string" && item.imageUrl
+            ? item.imageUrl
+            : undefined) ??
+          urls.get(String(item.imageMediaId ?? "")) ??
+          urls.get(String(item.coverMediaId ?? "")) ??
+          urls.get(String(item.avatarMediaId ?? "")) ??
+          null,
+        ...(galleryIds.length
+          ? {
+              portfolio: galleryIds.flatMap((id) => {
+                const url = urls.get(id);
+                return url ? [{ id, url }] : [];
+              }),
+            }
+          : {}),
+        ...(Array.isArray(item.trainingStyles)
+          ? {
+              trainingStyles: item.trainingStyles.map(
+                (style: Record<string, unknown>) => ({
+                  ...style,
+                  imageUrl: style.imageMediaId
+                    ? (urls.get(String(style.imageMediaId)) ?? null)
+                    : null,
+                }),
+              ),
+            }
+          : {}),
+      };
+    });
   }
 
   async getFeed(): Promise<Record<string, unknown>[]> {
@@ -380,6 +417,43 @@ export class DiscoveryFeedService {
       .sort({ position: 1, _id: 1 })
       .lean();
     return { items: items.map(serializeConfiguration) };
+  }
+
+  async importDefaults(actorRoles: UserRole[]) {
+    assertAdmin(actorRoles);
+    const keys = DEFAULT_DISCOVERY_SECTIONS.map((section) => section.key);
+    const existingKeys = new Set(
+      (
+        await this.sections.distinct("key", {
+          key: { $in: keys },
+        })
+      ).map(String),
+    );
+    const missing = DEFAULT_DISCOVERY_SECTIONS.filter(
+      (section) => !existingKeys.has(section.key),
+    );
+
+    if (!missing.length) {
+      return { created: 0, existing: DEFAULT_DISCOVERY_SECTIONS.length };
+    }
+
+    const position = await this.sections.countDocuments();
+    const result = await this.sections.bulkWrite(
+      missing.map((section, index) => ({
+        updateOne: {
+          filter: { key: section.key },
+          update: {
+            $setOnInsert: { ...section, position: position + index },
+          },
+          upsert: true,
+        },
+      })),
+    );
+
+    return {
+      created: result.upsertedCount,
+      existing: DEFAULT_DISCOVERY_SECTIONS.length - result.upsertedCount,
+    };
   }
 
   async listOptions(actorRoles: UserRole[], type: string) {
@@ -433,6 +507,20 @@ export class DiscoveryFeedService {
           id: String(item._id),
           label: item.title,
           status: item.status,
+        })),
+      };
+    }
+    if (type === "sports") {
+      const page = await this.resources.list("sports", "sport", {
+        isActive: "true",
+        limit: "100",
+        sortBy: "name",
+      });
+      return {
+        items: page.items.map((item) => ({
+          id: String(item.id),
+          label: String(item.name ?? item.code ?? ""),
+          status: item.isActive === false ? "غیرفعال" : "فعال",
         })),
       };
     }
@@ -600,6 +688,8 @@ export class DiscoveryFeedService {
           .limit(limit)
           .lean()
       ).map(publicClass);
+    } else if (section.type === "sports") {
+      items = await this.resolveSports(section);
     } else {
       const query: Record<string, unknown> = {
         status: "published",
@@ -614,6 +704,68 @@ export class DiscoveryFeedService {
       ).map(publicArticle);
     }
     return manual ? preserveOrder(items, ids).slice(0, limit) : items;
+  }
+
+  private async resolveSports(section: DiscoverySectionDocument) {
+    const selection = section.selection;
+    const filters = (selection.filters ?? {}) as Filters;
+    const categories = await this.resources.list("sports", "sport-category", {
+      isActive: "true",
+      limit: "100",
+    });
+    const categoryById = new Map(
+      categories.items.map((item) => [String(item.id), String(item.name)]),
+    );
+    const categoryCodes = new Set(filters.categoryCodes ?? []);
+    const categoryIds = new Set(filters.categoryIds ?? []);
+    for (const category of categories.items) {
+      if (categoryCodes.has(String(category.code ?? ""))) {
+        categoryIds.add(String(category.id));
+      }
+    }
+
+    const pages = categoryIds.size
+      ? await Promise.all(
+          [...categoryIds].map((parentId) =>
+            this.resources.list("sports", "sport", {
+              isActive: "true",
+              parentId,
+              limit: "100",
+            }),
+          ),
+        )
+      : [
+          await this.resources.list("sports", "sport", {
+            isActive: "true",
+            limit: "100",
+          }),
+        ];
+    const unique = new Map<string, Record<string, unknown>>();
+    for (const item of pages.flatMap((page) => page.items)) {
+      unique.set(String(item.id), {
+        ...item,
+        categoryName: categoryById.get(String(item.categoryId ?? "")) ?? "",
+      });
+    }
+    const items = [...unique.values()];
+    items.sort((left, right) => {
+      if (selection.sort === "name") {
+        return String(left.name ?? "").localeCompare(
+          String(right.name ?? ""),
+          "fa",
+        );
+      }
+      if (selection.sort === "newest") {
+        return (
+          new Date(String(right.createdAt ?? 0)).getTime() -
+          new Date(String(left.createdAt ?? 0)).getTime()
+        );
+      }
+      return Number(left.sortOrder ?? 0) - Number(right.sortOrder ?? 0);
+    });
+    return selection.mode === "manual"
+      ? items
+      : items.slice(0, selection.limit ?? 10);
   }
 
   private async filterCoachIds(
@@ -741,6 +893,18 @@ function publicCoach(item: Record<string, any>) {
     shortBio: item.shortBio ?? "",
     avatarMediaId: item.avatarMediaId ? String(item.avatarMediaId) : null,
     coverMediaId: item.coverMediaId ? String(item.coverMediaId) : null,
+    galleryMediaIds: (item.galleryMediaIds ?? []).map(String),
+    portfolio: [],
+    specialties: item.specialties ?? [],
+    trainingStyles: (item.trainingStyles ?? []).map(
+      (style: Record<string, any>) => ({
+        ...style,
+        imageMediaId: style.imageMediaId ? String(style.imageMediaId) : undefined,
+      }),
+    ),
+    experienceSummary: item.experienceSummary ?? "",
+    experience: item.experience ?? [],
+    faqs: item.faqs ?? [],
     experienceYears: item.experienceYears ?? 0,
     serviceModes: item.serviceModes ?? [],
     averageRating: item.averageRating ?? 0,
@@ -793,6 +957,7 @@ function publicClass(item: Record<string, any>) {
     price: item.price,
     venue: item.venue ?? null,
     prerequisites: item.prerequisites ?? [],
+    faqs: item.faqs ?? [],
     status: item.status,
   };
 }

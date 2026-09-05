@@ -32,6 +32,7 @@ export type PublicClub = {
     description?: string;
   }>;
   rules: string[];
+  faqs: Array<{ question: string; answer: string }>;
   location?: {
     countryId: string;
     provinceId: string;
@@ -130,6 +131,7 @@ export function toPublicClub(club: ClubDocument): PublicClub {
         : {}),
     })),
     rules: club.rules,
+    faqs: club.faqs ?? [],
     ...(club.geo && club.location && club.address
       ? {
           location: {

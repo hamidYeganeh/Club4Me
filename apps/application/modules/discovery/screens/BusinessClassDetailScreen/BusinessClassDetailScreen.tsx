@@ -6,14 +6,18 @@ import {
   useAthleteClubClasses,
   useAthleteClassCheckIn,
   useCancelClubClassEnrollment,
+  useClaimClubClassWaitlist,
+  useCreatePaymentIntent,
   useEnrollInClubClass,
+  useMockPaymentDecision,
   usePublicClubClass,
-  useResolveClubClassPayment,
+  type PaymentIntent,
 } from "@api";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGateway";
 import { QrScannerButton } from "@/components/qr-scanner-button";
 import { DetailPageSkeleton } from "@/components/loading-skeletons";
+import { DetailFaqSection } from "@modules/discovery/components/DetailFaqSection";
 
 const modelLabel: Record<string, string> = {
   group: "گروهی",
@@ -27,8 +31,10 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
   const query = usePublicClubClass(classId);
   const enrollments = useAthleteClubClasses();
   const enroll = useEnrollInClubClass();
-  const payment = useResolveClubClassPayment();
+  const createPayment = useCreatePaymentIntent();
+  const payment = useMockPaymentDecision();
   const cancel = useCancelClubClassEnrollment();
+  const claimWaitlist = useClaimClubClassWaitlist();
   const checkIn = useAthleteClassCheckIn();
   const [checkInCredential, setCheckInCredential] = useState("");
   const [checkInSessionId, setCheckInSessionId] = useState("");
@@ -37,7 +43,7 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
     if (match?.[1]) setCheckInSessionId(match[1]);
     setCheckInCredential(value);
   }, []);
-  const [paymentEnrollmentId, setPaymentEnrollmentId] = useState<string | null>(
+  const [paymentIntent, setPaymentIntent] = useState<PaymentIntent | null>(
     null,
   );
   const item = query.data;
@@ -45,8 +51,7 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
     (entry) => entry.classId === classId,
   );
 
-  if (query.isPending)
-    return <DetailPageSkeleton />;
+  if (query.isPending || enrollments.isPending) return <DetailPageSkeleton />;
   if (!item)
     return (
       <main className="app-page">
@@ -60,7 +65,7 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
   const startEnrollment = async () => {
     try {
       const result = await enroll.mutateAsync(item.id);
-      if (result.paymentStatus === "pending") setPaymentEnrollmentId(result.id);
+      if (result.paymentStatus === "pending") await startPayment(result.id);
       else
         toast.success(
           result.status === "active"
@@ -73,19 +78,32 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
       toast.danger("ثبت‌نام انجام نشد؛ دوباره تلاش کنید");
     }
   };
-  const resolve = async (result: "approve" | "reject") => {
-    const enrollmentId = paymentEnrollmentId ?? current?.id;
-    if (!enrollmentId) return;
+  const startPayment = async (enrollmentId: string) => {
     try {
-      const saved = await payment.mutateAsync({ enrollmentId, result });
-      setPaymentEnrollmentId(null);
+      const intent = await createPayment.mutateAsync({
+        referenceType: "business_class_enrollment",
+        referenceId: enrollmentId,
+        idempotencyKey: `class-${enrollmentId}-${crypto.randomUUID()}`,
+        returnUrl: window.location.href,
+        walletAmount: 0,
+      });
+      setPaymentIntent(intent);
+    } catch {
+      toast.danger("ایجاد پرداخت انجام نشد؛ دوباره تلاش کنید");
+    }
+  };
+  const resolve = async (result: "approve" | "reject") => {
+    if (!paymentIntent) return;
+    try {
+      await payment.mutateAsync({
+        intentId: paymentIntent.id,
+        status: result === "approve" ? "paid" : "failed",
+      });
+      setPaymentIntent(null);
+      await enrollments.refetch();
       const message =
         result === "approve"
-          ? saved.status === "active"
-            ? "پرداخت موفق و ثبت‌نام قطعی شد"
-            : saved.status === "waitlisted"
-              ? "پرداخت موفق؛ در لیست انتظار هستید"
-              : "پرداخت موفق؛ منتظر تأیید باشگاه باشید"
+          ? "پرداخت موفق و وضعیت ثبت‌نام به‌روزرسانی شد"
           : "پرداخت ناموفق بود و ثبت‌نام لغو شد";
       if (result === "approve") toast.success(message);
       else toast.danger(message);
@@ -100,6 +118,16 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
       toast.success("ثبت‌نام لغو شد");
     } catch {
       toast.danger("لغو ثبت‌نام انجام نشد");
+    }
+  };
+  const claimCurrentWaitlist = async () => {
+    if (!current) return;
+    try {
+      await claimWaitlist.mutateAsync(current.id);
+      await enrollments.refetch();
+      toast.success("جای خالی کلاس برای شما ثبت شد");
+    } catch {
+      toast.danger("مهلت ثبت جای خالی تمام شده یا ظرفیت تکمیل است");
     }
   };
   const active =
@@ -248,6 +276,8 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
         </div>
       </Card>
 
+      <DetailFaqSection items={item.faqs} />
+
       <Card className="app-card rounded-3xl p-5 shadow-none">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -272,7 +302,8 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
           <Button
             className="mt-4 w-full"
             variant="primary"
-            onPress={() => setPaymentEnrollmentId(current.id)}
+            isPending={createPayment.isPending}
+            onPress={() => void startPayment(current.id)}
           >
             ادامه پرداخت
           </Button>
@@ -286,6 +317,16 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
             ثبت‌نام
           </Button>
         ) : null}
+        {current?.status === "waitlisted" ? (
+          <Button
+            className="mt-2 w-full"
+            variant="primary"
+            isPending={claimWaitlist.isPending}
+            onPress={() => void claimCurrentWaitlist()}
+          >
+            دریافت جای خالی کلاس
+          </Button>
+        ) : null}
         {active ? (
           <Button
             className="mt-2 w-full"
@@ -297,10 +338,10 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
           </Button>
         ) : null}
       </Card>
-      {paymentEnrollmentId ? (
+      {paymentIntent ? (
         <MockPaymentGateway
           title={item.title}
-          amount={item.price}
+          amount={paymentIntent.amount}
           isPending={payment.isPending}
           onResult={(result) => void resolve(result)}
         />

@@ -58,6 +58,10 @@ const coachAssignmentSchema = z.object({
   role: z.enum(["primary", "assistant"]).default("primary"),
 });
 const customAttributesSchema = z.record(z.string().max(100), z.unknown());
+const faqSchema = z.object({
+  question: z.string().trim().min(2).max(240),
+  answer: z.string().trim().min(2).max(2000),
+});
 
 const CoachProfileInputSchema = z
   .object({
@@ -67,6 +71,36 @@ const CoachProfileInputSchema = z
     avatarMediaId: objectIdSchema.nullable(),
     coverMediaId: objectIdSchema.nullable(),
     galleryMediaIds: uniqueIds(30),
+    specialties: z
+      .array(
+        z.object({
+          title: z.string().trim().min(2).max(120),
+          description: z.string().trim().min(2).max(1000),
+          icon: z.string().trim().max(60).optional(),
+        }),
+      )
+      .max(20),
+    trainingStyles: z
+      .array(
+        z.object({
+          title: z.string().trim().min(2).max(120),
+          description: z.string().trim().min(2).max(1000),
+          imageMediaId: objectIdSchema.optional(),
+        }),
+      )
+      .max(20),
+    experienceSummary: z.string().trim().max(1500),
+    experience: z
+      .array(
+        z.object({
+          title: z.string().trim().min(2).max(160),
+          organization: z.string().trim().max(160).optional(),
+          period: z.string().trim().max(100).optional(),
+          description: z.string().trim().max(1000).optional(),
+        }),
+      )
+      .max(30),
+    faqs: z.array(faqSchema).max(30),
     experienceYears: z.number().int().min(0).max(80),
     languages: z.array(z.string().trim().min(2).max(60)).max(20),
     serviceModes: z.array(z.enum(DELIVERY_MODES)).max(4),
@@ -98,6 +132,20 @@ export class UpdateCoachProfileDto implements CoachProfileInput {
   avatarMediaId?: string | null;
   coverMediaId?: string | null;
   galleryMediaIds?: string[];
+  specialties?: Array<{ title: string; description: string; icon?: string }>;
+  trainingStyles?: Array<{
+    title: string;
+    description: string;
+    imageMediaId?: string;
+  }>;
+  experienceSummary?: string;
+  experience?: Array<{
+    title: string;
+    organization?: string;
+    period?: string;
+    description?: string;
+  }>;
+  faqs?: Array<{ question: string; answer: string }>;
   experienceYears?: number;
   languages?: string[];
   serviceModes?: Array<(typeof DELIVERY_MODES)[number]>;
@@ -259,6 +307,7 @@ const classShape = {
   galleryMediaIds: uniqueIds(30),
   tags: z.array(z.string().trim().min(1).max(50)).max(30),
   prerequisites: z.array(z.string().trim().min(2).max(300)).max(50),
+  faqs: z.array(faqSchema).max(30),
   requiredEquipmentIds: uniqueIds(100),
   amenityIds: uniqueIds(100),
   cancellationPolicy: customAttributesSchema.nullable(),
@@ -283,6 +332,7 @@ const ClassInputSchema = z
     galleryMediaIds: classShape.galleryMediaIds.default([]),
     tags: classShape.tags.default([]),
     prerequisites: classShape.prerequisites.default([]),
+    faqs: classShape.faqs.default([]),
     requiredEquipmentIds: classShape.requiredEquipmentIds.default([]),
     amenityIds: classShape.amenityIds.default([]),
     cancellationPolicy: classShape.cancellationPolicy.optional(),
@@ -356,6 +406,7 @@ export class CreateClassDto implements ClassInput {
   galleryMediaIds: string[];
   tags: string[];
   prerequisites: string[];
+  faqs: Array<{ question: string; answer: string }>;
   requiredEquipmentIds: string[];
   amenityIds: string[];
   cancellationPolicy?: Record<string, unknown> | null;
@@ -394,6 +445,7 @@ export class UpdateClassDto implements Partial<ClassInput> {
   galleryMediaIds?: string[];
   tags?: string[];
   prerequisites?: string[];
+  faqs?: Array<{ question: string; answer: string }>;
   requiredEquipmentIds?: string[];
   amenityIds?: string[];
   cancellationPolicy?: Record<string, unknown> | null;
