@@ -11,13 +11,14 @@
     "./resources": "./src/domains/resources/index.ts",
     "./business": "./src/domains/business/index.ts",
     "./coaching": "./src/domains/coaching/index.ts",
+    "./commerce": "./src/domains/commerce/index.ts",
     "./discovery": "./src/domains/discovery/index.ts",
     "./favorites": "./src/domains/favorites/index.ts",
     "./tracking": "./src/tracking/index.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "check-types": "node ../../node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.2",

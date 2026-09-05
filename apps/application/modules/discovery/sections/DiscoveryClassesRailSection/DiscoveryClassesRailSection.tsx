@@ -3,18 +3,13 @@
 import Link from "next/link";
 import { ScrollShadow, Typography } from "@heroui/react";
 import { useTranslations } from "next-intl";
+import { useCatalogClasses, type PublicCatalogClass } from "@api/discovery";
 
 import { FallbackImage } from "@/components/FallbackImage";
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
-import {
-  mockDiscoveryClasses,
-  type DiscoveryClassItem,
-} from "@modules/discovery/discovery-classes.mock";
 
 import { discoveryClassesRailSectionStyles } from "./DiscoveryClassesRailSection.styles";
 import type { DiscoveryClassesRailSectionProps } from "./DiscoveryClassesRailSection.types";
-
-const DEFAULT_LIMIT = 6;
 
 export function DiscoveryClassesRailSection({
   id,
@@ -24,13 +19,14 @@ export function DiscoveryClassesRailSection({
   seeAllHref = "/discovery/classes",
   seeAllLabel,
   items,
+  params,
   className,
 }: DiscoveryClassesRailSectionProps) {
   const t = useTranslations("discovery.classes");
   const tHome = useTranslations("discovery.home");
   const styles = discoveryClassesRailSectionStyles();
-  const visible: DiscoveryClassItem[] =
-    items ?? mockDiscoveryClasses(0, DEFAULT_LIMIT);
+  const query = useCatalogClasses(params);
+  const visible: PublicCatalogClass[] = items ?? query.data?.items ?? [];
   const titleId = `discovery-classes-rail-${id}`;
 
   if (visible.length === 0) {
@@ -71,7 +67,7 @@ export function DiscoveryClassesRailSection({
             return (
               <Link
                 key={item.id}
-                href={item.href}
+                href={`/discovery/classes/${item.slug}`}
                 scroll={false}
                 className={styles.card()}
                 aria-label={item.title}
@@ -94,13 +90,13 @@ export function DiscoveryClassesRailSection({
                 </div>
                 <div className={styles.body()}>
                   <Typography type="body-xs" className={styles.sport()}>
-                    {item.sportLabel}
+                    {item.deliveryMode === "online" ? "آنلاین" : "حضوری"}
                   </Typography>
                   <h3 className={styles.name()}>{item.title}</h3>
                   <p className={styles.description()}>{item.description}</p>
                   <p className={styles.price()}>
                     {t("fromPrice", {
-                      price: item.price.toLocaleString("fa-IR"),
+                      price: item.price.amount.toLocaleString("fa-IR"),
                     })}
                   </p>
                 </div>

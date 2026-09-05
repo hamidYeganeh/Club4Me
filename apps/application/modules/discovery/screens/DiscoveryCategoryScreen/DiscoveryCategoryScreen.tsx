@@ -1,25 +1,53 @@
-import { DISCOVERY_CATEGORIES } from "@modules/discovery/discovery-catalog.constants";
+"use client";
+
+import { usePublicCatalogResource } from "@api/discovery";
 import { DiscoveryClubsScreen } from "@modules/discovery/screens/DiscoveryClubsScreen";
+import { ListPageSkeleton } from "@/components/loading-skeletons";
+
+const resources = {
+  "club-types": ["sports", "club-type"],
+  sports: ["sports", "sport"],
+  regions: ["location", "city-region"],
+} as const;
 
 export function DiscoveryCategoryScreen({
   type,
   id,
 }: {
-  type: keyof typeof DISCOVERY_CATEGORIES;
+  type: keyof typeof resources;
   id: string;
 }) {
-  const item = DISCOVERY_CATEGORIES[type].find((entry) => entry.id === id);
+  const [category, resource] = resources[type];
+  const query = usePublicCatalogResource(category, resource, { search: id });
+  const item = query.data?.items.find((entry) => entry.slug === id);
+
+  if (query.isPending) {
+    return <ListPageSkeleton />;
+  }
+  if (!item) {
+    return (
+      <main className="grid min-h-dvh place-items-center p-6 text-sm text-muted">
+        این دسته‌بندی پیدا نشد.
+      </main>
+    );
+  }
+
   return (
     <DiscoveryClubsScreen
       layout="list"
-      title={item?.title}
-      description={item?.subtitle}
+      title={item.name}
+      description={
+        typeof item.description === "string" ? item.description : undefined
+      }
       browse={
         type === "club-types"
-          ? { clubTypeId: id }
+          ? { clubTypeId: item.id }
           : type === "sports"
-            ? { sportId: id }
+            ? { sportId: item.id }
             : undefined
+      }
+      initialFilters={
+        type === "regions" ? { cityRegionId: item.id } : undefined
       }
     />
   );

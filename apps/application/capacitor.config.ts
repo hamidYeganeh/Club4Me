@@ -7,7 +7,7 @@ const allowCleartext =
 const isDemoBuild = process.env.CAPACITOR_DEMO === "1";
 
 const config: CapacitorConfig = {
-  appId: "com.gym4me.application",
+  appId: "com.gym4me.app",
   appName: "Gym4Me",
   webDir: "out",
   backgroundColor: "#c6ff4e",

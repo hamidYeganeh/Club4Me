@@ -176,8 +176,7 @@ export function MorphPopoverTrigger({ children }: MorphPopoverTriggerProps) {
 
   const child = children as ReactElement<Record<string, unknown>>;
   const childOnClick = child.props.onClick as
-    | ((e: unknown) => void)
-    | undefined;
+    ((e: unknown) => void) | undefined;
   const childRef = (child.props as { ref?: Ref<HTMLElement> }).ref;
 
   return cloneElement(child, {
@@ -231,15 +230,19 @@ export function MorphPopoverContent({
   className,
 }: MorphPopoverContentProps) {
   const ctx = useMorphContext("MorphPopoverContent");
+  const { contentId, contentRef, open, triggerId, triggerRef } = ctx;
   const reduce = useReducedMotion() ?? false;
   const [portalReady, setPortalReady] = useState(false);
   const layout = usePopoverPortalPosition(
-    ctx.triggerRef,
-    ctx.contentRef,
-    portalReady && ctx.open,
+    triggerRef,
+    contentRef,
+    portalReady && open,
   );
 
-  useEffect(() => setPortalReady(true), []);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setPortalReady(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
   const left = layout
     ? align === "end"
       ? layout.trigger.left + layout.trigger.width - layout.content.width
@@ -277,7 +280,7 @@ export function MorphPopoverContent({
 
   return createPortal(
     <AnimatePresence>
-      {ctx.open ? (
+      {open ? (
         <motion.div
           data-morph-popover-portal=""
           // Wrapper carries the shadow as a drop-shadow filter, which hugs the
@@ -296,10 +299,10 @@ export function MorphPopoverContent({
           className="fixed z-[9999] [filter:drop-shadow(0_10px_18px_rgba(0,0,0,0.14))]"
         >
           <motion.div
-            ref={ctx.contentRef}
-            id={ctx.contentId}
+            ref={contentRef}
+            id={contentId}
             role="dialog"
-            aria-labelledby={ctx.triggerId}
+            aria-labelledby={triggerId}
             variants={clip}
             style={{ borderRadius: radius }}
             className={cn(

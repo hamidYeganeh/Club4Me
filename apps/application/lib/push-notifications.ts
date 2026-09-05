@@ -4,7 +4,8 @@ import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { Preferences } from "@capacitor/preferences";
 import { PushNotifications } from "@capacitor/push-notifications";
-import { notificationsClient, tokenStore } from "@api";
+import { notificationsClient } from "@api/domains/notifications";
+import { tokenStore } from "@api/http";
 
 const DEVICE_ID_KEY = "gym4me.push.deviceId";
 const PUSH_ENABLED_KEY = "gym4me.push.enabled";

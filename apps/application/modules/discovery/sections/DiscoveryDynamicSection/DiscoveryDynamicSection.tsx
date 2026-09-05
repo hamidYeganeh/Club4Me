@@ -4,6 +4,7 @@ import type {
   DiscoveryArticleItem,
   DiscoveryClubItem,
   DiscoveryCoachItem,
+  PublicCatalogClass,
   DiscoverySection,
 } from "@api/discovery";
 import { ArticleCard } from "@ui/article-card";
@@ -14,6 +15,7 @@ import { FreeMode } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { getLocaleDirection } from "@/lib/locale-direction";
 import { DiscoverySectionHeader } from "../../components/DiscoverySectionHeader";
+import { DiscoveryResultCard } from "../../components/DiscoveryResultCard";
 import {
   DiscoveryBannersSection,
   parseDiscoveryBannersLayout,
@@ -27,7 +29,21 @@ export function DiscoveryDynamicSection({
   section: DiscoverySection;
 }) {
   const direction = getLocaleDirection(useLocale());
-  if (!section.items.length) return null;
+  if (!section.items.length) {
+    return (
+      <section className="flex flex-col gap-4">
+        <DiscoverySectionHeader
+          title={section.title}
+          subtitle={section.subtitle}
+          viewAllLabel={section.viewAllLabel}
+          viewAllUrl={section.viewAllUrl}
+        />
+        <p className="rounded-2xl bg-surface p-5 text-center text-sm text-muted">
+          هنوز محتوایی برای این بخش ثبت نشده است.
+        </p>
+      </section>
+    );
+  }
 
   if (section.type === "banners") {
     const { aspectRatio, slidesPerView } = parseDiscoveryBannersLayout(
@@ -83,7 +99,7 @@ export function DiscoveryDynamicSection({
                         title={club.name}
                         rating={club.averageRating}
                         reviewsCount={club.reviewsCount}
-                        href={`/discovery/clubs/${club.id}`}
+                        href={`/discovery/clubs/${club.slug}`}
                       />
                     );
                   })()
@@ -94,10 +110,11 @@ export function DiscoveryDynamicSection({
                         <CoachCard
                           type="normal"
                           title={coach.displayName}
+                          imageUrl={coach.imageUrl}
                           supportingText={coach.shortBio}
                           rating={coach.averageRating}
                           reviewsCount={coach.reviewsCount}
-                          href={`/coaches/${coach.slug}`}
+                          href={`/discovery/coaches/${coach.slug}`}
                           stats={[
                             {
                               id: "experience",
@@ -107,21 +124,34 @@ export function DiscoveryDynamicSection({
                         />
                       );
                     })()
-                  : (() => {
-                      const article = item as DiscoveryArticleItem;
-                      return (
-                        <ArticleCard
-                          title={article.title}
-                          description={article.excerpt}
-                          coverImageUrl={article.coverImageUrl}
-                          authorName={article.authorName}
-                          readTime=""
-                          tags={[]}
-                          orientation="vertical"
-                          href={`/articles/${article.slug}`}
-                        />
-                      );
-                    })()}
+                  : section.type === "classes"
+                    ? (() => {
+                        const trainingClass = item as PublicCatalogClass;
+                        return (
+                          <DiscoveryResultCard
+                            title={trainingClass.title}
+                            subtitle={trainingClass.description}
+                            imageUrl={trainingClass.imageUrl}
+                            badge="کلاس"
+                            href={`/discovery/classes/${trainingClass.slug}`}
+                          />
+                        );
+                      })()
+                    : (() => {
+                        const article = item as DiscoveryArticleItem;
+                        return (
+                          <ArticleCard
+                            title={article.title}
+                            description={article.excerpt}
+                            coverImageUrl={article.coverImageUrl}
+                            authorName={article.authorName}
+                            readTime=""
+                            tags={[]}
+                            orientation="vertical"
+                            href={`/discovery/articles/${article.slug}`}
+                          />
+                        );
+                      })()}
             </SwiperSlide>
           ))}
         </Swiper>

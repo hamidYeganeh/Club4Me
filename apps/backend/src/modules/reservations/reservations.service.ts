@@ -25,6 +25,8 @@ import {
 } from "./schemas/reservable-session.schema";
 import { calculateRefund } from "./refund-policy";
 import { NotificationsService } from "../notifications/notifications.service";
+import { CommerceService } from "../commerce/commerce.service";
+import { EntitlementsService } from "../commerce/entitlements.service";
 
 @Injectable()
 export class ReservationsService {
@@ -41,6 +43,8 @@ export class ReservationsService {
     private readonly coachSessions: CoachSessionsService,
     private readonly media: MediaService,
     private readonly notifications: NotificationsService,
+    private readonly commerce: CommerceService,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   async listCourts(ownerId: string, clubId: string) {
@@ -156,6 +160,17 @@ export class ReservationsService {
         "RESERVATION_STATUS_CHANGED",
         "Reservation status changed before this action completed",
       );
+    }
+    const refundAmount = updated.refundAmount ?? 0;
+    if (reservation.paymentStatus === "paid" && refundAmount > 0) {
+      await this.commerce.refundReservation(
+        updated._id,
+        refundAmount,
+        "reservation_no_show_refund",
+      );
+    }
+    if (refundPercent === 100) {
+      await this.entitlements.finalizeReservation(updated._id, false);
     }
     return publicReservation(updated);
   }
@@ -462,11 +477,27 @@ export class ReservationsService {
       session.pricingUnit === "per_participant"
         ? session.basePrice * input.participantCount
         : session.basePrice;
-    const totalPrice =
-      baseTotal +
-      selected.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+    const optionsTotal = selected.reduce(
+      (sum, item) => sum + item.unitPrice * item.quantity,
+      0,
+    );
+    const reservationId = new Types.ObjectId();
+    const totalPrice = input.entitlementId
+      ? optionsTotal
+      : baseTotal + optionsTotal;
     try {
+      if (input.entitlementId) {
+        await this.entitlements.reserveForReservation({
+          entitlementId: input.entitlementId,
+          reservationId,
+          userId,
+          clubId: session.clubId,
+          sessionType: getSessionType(session),
+          sessionStartsAt: session.startsAt,
+        });
+      }
       const reservation = await this.reservations.create({
+        _id: reservationId,
         clubId: session.clubId,
         sessionId: session._id,
         userId: oid(userId),
@@ -477,11 +508,14 @@ export class ReservationsService {
         participantCount: input.participantCount,
         selectedOptions: selected,
         totalPrice,
+        entitlementId: input.entitlementId ? oid(input.entitlementId) : null,
+        entitlementCoveredAmount: input.entitlementId ? baseTotal : 0,
         paymentStatus: totalPrice > 0 ? "pending" : "not_required",
         cancellationPolicy: session.cancellationPolicy,
         status: "reserved",
       });
       if (reservation.paymentStatus === "not_required") {
+        await this.entitlements.finalizeReservation(reservation._id, true);
         await this.notifications.notifyBookingConfirmed({
           userId: reservation.userId,
           bookingId: reservation._id,
@@ -490,6 +524,7 @@ export class ReservationsService {
       }
       return publicReservation(reservation);
     } catch (error) {
+      await this.entitlements.finalizeReservation(reservationId, false);
       await this.releaseInventory(
         session._id,
         input.participantCount,
@@ -583,13 +618,28 @@ export class ReservationsService {
         })),
       );
       await Promise.all(
-        reservations.map((reservation) =>
+        reservations
+          .filter(
+            (reservation) =>
+              reservation.paymentStatus === "paid" && refundPercent > 0,
+          )
+          .map((reservation) =>
+            this.commerce.refundReservation(
+              reservation._id,
+              Math.floor((reservation.totalPrice * refundPercent) / 100),
+              "session_cancelled_by_owner",
+            ),
+          ),
+      );
+      await Promise.all(
+        reservations.flatMap((reservation) => [
           this.notifications.notifyBookingCancelled({
             userId: reservation.userId,
             bookingId: reservation._id,
             title: reservation.sessionTitle,
           }),
-        ),
+          this.entitlements.finalizeReservation(reservation._id, false),
+        ]),
       );
     }
     return publicSession(session);
@@ -667,6 +717,16 @@ export class ReservationsService {
       cancelled.participantCount,
       cancelled.selectedOptions,
     );
+    if (reservation.paymentStatus === "paid" && refund.refundAmount > 0) {
+      await this.commerce.refundReservation(
+        cancelled._id,
+        refund.refundAmount,
+        "reservation_cancelled",
+      );
+    }
+    if (refund.refundPercent === 100) {
+      await this.entitlements.finalizeReservation(cancelled._id, false);
+    }
     await this.notifications.notifyBookingCancelled({
       userId: cancelled.userId,
       bookingId: cancelled._id,
@@ -879,6 +939,8 @@ function publicReservation(value: ReservationDocument) {
       unitPrice: item.unitPrice,
     })),
     totalPrice: value.totalPrice,
+    entitlementId: value.entitlementId ? String(value.entitlementId) : null,
+    entitlementCoveredAmount: value.entitlementCoveredAmount ?? 0,
     paymentStatus: value.paymentStatus ?? "not_required",
     cancellationPolicy: value.cancellationPolicy,
     refundPercent: value.refundPercent,

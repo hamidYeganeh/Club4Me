@@ -7,7 +7,7 @@ import { ClubCard } from "@ui/club-card";
 import { useTranslations } from "next-intl";
 
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
-import { formatClubCityDistrict } from "@modules/discovery/discovery-clubs-rails.mock";
+import { formatClubCityDistrict } from "@modules/discovery/discovery.formatters";
 
 import { discoveryClubsRailSectionStyles } from "./DiscoveryClubsRailSection.styles";
 import type {
@@ -40,12 +40,12 @@ export function DiscoveryClubsRailSection({
 }: DiscoveryClubsRailSectionProps) {
   const t = useTranslations("discovery.clubs");
   const styles = discoveryClubsRailSectionStyles({ tone, cardVariant });
-  const useMock = Boolean(items);
-  const clubs = useCatalogClubs(params, enabled && !useMock);
+  const hasProvidedItems = items !== undefined;
+  const clubs = useCatalogClubs(params, enabled && !hasProvidedItems);
   const visible: DiscoveryClubsRailClub[] = items ?? clubs.data?.items ?? [];
   const titleId = `discovery-clubs-rail-${id}`;
-  const isPending = !useMock && clubs.isPending;
-  const isError = !useMock && clubs.isError;
+  const isPending = !hasProvidedItems && clubs.isPending;
+  const isError = !hasProvidedItems && clubs.isError;
   const isAccent = tone === "accent";
 
   if (!enabled) {
@@ -92,9 +92,28 @@ export function DiscoveryClubsRailSection({
           size={24}
           className={styles.scroller()}
         >
-          <div className={styles.track()} aria-hidden>
+          <div
+            className={styles.track()}
+            aria-busy="true"
+            aria-label="در حال بارگذاری باشگاه‌ها"
+          >
             {Array.from({ length: 3 }, (_, index) => (
-              <Skeleton key={index} className={styles.skeleton()} />
+              <div
+                key={index}
+                className={`${styles.skeleton()} overflow-hidden`}
+              >
+                <Skeleton
+                  className={`${cardVariant === "editorial" ? "h-[65%]" : "h-[58%]"} w-full rounded-none`}
+                />
+                <div className="space-y-2.5 p-4">
+                  <Skeleton className="h-4 w-2/3 rounded-lg" />
+                  <Skeleton className="h-3 w-full rounded-lg" />
+                  <div className="flex justify-between gap-3 pt-1">
+                    <Skeleton className="h-3 w-16 rounded-lg" />
+                    <Skeleton className="h-3 w-20 rounded-lg" />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </ScrollShadow>
@@ -145,7 +164,7 @@ export function DiscoveryClubsRailSection({
                       : undefined
                   }
                   priceSuffix={club.price != null ? t("currency") : undefined}
-                  href={`/discovery/clubs/${club.id}`}
+                  href={`/discovery/clubs/${club.slug}`}
                   className={styles.card()}
                 />
               );

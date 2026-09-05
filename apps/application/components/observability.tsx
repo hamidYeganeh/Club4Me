@@ -1,17 +1,26 @@
 "use client";
 
 import { useEffect } from "react";
-import * as Sentry from "@sentry/browser";
-import { App } from "@capacitor/app";
-import { Capacitor } from "@capacitor/core";
 
 const DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
 export function Observability() {
   useEffect(() => {
     if (!DSN) return;
+
+    let active = true;
     void (async () => {
-      const info = Capacitor.isNativePlatform() ? await App.getInfo() : null;
+      const [Sentry, { Capacitor }] = await Promise.all([
+        import("@sentry/browser"),
+        import("@capacitor/core"),
+      ]);
+      if (!active) return;
+
+      const info = Capacitor.isNativePlatform()
+        ? await import("@capacitor/app").then(({ App }) => App.getInfo())
+        : null;
+      if (!active) return;
+
       Sentry.init({
         dsn: DSN,
         environment: process.env.NODE_ENV,
@@ -27,6 +36,10 @@ export function Observability() {
         },
       });
     })();
+
+    return () => {
+      active = false;
+    };
   }, []);
   return null;
 }

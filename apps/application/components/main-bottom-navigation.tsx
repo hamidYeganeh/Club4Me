@@ -44,7 +44,10 @@ const athleteNav = createRoleNav("athlete");
 const coachNav = createRoleNav("coach");
 
 function isDiscoveryDetail(pathname: string): boolean {
-  return /^\/discovery\/(clubs|coaches|classes)\/[^/]+/.test(pathname);
+  return (
+    /^\/discovery\/(clubs|coaches|classes|articles)\/[^/]+/.test(pathname) ||
+    pathname === "/discovery/business-class"
+  );
 }
 
 function isNestedProfileRoute(pathname: string): boolean {

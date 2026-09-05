@@ -17,6 +17,7 @@ const PUBLIC_RESOURCES = new Set([
   "location/city",
   "location/district",
   "location/city-region",
+  "commerce/cancellation-reason",
 ]);
 
 @Controller("api/v1/public/catalog")

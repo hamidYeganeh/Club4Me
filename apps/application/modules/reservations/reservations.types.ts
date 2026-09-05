@@ -15,6 +15,8 @@ export type TimelineReservation = Pick<
 > & {
   source?: "club" | "coach" | "class";
   sourceId?: string;
+  changeTimeHref?: string;
+  cancellationPolicyTitle?: string;
 };
 
 export type ReservationDateOption = {

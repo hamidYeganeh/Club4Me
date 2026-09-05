@@ -50,9 +50,16 @@ export function toApiError(error: unknown): ApiError {
       });
     }
 
+    const code =
+      error.code === "ECONNABORTED" || error.code === "ETIMEDOUT"
+        ? "REQUEST_TIMEOUT"
+        : error.code === "ERR_CANCELED"
+          ? "REQUEST_CANCELLED"
+          : "NETWORK_ERROR";
+
     return new ApiError(error.message || "Request failed", {
       status: error.response?.status,
-      code: "NETWORK_ERROR",
+      code,
     });
   }
 

@@ -64,6 +64,26 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
               label: "گزارش‌ها",
             },
             {
+              href: "/finance",
+              icon: "wallet",
+              label: "مالی و تسویه",
+            },
+            {
+              href: "/analytics",
+              icon: "chart-bar-1",
+              label: "قیف و بازگشت",
+            },
+            {
+              href: "/activity",
+              icon: "shield-check",
+              label: "رویدادهای مدیریتی",
+            },
+            {
+              href: "/support",
+              icon: "chat",
+              label: "تیکت‌های پشتیبانی",
+            },
+            {
               href: "/coach",
               icon: "chat",
               label: t("panel.coach"),

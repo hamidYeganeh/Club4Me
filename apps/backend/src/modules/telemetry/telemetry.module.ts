@@ -7,7 +7,10 @@ import {
   ProductTelemetry,
   ProductTelemetrySchema,
 } from "./schemas/product-telemetry.schema";
-import { TelemetryController } from "./telemetry.controller";
+import {
+  AdminTelemetryController,
+  TelemetryController,
+} from "./telemetry.controller";
 import { TelemetryService } from "./telemetry.service";
 
 @Module({
@@ -18,7 +21,7 @@ import { TelemetryService } from "./telemetry.service";
       { name: ProductTelemetry.name, schema: ProductTelemetrySchema },
     ]),
   ],
-  controllers: [TelemetryController],
+  controllers: [TelemetryController, AdminTelemetryController],
   providers: [TelemetryService],
   exports: [TelemetryService],
 })

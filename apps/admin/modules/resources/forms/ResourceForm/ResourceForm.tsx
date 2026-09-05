@@ -187,6 +187,7 @@ function RelationInput({
       ) : (
         <Select
           value={value || null}
+          placeholder={t("selectOption")}
           onChange={(key) => {
             if (typeof key === "string") onChange(key);
           }}
@@ -196,7 +197,7 @@ function RelationInput({
             {field.required ? " *" : ""}
           </Label>
           <Select.Trigger className="h-11 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
-            <Select.Value placeholder={t("selectOption")} />
+            <Select.Value />
             <Select.Indicator />
           </Select.Trigger>
           <Select.Popover>
@@ -242,12 +243,7 @@ export function ResourceForm({
   const create = useCreateResource();
   const update = useUpdateResource();
   const mutationPending = create.isPending || update.isPending;
-  const {
-    control,
-    handleSubmit,
-    reset,
-    setValue,
-  } = useForm<FormValues>({
+  const { control, handleSubmit, reset, setValue } = useForm<FormValues>({
     resolver: zodResolver(schema) as Resolver<FormValues>,
     defaultValues: defaultValues(fields, record),
   });
@@ -331,10 +327,17 @@ export function ResourceForm({
                     const multiline =
                       field.kind === "textarea" || field.kind === "string-list";
 
-                    if (field.kind === "relation" || field.kind === "relation-list")
+                    if (
+                      field.kind === "relation" ||
+                      field.kind === "relation-list"
+                    )
                       return (
                         <div
-                          className={multiline ? "space-y-1.5 sm:col-span-2" : "space-y-1.5"}
+                          className={
+                            multiline
+                              ? "space-y-1.5 sm:col-span-2"
+                              : "space-y-1.5"
+                          }
                         >
                           <RelationInput
                             field={field}
@@ -352,12 +355,18 @@ export function ResourceForm({
                     if (field.kind === "enum")
                       return (
                         <div
-                          className={multiline ? "space-y-1.5 sm:col-span-2" : "space-y-1.5"}
+                          className={
+                            multiline
+                              ? "space-y-1.5 sm:col-span-2"
+                              : "space-y-1.5"
+                          }
                         >
                           <Select
                             value={String(controlled.value ?? "") || null}
+                            placeholder={t("selectOption")}
                             onChange={(key) => {
-                              if (typeof key === "string") controlled.onChange(key);
+                              if (typeof key === "string")
+                                controlled.onChange(key);
                             }}
                           >
                             <Label className="text-sm font-medium">
@@ -365,7 +374,7 @@ export function ResourceForm({
                               {field.required ? " *" : ""}
                             </Label>
                             <Select.Trigger className="h-11 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
-                              <Select.Value placeholder={t("selectOption")} />
+                              <Select.Value />
                               <Select.Indicator />
                             </Select.Trigger>
                             <Select.Popover>
@@ -475,6 +484,8 @@ export function ResourceForm({
               />
               {String(imageUrl ?? "") && (
                 <div className="flex items-end gap-3 sm:col-span-2">
+                  {/* Dynamic admin previews may be blob/data URLs. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={String(imageUrl)}
                     alt={t("imagePreview")}

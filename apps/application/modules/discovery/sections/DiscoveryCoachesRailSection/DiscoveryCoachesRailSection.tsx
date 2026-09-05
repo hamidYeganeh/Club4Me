@@ -35,10 +35,7 @@ export function DiscoveryCoachesRailSection({
   }
 
   return (
-    <section
-      className={styles.root({ className })}
-      aria-labelledby={titleId}
-    >
+    <section className={styles.root({ className })} aria-labelledby={titleId}>
       <DiscoverySectionHeader
         id={titleId}
         title={title}
@@ -61,25 +58,27 @@ export function DiscoveryCoachesRailSection({
           <SwiperSlide key={coach.id} className={styles.slide()}>
             <CoachCard
               type={cardType}
-              title={coach.title}
+              title={coach.displayName}
               imageUrl={coach.imageUrl}
               supportingText={
-                cardType === "normal" ? coach.supportingText : undefined
+                cardType === "normal" ? coach.shortBio : undefined
               }
-              badge={coach.badge}
-              rating={cardType === "normal" ? coach.rating : undefined}
+              rating={cardType === "normal" ? coach.averageRating : undefined}
               reviewsCount={
                 cardType === "normal" ? coach.reviewsCount : undefined
               }
-              stats={cardType === "normal" ? coach.stats : undefined}
-              meta={cardType === "compact" ? coach.meta : undefined}
-              authorName={
-                cardType === "compact" ? coach.authorName : undefined
+              stats={
+                cardType === "normal"
+                  ? [
+                      {
+                        id: "experience",
+                        label: `${coach.experienceYears.toLocaleString("fa-IR")} سال تجربه`,
+                      },
+                    ]
+                  : undefined
               }
-              authorAvatarUrl={
-                cardType === "compact" ? coach.authorAvatarUrl : undefined
-              }
-              href={coach.href}
+              meta={cardType === "compact" ? coach.serviceModes : undefined}
+              href={`/discovery/coaches/${coach.slug}`}
             />
           </SwiperSlide>
         ))}

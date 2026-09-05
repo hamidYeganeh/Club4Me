@@ -1,14 +1,21 @@
 import { RESERVATION_ICONS } from "./reservations.constants";
-import type { ReservationDateOption } from "./reservations.types";
+import type {
+  ReservationDateOption,
+  TimelineReservation,
+} from "./reservations.types";
 
 const weekdayFormatter = new Intl.DateTimeFormat("fa-IR", {
-  weekday: "narrow",
+  weekday: "short",
 });
 const dayFormatter = new Intl.DateTimeFormat("fa-IR", { day: "numeric" });
 const timeFormatter = new Intl.DateTimeFormat("fa-IR", {
   hour: "2-digit",
   minute: "2-digit",
   hour12: false,
+});
+const shortDateFormatter = new Intl.DateTimeFormat("fa-IR", {
+  day: "numeric",
+  month: "short",
 });
 
 export function startOfDay(date: Date): Date {
@@ -38,12 +45,29 @@ export function formatReservationTime(iso: string): string {
   return timeFormatter.format(new Date(iso));
 }
 
+export function formatReservationDate(iso: string): string {
+  return shortDateFormatter.format(new Date(iso));
+}
+
 export function durationMinutes(startsAt: string, endsAt: string): number {
   const ms = new Date(endsAt).getTime() - new Date(startsAt).getTime();
   return Math.max(1, Math.round(ms / 60_000));
 }
 
-export function reservationIcon(title: string) {
+export function reservationIcon(
+  reservation: Pick<TimelineReservation, "source" | "sessionTitle">,
+) {
+  const iconsBySource = {
+    club: "building-2",
+    coach: "user",
+    class: "users-three",
+  } as const;
+
+  if (reservation.source) {
+    return iconsBySource[reservation.source];
+  }
+
+  const { sessionTitle: title } = reservation;
   let hash = 0;
   for (let index = 0; index < title.length; index += 1) {
     hash =

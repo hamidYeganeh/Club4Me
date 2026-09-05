@@ -1,0 +1,1 @@
+export { DiscoveryArticleDetailScreen } from "./DiscoveryArticleDetailScreen";

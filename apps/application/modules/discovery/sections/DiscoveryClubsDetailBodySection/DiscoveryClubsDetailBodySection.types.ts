@@ -7,6 +7,7 @@ import type {
 } from "@modules/discovery/discovery.types";
 
 export type DiscoveryClubsDetailBodySectionProps = {
+  name: string;
   images: string[];
   about: string;
   amenities: DiscoveryFacilityItem[];

@@ -114,4 +114,25 @@ describe("KavenegarSmsProvider", () => {
     expect(requestedUrl.searchParams.get("token")).toBe("a1b2c3d4");
     expect(requestedUrl.searchParams.get("token10")).toBe("۱۴۰۵/۰۶/۱۲ ۱۸:۳۰");
   });
+
+  it("sends transactional text when a dedicated lookup template is unavailable", async () => {
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ return: { status: 200 } }),
+    });
+    globalThis.fetch = fetchMock as typeof fetch;
+    const provider = createProvider({
+      KAVENEGAR_API_KEY: "super-secret-api-key",
+    });
+
+    await provider.sendMessage("+989121234567", "وضعیت تیکت به‌روزرسانی شد");
+
+    const requestedUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(requestedUrl.pathname).toContain("/sms/send.json");
+    expect(requestedUrl.searchParams.get("receptor")).toBe("09121234567");
+    expect(requestedUrl.searchParams.get("message")).toBe(
+      "وضعیت تیکت به‌روزرسانی شد",
+    );
+  });
 });

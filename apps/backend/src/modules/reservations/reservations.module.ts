@@ -7,12 +7,15 @@ import { ResourcesModule } from "../resources/resources.module";
 import { CoachingModule } from "../coaching/coaching.module";
 import { MediaModule } from "../media/media.module";
 import { NotificationsModule } from "../notifications/notifications.module";
+import { CommerceModule } from "../commerce/commerce.module";
+import { AppConfigModule } from "../../config/app-config.module";
 import {
   BusinessReservationsController,
   PublicSessionsController,
   ReservationsController,
 } from "./reservations.controller";
 import { ReservationsService } from "./reservations.service";
+import { ReservationRemindersService } from "./reservation-reminders.service";
 import { Court, CourtSchema } from "./schemas/court.schema";
 import { Reservation, ReservationSchema } from "./schemas/reservation.schema";
 import {
@@ -33,12 +36,14 @@ import {
     CoachingModule,
     MediaModule,
     NotificationsModule,
+    CommerceModule,
+    AppConfigModule,
   ],
   controllers: [
     BusinessReservationsController,
     PublicSessionsController,
     ReservationsController,
   ],
-  providers: [ReservationsService],
+  providers: [ReservationsService, ReservationRemindersService],
 })
 export class ReservationsModule {}

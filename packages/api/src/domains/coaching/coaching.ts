@@ -675,7 +675,13 @@ export function useBookCoachSession() {
 export function useCancelCoachBooking() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (bookingId: string) => client.cancelBooking(bookingId),
+    mutationFn: ({
+      bookingId,
+      reason,
+    }: {
+      bookingId: string;
+      reason?: string;
+    }) => client.cancelBooking(bookingId, reason),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["athlete", "coach-bookings"],

@@ -19,7 +19,8 @@ export function AccountAuthRolesOptionsSection({
   athleteLabel,
   coachLabel,
   ownerLabel,
-  onAthlete,
+  availableRoles,
+  onSelectRole,
 }: AccountAuthRolesOptionsSectionProps) {
   const styles = accountAuthRolesOptionsSectionStyles();
   const t = useTranslations("auth");
@@ -27,7 +28,7 @@ export function AccountAuthRolesOptionsSection({
   const requestRole = useRequestRole();
   const [pendingRole, setPendingRole] = useState<RequestableRole | null>(null);
 
-  const options: AccountAuthRoleOption[] = [
+  const allOptions: AccountAuthRoleOption[] = [
     {
       id: "athlete",
       label: athleteLabel,
@@ -47,6 +48,9 @@ export function AccountAuthRolesOptionsSection({
       tone: "owner",
     },
   ];
+  const options = allOptions.filter(
+    (option) => !availableRoles || availableRoles.includes(option.id),
+  );
 
   const handleRequest = async (role: RequestableRole) => {
     if (requestRole.isPending) {
@@ -88,9 +92,11 @@ export function AccountAuthRolesOptionsSection({
             isDisabled={isBusy}
             className={styles.item()}
             onPress={() => {
-              if (option.id === "athlete") {
-                trackOnboardingCompleted({ selected_role: "athlete" });
-                onAthlete();
+              if (availableRoles || option.id === "athlete") {
+                if (!availableRoles) {
+                  trackOnboardingCompleted({ selected_role: "athlete" });
+                }
+                onSelectRole(option.id);
                 return;
               }
 

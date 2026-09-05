@@ -2,8 +2,8 @@
 <resources>
     <string name="app_name">Gym4Me</string>
     <string name="title_activity_main">Gym4Me</string>
-    <string name="package_name">com.gym4me.application</string>
-    <string name="custom_url_scheme">com.gym4me.application</string>
+    <string name="package_name">com.gym4me.app</string>
+    <string name="custom_url_scheme">com.gym4me.app</string>
     <string name="reminder_widget_name">Upcoming reminder</string>
     <string name="reminder_widget_description">Shows your next Gym4Me reminder.</string>
     <string name="reminder_widget_date">8 September, 2026</string>

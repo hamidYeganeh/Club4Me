@@ -3,6 +3,10 @@ import type { ListClubsParams, PublicCatalogParams } from "./discovery.dto";
 export const discoveryQueries = {
   all: () => ["discovery"] as const,
   feed: () => [...discoveryQueries.all(), "feed"] as const,
+  coachSections: () =>
+    [...discoveryQueries.all(), "coaches", "sections"] as const,
+  coaches: (params?: PublicCatalogParams) =>
+    [...discoveryQueries.all(), "coaches", "list", params] as const,
   catalog: {
     all: () => [...discoveryQueries.all(), "catalog"] as const,
     clubs: (params?: PublicCatalogParams) =>
@@ -17,6 +21,10 @@ export const discoveryQueries = {
       [...discoveryQueries.catalog.all(), "classes", params] as const,
     class: (identifier: string) =>
       [...discoveryQueries.catalog.all(), "class", identifier] as const,
+    articles: (params?: PublicCatalogParams) =>
+      [...discoveryQueries.catalog.all(), "articles", params] as const,
+    article: (slug: string) =>
+      [...discoveryQueries.catalog.all(), "article", slug] as const,
     clubTypes: () => [...discoveryQueries.catalog.all(), "club-types"] as const,
     search: (params?: PublicCatalogParams & { kind?: string }) =>
       [...discoveryQueries.catalog.all(), "search", params] as const,

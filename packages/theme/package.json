@@ -20,7 +20,7 @@
     "build": "npm run build:icons",
     "build:icons": "node scripts/build-icons.mjs",
     "lint": "echo 'No lint configured'",
-    "check-types": "tsc --noEmit"
+    "check-types": "node ../../node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
     "next-themes": "^0.4.6"

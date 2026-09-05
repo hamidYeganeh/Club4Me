@@ -7,6 +7,8 @@ export * from "./admin-coaches";
 export * from "./admin-classes";
 export * from "./admin-users";
 export * from "./admin-discovery";
+export * from "./admin-analytics";
+export * from "./admin-audit";
 export {
   useAdminAppReleases,
   useSaveAdminAppRelease,

@@ -12,82 +12,141 @@ import type {
   ListSlotsResponse,
   Reservation,
   ReserveSlotPayload,
+  DiscoveryArticleItem,
   DiscoverySection,
   PublicCatalogClass,
+  PublicCatalogArticle,
   PublicCatalogClub,
   PublicCatalogCoach,
   PublicCatalogClubTypesResponse,
   PublicCatalogPage,
   PublicCatalogParams,
   PublicCatalogSearchResponse,
+  PublicCatalogSearchParams,
   PublicResourcePage,
 } from "./discovery.dto";
 import { discoveryEndpoints } from "./discovery.endpoints";
 
 export const discoveryClient = {
-  getFeed: () => http.get<DiscoverySection[]>(discoveryEndpoints.feed),
+  getFeed: (signal?: AbortSignal) =>
+    http.get<DiscoverySection[]>(discoveryEndpoints.feed, undefined, signal),
+  getCoachSections: (signal?: AbortSignal) =>
+    http.get<DiscoverySection[]>(
+      discoveryEndpoints.coachSections,
+      undefined,
+      signal,
+    ),
 
-  listCatalogClubs: (params?: PublicCatalogParams) =>
+  listCoaches: (params?: PublicCatalogParams, signal?: AbortSignal) =>
+    http.get<PublicCatalogPage<PublicCatalogCoach>>(
+      discoveryEndpoints.coaches,
+      params,
+      signal,
+    ),
+
+  listCatalogClubs: (params?: PublicCatalogParams, signal?: AbortSignal) =>
     http.get<PublicCatalogPage<PublicCatalogClub>>(
       discoveryEndpoints.catalogClubs,
       params,
+      signal,
     ),
-  getCatalogClub: (identifier: string) =>
-    http.get<PublicCatalogClub>(discoveryEndpoints.catalogClub(identifier)),
+  getCatalogClub: (identifier: string, signal?: AbortSignal) =>
+    http.get<PublicCatalogClub>(
+      discoveryEndpoints.catalogClub(identifier),
+      undefined,
+      signal,
+    ),
 
-  listCatalogCoaches: (params?: PublicCatalogParams) =>
+  listCatalogCoaches: (params?: PublicCatalogParams, signal?: AbortSignal) =>
     http.get<PublicCatalogPage<PublicCatalogCoach>>(
       discoveryEndpoints.catalogCoaches,
       params,
+      signal,
     ),
-  getCatalogCoach: (identifier: string) =>
-    http.get<PublicCatalogCoach>(discoveryEndpoints.catalogCoach(identifier)),
+  getCatalogCoach: (identifier: string, signal?: AbortSignal) =>
+    http.get<PublicCatalogCoach>(
+      discoveryEndpoints.catalogCoach(identifier),
+      undefined,
+      signal,
+    ),
 
-  listCatalogClasses: (params?: PublicCatalogParams) =>
+  listCatalogClasses: (params?: PublicCatalogParams, signal?: AbortSignal) =>
     http.get<PublicCatalogPage<PublicCatalogClass>>(
       discoveryEndpoints.catalogClasses,
       params,
+      signal,
     ),
-  getCatalogClass: (identifier: string) =>
-    http.get<PublicCatalogClass>(discoveryEndpoints.catalogClass(identifier)),
+  getCatalogClass: (identifier: string, signal?: AbortSignal) =>
+    http.get<PublicCatalogClass>(
+      discoveryEndpoints.catalogClass(identifier),
+      undefined,
+      signal,
+    ),
 
-  searchCatalog: (params?: PublicCatalogParams & { kind?: string }) =>
+  listCatalogArticles: (params?: PublicCatalogParams, signal?: AbortSignal) =>
+    http.get<PublicCatalogPage<DiscoveryArticleItem>>(
+      discoveryEndpoints.catalogArticles,
+      params,
+      signal,
+    ),
+  getCatalogArticle: (slug: string, signal?: AbortSignal) =>
+    http.get<PublicCatalogArticle>(
+      discoveryEndpoints.catalogArticle(slug),
+      undefined,
+      signal,
+    ),
+
+  searchCatalog: (params?: PublicCatalogSearchParams, signal?: AbortSignal) =>
     http.get<PublicCatalogSearchResponse>(
       discoveryEndpoints.catalogSearch,
       params,
+      signal,
     ),
 
-  listCatalogClubTypes: () =>
+  listCatalogClubTypes: (signal?: AbortSignal) =>
     http.get<PublicCatalogClubTypesResponse>(
       discoveryEndpoints.catalogClubTypes,
+      undefined,
+      signal,
     ),
 
   listPublicResources: (
     category: string,
     resource: string,
     params?: Record<string, unknown>,
+    signal?: AbortSignal,
   ) =>
     http.get<PublicResourcePage>(
       discoveryEndpoints.publicResource(category, resource),
       params,
+      signal,
     ),
 
-  listClubs: (params?: ListClubsParams) =>
-    http.get<ListClubsResponse>(discoveryEndpoints.clubs, params),
+  listClubs: (params?: ListClubsParams, signal?: AbortSignal) =>
+    http.get<ListClubsResponse>(discoveryEndpoints.clubs, params, signal),
 
   createClub: (payload: CreateClubPayload) =>
     http.post<Club>(discoveryEndpoints.clubs, payload),
 
-  getClub: (clubId: string) => http.get<Club>(discoveryEndpoints.club(clubId)),
+  getClub: (clubId: string, signal?: AbortSignal) =>
+    http.get<Club>(discoveryEndpoints.club(clubId), undefined, signal),
 
-  listClasses: (clubId: string) =>
-    http.get<ListClassesResponse>(discoveryEndpoints.classes(clubId)),
+  listClasses: (clubId: string, signal?: AbortSignal) =>
+    http.get<ListClassesResponse>(
+      discoveryEndpoints.classes(clubId),
+      undefined,
+      signal,
+    ),
 
   createClass: (clubId: string, payload: CreateClassPayload) =>
     http.post<ClubClass>(discoveryEndpoints.classes(clubId), payload),
 
-  listSlots: (clubId: string) =>
-    http.get<ListSlotsResponse>(discoveryEndpoints.slots(clubId)),
+  listSlots: (clubId: string, signal?: AbortSignal) =>
+    http.get<ListSlotsResponse>(
+      discoveryEndpoints.slots(clubId),
+      undefined,
+      signal,
+    ),
 
   createSlot: (clubId: string, payload: CreateSlotPayload) =>
     http.post<ClubSlot>(discoveryEndpoints.slots(clubId), payload),

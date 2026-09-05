@@ -56,6 +56,8 @@ export function ClubCard({
         className={styles.image()}
         src={resolvedImageUrl}
         alt={imageAlt ?? title}
+        loading="lazy"
+        decoding="async"
         onError={onImageError}
       />
       <div aria-hidden className={styles.shade()} />

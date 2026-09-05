@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Drawer, Typography } from "@heroui/react";
+import { Button, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { useLocale, useTranslations } from "next-intl";
 import { FreeMode, Thumbs } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FallbackImage } from "@/components/FallbackImage";
 import { NeshanMap } from "@/components/maps/neshan-map";
+import { BottomSheet } from "@/components/motion/bottom-sheet";
 import { getLocaleDirection } from "@/lib/locale-direction";
 
 import "swiper/css";
@@ -25,6 +26,7 @@ import type { DiscoveryClubsDetailBodySectionProps } from "./DiscoveryClubsDetai
 type FacilityListKind = "amenities" | "equipment";
 
 export function DiscoveryClubsDetailBodySection({
+  name,
   images,
   about,
   amenities,
@@ -246,123 +248,124 @@ export function DiscoveryClubsDetailBodySection({
 
       <div className={styles.location()}>
         <div className={styles.locationHeader()}>
-          <div>
-            <Typography type="h5" className={styles.locationTitle()}>
-              {t("locationTitle")}
-            </Typography>
-            <Typography
-              type="body-sm"
-              color="muted"
-              className={styles.locationAddress()}
-            >
-              {location.address}
-            </Typography>
-          </div>
-          <a
-            href={`https://nshn.ir/?lat=${location.latitude}&lng=${location.longitude}`}
-            target="_blank"
-            rel="noreferrer"
-            className={styles.locationLink()}
-          >
-            {t("openInNeshan")}
-          </a>
+          <Icon name="map-pin-1" size="lg" />
+          <Typography type="h5" className={styles.locationTitle()}>
+            {t("locationTitle")}
+          </Typography>
         </div>
-        <NeshanMap
-          center={location}
-          marker={location}
-          markerLabel={location.address}
-        />
-      </div>
-
-      <Drawer.Backdrop
-        isOpen={listKind !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setListKind(null);
-          }
-        }}
-      >
-        <Drawer.Content placement="bottom">
-          <Drawer.Dialog className="max-h-[85dvh]">
-            <Drawer.Handle />
-            <Drawer.CloseTrigger />
-            <Drawer.Header>
-              <Drawer.Heading>{listTitle}</Drawer.Heading>
-            </Drawer.Header>
-            <Drawer.Body>
-              <div className={styles.facilityList()}>
-                {listItems.map((item) => (
-                  <AmenityCard
-                    key={item.id}
-                    title={item.title}
-                    icon={item.icon}
-                    backgroundImage={item.backgroundImage}
-                    className="w-full!"
-                    onPress={() => {
-                      setListKind(null);
-                      setDetailItem(item);
-                    }}
-                  />
-                ))}
-              </div>
-            </Drawer.Body>
-          </Drawer.Dialog>
-        </Drawer.Content>
-      </Drawer.Backdrop>
-
-      <Drawer.Backdrop
-        isOpen={detailItem !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDetailItem(null);
-          }
-        }}
-      >
-        <Drawer.Content placement="bottom">
-          <Drawer.Dialog className="max-h-[85dvh]">
-            <Drawer.Handle />
-            <Drawer.CloseTrigger />
-            <Drawer.Header>
-              <Drawer.Heading>{detailItem?.title ?? ""}</Drawer.Heading>
-            </Drawer.Header>
-            <Drawer.Body>
-              {detailItem?.backgroundImage ? (
-                <div className={styles.facilityDetailImage()}>
-                  <FallbackImage
-                    src={detailItem.backgroundImage}
-                    alt={detailItem.title}
-                    fill
-                    unoptimized
-                    sizes="100vw"
-                    className={styles.facilityDetailImageSrc()}
-                  />
-                </div>
-              ) : detailItem?.icon ? (
-                <div className="mb-4 flex size-16 items-center justify-center rounded-[18px] bg-surface-secondary">
-                  <Icon name={detailItem.icon} size={32} />
-                </div>
-              ) : null}
-              {detailItem?.count != null ? (
+        <div className={styles.locationCard()}>
+          <NeshanMap
+            center={location}
+            markers={[
+              {
+                id: "club-location",
+                ...location,
+                imageUrl: images[0],
+                label: name,
+              },
+            ]}
+            selectedMarkerId="club-location"
+            className={styles.locationMap()}
+          />
+          <div className={styles.locationDetails()}>
+            <div className={styles.locationInfo()}>
+              <span className={styles.locationVenueIcon()}>
+                <Icon name="building-1" size="lg" />
+              </span>
+              <div className={styles.locationText()}>
+                <Typography
+                  type="body"
+                  weight="semibold"
+                  className={styles.locationName()}
+                >
+                  {name}
+                </Typography>
                 <Typography
                   type="body-sm"
                   color="muted"
-                  className={styles.facilityDetailMeta()}
+                  className={styles.locationAddress()}
                 >
-                  {t("facilityCount", { count: detailItem.count })}
+                  {location.address}
                 </Typography>
-              ) : null}
-              {detailItem?.description ? (
-                <Typography
-                  type="body-sm"
-                  className={styles.facilityDetailDescription()}
-                >
-                  {detailItem.description}
-                </Typography>
-              ) : null}
-            </Drawer.Body>
-          </Drawer.Dialog>
-        </Drawer.Content>
-      </Drawer.Backdrop>
+              </div>
+            </div>
+            <div className={styles.locationDivider()} />
+            <a
+              href={`https://nshn.ir/?lat=${location.latitude}&lng=${location.longitude}`}
+              target="_blank"
+              rel="noreferrer"
+              className={styles.locationLink()}
+            >
+              {t("openInNeshan")}
+              <Icon name="map-pin-1" size="md" />
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <BottomSheet
+        open={listKind !== null}
+        onOpenChange={(open) => !open && setListKind(null)}
+        snapPoints={[0.85]}
+        title={listTitle}
+      >
+        <div className={styles.facilityList()}>
+          {listItems.map((item) => (
+            <AmenityCard
+              key={item.id}
+              title={item.title}
+              icon={item.icon}
+              backgroundImage={item.backgroundImage}
+              className="w-full!"
+              onPress={() => {
+                setListKind(null);
+                setDetailItem(item);
+              }}
+            />
+          ))}
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={detailItem !== null}
+        onOpenChange={(open) => !open && setDetailItem(null)}
+        snapPoints={[0.85]}
+        title={detailItem?.title ?? ""}
+      >
+        {detailItem?.backgroundImage ? (
+          <div className={styles.facilityDetailImage()}>
+            <FallbackImage
+              src={detailItem.backgroundImage}
+              alt={detailItem.title}
+              fill
+              unoptimized
+              sizes="100vw"
+              className={styles.facilityDetailImageSrc()}
+            />
+          </div>
+        ) : detailItem?.icon ? (
+          <div className="mb-4 flex size-16 items-center justify-center rounded-[18px] bg-surface-secondary">
+            <Icon name={detailItem.icon} size={32} />
+          </div>
+        ) : null}
+        {detailItem?.count != null ? (
+          <Typography
+            type="body-sm"
+            color="muted"
+            className={styles.facilityDetailMeta()}
+          >
+            {t("facilityCount", { count: detailItem.count })}
+          </Typography>
+        ) : null}
+        {detailItem?.description ? (
+          <Typography
+            type="body-sm"
+            className={styles.facilityDetailDescription()}
+          >
+            {detailItem.description}
+          </Typography>
+        ) : null}
+      </BottomSheet>
     </section>
   );
 }

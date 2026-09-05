@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, Chip, Spinner, toast, Typography } from "@heroui/react";
+import { Button, Card, Chip, toast, Typography } from "@heroui/react";
 import {
   useCoachClasses,
   useCoachProfile,
@@ -9,6 +9,8 @@ import {
 } from "@api";
 
 import { AthleteScreenHeaderSection } from "@modules/athlete/sections/AthleteScreenHeaderSection";
+import { CoachClubClassesSection } from "@modules/coach/sections/CoachClubClassesSection";
+import { DashboardPageSkeleton } from "@/components/loading-skeletons";
 
 const statusLabel: Record<string, string> = {
   draft: "پیش‌نویس",
@@ -48,11 +50,7 @@ export function CoachHomeScreen() {
   };
 
   if (profile.isLoading || classes.isLoading) {
-    return (
-      <main className="flex min-h-dvh items-center justify-center">
-        <Spinner />
-      </main>
-    );
+    return <DashboardPageSkeleton />;
   }
 
   return (
@@ -98,6 +96,7 @@ export function CoachHomeScreen() {
           </Button>
         ) : null}
       </Card>
+      <CoachClubClassesSection />
       <section>
         <div className="mb-3 flex items-center justify-between">
           <Typography type="h4" weight="bold">

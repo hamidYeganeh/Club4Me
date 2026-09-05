@@ -56,6 +56,7 @@ export class DiscoveryFeedService {
       operationalStatus: { $ne: "permanently_closed" },
     };
     addIdFilter(filter, "geo.cityId", query.cityId);
+    addIdFilter(filter, "geo.districtId", query.districtId);
     addIdFilter(filter, "geo.cityRegionIds", query.cityRegionId);
     addIdFilter(filter, "sportIds", query.sportId);
     addIdFilter(filter, "clubTypeIds", query.clubTypeId);
@@ -144,6 +145,7 @@ export class DiscoveryFeedService {
         const id = String(item.id ?? "");
         return {
           id,
+          slug: typeof item.slug === "string" ? item.slug : "",
           name: typeof item.name === "string" ? item.name : "",
           code: typeof item.code === "string" ? item.code : "",
           icon: typeof item.icon === "string" ? item.icon : null,
@@ -283,6 +285,44 @@ export class DiscoveryFeedService {
     return (await this.hydrateMedia([publicClass(base!)]))[0];
   }
 
+  async listPublicArticles(query: Record<string, string | undefined>) {
+    const { page, limit, skip } = pagination(query);
+    const filter: Record<string, unknown> = { status: "published" };
+    addIdFilter(filter, "categoryId", query.categoryId);
+    if (query.q?.trim()) {
+      const pattern = searchPattern(query.q);
+      filter.$or = [
+        { title: pattern },
+        { excerpt: pattern },
+        { authorName: pattern },
+      ];
+    }
+    const [documents, total] = await Promise.all([
+      this.articles
+        .find(filter)
+        .sort({ publishedAt: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.articles.countDocuments(filter),
+    ]);
+    return {
+      items: documents.map(publicArticle),
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getPublicArticle(slug: string) {
+    const document = await this.articles
+      .findOne({ slug, status: "published" })
+      .lean();
+    if (!document) catalogNotFound("ARTICLE_NOT_FOUND");
+    return publicCatalogArticle(document!);
+  }
+
   async searchPublicCatalog(query: Record<string, string | undefined>) {
     const kind = query.kind;
     const scoped = { ...query, page: "1", limit: query.limit ?? "20" };
@@ -325,6 +365,14 @@ export class DiscoveryFeedService {
     return Promise.all(sections.map((section) => this.resolveSection(section)));
   }
 
+  async getCoachSections(): Promise<Record<string, unknown>[]> {
+    const sections = await this.sections
+      .find({ enabled: true, key: /^coaches-/ })
+      .sort({ position: 1, _id: 1 })
+      .exec();
+    return Promise.all(sections.map((section) => this.resolveSection(section)));
+  }
+
   async listAdmin(actorRoles: UserRole[]) {
     assertAdmin(actorRoles);
     const items = await this.sections
@@ -362,6 +410,20 @@ export class DiscoveryFeedService {
     }
     if (type === "articles") {
       const items = await this.articles
+        .find()
+        .sort({ title: 1 })
+        .limit(500)
+        .lean();
+      return {
+        items: items.map((item) => ({
+          id: String(item._id),
+          label: item.title,
+          status: item.status,
+        })),
+      };
+    }
+    if (type === "classes") {
+      const items = await this.classes
         .find()
         .sort({ title: 1 })
         .limit(500)
@@ -487,7 +549,7 @@ export class DiscoveryFeedService {
       };
     }
     const items = await this.resolveEntities(section);
-    return { ...base, items };
+    return { ...base, items: await this.hydrateMedia(items) };
   }
 
   private async resolveEntities(section: DiscoverySectionDocument) {
@@ -526,6 +588,18 @@ export class DiscoveryFeedService {
           .limit(limit)
           .lean()
       ).map(publicCoach);
+    } else if (section.type === "classes") {
+      const query: Record<string, unknown> = {
+        status: { $in: ["published", "registration_closed", "in_progress"] },
+        ...(manual ? { _id: { $in: ids } } : classFilters(filters)),
+      };
+      items = (
+        await this.classes
+          .find(query)
+          .sort(sortFor(selection.sort))
+          .limit(limit)
+          .lean()
+      ).map(publicClass);
     } else {
       const query: Record<string, unknown> = {
         status: "published",
@@ -604,6 +678,12 @@ function articleFilters(f: Filters) {
     ? { categoryId: { $in: ids(f.categoryIds) } }
     : {};
 }
+function classFilters(f: Filters) {
+  return {
+    ...(f.sportIds?.length ? { sportId: { $in: ids(f.sportIds) } } : {}),
+    ...(f.cityIds?.length ? { "geo.cityId": { $in: ids(f.cityIds) } } : {}),
+  };
+}
 function sortFor(sort: string): Record<string, 1 | -1> {
   if (sort === "rating") return { averageRating: -1, reviewsCount: -1, _id: 1 };
   if (sort === "name") return { name: 1, displayName: 1, title: 1, _id: 1 };
@@ -678,6 +758,13 @@ function publicArticle(item: Record<string, any>) {
     excerpt: item.excerpt ?? "",
     coverImageUrl: item.coverImageUrl ?? null,
     publishedAt: item.publishedAt?.toISOString() ?? null,
+    readTimeMinutes: estimateArticleReadTime(item.bodyHtml),
+  };
+}
+function publicCatalogArticle(item: Record<string, any>) {
+  return {
+    ...publicArticle(item),
+    bodyHtml: item.bodyHtml ?? "",
   };
 }
 function publicClass(item: Record<string, any>) {
@@ -708,6 +795,15 @@ function publicClass(item: Record<string, any>) {
     prerequisites: item.prerequisites ?? [],
     status: item.status,
   };
+}
+function estimateArticleReadTime(html: unknown) {
+  if (typeof html !== "string") return 1;
+  const words = html
+    .replace(/<[^>]*>/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 180));
 }
 function pagination(query: Record<string, string | undefined>) {
   const page = integer(query.page, 1, 1, 100_000);
@@ -790,7 +886,15 @@ function serializeConfiguration(item: Record<string, any>) {
     updatedAt: item.updatedAt?.toISOString?.() ?? item.updatedAt,
   };
 }
-function normalizeAppearance(item?: Record<string, unknown>) {
+function normalizeAppearance(item?: {
+  backgroundColor?: unknown;
+  textColor?: unknown;
+  accentColor?: unknown;
+  showHeader?: unknown;
+  showViewAll?: unknown;
+  headerAlignment?: unknown;
+  viewAllVariant?: unknown;
+}) {
   return {
     backgroundColor: item?.backgroundColor ?? "transparent",
     textColor: item?.textColor ?? "",

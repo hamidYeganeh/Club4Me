@@ -234,10 +234,24 @@ export function useResolveMockClubPayment() {
     }: {
       reservationId: string;
       result: "approve" | "reject";
-    }) =>
-      result === "approve"
-        ? reservationsClient.approveMockPayment(reservationId)
-        : reservationsClient.rejectMockPayment(reservationId),
+    }) => {
+      const returnUrl =
+        typeof window === "undefined"
+          ? "https://club4me.local/payment-return"
+          : `${window.location.origin}/athlete/reservations`;
+      return http
+        .post<{ id: string }>("/payments/intents", {
+          referenceType: "reservation",
+          referenceId: reservationId,
+          idempotencyKey: `reservation-${reservationId}-checkout-v1`,
+          returnUrl,
+        })
+        .then((intent) =>
+          http.post(`/payments/intents/${intent.id}/mock/decision`, {
+            status: result === "approve" ? "paid" : "failed",
+          }),
+        );
+    },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["reservations"] });
       await qc.invalidateQueries({ queryKey: ["discovery", "clubs"] });

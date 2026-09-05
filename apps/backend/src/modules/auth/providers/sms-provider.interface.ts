@@ -7,6 +7,7 @@ export type SmsLookupTokens = {
 
 export interface SmsProvider {
   sendOtp(phone: string, code: string, purpose: SmsPurpose): Promise<void>;
+  sendMessage?(phone: string, message: string): Promise<void>;
   sendTemplate(
     phone: string,
     template: string,

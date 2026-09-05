@@ -2,32 +2,31 @@ import { tv } from "tailwind-variants";
 
 export const reservationsHeaderSectionStyles = tv({
   slots: {
-    root: "fixed inset-x-0 top-0 z-40 mx-auto w-full max-w-xl border-b border-white/7 bg-background/78 px-5 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-[0_12px_32px_color-mix(in_oklch,var(--background)_55%,transparent)] backdrop-blur-xl",
-    spacer: "h-[calc(78px+env(safe-area-inset-top)+5.6rem)] w-full shrink-0",
-    bar: "flex h-19.5 items-center gap-3",
-    back: "app-icon-button border-none",
-    title: "text-xl leading-none font-bold text-foreground",
-    dates: "flex snap-x snap-mandatory flex-nowrap gap-2.5 pb-1",
+    root: "border-b border-white/7 bg-background/82 px-5 py-4 shadow-[0_12px_30px_color-mix(in_oklch,var(--background)_55%,transparent)] backdrop-blur-xl",
+    calendar: "flex size-10 items-center justify-center text-foreground",
+    dates: "flex snap-x snap-mandatory flex-nowrap gap-2 pb-1",
     dateButton:
-      "flex h-auto min-h-[4.85rem] w-[3.4rem] min-w-[3.4rem] snap-start flex-col gap-1 rounded-[1rem] border border-white/8 px-0 py-2.5 shadow-none transition-transform duration-200 active:scale-95",
-    weekday: "text-[0.7rem] leading-none font-medium",
-    day: "text-[1.35rem] leading-none font-bold",
-    dot: "mt-0.5 size-1.5 rounded-full",
+      "group flex h-auto min-h-[4.55rem] w-[4.15rem] min-w-[4.15rem] snap-start flex-col items-center justify-center gap-1 rounded-[1.15rem] border border-transparent bg-surface-tertiary px-3 py-2.5 text-foreground shadow-none transition-[transform,border-color,background-color,color] duration-300 ease-out active:scale-95",
+    weekday: "text-base leading-none font-medium text-muted transition-colors",
+    day: "text-2xl leading-none font-black tracking-tight tabular-nums",
   },
   variants: {
+    historyActive: {
+      true: {
+        calendar: "rounded-xl bg-accent text-accent-foreground",
+      },
+      false: {},
+    },
     selected: {
       true: {
-        dateButton: "bg-foreground text-background",
-        weekday: "text-muted",
-        day: "text-background",
-        dot: "bg-background/70",
+        dateButton: "border-foreground/80 bg-surface text-foreground",
+        weekday: "text-foreground/75",
+        day: "text-foreground",
       },
       false: {
-        dateButton:
-          "bg-surface-secondary text-foreground hover:bg-surface-tertiary",
+        dateButton: "hover:scale-[1.03]",
         weekday: "text-muted",
         day: "text-foreground",
-        dot: "bg-foreground/30",
       },
     },
   },

@@ -2,13 +2,12 @@
 
 import { type ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Spinner } from "@heroui/react";
-import { tokenStore } from "@api";
+import { tokenStore } from "@api/http";
 import { useAccountMe } from "@api/account";
-import { useTranslations } from "next-intl";
 
 import { SET_PASSWORD_PATH } from "@/lib/post-auth-path";
 import { AUTH_PATH, markWelcomeSeen } from "@/lib/welcome-onboarding";
+import { DashboardPageSkeleton } from "@/components/loading-skeletons";
 
 type AuthGateProps = {
   children: ReactNode;
@@ -16,7 +15,6 @@ type AuthGateProps = {
 
 export function AuthGate({ children }: AuthGateProps) {
   const router = useRouter();
-  const t = useTranslations("common");
   const [hasToken, setHasToken] = useState<boolean | null>(null);
   const me = useAccountMe(hasToken === true);
 
@@ -47,19 +45,11 @@ export function AuthGate({ children }: AuthGateProps) {
   }, [me.data, router]);
 
   if (hasToken === null || hasToken === false || me.isError) {
-    return (
-      <div className="flex min-h-full flex-1 items-center justify-center">
-        <Spinner size="lg" aria-label={t("loading")} />
-      </div>
-    );
+    return <DashboardPageSkeleton />;
   }
 
   if (me.isLoading || !me.data || !me.data.hasPassword) {
-    return (
-      <div className="flex min-h-full flex-1 items-center justify-center">
-        <Spinner size="lg" aria-label={t("loading")} />
-      </div>
-    );
+    return <DashboardPageSkeleton />;
   }
 
   return children;

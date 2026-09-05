@@ -14,12 +14,25 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
   JWT_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("30d"),
+  MOCK_PAYMENT_CALLBACK_SECRET: z
+    .string()
+    .min(16)
+    .default("local-mock-payment-secret"),
+  EXPORT_STORAGE_DRIVER: z.enum(["local", "gcs"]).default("local"),
+  EXPORT_LOCAL_DIR: z.string().default(".artifacts/exports"),
+  EXPORT_GCS_BUCKET: z.string().trim().optional(),
+  EXPORT_SIGNED_URL_MINUTES: z.coerce.number().int().min(1).max(1440).default(15),
+  SUPPORT_SLA_NORMAL_MINUTES: z.coerce.number().int().min(5).default(480),
+  SUPPORT_SLA_HIGH_MINUTES: z.coerce.number().int().min(5).default(120),
+  SUPPORT_SLA_URGENT_MINUTES: z.coerce.number().int().min(5).default(30),
   APP_RELEASE: z.string().default("development"),
   SENTRY_DSN: z.string().url().optional().or(z.literal("")),
   FIREBASE_PROJECT_ID: z.string().optional(),
   FIREBASE_CLIENT_EMAIL: z.string().email().optional().or(z.literal("")),
   FIREBASE_PRIVATE_KEY: z.string().optional(),
+  FIREBASE_SERVICE_ACCOUNT_PATH: z.string().optional(),
   KAVENEGAR_API_KEY: z.string().optional(),
+  KAVENEGAR_SENDER: z.string().optional(),
   KAVENEGAR_OTP_TEMPLATE: z.string().default("gym4meotp"),
   KAVENEGAR_RESET_TEMPLATE: z.string().optional(),
   KAVENEGAR_BOOKING_CONFIRMED_TEMPLATE: z
@@ -35,8 +48,10 @@ const envSchema = z.object({
     .string()
     .default("gym4mebookingrescheduled"),
   KAVENEGAR_PAYMENT_FAILED_TEMPLATE: z.string().default("gym4mepaymentfailed"),
+  KAVENEGAR_PAYOUT_TEMPLATE: z.string().default(""),
+  KAVENEGAR_SUPPORT_TEMPLATE: z.string().default(""),
   KAVENEGAR_WAITLIST_TEMPLATE: z.string().default("gym4mewaitlist"),
-  KAVENEGAR_OWNER_APPROVED_TEMPLATE: z.string().default("gym4meownerapproved"),
+  KAVENEGAR_OWNER_APPROVED_TEMPLATE: z.string().default(""),
   CORS_ORIGINS: z
     .string()
     .default(

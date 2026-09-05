@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useAccountMe } from "@api/account";
-import { InputGroup, Label, Separator, TextField, Typography } from "@heroui/react";
+import {
+  InputGroup,
+  Label,
+  Separator,
+  Skeleton,
+  TextField,
+  Typography,
+} from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
 
@@ -52,6 +59,22 @@ export function ProfileEditGeneralSection({
       </Typography>
 
       <div className={styles.list()}>
+        {me.isPending
+          ? Array.from({ length: 5 }, (_, index) => (
+              <div
+                key={index}
+                className={styles.field()}
+                aria-busy="true"
+                aria-label="در حال بارگذاری اطلاعات پروفایل"
+              >
+                <Skeleton className="h-3.5 w-24 rounded-lg" />
+                <Skeleton className="h-14 w-full rounded-[1.15rem]" />
+              </div>
+            ))
+          : null}
+
+        {!me.isPending ? (
+          <>
         <ProfileEditFieldRow
           field="name"
           href={getProfileEditHref(role, "name")}
@@ -134,6 +157,8 @@ export function ProfileEditGeneralSection({
             </InputGroup.Suffix>
           </InputGroup>
         </TextField>
+          </>
+        ) : null}
       </div>
     </section>
   );

@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Button, Card, Spinner } from "@heroui/react";
+import { Card } from "@heroui/react";
 import { useMarkNotificationRead, useNotifications } from "@api";
 
 import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
+import { RequestFailureState } from "@/components/request-failure-state";
+import { NotificationListSkeleton } from "@/components/loading-skeletons";
 
 export function NotificationsScreen() {
   const notifications = useNotifications();
@@ -16,14 +18,13 @@ export function NotificationsScreen() {
         description="خبرهای باشگاه‌ها و مربی‌های موردعلاقه‌ات"
       />
       {notifications.isPending ? (
-        <div className="flex min-h-64 items-center justify-center">
-          <Spinner />
-        </div>
+        <NotificationListSkeleton count={4} />
       ) : null}
       {notifications.isError ? (
-        <Button variant="secondary" onPress={() => notifications.refetch()}>
-          تلاش دوباره
-        </Button>
+        <RequestFailureState
+          error={notifications.error}
+          onRetry={() => void notifications.refetch()}
+        />
       ) : null}
       <div className="space-y-3">
         {(notifications.data?.items ?? []).map((item) => (
@@ -50,7 +51,9 @@ export function NotificationsScreen() {
             </Link>
           </Card>
         ))}
-        {notifications.data && !notifications.data.items.length ? (
+        {notifications.data &&
+        !notifications.isError &&
+        !notifications.data.items.length ? (
           <p className="py-16 text-center text-sm text-muted">
             هنوز اعلانی نداری.
           </p>

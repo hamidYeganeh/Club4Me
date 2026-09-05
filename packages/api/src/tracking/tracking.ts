@@ -3,9 +3,12 @@ import { EVENTS, type TelemetryEventName } from "./events";
 import type {
   AccountDeletedEvent,
   ClubTraits,
+  CheckoutStartedEvent,
+  DiscoveryClubViewedEvent,
   FavoriteAddedEvent,
   NotificationPreferenceChangedEvent,
   OnboardingCompletedEvent,
+  PaymentSucceededEvent,
   ReservationCancelledEvent,
   ReservationCreatedEvent,
   ReviewSubmittedEvent,
@@ -16,6 +19,12 @@ import type {
   UserSignedUpEvent,
   UserTraits,
 } from "./types";
+
+declare const process: {
+  env: {
+    NEXT_PUBLIC_APP_RELEASE?: string;
+  };
+};
 
 const QUEUE_KEY = "gym4me.telemetry.queue.v1";
 const MAX_QUEUE_LENGTH = 100;
@@ -67,6 +76,20 @@ export function trackOnboardingCompleted(
 
 export function trackSearchPerformed(properties: SearchPerformedEvent): void {
   track(EVENTS.SEARCH_PERFORMED, properties);
+}
+
+export function trackDiscoveryClubViewed(
+  properties: DiscoveryClubViewedEvent,
+): void {
+  track(EVENTS.DISCOVERY_CLUB_VIEWED, properties);
+}
+
+export function trackCheckoutStarted(properties: CheckoutStartedEvent): void {
+  track(EVENTS.CHECKOUT_STARTED, properties);
+}
+
+export function trackPaymentSucceeded(properties: PaymentSucceededEvent): void {
+  track(EVENTS.PAYMENT_SUCCEEDED, properties);
 }
 
 export function trackFavoriteAdded(properties: FavoriteAddedEvent): void {

@@ -115,13 +115,13 @@ export function AccountAuthForgotPasswordConfirmForm({
     }
 
     try {
-      await confirmForgotPassword.mutateAsync({
+      const session = await confirmForgotPassword.mutateAsync({
         phone,
         code: values.code,
         password: values.password,
       });
       setIsSucceeded(true);
-      onSuccess();
+      onSuccess(session.user);
     } catch (error) {
       toast.danger(t("resetErrorTitle"), {
         description: getAccountApiErrorMessage(error, t),

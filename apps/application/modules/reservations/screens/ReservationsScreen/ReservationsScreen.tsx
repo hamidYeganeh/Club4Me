@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import {
   useCancelCoachBooking,
@@ -14,6 +15,7 @@ import {
   useResolveMockCoachPayment,
 } from "@api";
 import { useTranslations } from "next-intl";
+import { usePublicCatalogResource } from "@api/discovery";
 
 import {
   RESERVATION_DATE_FUTURE_DAYS,
@@ -29,8 +31,11 @@ import { ReservationsHeaderSection } from "../../sections/ReservationsHeaderSect
 import { ReservationsTimelineSection } from "../../sections/ReservationsTimelineSection";
 import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGateway";
 import type { ReservationsScreenProps } from "./ReservationsScreen.types";
+import { ReservationActionScreen } from "../../sections/ReservationActionScreen";
+import { getRequestFailurePresentation } from "@/lib/request-failure";
 
 export function ReservationsScreen({ role }: ReservationsScreenProps) {
+  const router = useRouter();
   const t = useTranslations("athleteReservations");
   const common = useTranslations("common");
   const reservations = useMyReservations();
@@ -42,14 +47,20 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
   const resolveClubPayment = useResolveMockClubPayment();
   const resolveCoachPayment = useResolveMockCoachPayment();
   const resolveClassPayment = useResolveMockClassPayment();
+  const cancellationReasons = usePublicCatalogResource(
+    "commerce",
+    "cancellation-reason",
+    { limit: 100 },
+  );
 
   const [selectedDateKey, setSelectedDateKey] = useState(() =>
     toDateKey(new Date()),
   );
   const [sortNewestFirst, setSortNewestFirst] = useState(true);
+  const [showAllHistory, setShowAllHistory] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [favoriteIds, setFavoriteIds] = useState<ReadonlySet<string>>(
-    () => new Set(),
+  const [actionReservationId, setActionReservationId] = useState<string | null>(
+    null,
   );
 
   const items = useMemo<TimelineReservation[]>(() => {
@@ -62,7 +73,13 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
     }
     const clubItems: TimelineReservation[] = (
       reservations.data?.items ?? []
-    ).map((item) => ({ ...item, source: "club", sourceId: item.id }));
+    ).map((item) => ({
+      ...item,
+      source: "club",
+      sourceId: item.id,
+      changeTimeHref: `/discovery/clubs/${item.clubId}/slots`,
+      cancellationPolicyTitle: item.cancellationPolicy.title,
+    }));
     const coachItems: TimelineReservation[] = (
       coachBookings.data?.items ?? []
     ).map((item) => ({
@@ -78,6 +95,7 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
       paymentStatus: item.paymentStatus,
       refundPercent: item.refundPercent,
       refundAmount: item.refundAmount,
+      changeTimeHref: `/discovery/coaches/${item.coachId}`,
     }));
     const classItems: TimelineReservation[] = (
       classEnrollments.data?.items ?? []
@@ -94,6 +112,7 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
       paymentStatus: item.paymentStatus,
       refundPercent: item.refundPercent,
       refundAmount: item.refundAmount,
+      changeTimeHref: `/discovery/classes/${item.classId}`,
     }));
     return [...clubItems, ...coachItems, ...classItems];
   }, [
@@ -116,16 +135,19 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
   );
 
   const visibleItems = useMemo(() => {
-    const forDay = items.filter(
-      (item) => toReservationDateKey(item.sessionStartsAt) === selectedDateKey,
-    );
-    return [...forDay].sort((left, right) => {
+    const relevantItems = showAllHistory
+      ? items
+      : items.filter(
+          (item) =>
+            toReservationDateKey(item.sessionStartsAt) === selectedDateKey,
+        );
+    return [...relevantItems].sort((left, right) => {
       const delta =
         new Date(right.sessionStartsAt).getTime() -
         new Date(left.sessionStartsAt).getTime();
       return sortNewestFirst ? delta : -delta;
     });
-  }, [items, selectedDateKey, sortNewestFirst]);
+  }, [items, selectedDateKey, showAllHistory, sortNewestFirst]);
 
   const activeSelectedId =
     selectedId && visibleItems.some((item) => item.id === selectedId)
@@ -160,23 +182,24 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
       } else {
         toast.danger("پرداخت ناموفق بود و ظرفیت رزرو آزاد شد");
       }
-    } catch {
-      toast.danger("ثبت نتیجه پرداخت انجام نشد؛ دوباره تلاش کنید");
+    } catch (error) {
+      const failure = getRequestFailurePresentation(error);
+      toast.danger(failure.title, { description: failure.description });
     }
   };
 
-  const cancelReservation = async (id: string) => {
+  const cancelReservation = async (id: string, reason: string) => {
     const target = items.find((item) => item.id === id);
     if (!target || !target.sourceId) {
-      return;
-    }
-    if (!window.confirm(t("cancelConfirm"))) {
       return;
     }
     try {
       const result =
         target.source === "coach"
-          ? await cancelCoach.mutateAsync(target.sourceId)
+          ? await cancelCoach.mutateAsync({
+              bookingId: target.sourceId,
+              reason,
+            })
           : target.source === "class"
             ? await cancelClass.mutateAsync(target.sourceId)
             : await cancel.mutateAsync(target.sourceId);
@@ -186,10 +209,33 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
           amount: Number(result.refundAmount ?? 0).toLocaleString("fa-IR"),
         }),
       );
-    } catch {
-      toast.danger(t("cancelError"));
+      setActionReservationId(null);
+    } catch (error) {
+      const failure = getRequestFailurePresentation(error);
+      toast.danger(failure.title, { description: failure.description });
     }
   };
+
+  const actionReservation = items.find(
+    (item) => item.id === actionReservationId,
+  );
+
+  if (actionReservation) {
+    return (
+      <ReservationActionScreen
+        reservation={actionReservation}
+        reasons={cancellationReasons.data?.items ?? []}
+        reasonsPending={cancellationReasons.isPending}
+        cancelPending={
+          cancel.isPending || cancelCoach.isPending || cancelClass.isPending
+        }
+        onBack={() => setActionReservationId(null)}
+        onCancel={(reason) =>
+          void cancelReservation(actionReservation.id, reason)
+        }
+      />
+    );
+  }
 
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-background">
@@ -198,9 +244,15 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
         backLabel={common("back")}
         backHref={`/${role}`}
         datesLabel={t("datesLabel")}
+        historyLabel={t("historyLabel")}
+        historyActive={showAllHistory}
+        onShowHistory={() => setShowAllHistory(true)}
         dates={dates}
         selectedDateKey={selectedDateKey}
-        onSelectDate={setSelectedDateKey}
+        onSelectDate={(key) => {
+          setSelectedDateKey(key);
+          setShowAllHistory(false);
+        }}
       />
       <ReservationsTimelineSection
         title={t("all")}
@@ -209,27 +261,31 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
         sortNewestFirst={sortNewestFirst}
         onToggleSort={() => setSortNewestFirst((value) => !value)}
         items={visibleItems}
+        historyMode={showAllHistory}
         isPending={
           reservations.isPending ||
           coachBookings.isPending ||
           classEnrollments.isPending
         }
-        emptyLabel={items.length === 0 ? t("empty") : t("emptyDay")}
+        error={
+          reservations.error ?? coachBookings.error ?? classEnrollments.error
+        }
+        onRetry={() => {
+          void reservations.refetch();
+          void coachBookings.refetch();
+          void classEnrollments.refetch();
+        }}
+        emptyTitle={items.length === 0 ? t("empty") : t("emptyDay")}
+        emptyDescription={t("emptyDescription")}
+        exploreLabel={t("explore")}
+        exploreHref="/discovery"
         selectedId={activeSelectedId}
         onSelect={setSelectedId}
-        favoriteIds={favoriteIds}
-        onToggleFavorite={(id) =>
-          setFavoriteIds((current) => {
-            const next = new Set(current);
-            if (next.has(id)) {
-              next.delete(id);
-            } else {
-              next.add(id);
-            }
-            return next;
-          })
+        renewLabel={t("renew")}
+        onRenew={(item) =>
+          router.push(item.changeTimeHref ?? "/discovery")
         }
-        onCancel={cancelReservation}
+        onCancel={setActionReservationId}
         cancelPending={
           cancel.isPending || cancelCoach.isPending || cancelClass.isPending
         }
@@ -240,8 +296,6 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
           t("duration", { minutes: minutes.toLocaleString("fa-IR") })
         }
         statusLabel={(status) => t(status)}
-        favoriteLabel={t("favorite")}
-        unfavoriteLabel={t("unfavorite")}
         cancelLabel={t("cancel")}
       />
       {pendingPayment ? (

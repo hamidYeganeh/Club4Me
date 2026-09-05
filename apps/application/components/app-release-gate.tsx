@@ -8,7 +8,7 @@ import {
   appReleasesClient,
   type AppPlatform,
   type CurrentAppRelease,
-} from "@api";
+} from "@api/domains/app-releases";
 import { openExternalUrl } from "@/lib/native-browser";
 
 const SEEN_PREFIX = "gym4me:release-seen";

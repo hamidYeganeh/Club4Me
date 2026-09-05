@@ -510,6 +510,8 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                       }}
                     />
                     {previewUrl ? (
+                      // Dynamic uploader previews may be blob/data URLs.
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={previewUrl}
                         alt={item.altText || item.title || "gallery"}

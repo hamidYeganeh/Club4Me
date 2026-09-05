@@ -9,7 +9,7 @@ website URL, Neshan key, and optional Sentry DSN. Never commit `.env.production`
 `google-services.json`, signing keystores, or Firebase service-account keys.
 
 Push notifications require `android/app/google-services.json` from the matching
-Firebase Android app (`com.gym4me.application`). The backend separately needs
+Firebase Android app (`com.gym4me.app`). The backend separately needs
 the three `FIREBASE_*` service-account variables documented in
 `apps/backend/.env.example`.
 

@@ -34,9 +34,44 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
               label: t("panel.clubs"),
             },
             {
-              href: "/#calendar",
+              href: "/students",
+              icon: "users-two",
+              label: t("panel.students"),
+            },
+            {
+              href: "/coaches",
+              icon: "user",
+              label: t("panel.coaches"),
+            },
+            {
+              href: "/classes",
               icon: "calendar-1",
-              label: t("panel.calendar"),
+              label: t("panel.classes"),
+            },
+            {
+              href: "/payments",
+              icon: "wallet",
+              label: t("panel.payments"),
+            },
+            {
+              href: "/memberships",
+              icon: "ticket",
+              label: "بسته‌ها و عضویت",
+            },
+            {
+              href: "/data",
+              icon: "database",
+              label: "ورود و خروج داده",
+            },
+            {
+              href: "/attendance",
+              icon: "calendar-check",
+              label: t("panel.attendance"),
+            },
+            {
+              href: "/branches",
+              icon: "building-1",
+              label: t("panel.branches"),
             },
             {
               href: "/coach",

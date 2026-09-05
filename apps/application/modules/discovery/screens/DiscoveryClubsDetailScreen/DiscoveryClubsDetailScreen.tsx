@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Spinner, toast } from "@heroui/react";
+import { toast } from "@heroui/react";
 import {
   tokenStore,
+  trackDiscoveryClubViewed,
   useCreateReport,
   usePublicClub,
   useToggleFavorite,
 } from "@api";
+import { useCatalogClub } from "@api/discovery";
 import type { Swiper as SwiperType } from "swiper";
 import { useTranslations } from "next-intl";
 import { DiscoveryClubsDetailActionsSection } from "@modules/discovery/sections/DiscoveryClubsDetailActionsSection";
@@ -16,10 +18,14 @@ import { DiscoveryClubsDetailBodySection } from "@modules/discovery/sections/Dis
 import { DiscoveryClubsDetailHeroSection } from "@modules/discovery/sections/DiscoveryClubsDetailHeroSection";
 import { DiscoveryClubsDetailStickyHeaderSection } from "@modules/discovery/sections/DiscoveryClubsDetailStickyHeaderSection";
 import { ClubReservationsAndReviewsSection } from "@modules/discovery/sections/ClubReservationsAndReviewsSection";
+import { ClubClassesSection } from "@modules/discovery/sections/ClubClassesSection";
+import { ClubBenefitProductsSection } from "@modules/discovery/sections/ClubBenefitProductsSection";
 import { iconNames, type IconName } from "@theme/icon";
+import { RequestFailureState } from "@/components/request-failure-state";
 
 import type { DiscoveryClubsDetailScreenProps } from "./DiscoveryClubsDetailScreen.types";
 import type { DiscoveryFacilityItem } from "@modules/discovery/discovery.types";
+import { DetailPageSkeleton } from "@/components/loading-skeletons";
 
 const ICON_NAME_SET = new Set<string>(iconNames);
 
@@ -52,18 +58,25 @@ export function DiscoveryClubsDetailScreen({
   clubId,
 }: DiscoveryClubsDetailScreenProps) {
   const router = useRouter();
-  const publicClub = usePublicClub(clubId);
-  const isPersistedClub = /^[a-f\d]{24}$/i.test(clubId);
-  const favorite = useToggleFavorite("club", isPersistedClub ? clubId : "");
+  const catalogClub = useCatalogClub(clubId);
+  const persistedId = catalogClub.data?.id ?? "";
+  const publicClub = usePublicClub(persistedId);
+  const favorite = useToggleFavorite("club", persistedId);
   const report = useCreateReport();
   const t = useTranslations("discovery.clubDetail");
-  const heroRef = useRef<HTMLElement>(null);
+  const [heroElement, setHeroElement] = useState<HTMLElement | null>(null);
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [mainSwiper, setMainSwiper] = useState<SwiperType | null>(null);
   const [stickyHeaderVisible, setStickyHeaderVisible] = useState(false);
 
   useEffect(() => {
-    const hero = heroRef.current;
+    if (persistedId && tokenStore.get()) {
+      trackDiscoveryClubViewed({ club_id: persistedId });
+    }
+  }, [persistedId]);
+
+  useEffect(() => {
+    const hero = heroElement;
     if (!hero) {
       return;
     }
@@ -77,22 +90,27 @@ export function DiscoveryClubsDetailScreen({
 
     observer.observe(hero);
     return () => observer.disconnect();
-  }, []);
+  }, [heroElement]);
 
-  if (!isPersistedClub || publicClub.isError) {
+  const loadError = catalogClub.error ?? publicClub.error;
+
+  if (loadError) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-background p-6 text-center text-muted">
-        {t("notFound")}
+      <main className="flex min-h-dvh items-center justify-center bg-background p-6">
+        <RequestFailureState
+          error={loadError}
+          className="w-full max-w-md"
+          onRetry={() => {
+            void catalogClub.refetch();
+            if (persistedId) void publicClub.refetch();
+          }}
+        />
       </main>
     );
   }
 
-  if (publicClub.isPending) {
-    return (
-      <main className="flex min-h-dvh items-center justify-center bg-background">
-        <Spinner />
-      </main>
-    );
+  if (catalogClub.isPending || publicClub.isPending) {
+    return <DetailPageSkeleton />;
   }
 
   const data = publicClub.data;
@@ -169,7 +187,7 @@ export function DiscoveryClubsDetailScreen({
         name={club.name}
         favorited={favorite.active}
         onFavoritePress={() => {
-          if (!isPersistedClub || !tokenStore.get()) {
+          if (!persistedId || !tokenStore.get()) {
             router.push("/auth");
             return;
           }
@@ -178,8 +196,8 @@ export function DiscoveryClubsDetailScreen({
       />
 
       <DiscoveryClubsDetailHeroSection
-        sectionRef={heroRef}
-        clubId={club.id}
+        sectionRef={setHeroElement}
+        clubId={clubId}
         name={club.name}
         location={club.location}
         statusLabel={data.operationalStatus === "active" ? "فعال" : "بسته"}
@@ -189,6 +207,7 @@ export function DiscoveryClubsDetailScreen({
       />
 
       <DiscoveryClubsDetailBodySection
+        name={club.name}
         images={club.images}
         about={club.about}
         amenities={club.amenities}
@@ -206,7 +225,11 @@ export function DiscoveryClubsDetailScreen({
         }}
       />
 
-      <ClubReservationsAndReviewsSection clubId={clubId} />
+      <ClubClassesSection clubId={club.id} />
+
+      <ClubBenefitProductsSection clubId={club.id} />
+
+      <ClubReservationsAndReviewsSection clubId={club.id} />
 
       <DiscoveryClubsDetailActionsSection
         primaryLabel={t("bookNow")}
@@ -235,7 +258,7 @@ export function DiscoveryClubsDetailScreen({
           report.mutate(
             {
               targetType: "club",
-              targetId: clubId,
+              targetId: club.id,
               reason: "اطلاعات نادرست",
               details,
             },

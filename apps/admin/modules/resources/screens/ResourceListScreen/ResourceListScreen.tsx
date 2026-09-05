@@ -84,15 +84,14 @@ function ParentFilter({
   return (
     <Select
       value={value}
+      placeholder={t("allParents", { parent: definition.label })}
       onChange={(next) => {
         if (typeof next === "string") onChange(next);
       }}
     >
       <Label className="sr-only">{definition.label}</Label>
       <Select.Trigger className="h-10 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
-        <Select.Value
-          placeholder={t("allParents", { parent: definition.label })}
-        />
+        <Select.Value />
         <Select.Indicator />
       </Select.Trigger>
       <Select.Popover>
@@ -262,6 +261,7 @@ export function ResourceListScreen({
           </label>
           <Select
             value={status}
+            placeholder={t("statusFilter")}
             onChange={(next) => {
               if (typeof next === "string") {
                 setStatus(next);
@@ -271,7 +271,7 @@ export function ResourceListScreen({
           >
             <Label className="sr-only">{t("statusFilter")}</Label>
             <Select.Trigger className="h-10 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
-              <Select.Value placeholder={t("statusFilter")} />
+              <Select.Value />
               <Select.Indicator />
             </Select.Trigger>
             <Select.Popover>
@@ -303,6 +303,7 @@ export function ResourceListScreen({
           )}
           <Select
             value={sortBy}
+            placeholder={t("sort")}
             onChange={(next) => {
               if (
                 next === "name" ||
@@ -316,7 +317,7 @@ export function ResourceListScreen({
           >
             <Label className="sr-only">{t("sort")}</Label>
             <Select.Trigger className="h-10 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
-              <Select.Value placeholder={t("sort")} />
+              <Select.Value />
               <Select.Indicator />
             </Select.Trigger>
             <Select.Popover>

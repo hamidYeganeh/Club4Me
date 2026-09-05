@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start --port 7083",
     "lint": "eslint",
-    "check-types": "tsc --noEmit"
+    "check-types": "node ../../node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
     "@heroui/react": "^3.0.0",
@@ -17,8 +17,10 @@
     "@repo/i18n": "*",
     "@repo/theme": "*",
     "@repo/ui": "*",
+    "@types/qrcode": "^1.5.6",
     "next": "16.3.4",
     "next-intl": "^4.3.4",
+    "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.87.0",

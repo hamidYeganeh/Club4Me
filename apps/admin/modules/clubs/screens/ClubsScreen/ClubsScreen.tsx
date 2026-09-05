@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Button, Card, Chip, Spinner, Table, toast } from "@heroui/react";
 import { useAdminClubs, useReviewClub } from "@api/admin";
+import type { BusinessClub } from "@api/business";
+import { EntityDetailsModal } from "@ui/entity-details-modal";
 import { useTranslations } from "next-intl";
 
 export function ClubsScreen() {
@@ -10,6 +12,7 @@ export function ClubsScreen() {
   const clubs = useAdminClubs();
   const review = useReviewClub();
   const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<BusinessClub | null>(null);
 
   const decide = async (clubId: string, status: "approved" | "rejected") => {
     if (review.isPending) return;
@@ -91,31 +94,42 @@ export function ClubsScreen() {
                         }).format(new Date(club.updatedAt))}
                       </Table.Cell>
                       <Table.Cell>
-                        {club.reviewStatus === "pending" ? (
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              isDisabled={review.isPending}
-                              isPending={
-                                reviewingId === club.id && review.isPending
-                              }
-                              onPress={() => void decide(club.id, "approved")}
-                            >
-                              {t("approve")}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              isDisabled={review.isPending}
-                              onPress={() => void decide(club.id, "rejected")}
-                            >
-                              {t("reject")}
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="text-muted">—</span>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onPress={() => setSelected(club)}
+                          >
+                            جزئیات
+                          </Button>
+                          {club.reviewStatus === "pending" ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                isDisabled={review.isPending}
+                                isPending={
+                                  reviewingId === club.id && review.isPending
+                                }
+                                onPress={() =>
+                                  void decide(club.id, "approved")
+                                }
+                              >
+                                {t("approve")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                isDisabled={review.isPending}
+                                onPress={() =>
+                                  void decide(club.id, "rejected")
+                                }
+                              >
+                                {t("reject")}
+                              </Button>
+                            </>
+                          ) : null}
+                        </div>
                       </Table.Cell>
                     </Table.Row>
                   ))}
@@ -125,6 +139,86 @@ export function ClubsScreen() {
           </Table>
         )}
       </Card>
+      <EntityDetailsModal
+        isOpen={Boolean(selected)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelected(null);
+        }}
+        title={selected?.name ?? "جزئیات باشگاه"}
+        description="اطلاعات کامل ثبت‌شده برای بررسی و تصمیم‌گیری"
+        sections={
+          selected
+            ? [
+                {
+                  title: "شناسه و وضعیت",
+                  items: [
+                    { label: "شناسه باشگاه", value: selected.id, dir: "ltr" },
+                    { label: "شناسه مالک", value: selected.ownerId, dir: "ltr" },
+                    { label: "نامک", value: selected.slug, dir: "ltr" },
+                    { label: "وضعیت بررسی", value: t(selected.reviewStatus) },
+                    { label: "نمایش عمومی", value: selected.visibility },
+                    { label: "وضعیت عملیاتی", value: selected.operationalStatus },
+                    { label: "علت رد", value: selected.rejectionReason, wide: true },
+                  ],
+                },
+                {
+                  title: "معرفی",
+                  items: [
+                    { label: "توضیح کوتاه", value: selected.shortDescription, wide: true },
+                    { label: "توضیحات", value: selected.description, wide: true },
+                    { label: "گروه مخاطب", value: selected.audience.join("، ") },
+                    {
+                      label: "بازه سنی",
+                      value:
+                        selected.minAge == null && selected.maxAge == null
+                          ? null
+                          : `${selected.minAge ?? "—"} تا ${selected.maxAge ?? "—"} سال`,
+                    },
+                    { label: "تگ‌ها", value: selected.tags.join("، ") },
+                    { label: "قوانین", value: selected.rules.join(" | "), wide: true },
+                  ],
+                },
+                {
+                  title: "مکان و امکانات",
+                  items: [
+                    { label: "نشانی", value: selected.location?.address, wide: true },
+                    { label: "منطقه زمانی", value: selected.location?.timezone, dir: "ltr" },
+                    {
+                      label: "مختصات",
+                      value: selected.location
+                        ? `${selected.location.latitude}, ${selected.location.longitude}`
+                        : null,
+                      dir: "ltr",
+                    },
+                    { label: "رشته‌ها", value: selected.sportIds.length.toLocaleString("fa-IR") },
+                    { label: "امکانات", value: selected.amenities.length.toLocaleString("fa-IR") },
+                    { label: "تجهیزات", value: selected.equipment.length.toLocaleString("fa-IR") },
+                    { label: "رسانه‌ها", value: selected.gallery.length.toLocaleString("fa-IR") },
+                  ],
+                },
+                {
+                  title: "زمان‌ها",
+                  items: [
+                    {
+                      label: "ایجاد",
+                      value: new Intl.DateTimeFormat("fa-IR", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(selected.createdAt)),
+                    },
+                    {
+                      label: "آخرین تغییر",
+                      value: new Intl.DateTimeFormat("fa-IR", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(selected.updatedAt)),
+                    },
+                  ],
+                },
+              ]
+            : []
+        }
+      />
     </main>
   );
 }

@@ -7,10 +7,7 @@ import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
 
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
-import {
-  MOCK_DISCOVERY_CLUB_TYPES,
-  resolveClubTypeIcon,
-} from "@modules/discovery/discovery-club-types";
+import { resolveClubTypeIcon } from "@modules/discovery/discovery-icons";
 
 import { discoveryClubTypesSectionStyles } from "./DiscoveryClubTypesSection.styles";
 import type {
@@ -34,20 +31,20 @@ export function DiscoveryClubTypesSection({
 }: DiscoveryClubTypesSectionProps) {
   const t = useTranslations("discovery.clubs");
   const styles = discoveryClubTypesSectionStyles();
-  const useMock = Boolean(items);
-  const catalog = useCatalogClubTypes(enabled && !useMock);
+  const hasProvidedItems = items !== undefined;
+  const catalog = useCatalogClubTypes(enabled && !hasProvidedItems);
   const live: DiscoveryClubTypeItem[] = (catalog.data?.items ?? []).map(
     (type) => ({
       id: type.id,
       name: type.name,
       clubsCount: type.clubsCount,
       icon: resolveClubTypeIcon(type.code, type.icon),
-      href: `/discovery/club-types/${type.id}`,
+      href: `/discovery/club-types/${type.slug}`,
     }),
   );
-  const visible = items ?? (live.length > 0 ? live : MOCK_DISCOVERY_CLUB_TYPES);
+  const visible = items ?? live;
   const columns = chunkTypes(visible, ROWS_PER_COLUMN);
-  const isPending = !useMock && catalog.isPending && live.length === 0;
+  const isPending = !hasProvidedItems && catalog.isPending && live.length === 0;
 
   if (!enabled) {
     return null;

@@ -1,20 +1,35 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Button, InputGroup, Label, Spinner, TextField, toast } from "@heroui/react";
-import { useAccountMe, useUpdateAccountMe, type UpdateAccountMePayload } from "@api/account";
+import {
+  Button,
+  InputGroup,
+  Label,
+  Spinner,
+  TextField,
+  toast,
+} from "@heroui/react";
+import {
+  useAccountMe,
+  useUpdateAccountMe,
+  type UpdateAccountMePayload,
+} from "@api/account";
 import { Icon } from "@theme/icon";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { getAccountApiErrorMessage } from "@/lib/account-api-error";
+import { FormPageSkeleton } from "@/components/loading-skeletons";
 
 import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
 
 import { getProfileEditFieldLabelKey } from "../../profile.utils";
 import type { ProfileEditFieldScreenProps } from "./ProfileEditFieldScreen.types";
 
-export function ProfileEditFieldScreen({ role, field }: ProfileEditFieldScreenProps) {
+export function ProfileEditFieldScreen({
+  role,
+  field,
+}: ProfileEditFieldScreenProps) {
   const router = useRouter();
   const t = useTranslations("profile");
   const tCommon = useTranslations("common");
@@ -35,12 +50,16 @@ export function ProfileEditFieldScreen({ role, field }: ProfileEditFieldScreenPr
       return;
     }
 
-    setFirstName(me.data.firstName ?? "");
-    setLastName(me.data.lastName ?? "");
-    setGender(me.data.gender ?? "");
-    setIdCard(me.data.idCard ?? "");
-    setBirthdate(toDateInputValue(me.data.birthdate));
-    setIsInitialized(true);
+    const frame = requestAnimationFrame(() => {
+      setFirstName(me.data?.firstName ?? "");
+      setLastName(me.data?.lastName ?? "");
+      setGender(me.data?.gender ?? "");
+      setIdCard(me.data?.idCard ?? "");
+      setBirthdate(toDateInputValue(me.data?.birthdate));
+      setIsInitialized(true);
+    });
+
+    return () => cancelAnimationFrame(frame);
   }, [isInitialized, me.data]);
 
   const isBusy = me.isLoading || updateMe.isPending;
@@ -85,6 +104,10 @@ export function ProfileEditFieldScreen({ role, field }: ProfileEditFieldScreenPr
       });
     }
   };
+
+  if (me.isLoading || !isInitialized) {
+    return <FormPageSkeleton fields={field === "name" ? 2 : 1} />;
+  }
 
   return (
     <main className="flex min-h-0 w-full max-w-full flex-1 flex-col overflow-x-hidden bg-transparent px-5">
@@ -159,7 +182,9 @@ export function ProfileEditFieldScreen({ role, field }: ProfileEditFieldScreenPr
           <TextField
             name="idCard"
             value={idCard}
-            onChange={(value) => setIdCard(value.replace(/\D/g, "").slice(0, 10))}
+            onChange={(value) =>
+              setIdCard(value.replace(/\D/g, "").slice(0, 10))
+            }
             isDisabled={isBusy}
             validationBehavior="aria"
           >
@@ -240,7 +265,9 @@ type BuildPayloadParams = {
   birthdate: string;
 };
 
-function buildPayload(values: BuildPayloadParams): UpdateAccountMePayload | null {
+function buildPayload(
+  values: BuildPayloadParams,
+): UpdateAccountMePayload | null {
   if (values.field === "name") {
     const firstName = values.firstName.trim();
     const lastName = values.lastName.trim();

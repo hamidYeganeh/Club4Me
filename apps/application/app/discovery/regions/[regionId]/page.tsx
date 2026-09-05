@@ -1,9 +1,12 @@
-import { DISCOVERY_CATEGORIES } from "@modules/discovery/discovery-catalog.constants";
 import { DiscoveryCategoryScreen } from "@modules/discovery/screens/DiscoveryCategoryScreen";
+import { getDiscoverySlugParams } from "@/lib/discovery-static-params";
 
 type PageProps = { params: Promise<{ regionId: string }> };
 export function generateStaticParams() {
-  return DISCOVERY_CATEGORIES.regions.map(({ id }) => ({ regionId: id }));
+  return getDiscoverySlugParams(
+    "/public/catalog/location/city-region?limit=100",
+    "regionId",
+  );
 }
 export default async function RegionPage({ params }: PageProps) {
   const { regionId } = await params;

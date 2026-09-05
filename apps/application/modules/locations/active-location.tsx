@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
 import { useUserLocations, type UserLocation } from "@api/locations";
 
 export type ActiveLocation =
@@ -31,7 +32,8 @@ const ActiveLocationContext = createContext<ActiveLocationContextValue | null>(
 );
 
 export function ActiveLocationProvider({ children }: { children: ReactNode }) {
-  const locations = useUserLocations();
+  const pathname = usePathname();
+  const locations = useUserLocations(pathname.startsWith("/discovery"));
   const [selection, setSelection] = useState<
     | { kind: "saved"; id: string }
     | { kind: "gps"; latitude: number; longitude: number }

@@ -46,8 +46,10 @@ export default async function RootLayout({
           >
             <ApiProvider
               baseURL={
-                process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:7088/api/v1"
+                process.env.NEXT_PUBLIC_API_URL ??
+                "http://localhost:7088/api/v1"
               }
+              refreshEndpoint="/admin/auth/refresh"
             >
               <AppToastProvider />
               {children}

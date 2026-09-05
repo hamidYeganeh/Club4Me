@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
-import { Button, Card, Spinner, toast, Typography } from "@heroui/react";
+import { Button, Card, toast, Typography } from "@heroui/react";
 import {
   useCoachProfile,
   useCoachSports,
@@ -11,6 +11,7 @@ import {
 import { usePublicCatalogResource } from "@api/discovery";
 
 import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
+import { FormPageSkeleton } from "@/components/loading-skeletons";
 
 const input =
   "h-12 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm outline-none focus:border-accent";
@@ -76,12 +77,7 @@ export function CoachProfileFormScreen() {
     }
   };
 
-  if (profile.isLoading)
-    return (
-      <main className="flex min-h-dvh items-center justify-center">
-        <Spinner />
-      </main>
-    );
+  if (profile.isLoading) return <FormPageSkeleton fields={7} />;
   return (
     <main className="min-h-dvh px-5 pb-[calc(7rem+env(safe-area-inset-bottom))]">
       <DiscoveryPageHeader

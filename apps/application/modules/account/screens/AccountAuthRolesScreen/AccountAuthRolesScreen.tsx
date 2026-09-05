@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Spinner } from "@heroui/react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { tokenStore } from "@api";
 import { useAccountMe } from "@api/account";
 import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
@@ -11,15 +10,26 @@ import { AccountAuthRolesOptionsSection } from "@modules/account/sections/Accoun
 import { useTranslations } from "next-intl";
 
 import { AuthScreen } from "@/components/auth-screen";
-import { SET_PASSWORD_PATH } from "@/lib/post-auth-path";
+import {
+  getApplicationRoles,
+  getRolePath,
+  SET_PASSWORD_PATH,
+} from "@/lib/post-auth-path";
 import { AUTH_PATH } from "@/lib/welcome-onboarding";
+import { AuthScreenSkeleton } from "@/components/loading-skeletons";
 
 export function AccountAuthRolesScreen() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations("auth.roles");
   const tCommon = useTranslations("common");
   const [hasToken, setHasToken] = useState<boolean | null>(null);
   const me = useAccountMe(hasToken === true);
+  const isFirstTime = searchParams.get("firstTime") === "1";
+  const roles = useMemo(
+    () => (me.data ? getApplicationRoles(me.data.roles) : []),
+    [me.data],
+  );
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -38,8 +48,10 @@ export function AccountAuthRolesScreen() {
   useEffect(() => {
     if (me.data && !me.data.hasPassword) {
       router.replace(SET_PASSWORD_PATH);
+    } else if (me.data?.hasPassword && !isFirstTime && roles.length === 1) {
+      router.replace(getRolePath(roles[0]));
     }
-  }, [me.data, router]);
+  }, [isFirstTime, me.data, roles, router]);
 
   if (
     hasToken === null ||
@@ -47,13 +59,10 @@ export function AccountAuthRolesScreen() {
     me.isError ||
     me.isLoading ||
     !me.data ||
-    !me.data.hasPassword
+    !me.data.hasPassword ||
+    (!isFirstTime && roles.length === 1)
   ) {
-    return (
-      <div className="flex min-h-full flex-1 items-center justify-center">
-        <Spinner size="lg" aria-label={tCommon("loading")} />
-      </div>
-    );
+    return <AuthScreenSkeleton />;
   }
 
   return (
@@ -64,13 +73,22 @@ export function AccountAuthRolesScreen() {
         overlay
         transparent
       />
-      <AccountAuthRolesCopySection title={t("title")} subtitle={t("subtitle")} />
+      <AccountAuthRolesCopySection
+        title={t("title")}
+        subtitle={t("subtitle")}
+      />
       <AccountAuthRolesOptionsSection
         athleteLabel={t("athlete")}
         coachLabel={t("coach")}
         ownerLabel={t("owner")}
-        onAthlete={() => {
-          router.replace("/athlete");
+        availableRoles={isFirstTime ? undefined : roles}
+        onSelectRole={(role) => {
+          const path = getRolePath(role);
+          if (path.startsWith("http")) {
+            window.location.assign(path);
+            return;
+          }
+          router.replace(path);
         }}
       />
     </AuthScreen>

@@ -1,4 +1,3 @@
-import type { Ref } from "react";
 import type { Swiper as SwiperType } from "swiper";
 
 export type DiscoveryClubsDetailHeroSectionProps = {
@@ -9,5 +8,5 @@ export type DiscoveryClubsDetailHeroSectionProps = {
   images: string[];
   thumbsSwiper: SwiperType | null;
   onMainSwiper: (swiper: SwiperType) => void;
-  sectionRef?: Ref<HTMLElement>;
+  sectionRef?: (node: HTMLElement | null) => void;
 };

@@ -1,1 +1,0 @@
-export { DiscoveryHomeBannerSection } from "./DiscoveryHomeBannerSection";

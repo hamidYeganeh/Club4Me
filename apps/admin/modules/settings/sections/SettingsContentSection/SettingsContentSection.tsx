@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { Avatar, Button, Card, Chip, Input, Switch } from "@heroui/react";
 import { Icon } from "@theme/icon";
-import { imageUploaderAccept, Uploader, type UploaderLabels } from "@ui/uploader";
+import {
+  imageUploaderAccept,
+  Uploader,
+  type UploaderLabels,
+} from "@ui/uploader";
 import { useTranslations } from "next-intl";
 
 import { settingsContentSectionStyles } from "./SettingsContentSection.styles";
@@ -56,6 +60,8 @@ export function SettingsContentSection({
   return (
     <main className={styles.root()}>
       <div className={styles.cover()}>
+        {/* Remote demo artwork is intentionally rendered without Next image optimization. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           alt=""
           src="https://picsum.photos/seed/gym4me-cover/1400/420"

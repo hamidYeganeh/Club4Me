@@ -15,6 +15,8 @@ export function SecondaryHeader({
   showFilter = true,
   showBack,
   backLabel,
+  backHref,
+  onBack,
   action,
 }: SecondaryHeaderProps) {
   const router = useRouter();
@@ -52,7 +54,17 @@ export function SecondaryHeader({
                 type="button"
                 aria-label={resolvedBackLabel}
                 className={styles.back()}
-                onClick={() => router.back()}
+                onClick={() => {
+                  if (onBack) {
+                    onBack();
+                    return;
+                  }
+                  if (backHref) {
+                    router.push(backHref);
+                    return;
+                  }
+                  router.back();
+                }}
               >
                 <Icon name="chevron-right" size={22} />
               </button>

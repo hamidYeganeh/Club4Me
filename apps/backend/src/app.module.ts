@@ -29,6 +29,9 @@ import { ResourcesModule } from "./modules/resources/resources.module";
 import { UsersModule } from "./modules/users/users.module";
 import { UserLocationsModule } from "./modules/user-locations/user-locations.module";
 import { TelemetryModule } from "./modules/telemetry/telemetry.module";
+import { BusinessOperationsModule } from "./modules/business-operations/business-operations.module";
+import { CommerceModule } from "./modules/commerce/commerce.module";
+import { SupportModule } from "./modules/support/support.module";
 
 @Module({
   imports: [
@@ -61,6 +64,9 @@ import { TelemetryModule } from "./modules/telemetry/telemetry.module";
     DiscoveryFeedModule,
     DiscoveryModule,
     TelemetryModule,
+    BusinessOperationsModule,
+    CommerceModule,
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [

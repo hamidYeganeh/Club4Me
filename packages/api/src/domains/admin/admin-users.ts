@@ -16,19 +16,30 @@ export type AdminUser = {
 };
 
 const client = {
-  list: (q?: string) => http.get<{ items: AdminUser[] }>("/admin/users", q ? { q } : undefined),
+  list: (q?: string) =>
+    http.get<{ items: AdminUser[] }>("/admin/users", q ? { q } : undefined),
   updateStatus: (userId: string, status: AdminUser["status"]) =>
     http.patch<AdminUser>(`/admin/users/${userId}/status`, { status }),
 };
 
 export function useAdminUsers(q?: string) {
-  return useQuery({ queryKey: ["admin", "users", q], queryFn: () => client.list(q) });
+  return useQuery({
+    queryKey: ["admin", "users", q],
+    queryFn: () => client.list(q),
+  });
 }
 
 export function useUpdateAdminUserStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ userId, status }: { userId: string; status: AdminUser["status"] }) => client.updateStatus(userId, status),
-    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ["admin", "users"] }),
+    mutationFn: ({
+      userId,
+      status,
+    }: {
+      userId: string;
+      status: AdminUser["status"];
+    }) => client.updateStatus(userId, status),
+    onSuccess: async () =>
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] }),
   });
 }

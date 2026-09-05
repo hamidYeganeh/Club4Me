@@ -6,7 +6,7 @@ import { ClubCard } from "@ui/club-card";
 import { useTranslations } from "next-intl";
 
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
-import { formatClubCityDistrict } from "@modules/discovery/discovery-clubs-rails.mock";
+import { formatClubCityDistrict } from "@modules/discovery/discovery.formatters";
 import type { DiscoveryClubsRailClub } from "@modules/discovery/sections/DiscoveryClubsRailSection/DiscoveryClubsRailSection.types";
 
 import { discoveryClubsEditorialListSectionStyles } from "./DiscoveryClubsEditorialListSection.styles";
@@ -49,9 +49,23 @@ export function DiscoveryClubsEditorialListSection({
       />
 
       {isPending ? (
-        <div className={styles.list()} aria-hidden>
+        <div
+          className={styles.list()}
+          aria-busy="true"
+          aria-label="در حال بارگذاری باشگاه‌ها"
+        >
           {Array.from({ length: 3 }, (_, index) => (
-            <Skeleton key={index} className={styles.skeleton()} />
+            <div key={index} className={`${styles.skeleton()} overflow-hidden`}>
+              <Skeleton className="h-[64%] w-full rounded-none" />
+              <div className="space-y-3 p-4">
+                <Skeleton className="h-5 w-2/3 rounded-lg" />
+                <Skeleton className="h-3.5 w-full rounded-lg" />
+                <div className="flex items-center justify-between gap-4 pt-2">
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-4 w-24 rounded-lg" />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       ) : null}
@@ -93,7 +107,7 @@ export function DiscoveryClubsEditorialListSection({
                     : undefined
                 }
                 priceSuffix={club.price != null ? t("currency") : undefined}
-                href={`/discovery/clubs/${club.id}`}
+                href={`/discovery/clubs/${club.slug}`}
                 className={styles.card()}
               />
             );

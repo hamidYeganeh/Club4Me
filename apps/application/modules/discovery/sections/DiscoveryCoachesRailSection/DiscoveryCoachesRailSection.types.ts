@@ -1,7 +1,7 @@
 import type { IconName } from "@theme/icon";
 import type { CoachCardType } from "@ui/coach-card";
 
-import type { DiscoveryCoachItem } from "@modules/discovery/discovery-coaches.mock";
+import type { DiscoveryCoachItem } from "@api/discovery";
 
 export type DiscoveryCoachesRailSectionProps = {
   id: string;

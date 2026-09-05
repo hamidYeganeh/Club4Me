@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
-import { Button, Card, Spinner, toast, Typography } from "@heroui/react";
+import { Button, Card, toast, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import {
   useCatalogClass,
@@ -25,6 +25,10 @@ import { ButtonLink } from "@/components/button-link";
 import { FallbackImage } from "@/components/FallbackImage";
 import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
 import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGateway";
+import {
+  CompactCardListSkeleton,
+  DetailPageSkeleton,
+} from "@/components/loading-skeletons";
 
 type PendingMockPayment = {
   source: "club" | "coach";
@@ -45,7 +49,8 @@ export function DiscoveryProfileDetailScreen({
 
 function CoachDetails({ id }: { id: string }) {
   const query = useCatalogCoach(id);
-  const sessions = usePublicCoachSessions(query.data?.slug ?? "");
+  const coach = query.data;
+  const sessions = usePublicCoachSessions(coach?.slug ?? "");
   const book = useBookCoachSession();
   const bookClub = useReserveSession();
   const resolveClubPayment = useResolveMockClubPayment();
@@ -53,8 +58,7 @@ function CoachDetails({ id }: { id: string }) {
   const [pendingPayment, setPendingPayment] =
     useState<PendingMockPayment | null>(null);
   if (query.isLoading) return <Loading />;
-  if (!query.data) return <Missing retry={() => query.refetch()} />;
-  const coach = query.data;
+  if (!coach) return <Missing retry={() => query.refetch()} />;
   const phone = firstString(coach.contact, ["phone", "mobile", "telephone"]);
   const availableSessions = sessions.data?.items ?? [];
   const reserve = async (session: CoachSession) => {
@@ -148,7 +152,9 @@ function CoachDetails({ id }: { id: string }) {
       >
         <Card.Title>سانس‌های قابل رزرو</Card.Title>
         {sessions.isPending ? (
-          <Spinner className="mt-5" />
+          <div className="mt-4">
+            <CompactCardListSkeleton count={3} />
+          </div>
         ) : availableSessions.length ? (
           <div className="mt-4 flex flex-col gap-3">
             {availableSessions.map((session) => (
@@ -223,8 +229,8 @@ function ClassDetails({ id }: { id: string }) {
   const resolvePayment = useResolveMockClassPayment();
   const [showPayment, setShowPayment] = useState(false);
   if (query.isLoading) return <Loading />;
-  if (!query.data) return <Missing retry={() => query.refetch()} />;
   const item = query.data;
+  if (!item) return <Missing retry={() => query.refetch()} />;
   const remaining = Math.max(0, item.capacity - item.enrollmentCount);
   const enrollment = (enrollments.data?.items ?? []).find(
     (candidate) => candidate.classId === item.id,
@@ -495,11 +501,7 @@ function DetailLayout({
 }
 
 function Loading() {
-  return (
-    <main className="flex min-h-dvh items-center justify-center">
-      <Spinner aria-label="در حال دریافت اطلاعات" />
-    </main>
-  );
+  return <DetailPageSkeleton />;
 }
 
 function Missing({ retry }: { retry: () => void }) {

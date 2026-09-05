@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Spinner, Typography } from "@heroui/react";
+import { Typography } from "@heroui/react";
 import { useFavorites, type Favorite } from "@api";
 import {
   useCatalogClass,
@@ -10,6 +10,8 @@ import {
 
 import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
 import { DiscoveryResultCard } from "@modules/discovery/components/DiscoveryResultCard";
+import { RequestFailureState } from "@/components/request-failure-state";
+import { DiscoveryResultCardSkeleton } from "@/components/loading-skeletons";
 
 export function AthleteFavoritesScreen() {
   const favorites = useFavorites();
@@ -21,12 +23,13 @@ export function AthleteFavoritesScreen() {
         description="باشگاه‌ها، مربی‌ها و کلاس‌هایی که ذخیره کرده‌ای."
       />
       {favorites.isLoading ? (
-        <Spinner aria-label="در حال دریافت علاقه‌مندی‌ها" />
+        <DiscoveryResultCardSkeleton count={4} />
       ) : null}
       {favorites.isError ? (
-        <Button variant="secondary" onPress={() => favorites.refetch()}>
-          تلاش دوباره
-        </Button>
+        <RequestFailureState
+          error={favorites.error}
+          onRetry={() => void favorites.refetch()}
+        />
       ) : null}
       {!favorites.isLoading && !favorites.isError && items.length === 0 ? (
         <Typography type="body-sm" color="muted" className="py-16 text-center">
@@ -50,13 +53,14 @@ function FavoriteResult({ item }: { item: Favorite }) {
 
 function FavoriteClub({ id }: { id: string }) {
   const item = useCatalogClub(id);
+  if (item.isPending) return <DiscoveryResultCardSkeleton count={1} />;
   if (!item.data) return null;
   return (
     <DiscoveryResultCard
       title={item.data.name}
       subtitle={item.data.address || item.data.shortDescription}
       imageUrl={item.data.imageUrl}
-      href={`/discovery/clubs/${item.data.id}`}
+      href={`/discovery/clubs/${item.data.slug}`}
       badge="باشگاه"
     />
   );
@@ -64,13 +68,14 @@ function FavoriteClub({ id }: { id: string }) {
 
 function FavoriteCoach({ id }: { id: string }) {
   const item = useCatalogCoach(id);
+  if (item.isPending) return <DiscoveryResultCardSkeleton count={1} />;
   if (!item.data) return null;
   return (
     <DiscoveryResultCard
       title={item.data.displayName}
       subtitle={item.data.shortBio}
       imageUrl={item.data.imageUrl}
-      href={`/discovery/coaches/${item.data.id}`}
+      href={`/discovery/coaches/${item.data.slug}`}
       badge="مربی"
     />
   );
@@ -78,13 +83,14 @@ function FavoriteCoach({ id }: { id: string }) {
 
 function FavoriteClass({ id }: { id: string }) {
   const item = useCatalogClass(id);
+  if (item.isPending) return <DiscoveryResultCardSkeleton count={1} />;
   if (!item.data) return null;
   return (
     <DiscoveryResultCard
       title={item.data.title}
       subtitle={item.data.description}
       imageUrl={item.data.imageUrl}
-      href={`/discovery/classes/${item.data.id}`}
+      href={`/discovery/classes/${item.data.slug}`}
       badge="کلاس"
     />
   );

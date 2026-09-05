@@ -2,7 +2,7 @@
 
 ## سرویس‌های بیرونی
 
-- Firebase: اپ Android با package برابر `com.gym4me.application` بسازید و
+- Firebase: اپ Android با package برابر `com.gym4me.app` بسازید و
   `google-services.json` را فقط در `apps/application/android/app/` قرار دهید.
 - Firebase service account: سه مقدار `FIREBASE_PROJECT_ID`،
   `FIREBASE_CLIENT_EMAIL` و `FIREBASE_PRIVATE_KEY` را در Secretهای بک‌اند ثبت

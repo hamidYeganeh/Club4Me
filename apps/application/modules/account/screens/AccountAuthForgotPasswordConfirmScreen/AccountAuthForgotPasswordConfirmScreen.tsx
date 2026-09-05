@@ -18,10 +18,9 @@ import {
   normalizeIranianPhone,
   toE164IranianPhone,
 } from "@/lib/phone";
-import { ROLES_PATH } from "@/lib/post-auth-path";
+import { getPostAuthPath } from "@/lib/post-auth-path";
 
-const ACCOUNT_AUTH_FORGOT_CONFIRM_FORM_ID =
-  "account-auth-forgot-confirm-form";
+const ACCOUNT_AUTH_FORGOT_CONFIRM_FORM_ID = "account-auth-forgot-confirm-form";
 
 export function AccountAuthForgotPasswordConfirmScreen() {
   const router = useRouter();
@@ -111,8 +110,8 @@ export function AccountAuthForgotPasswordConfirmScreen() {
         passwordRequired={tConfirm("passwordRequired")}
         passwordMin={tConfirm("passwordMin")}
         passwordMismatch={tConfirm("passwordMismatch")}
-        onSuccess={() => {
-          router.replace(ROLES_PATH);
+        onSuccess={(user) => {
+          router.replace(getPostAuthPath(user));
         }}
         sent={t("sent")}
       />

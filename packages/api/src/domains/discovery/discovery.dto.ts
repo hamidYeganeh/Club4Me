@@ -109,6 +109,7 @@ export type DiscoveryCoachItem = {
   shortBio: string;
   avatarMediaId: string | null;
   coverMediaId: string | null;
+  imageUrl?: string | null;
   experienceYears: number;
   serviceModes: string[];
   averageRating: number;
@@ -124,6 +125,11 @@ export type DiscoveryArticleItem = {
   excerpt: string;
   coverImageUrl: string | null;
   publishedAt: string | null;
+  readTimeMinutes?: number;
+};
+
+export type PublicCatalogArticle = DiscoveryArticleItem & {
+  bodyHtml: string;
 };
 
 type DiscoverySectionBase<TType extends string, TItem> = {
@@ -154,6 +160,7 @@ export type DiscoverySection =
   | DiscoverySectionBase<"banners", DiscoveryBannerItem>
   | DiscoverySectionBase<"clubs", DiscoveryClubItem>
   | DiscoverySectionBase<"coaches", DiscoveryCoachItem>
+  | DiscoverySectionBase<"classes", PublicCatalogClass>
   | DiscoverySectionBase<"articles", DiscoveryArticleItem>;
 
 export type PublicCatalogParams = {
@@ -162,6 +169,7 @@ export type PublicCatalogParams = {
   limit?: number;
   sort?: "newest" | "rating";
   cityId?: string;
+  districtId?: string;
   cityRegionId?: string;
   sportId?: string;
   clubTypeId?: string;
@@ -169,10 +177,17 @@ export type PublicCatalogParams = {
   equipmentId?: string;
   coachId?: string;
   clubId?: string;
+  categoryId?: string;
   serviceMode?: string;
   latitude?: number;
   longitude?: number;
   radiusKm?: number;
+};
+
+export type PublicCatalogSearchKind = "club" | "coach" | "class";
+
+export type PublicCatalogSearchParams = PublicCatalogParams & {
+  kind?: PublicCatalogSearchKind;
 };
 
 export type PublicCatalogClub = DiscoveryClubItem & {
@@ -198,6 +213,7 @@ export type PublicCatalogClub = DiscoveryClubItem & {
 
 export type PublicCatalogClubType = {
   id: string;
+  slug: string;
   name: string;
   code: string;
   icon: string | null;

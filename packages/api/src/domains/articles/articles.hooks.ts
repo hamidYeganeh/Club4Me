@@ -50,10 +50,7 @@ export function useUpdateArticle() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      ...payload
-    }: UpdateArticlePayload & { id: string }) =>
+    mutationFn: ({ id, ...payload }: UpdateArticlePayload & { id: string }) =>
       articlesClient.update(id, payload),
     onSuccess: async (_data, variables) => {
       await queryClient.invalidateQueries({ queryKey: articlesQueries.all() });

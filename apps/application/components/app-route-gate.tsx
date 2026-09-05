@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { tokenStore } from "@api";
+import { tokenStore } from "@api/http";
 
 import { getAppRouteRedirect, hasSeenWelcome } from "@/lib/welcome-onboarding";
 

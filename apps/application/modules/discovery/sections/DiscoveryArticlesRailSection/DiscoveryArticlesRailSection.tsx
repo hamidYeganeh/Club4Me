@@ -19,7 +19,7 @@ export function DiscoveryArticlesRailSection({
   title,
   subtitle,
   icon,
-  seeAllHref = "/articles",
+  seeAllHref = "/discovery/articles",
   seeAllLabel,
   items,
   cardVariant = { orientation: "vertical", outlined: false },
@@ -36,10 +36,7 @@ export function DiscoveryArticlesRailSection({
   }
 
   return (
-    <section
-      className={styles.root({ className })}
-      aria-labelledby={titleId}
-    >
+    <section className={styles.root({ className })} aria-labelledby={titleId}>
       <DiscoverySectionHeader
         id={titleId}
         title={title}
@@ -62,17 +59,15 @@ export function DiscoveryArticlesRailSection({
           <SwiperSlide key={article.id} className={styles.slide()}>
             <ArticleCard
               title={article.title}
-              description={article.description}
+              description={article.excerpt}
               coverImageUrl={article.coverImageUrl}
               authorName={article.authorName}
-              authorAvatarUrl={article.authorAvatarUrl}
-              readTime={article.readTime}
-              badge={article.badge}
-              tags={article.tags}
+              readTime=""
+              tags={[]}
               tagsLabel={t("articleTagsLabel")}
               orientation={orientation}
               outlined={cardVariant.outlined}
-              href={article.href}
+              href={`/discovery/articles/${article.slug}`}
               className={styles.card()}
             />
           </SwiperSlide>

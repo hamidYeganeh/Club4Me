@@ -1,12 +1,15 @@
-import { getDiscoveryCityParams } from "@modules/discovery/discovery-city.constants";
 import { DiscoveryCityScreen } from "@modules/discovery/screens/DiscoveryCityScreen";
+import { getDiscoverySlugParams } from "@/lib/discovery-static-params";
 
 type PageProps = {
   params: Promise<{ cityId: string }>;
 };
 
 export function generateStaticParams() {
-  return getDiscoveryCityParams();
+  return getDiscoverySlugParams(
+    "/public/catalog/location/city?limit=100",
+    "cityId",
+  );
 }
 
 export default async function CityDiscoveryPage({ params }: PageProps) {

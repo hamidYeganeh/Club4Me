@@ -21,6 +21,8 @@ import {
   getPushNotificationState,
 } from "@/lib/push-notifications";
 import { openExternalUrl } from "@/lib/native-browser";
+import { PermissionGrantSheet } from "@/components/permissions/permission-grant-sheet";
+import { getRequestFailurePresentation } from "@/lib/request-failure";
 
 type Props = { role: "athlete" | "coach" };
 type PreferenceKey = keyof NotificationPreferences;
@@ -63,6 +65,8 @@ export function AppSettingsScreen({ role }: Props) {
     "enabled" | "disabled" | "denied" | "unsupported"
   >("disabled");
   const [version, setVersion] = useState("وب");
+  const [pushPrimerOpen, setPushPrimerOpen] = useState(false);
+  const [requestingPush, setRequestingPush] = useState(false);
 
   useEffect(() => {
     void getPushNotificationState().then(setPushState);
@@ -74,16 +78,25 @@ export function AppSettingsScreen({ role }: Props) {
   }, []);
 
   const togglePush = async (enabled: boolean) => {
+    if (enabled) {
+      setPushPrimerOpen(true);
+      return;
+    }
     try {
-      if (!enabled) {
-        await disablePushNotifications();
-        setPushState("disabled");
-        trackNotificationPreferenceChanged({
-          preference_name: "push_enabled",
-          is_enabled: false,
-        });
-        return;
-      }
+      await disablePushNotifications();
+      setPushState("disabled");
+      trackNotificationPreferenceChanged({
+        preference_name: "push_enabled",
+        is_enabled: false,
+      });
+    } catch {
+      toast.danger("غیرفعال‌سازی اعلان‌ها ناموفق بود.");
+    }
+  };
+
+  const grantPushAccess = async () => {
+    setRequestingPush(true);
+    try {
       const state = await enablePushNotifications();
       setPushState(state);
       if (state === "enabled") {
@@ -99,6 +112,9 @@ export function AppSettingsScreen({ role }: Props) {
       }
     } catch {
       toast.danger("فعال‌سازی اعلان‌ها ناموفق بود.");
+    } finally {
+      setRequestingPush(false);
+      setPushPrimerOpen(false);
     }
   };
 
@@ -117,9 +133,10 @@ export function AppSettingsScreen({ role }: Props) {
     if (!confirmed) return;
     try {
       await deleteAccount.mutateAsync();
-      router.replace("/welcome");
-    } catch {
-      toast.danger("حذف حساب ناموفق بود. دوباره تلاش کنید.");
+      router.replace("/auth");
+    } catch (error) {
+      const failure = getRequestFailurePresentation(error);
+      toast.danger(failure.title, { description: failure.description });
     }
   };
 
@@ -189,7 +206,11 @@ export function AppSettingsScreen({ role }: Props) {
         />
         <LinkRow
           title="تماس با پشتیبانی"
-          onPress={() => openExternal("/support")}
+          onPress={() =>
+            role === "athlete"
+              ? router.push("/athlete/support")
+              : openExternal("/support")
+          }
         />
       </SettingsSection>
 
@@ -213,6 +234,14 @@ export function AppSettingsScreen({ role }: Props) {
       <p className="font-brand pb-5 text-center text-xs text-muted" dir="ltr">
         Gym4Me {version}
       </p>
+
+      <PermissionGrantSheet
+        kind="notifications"
+        open={pushPrimerOpen}
+        pending={requestingPush}
+        onOpenChange={setPushPrimerOpen}
+        onGrant={grantPushAccess}
+      />
     </main>
   );
 }

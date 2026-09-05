@@ -3,9 +3,9 @@
 import { ScrollShadow } from "@heroui/react";
 import { CityCard } from "@ui/city-card";
 import { useTranslations } from "next-intl";
+import { usePublicCatalogResource } from "@api/discovery";
 
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
-import { buildDiscoveryClubsLocations } from "@modules/discovery/discovery-clubs-locations.mock";
 
 import { discoveryClubsLocationsSectionStyles } from "./DiscoveryClubsLocationsSection.styles";
 import type { DiscoveryClubsLocationsSectionProps } from "./DiscoveryClubsLocationsSection.types";
@@ -16,7 +16,17 @@ export function DiscoveryClubsLocationsSection({
 }: DiscoveryClubsLocationsSectionProps) {
   const t = useTranslations("discovery.clubs");
   const styles = discoveryClubsLocationsSectionStyles();
-  const locations = items ?? buildDiscoveryClubsLocations();
+  const query = usePublicCatalogResource("location", "city");
+  const locations =
+    items ??
+    (query.data?.items ?? []).map((city) => ({
+      id: city.id,
+      name: city.name,
+      clubsCount: typeof city.clubsCount === "number" ? city.clubsCount : 0,
+      imageUrl: typeof city.imageUrl === "string" ? city.imageUrl : "",
+      href: `/discovery/city/${String(city.slug ?? city.id)}`,
+      kind: "city" as const,
+    }));
 
   if (locations.length === 0) {
     return null;

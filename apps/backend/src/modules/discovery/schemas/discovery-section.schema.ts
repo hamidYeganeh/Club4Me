@@ -5,6 +5,7 @@ export const DISCOVERY_SECTION_TYPES = [
   "banners",
   "clubs",
   "coaches",
+  "classes",
   "articles",
 ] as const;
 export const DISCOVERY_SELECTION_MODES = ["manual", "query"] as const;

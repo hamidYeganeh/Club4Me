@@ -39,6 +39,23 @@ const trackSchemas = [
   }),
   z.object({
     ...context,
+    event: z.literal("discovery.club_viewed"),
+    properties: z.object({ club_id: objectId }).strict(),
+  }),
+  z.object({
+    ...context,
+    event: z.literal("checkout.started"),
+    properties: z.object({ club_id: objectId, session_id: objectId }).strict(),
+  }),
+  z.object({
+    ...context,
+    event: z.literal("payment.succeeded"),
+    properties: z
+      .object({ reservation_id: objectId, club_id: objectId })
+      .strict(),
+  }),
+  z.object({
+    ...context,
     event: z.literal("favorite.added"),
     properties: z
       .object({

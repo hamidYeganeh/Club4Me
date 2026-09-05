@@ -1,9 +1,13 @@
 import { DiscoveryReviewsScreen } from "@modules/discovery/screens/DiscoveryReviewsScreen";
+import { getDiscoverySlugParams } from "@/lib/discovery-static-params";
 
 type PageProps = { params: Promise<{ coachId: string }> };
 
 export function generateStaticParams() {
-  return [{ coachId: "66d500000000000000000001" }];
+  return getDiscoverySlugParams(
+    "/discovery/catalog/coaches?limit=100",
+    "coachId",
+  );
 }
 
 export default async function CoachReviewsPage({ params }: PageProps) {

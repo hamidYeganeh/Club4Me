@@ -1,6 +1,6 @@
 import type { IconName } from "@theme/icon";
 
-import type { DiscoveryClassItem } from "@modules/discovery/discovery-classes.mock";
+import type { PublicCatalogClass, PublicCatalogParams } from "@api/discovery";
 
 export type DiscoveryClassesRailSectionProps = {
   id: string;
@@ -9,6 +9,7 @@ export type DiscoveryClassesRailSectionProps = {
   icon?: IconName;
   seeAllHref?: string;
   seeAllLabel?: string;
-  items?: DiscoveryClassItem[];
+  items?: PublicCatalogClass[];
+  params?: PublicCatalogParams;
   className?: string;
 };

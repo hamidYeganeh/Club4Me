@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Card, Spinner, Typography, toast } from "@heroui/react";
+import { Button, Card, Typography, toast } from "@heroui/react";
 import {
   useClubReviews,
   useCreateClubReview,
@@ -12,6 +12,10 @@ import {
 import { useTranslations } from "next-intl";
 
 import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGateway";
+import {
+  CompactCardListSkeleton,
+  ReviewListSkeleton,
+} from "@/components/loading-skeletons";
 
 const field =
   "h-11 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm outline-none focus:border-accent";
@@ -105,7 +109,9 @@ export function ClubReservationsAndReviewsSection({
       <div>
         <Typography type="h4">{t("sessions")}</Typography>
         {sessions.isPending ? (
-          <Spinner className="mt-4" />
+          <div className="mt-4">
+            <CompactCardListSkeleton count={2} />
+          </div>
         ) : (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {(sessions.data?.items ?? []).map((session) => (
@@ -243,7 +249,8 @@ export function ClubReservationsAndReviewsSection({
           </Button>
         </form>
         <div className="mt-3 space-y-2">
-          {(reviews.data?.items ?? []).map((review) => (
+          {reviews.isPending ? <ReviewListSkeleton count={2} /> : null}
+          {!reviews.isPending && (reviews.data?.items ?? []).map((review) => (
             <article
               key={review.id}
               className="rounded-2xl bg-surface-secondary p-4"

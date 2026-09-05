@@ -1,33 +1,30 @@
+"use client";
+
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { DiscoveryClubsScreen } from "@modules/discovery/screens/DiscoveryClubsScreen";
 import type { DiscoveryClubsBrowse } from "@modules/discovery/screens/DiscoveryClubsScreen";
+import { ListPageSkeleton } from "@/components/loading-skeletons";
 
-type ClubsPageProps = {
-  searchParams: Promise<{
-    sort?: string;
-    sportId?: string;
-    clubTypeId?: string;
-    nearby?: string;
-  }>;
-};
-
-export default async function ClubsPage({ searchParams }: ClubsPageProps) {
-  const params = await searchParams;
-  return <DiscoveryClubsScreen browse={toBrowse(params)} />;
+export default function ClubsPage() {
+  return (
+    <Suspense fallback={<ListPageSkeleton />}>
+      <ClubsPageContent />
+    </Suspense>
+  );
 }
 
-function toBrowse(params: {
-  sort?: string;
-  sportId?: string;
-  clubTypeId?: string;
-  nearby?: string;
-}): DiscoveryClubsBrowse {
+function ClubsPageContent() {
+  const searchParams = useSearchParams();
+  return <DiscoveryClubsScreen browse={toBrowse(searchParams)} />;
+}
+
+function toBrowse(params: Pick<URLSearchParams, "get">): DiscoveryClubsBrowse {
+  const sort = params.get("sort");
   return {
-    sort:
-      params.sort === "rating" || params.sort === "newest"
-        ? params.sort
-        : undefined,
-    sportId: params.sportId,
-    clubTypeId: params.clubTypeId,
-    nearby: params.nearby === "1",
+    sort: sort === "rating" || sort === "newest" ? sort : undefined,
+    sportId: params.get("sportId") ?? undefined,
+    clubTypeId: params.get("clubTypeId") ?? undefined,
+    nearby: params.get("nearby") === "1",
   };
 }

@@ -2,14 +2,7 @@
 // beui.dev/components/blocks/availability-scheduler
 
 import { LayoutGroup, useReducedMotion } from "motion/react";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useId, useMemo, useRef, useState } from "react";
 import { cn } from "./lib/utils";
 import { DayRow } from "./day-row";
 import {
@@ -90,9 +83,8 @@ export function AvailabilityScheduler({
     return ids;
   }, [week]);
 
-  useEffect(() => {
-    if (openPanel !== null && !livePanels.has(openPanel)) setOpenPanel(null);
-  }, [livePanels, openPanel]);
+  const visibleOpenPanel =
+    openPanel !== null && livePanels.has(openPanel) ? openPanel : null;
 
   const commit = useCallback(
     (next: WeekAvailability) => {
@@ -111,9 +103,7 @@ export function AvailabilityScheduler({
 
   const panelOpenChange = useCallback(
     (day: DayKey, id: string, open: boolean) => {
-      setOpenPanel((current) =>
-        open ? id : current === id ? null : current,
-      );
+      setOpenPanel((current) => (open ? id : current === id ? null : current));
       // Elevation stays on the row that opened last so the panel's collapse
       // animation finishes above its neighbours.
       if (open) setOpenDay(day);
@@ -151,7 +141,7 @@ export function AvailabilityScheduler({
             options={options}
             reduce={reduce}
             elevated={openDay === key}
-            openPanel={openPanel}
+            openPanel={visibleOpenPanel}
             onChange={(next) => setDay(key, next)}
             onCopy={(targets) => copyDay(key, targets)}
             onPanelOpenChange={(id, open) => panelOpenChange(key, id, open)}

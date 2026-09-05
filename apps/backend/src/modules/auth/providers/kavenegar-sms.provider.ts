@@ -65,9 +65,36 @@ export class KavenegarSmsProvider implements SmsProvider {
     for (const [key, value] of Object.entries(tokens)) {
       if (value) url.searchParams.set(key, value);
     }
+    await this.request(url);
+  }
 
+  async sendMessage(phone: string, message: string): Promise<void> {
+    const env = this.config.env;
+    if (!env.KAVENEGAR_API_KEY) {
+      if (env.NODE_ENV === "production") {
+        throw new AppError(
+          500,
+          "SMS_NOT_CONFIGURED",
+          "SMS provider is not configured",
+        );
+      }
+      this.logger.log(
+        `[sms] skipped phone=${phone} messageLength=${message.length}`,
+      );
+      return;
+    }
+    const url = new URL(
+      `https://api.kavenegar.com/v1/${env.KAVENEGAR_API_KEY}/sms/send.json`,
+    );
+    url.searchParams.set("receptor", toLocalIranianPhone(phone));
+    url.searchParams.set("message", message);
+    if (env.KAVENEGAR_SENDER)
+      url.searchParams.set("sender", env.KAVENEGAR_SENDER);
+    await this.request(url);
+  }
+
+  private async request(url: URL) {
     let response: Response;
-
     try {
       response = await fetch(url, {
         method: "GET",
@@ -77,17 +104,13 @@ export class KavenegarSmsProvider implements SmsProvider {
       this.logger.error("Kavenegar request failed");
       throw new AppError(502, "SMS_FAILED", "Failed to send verification SMS");
     }
-
     let body: KavenegarResponse = {};
-
     try {
       body = (await response.json()) as KavenegarResponse;
     } catch {
       body = {};
     }
-
     const status = body.return?.status ?? response.status;
-
     if (!response.ok || status !== 200) {
       const providerMessage = body.return?.message?.trim();
       this.logger.error(

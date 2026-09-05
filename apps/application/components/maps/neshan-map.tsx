@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Typography } from "@heroui/react";
+import { Skeleton, toast, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { useTheme } from "next-themes";
-import { getCurrentPosition } from "@/lib/native-geolocation";
+import {
+  getCurrentPosition,
+  LocationAccessError,
+} from "@/lib/native-geolocation";
 import { cn } from "@/lib/cn";
+import { PermissionGrantSheet } from "@/components/permissions/permission-grant-sheet";
 
 import type { Map as NeshanMapInstance } from "@neshan-maps-platform/maplibre-sdk";
 
@@ -13,8 +17,6 @@ const NESHAN_LIGHT_STYLE =
   "https://static.neshan.org/sdk/maplibre/styles/light.json";
 const NESHAN_DARK_STYLE =
   "https://static.neshan.org/sdk/maplibre/styles/dark.json";
-const MARKER_COLOR = "#121212";
-const MARKER_SELECTED_COLOR = "#c6ff4e";
 const USER_MARKER_COLOR = "#c6ff4e";
 
 export type GeoPoint = {
@@ -24,6 +26,7 @@ export type GeoPoint = {
 
 export type NeshanMapMarker = GeoPoint & {
   id: string;
+  imageUrl?: string | null;
   label?: string;
 };
 
@@ -77,6 +80,7 @@ export function NeshanMap({
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [locationPrimerOpen, setLocationPrimerOpen] = useState(false);
   const apiKey = process.env.NEXT_PUBLIC_NESHAN_MAP_KEY?.trim();
   const mapStyle =
     resolvedTheme === "light" ? NESHAN_LIGHT_STYLE : NESHAN_DARK_STYLE;
@@ -101,7 +105,7 @@ export function NeshanMap({
   const markersKey = resolvedMarkers
     .map(
       (entry) =>
-        `${entry.id}:${entry.latitude}:${entry.longitude}:${entry.label ?? ""}`,
+        `${entry.id}:${entry.latitude}:${entry.longitude}:${entry.label ?? ""}:${entry.imageUrl ?? ""}`,
     )
     .join("|");
 
@@ -216,10 +220,7 @@ export function NeshanMap({
     locationMarkersRef.current.forEach((entry) => entry.remove());
     locationMarkersRef.current = resolvedMarkers.map((entry) => {
       const nextMarker = new maplibregl.Marker({
-        color:
-          selectedMarkerId && entry.id === selectedMarkerId
-            ? MARKER_SELECTED_COLOR
-            : MARKER_COLOR,
+        element: createClubMarkerElement(entry, false),
       }).setLngLat([entry.longitude, entry.latitude]) as RemovableMarker;
 
       if (entry.label) {
@@ -243,6 +244,18 @@ export function NeshanMap({
     };
     // resolvedMarkers is represented by markersKey to avoid identity churn.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady, markersKey]);
+
+  useEffect(() => {
+    if (!mapReady) return;
+
+    locationMarkersRef.current.forEach((marker) => {
+      const element = marker.getElement();
+      applyClubMarkerSelectionStyles(
+        element,
+        element.dataset.markerId === selectedMarkerId,
+      );
+    });
   }, [mapReady, markersKey, selectedMarkerId]);
 
   useEffect(() => {
@@ -285,6 +298,23 @@ export function NeshanMap({
       }).setLngLat(point) as RemovableMarker;
       userMarkerRef.current.addTo(map);
       map.flyTo({ center: point, essential: true, zoom: Math.max(zoom, 15) });
+    } catch (error) {
+      const code =
+        error instanceof LocationAccessError ? error.code : "unknown";
+      if (code === "denied") {
+        toast.warning(
+          "دسترسی موقعیت رد شده است. آن را از تنظیمات دستگاه یا مرورگر فعال کنید.",
+        );
+      } else if (code === "timeout") {
+        toast.warning("دریافت موقعیت طول کشید. در فضای باز دوباره تلاش کنید.");
+      } else if (code === "unavailable") {
+        toast.warning("موقعیت‌یاب دستگاه خاموش یا در دسترس نیست.");
+      } else if (code === "unsupported") {
+        toast.warning("این دستگاه از دریافت موقعیت پشتیبانی نمی‌کند.");
+      } else {
+        console.error("Current location request failed", error);
+        toast.danger("دریافت موقعیت فعلی ناموفق بود. دوباره تلاش کنید.");
+      }
     } finally {
       setLocating(false);
     }
@@ -308,6 +338,21 @@ export function NeshanMap({
         style={{ inset: 0, position: "absolute" }}
       />
 
+      {!unavailable && !mapReady ? (
+        <div
+          className="absolute inset-0 z-10 overflow-hidden"
+          role="status"
+          aria-label="در حال بارگذاری نقشه"
+        >
+          <Skeleton className="absolute inset-0 rounded-none" />
+          <div className="absolute inset-x-5 top-5 flex justify-between">
+            <Skeleton className="h-9 w-24 rounded-xl" />
+            <Skeleton className="size-10 rounded-full" />
+          </div>
+          <Skeleton className="absolute bottom-5 right-5 size-11 rounded-full" />
+        </div>
+      ) : null}
+
       {unavailable && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 px-6 text-center">
           <span className="flex size-11 items-center justify-center rounded-full bg-accent text-accent-foreground">
@@ -327,7 +372,7 @@ export function NeshanMap({
           type="button"
           aria-label="نمایش موقعیت فعلی من"
           disabled={locating}
-          onClick={() => void locateUser()}
+          onClick={() => setLocationPrimerOpen(true)}
           className={cn(
             "absolute bottom-4 right-4 z-10 flex size-11 items-center justify-center rounded-full border border-foreground/10 bg-background text-foreground shadow-lg transition-transform active:scale-95 disabled:opacity-50",
             locateClassName,
@@ -336,6 +381,74 @@ export function NeshanMap({
           <Icon name="compass" size="lg" />
         </button>
       )}
+
+      <PermissionGrantSheet
+        kind="location"
+        open={locationPrimerOpen}
+        pending={locating}
+        onOpenChange={setLocationPrimerOpen}
+        onGrant={() => {
+          setLocationPrimerOpen(false);
+          void locateUser();
+        }}
+      />
     </div>
   );
+}
+
+function createClubMarkerElement(marker: NeshanMapMarker, selected: boolean) {
+  const element = document.createElement("button");
+  element.type = "button";
+  element.dataset.markerId = marker.id;
+  element.setAttribute("aria-label", marker.label ?? "باشگاه روی نقشه");
+  element.style.alignItems = "center";
+  element.style.background = "var(--surface)";
+  element.style.borderRadius = "9999px";
+  element.style.color = "var(--foreground)";
+  element.style.cursor = "pointer";
+  element.style.display = "flex";
+  element.style.fontSize = "14px";
+  element.style.fontWeight = "800";
+  element.style.justifyContent = "center";
+  element.style.overflow = "hidden";
+  element.style.transition = "border-color 180ms ease, transform 180ms ease";
+  applyClubMarkerSelectionStyles(element, selected);
+
+  const initial = document.createElement("span");
+  initial.textContent = marker.label?.trim().slice(0, 1) || "•";
+  initial.style.color = "var(--accent)";
+  element.append(initial);
+
+  if (marker.imageUrl) {
+    const image = document.createElement("img");
+    image.alt = "";
+    image.loading = "lazy";
+    image.decoding = "async";
+    image.width = 56;
+    image.height = 56;
+    image.src = marker.imageUrl;
+    image.style.height = "100%";
+    image.style.inset = "0";
+    image.style.objectFit = "cover";
+    image.style.position = "absolute";
+    image.style.width = "100%";
+    image.addEventListener("error", () => image.remove(), { once: true });
+    element.append(image);
+  }
+
+  return element;
+}
+
+function applyClubMarkerSelectionStyles(
+  element: HTMLElement,
+  selected: boolean,
+) {
+  element.style.border = `${selected ? 4 : 2}px solid ${
+    selected ? "var(--accent)" : "var(--border)"
+  }`;
+  element.style.boxShadow = selected
+    ? "0 10px 28px color-mix(in srgb, var(--accent) 28%, transparent)"
+    : "0 8px 22px rgb(0 0 0 / 0.24)";
+  element.style.height = selected ? "56px" : "46px";
+  element.style.width = selected ? "56px" : "46px";
 }

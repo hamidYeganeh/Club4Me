@@ -1,0 +1,35 @@
+[debug] [2026-09-05T01:08:42.079Z] ----------------------------------------------------------------------
+[debug] [2026-09-05T01:08:42.081Z] Command:       /opt/homebrew/Cellar/node/26.8.1/bin/node /Users/mahdi/.npm/_npx/7750544ccf494d8b/node_modules/.bin/firebase projects:list --json
+[debug] [2026-09-05T01:08:42.081Z] CLI Version:   15.29.0
+[debug] [2026-09-05T01:08:42.081Z] Platform:      darwin
+[debug] [2026-09-05T01:08:42.081Z] Node Version:  v26.8.1
+[debug] [2026-09-05T01:08:42.081Z] Detected Agent: codex_cli
+[debug] [2026-09-05T01:08:42.081Z] Time:          Sat Sep 05 2026 04:38:42 GMT+0330 (Iran Standard Time)
+[debug] [2026-09-05T01:08:42.081Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-09-05T01:08:42.088Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-09-05T01:08:42.110Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-09-05T01:08:42.110Z] > authorizing via signed-in user (hamidyeganeh82@gmail.com)
+[debug] [2026-09-05T01:08:42.112Z] Checked if tokens are valid: false, expires at: 1788342920809
+[debug] [2026-09-05T01:08:42.112Z] Checked if tokens are valid: false, expires at: 1788342920809
+[debug] [2026-09-05T01:08:42.112Z] > refreshing access token with scopes: []
+[debug] [2026-09-05T01:08:42.113Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-09-05T01:08:42.113Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-05T01:08:42.531Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-09-05T01:08:42.531Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-05T01:08:42.546Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2026-09-05T01:08:42.551Z] *** [apiv2] error from fetch(https://firebase-public.firebaseio.com/cli.json, {"headers":{},"method":"GET"}): Error: read ECONNRESET
+[debug] [2026-09-05T01:08:42.551Z] *** [apiv2] retrying https://firebase-public.firebaseio.com/cli.json without keep-alive after a premature close error
+[debug] [2026-09-05T01:08:43.552Z] *** [apiv2] Attempting the request again. Attempt number 2
+[debug] [2026-09-05T01:08:43.552Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-09-05T01:08:43.942Z] *** [apiv2] error from fetch(https://firebase-public.firebaseio.com/cli.json, {"headers":{},"method":"GET"}): Error: read ECONNRESET
+[warn] ⚠  Unable to fetch the CLI MOTD and remote config. This is not a fatal error, but may indicate an issue with your network connection. 
+[debug] [2026-09-05T01:08:43.943Z] Failed to fetch MOTD FirebaseError: Failed to make request to https://firebase-public.firebaseio.com/cli.json
+[debug] [2026-09-05T01:08:44.177Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 403
+[debug] [2026-09-05T01:08:44.177Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2026-09-05T01:08:44.177Z] Unable to parse JSON: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+[debug] [2026-09-05T01:08:44.178Z] FirebaseError: Unable to parse JSON: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at RetryOperation._fn (/Users/mahdi/.npm/_npx/7750544ccf494d8b/node_modules/firebase-tools/lib/apiv2.js:356:39)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+[error] 
+[error] Error: Failed to list Firebase projects. See firebase-debug.log for more info.

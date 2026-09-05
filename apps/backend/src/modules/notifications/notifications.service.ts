@@ -170,13 +170,14 @@ export class NotificationsService {
     bookingId: string | Types.ObjectId;
     title: string;
     startAt: Date;
+    href?: string;
   }) {
     return this.notifyUser({
       userId: input.userId,
       type: "booking_reminder",
       title: "یادآوری رزرو",
       body: `رزرو «${input.title}» در ${formatTehran(input.startAt)} شروع می‌شود.`,
-      href: "/athlete/reservations",
+      href: input.href ?? "/athlete/reservations",
       template: this.config.env.KAVENEGAR_BOOKING_REMINDER_TEMPLATE,
       tokens: {
         token: shortId(input.bookingId),
@@ -201,13 +202,82 @@ export class NotificationsService {
     });
   }
 
+  notifyPayoutStatus(input: {
+    userId: string | Types.ObjectId;
+    payoutId: string | Types.ObjectId;
+    amount: number;
+    status: "requested" | "paid" | "rejected";
+  }) {
+    const copy = {
+      requested: {
+        title: "درخواست تسویه ثبت شد",
+        body: `درخواست برداشت ${input.amount.toLocaleString("fa-IR")} ریال ثبت شد.`,
+      },
+      paid: {
+        title: "تسویه پرداخت شد",
+        body: `مبلغ ${input.amount.toLocaleString("fa-IR")} ریال پرداخت شد.`,
+      },
+      rejected: {
+        title: "درخواست تسویه رد شد",
+        body: `درخواست برداشت ${input.amount.toLocaleString("fa-IR")} ریال رد شد.`,
+      },
+    }[input.status];
+    return this.notifyUser({
+      userId: input.userId,
+      type: `payout_${input.status}`,
+      title: copy.title,
+      body: copy.body,
+      href: "/payments",
+      template: this.config.env.KAVENEGAR_PAYOUT_TEMPLATE,
+      tokens: {
+        token: shortId(input.payoutId),
+        token10: input.amount.toLocaleString("fa-IR"),
+      },
+    });
+  }
+
+  notifyTicketUpdated(input: {
+    userId: string | Types.ObjectId;
+    ticketId: string | Types.ObjectId;
+    status: string;
+  }) {
+    return this.notifyUser({
+      userId: input.userId,
+      type: "support_ticket_updated",
+      title: "تیکت پشتیبانی به‌روزرسانی شد",
+      body: `وضعیت تیکت شما به «${input.status}» تغییر کرد.`,
+      href: `/athlete/support/tickets/${String(input.ticketId)}`,
+      template: this.config.env.KAVENEGAR_SUPPORT_TEMPLATE,
+      tokens: { token: shortId(input.ticketId), token10: input.status },
+    });
+  }
+
+  notifyWaitlistSeatAvailable(input: {
+    userId: string | Types.ObjectId;
+    classId: string | Types.ObjectId;
+    title: string;
+  }) {
+    return this.notifyUser({
+      userId: input.userId,
+      type: "waitlist_seat_available",
+      title: "ظرفیت کلاس باز شد",
+      body: `برای کلاس «${input.title}» ظرفیت باز شده؛ اولین تأیید، صندلی را می‌گیرد.`,
+      href: `/discovery/business-classes/${String(input.classId)}`,
+      template: this.config.env.KAVENEGAR_WAITLIST_TEMPLATE,
+      tokens: {
+        token: shortId(input.classId),
+        token10: input.title.slice(0, 30),
+      },
+    });
+  }
+
   private async notifyUser(input: {
     userId: string | Types.ObjectId;
     type: string;
     title: string;
     body: string;
     href: string;
-    template: string;
+    template?: string;
     tokens: SmsLookupTokens;
   }) {
     const userId = new Types.ObjectId(String(input.userId));
@@ -234,7 +304,11 @@ export class NotificationsService {
     }
     try {
       const user = await this.users.findById(String(userId));
-      await this.sms.sendTemplate(user.phone, input.template, input.tokens);
+      if (input.template) {
+        await this.sms.sendTemplate(user.phone, input.template, input.tokens);
+      } else if (this.sms.sendMessage) {
+        await this.sms.sendMessage(user.phone, `${input.title}\n${input.body}`);
+      }
     } catch (error) {
       this.logger.error(
         `Transactional SMS failed type=${input.type} userId=${String(userId)} error=${error instanceof Error ? error.message : "unknown"}`,

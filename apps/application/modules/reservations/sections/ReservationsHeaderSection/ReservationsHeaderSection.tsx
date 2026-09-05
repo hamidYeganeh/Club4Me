@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { Button, ScrollShadow, Typography } from "@heroui/react";
+import { Button, ScrollShadow } from "@heroui/react";
 import { Icon } from "@theme/icon";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader/SecondaryHeader";
 
 import { reservationsHeaderSectionStyles } from "./ReservationsHeaderSection.styles";
 import type { ReservationsHeaderSectionProps } from "./ReservationsHeaderSection.types";
@@ -13,13 +13,15 @@ export function ReservationsHeaderSection({
   backLabel,
   backHref,
   datesLabel,
+  historyLabel,
+  historyActive,
+  onShowHistory,
   dates,
   selectedDateKey,
   onSelectDate,
 }: ReservationsHeaderSectionProps) {
-  const router = useRouter();
   const selectedRef = useRef<HTMLDivElement>(null);
-  const styles = reservationsHeaderSectionStyles();
+  const styles = reservationsHeaderSectionStyles({ historyActive });
 
   useEffect(() => {
     selectedRef.current?.scrollIntoView({
@@ -31,23 +33,24 @@ export function ReservationsHeaderSection({
 
   return (
     <>
-      <header className={styles.root()}>
-        <div className={styles.bar()}>
-          <Button
-            isIconOnly
-            variant="ghost"
-            size="lg"
-            aria-label={backLabel}
-            className={styles.back()}
-            onPress={() => router.push(backHref)}
+      <SecondaryHeader
+        title={title}
+        backLabel={backLabel}
+        backHref={backHref}
+        showFilter={false}
+        action={
+          <button
+            type="button"
+            className={styles.calendar()}
+            aria-label={historyLabel}
+            aria-pressed={historyActive}
+            onClick={onShowHistory}
           >
-            <Icon name="chevron-right" size={22} />
-          </Button>
-          <Typography type="h4" className={styles.title()}>
-            {title}
-          </Typography>
-        </div>
-
+            <Icon name="calendar-1" size={22} />
+          </button>
+        }
+      />
+      <div className={styles.root()}>
         <ScrollShadow
           hideScrollBar
           orientation="horizontal"
@@ -57,7 +60,8 @@ export function ReservationsHeaderSection({
         >
           <div className={styles.dates()}>
             {dates.map((date) => {
-              const selected = date.key === selectedDateKey;
+              const selected =
+                !historyActive && date.key === selectedDateKey;
               const dateStyles = reservationsHeaderSectionStyles({ selected });
 
               return (
@@ -72,17 +76,15 @@ export function ReservationsHeaderSection({
                     className={dateStyles.dateButton()}
                     onPress={() => onSelectDate(date.key)}
                   >
-                    <span className={dateStyles.weekday()}>{date.weekday}</span>
                     <span className={dateStyles.day()}>{date.day}</span>
-                    <span aria-hidden className={dateStyles.dot()} />
+                    <span className={dateStyles.weekday()}>{date.weekday}</span>
                   </Button>
                 </div>
               );
             })}
           </div>
         </ScrollShadow>
-      </header>
-      <div aria-hidden className={styles.spacer()} />
+      </div>
     </>
   );
 }

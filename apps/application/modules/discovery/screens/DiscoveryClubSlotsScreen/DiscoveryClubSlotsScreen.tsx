@@ -9,19 +9,22 @@ import {
   Radio,
   RadioGroup,
   ScrollShadow,
-  Spinner,
   Tabs,
   Typography,
   toast,
 } from "@heroui/react";
 import {
   tokenStore,
+  trackCheckoutStarted,
+  trackPaymentSucceeded,
   usePublicClub,
   useReservableSessions,
   useReserveSession,
   useResolveMockClubPayment,
+  useMyEntitlements,
   type ReservableSession,
 } from "@api";
+import { useCatalogClub } from "@api/discovery";
 import { Icon } from "@theme/icon";
 import { ThemeToggle } from "@theme/theme-toggle";
 import { useGSAP } from "@gsap/react";
@@ -29,7 +32,10 @@ import gsap from "gsap";
 import NumberFlow from "@number-flow/react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/cn";
+import { RequestFailureState } from "@/components/request-failure-state";
+import { getRequestFailurePresentation } from "@/lib/request-failure";
 import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGateway";
+import { SlotBookingSkeleton } from "@/components/loading-skeletons";
 
 import { discoveryClubSlotsScreenStyles } from "./DiscoveryClubSlotsScreen.styles";
 import type { DiscoveryClubSlotsScreenProps } from "./DiscoveryClubSlotsScreen.types";
@@ -59,17 +65,21 @@ export function DiscoveryClubSlotsScreen({
   const t = useTranslations("discovery.clubSlots");
   const tDetail = useTranslations("discovery.clubDetail");
   const styles = discoveryClubSlotsScreenStyles();
-  const isPersistedClub = /^[a-f\d]{24}$/i.test(clubId);
+  const catalogClub = useCatalogClub(clubId);
+  const persistedId = catalogClub.data?.id ?? "";
+  const isPersistedClub = Boolean(persistedId);
   const rootRef = useRef<HTMLElement>(null);
 
-  const publicClub = usePublicClub(clubId);
-  const sessionsQuery = useReservableSessions(clubId);
+  const publicClub = usePublicClub(persistedId);
+  const sessionsQuery = useReservableSessions(persistedId);
   const reserve = useReserveSession();
   const resolvePayment = useResolveMockClubPayment();
+  const entitlements = useMyEntitlements(Boolean(tokenStore.get()));
 
   const [courtKey, setCourtKey] = useState<string>("");
   const [dateKey, setDateKey] = useState<string>("");
   const [sessionId, setSessionId] = useState<string>("");
+  const [entitlementId, setEntitlementId] = useState("");
   const [pendingPayment, setPendingPayment] = useState<{
     id: string;
     title: string;
@@ -87,15 +97,13 @@ export function DiscoveryClubSlotsScreen({
 
   const sessions = useMemo(
     () =>
-      (sessionsQuery.data?.items ?? []).filter(
-        (item) => {
-          if (item.status !== "active") return false;
-          const startsAtMs = new Date(item.startsAt).getTime();
-          return (
-            startsAtMs >= dateWindow.startMs && startsAtMs <= dateWindow.endMs
-          );
-        },
-      ),
+      (sessionsQuery.data?.items ?? []).filter((item) => {
+        if (item.status !== "active") return false;
+        const startsAtMs = new Date(item.startsAt).getTime();
+        return (
+          startsAtMs >= dateWindow.startMs && startsAtMs <= dateWindow.endMs
+        );
+      }),
     [dateWindow.endMs, dateWindow.startMs, sessionsQuery.data?.items],
   );
 
@@ -278,7 +286,7 @@ export function DiscoveryClubSlotsScreen({
 
       return () => ctx.revert();
     },
-    { dependencies: [ready, clubId], revertOnUpdate: true },
+    { dependencies: [ready, persistedId], revertOnUpdate: true },
   );
 
   const book = async () => {
@@ -288,9 +296,14 @@ export function DiscoveryClubSlotsScreen({
       return;
     }
     try {
+      trackCheckoutStarted({
+        club_id: persistedId,
+        session_id: selectedSession.id,
+      });
       const result = await reserve.mutateAsync({
         sessionId: selectedSession.id,
         participantCount: 1,
+        ...(entitlementId ? { entitlementId } : {}),
       });
       if (result.paymentStatus === "pending") {
         setPendingPayment({
@@ -301,8 +314,9 @@ export function DiscoveryClubSlotsScreen({
       } else {
         toast.success(t("reserved"));
       }
-    } catch {
-      toast.danger(t("reserveError"));
+    } catch (error) {
+      const failure = getRequestFailurePresentation(error);
+      toast.danger(failure.title, { description: failure.description });
     }
   };
 
@@ -314,30 +328,48 @@ export function DiscoveryClubSlotsScreen({
         result,
       });
       if (result === "approve") {
+        trackPaymentSucceeded({
+          reservation_id: pendingPayment.id,
+          club_id: persistedId,
+        });
         toast.success(t("paymentApproved"));
       } else {
         toast.danger(t("paymentRejected"));
       }
       setPendingPayment(null);
-    } catch {
-      toast.danger(t("paymentError"));
+    } catch (error) {
+      const failure = getRequestFailurePresentation(error);
+      toast.danger(failure.title, { description: failure.description });
     }
   };
 
-  if (!isPersistedClub || publicClub.isError) {
+  const loadError =
+    catalogClub.error ?? publicClub.error ?? sessionsQuery.error;
+
+  if (loadError) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-background p-6 text-center text-muted">
-        {tDetail("notFound")}
+      <main className="flex min-h-dvh items-center justify-center bg-background p-6">
+        <RequestFailureState
+          error={loadError}
+          className="w-full max-w-md"
+          onRetry={() => {
+            void catalogClub.refetch();
+            if (persistedId) {
+              void publicClub.refetch();
+              void sessionsQuery.refetch();
+            }
+          }}
+        />
       </main>
     );
   }
 
-  if (publicClub.isPending || sessionsQuery.isPending) {
-    return (
-      <main className="flex min-h-dvh items-center justify-center bg-background">
-        <Spinner />
-      </main>
-    );
+  if (
+    catalogClub.isPending ||
+    publicClub.isPending ||
+    sessionsQuery.isPending
+  ) {
+    return <SlotBookingSkeleton />;
   }
 
   const clubName = publicClub.data?.name ?? "";
@@ -425,7 +457,6 @@ export function DiscoveryClubSlotsScreen({
             </ScrollShadow>
           </div>
         ) : null}
-
       </section>
 
       <section data-slots-panel className={styles.panel()}>
@@ -463,7 +494,9 @@ export function DiscoveryClubSlotsScreen({
                     onSelectionChange={(key) => setDateKey(String(key))}
                     className={styles.dateTabs()}
                   >
-                    <Tabs.ListContainer className={styles.dateTabsListContainer()}>
+                    <Tabs.ListContainer
+                      className={styles.dateTabsListContainer()}
+                    >
                       <Tabs.List
                         aria-label={t("selectDate")}
                         className={styles.dateTabsList()}
@@ -478,7 +511,9 @@ export function DiscoveryClubSlotsScreen({
                             <span className={styles.dateWeekday()}>
                               {date.weekday}
                             </span>
-                            <Tabs.Indicator className={styles.dateTabIndicator()} />
+                            <Tabs.Indicator
+                              className={styles.dateTabIndicator()}
+                            />
                           </Tabs.Tab>
                         ))}
                       </Tabs.List>
@@ -535,7 +570,9 @@ export function DiscoveryClubSlotsScreen({
                                   isSelected && styles.timeContentSelected(),
                                 )}
                               >
-                                <Radio.Control className={styles.controlHidden()}>
+                                <Radio.Control
+                                  className={styles.controlHidden()}
+                                >
                                   <Radio.Indicator />
                                 </Radio.Control>
                                 {formatTimeRange(slot.startsAt, slot.endsAt)}
@@ -550,6 +587,42 @@ export function DiscoveryClubSlotsScreen({
               </div>
             </div>
 
+            {selectedSession ? (
+              <div data-slots-section className={styles.section()}>
+                <Label className={styles.sectionLabel()}>
+                  استفاده از بسته یا عضویت
+                </Label>
+                <select
+                  className="h-11 w-full rounded-xl border border-white/10 bg-surface-secondary px-3 text-sm"
+                  value={entitlementId}
+                  onChange={(event) => setEntitlementId(event.target.value)}
+                >
+                  <option value="">پرداخت عادی</option>
+                  {(entitlements.data?.items ?? [])
+                    .filter(
+                      (item) =>
+                        item.clubId === persistedId &&
+                        item.status === "active" &&
+                        item.sessionTypes.includes(
+                          selectedSession.courtId
+                            ? "court"
+                            : selectedSession.classId
+                              ? "class"
+                              : "coached_session",
+                        ),
+                    )
+                    .map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.title} ·{" "}
+                        {item.remainingSessions !== null
+                          ? `${item.remainingSessions} جلسه باقی‌مانده`
+                          : `${Math.max(0, (item.weeklyLimit ?? 0) - item.weeklyUsed)} استفاده این هفته`}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            ) : null}
+
             <div
               data-slots-section
               className={cn(
@@ -563,7 +636,7 @@ export function DiscoveryClubSlotsScreen({
                   {selectedSession ? (
                     <>
                       <NumberFlow
-                        value={selectedSession.basePrice}
+                        value={entitlementId ? 0 : selectedSession.basePrice}
                         locales="fa-IR"
                         format={{ useGrouping: true }}
                         className="inline-block min-w-[3ch]"

@@ -58,25 +58,44 @@ export function WelcomeIntroduceCarouselSection({
           onSlideChange={(instance) => setActiveIndex(instance.activeIndex)}
           className={styles.swiper()}
         >
-          {slides.map((slide, index) => (
-            <SwiperSlide key={slide.imageSrc} className={styles.slide()}>
-              <Image
-                src={slide.imageSrc}
-                alt={slide.imageAlt}
-                fill
-                priority={index === 0}
-                sizes="100vw"
-                className={styles.image()}
-              />
-              <div aria-hidden className={styles.overlay()} />
-              <div aria-hidden className={styles.overlayBottom()} />
-              <div aria-hidden className={styles.glow()} />
-              <div className={styles.copy()}>
-                <Typography type="h2" align="center" className={styles.title()}>{slide.title}</Typography>
-                <Typography type="body" color="muted" align="center" className={styles.subtitle()}>{slide.subtitle}</Typography>
-              </div>
-            </SwiperSlide>
-          ))}
+          {slides.map((slide, index) => {
+            const shouldMountImage = Math.abs(index - activeIndex) <= 1;
+
+            return (
+              <SwiperSlide key={slide.imageSrc} className={styles.slide()}>
+                {shouldMountImage ? (
+                  <Image
+                    src={slide.imageSrc}
+                    alt={slide.imageAlt}
+                    fill
+                    priority={index === 0}
+                    sizes="100vw"
+                    className={styles.image()}
+                  />
+                ) : null}
+                <div aria-hidden className={styles.overlay()} />
+                <div aria-hidden className={styles.overlayBottom()} />
+                <div aria-hidden className={styles.glow()} />
+                <div className={styles.copy()}>
+                  <Typography
+                    type="h2"
+                    align="center"
+                    className={styles.title()}
+                  >
+                    {slide.title}
+                  </Typography>
+                  <Typography
+                    type="body"
+                    color="muted"
+                    align="center"
+                    className={styles.subtitle()}
+                  >
+                    {slide.subtitle}
+                  </Typography>
+                </div>
+              </SwiperSlide>
+            );
+          })}
         </Swiper>
       </div>
 

@@ -2,13 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Button,
-  Checkbox,
-  InputGroup,
-  Label,
-  toast,
-} from "@heroui/react";
+import { Button, Checkbox, InputGroup, Label, toast } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLogin } from "@api/account";
 import { Icon } from "@theme/icon";
@@ -79,13 +73,13 @@ export function AccountAuthLoginForm({
     }
 
     try {
-      await login.mutateAsync({
+      const session = await login.mutateAsync({
         phone: toE164IranianPhone(values.phone),
         password: values.password,
         remember: values.remember,
       });
       setIsSucceeded(true);
-      onSuccess();
+      onSuccess(session.user);
     } catch (error) {
       toast.danger(t("loginErrorTitle"), {
         description: getAccountApiErrorMessage(error, t),

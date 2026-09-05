@@ -1,7 +1,7 @@
 import type { IconName } from "@theme/icon";
 import type { ArticleCardOrientation } from "@ui/article-card";
 
-import type { DiscoveryArticleItem } from "@modules/discovery/discovery-articles.mock";
+import type { DiscoveryArticleItem } from "@api/discovery";
 
 export type DiscoveryArticlesCardVariant = {
   orientation?: ArticleCardOrientation;

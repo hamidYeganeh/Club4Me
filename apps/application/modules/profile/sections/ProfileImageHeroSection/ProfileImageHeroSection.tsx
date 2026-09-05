@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { Avatar, Typography } from "@heroui/react";
 import { FALLBACK_IMAGE_SRC, resolveImageSrc } from "@ui/fallback-image";
 import { imageUploaderAccept, Uploader } from "@ui/uploader";
@@ -7,6 +8,7 @@ import { useTranslations } from "next-intl";
 
 import { profileImageHeroSectionStyles } from "./ProfileImageHeroSection.styles";
 import type { ProfileImageHeroSectionProps } from "./ProfileImageHeroSection.types";
+import { PermissionGrantSheet } from "@/components/permissions/permission-grant-sheet";
 
 export function ProfileImageHeroSection({
   title,
@@ -16,6 +18,8 @@ export function ProfileImageHeroSection({
 }: ProfileImageHeroSectionProps) {
   const styles = profileImageHeroSectionStyles();
   const t = useTranslations("uploader");
+  const [cameraPrimerOpen, setCameraPrimerOpen] = useState(false);
+  const openFileDialogRef = useRef<(() => void) | null>(null);
 
   return (
     <section className={styles.root()}>
@@ -29,6 +33,8 @@ export function ProfileImageHeroSection({
           <Avatar.Fallback
             className={`${styles.avatarFallback()} overflow-hidden p-0`}
           >
+            {/* Avatar fallback supports runtime and local asset URLs. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={FALLBACK_IMAGE_SRC}
               alt=""
@@ -59,8 +65,22 @@ export function ProfileImageHeroSection({
               onFile(file);
             }
           }}
+          onBrowseRequest={(openFileDialog) => {
+            openFileDialogRef.current = openFileDialog;
+            setCameraPrimerOpen(true);
+          }}
         />
       </div>
+
+      <PermissionGrantSheet
+        kind="camera"
+        open={cameraPrimerOpen}
+        onOpenChange={setCameraPrimerOpen}
+        onGrant={() => {
+          setCameraPrimerOpen(false);
+          window.setTimeout(() => openFileDialogRef.current?.(), 180);
+        }}
+      />
     </section>
   );
 }

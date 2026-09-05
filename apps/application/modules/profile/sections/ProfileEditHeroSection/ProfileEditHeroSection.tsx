@@ -35,7 +35,9 @@ export function ProfileEditHeroSection({ role }: ProfileEditHeroSectionProps) {
         <Icon name="chevron-right" size={22} />
       </Button>
 
-      <Typography type="h2" align="center" className={styles.title()}>{t("editHeadline")}</Typography>
+      <Typography type="h2" align="center" className={styles.title()}>
+        {t("editHeadline")}
+      </Typography>
 
       <div className={styles.avatarWrap()}>
         <Link
@@ -46,8 +48,15 @@ export function ProfileEditHeroSection({ role }: ProfileEditHeroSectionProps) {
         >
           <Badge.Anchor>
             <Avatar className={styles.avatar()}>
-              <Avatar.Image alt={t("avatarAlt", { name })} src={PROFILE_AVATAR_SRC} />
-              <Avatar.Fallback className={`${styles.avatarFallback()} overflow-hidden p-0`}>
+              <Avatar.Image
+                alt={t("avatarAlt", { name })}
+                src={PROFILE_AVATAR_SRC}
+              />
+              <Avatar.Fallback
+                className={`${styles.avatarFallback()} overflow-hidden p-0`}
+              >
+                {/* Avatar fallback supports runtime and local asset URLs. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={PROFILE_AVATAR_SRC}
                   alt=""

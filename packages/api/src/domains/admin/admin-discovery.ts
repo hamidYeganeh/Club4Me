@@ -3,7 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { http } from "../../http/client";
 
-export type DiscoverySectionType = "banners" | "clubs" | "coaches" | "articles";
+export type DiscoverySectionType =
+  "banners" | "clubs" | "coaches" | "classes" | "articles";
 export type DiscoverySectionSort = "manual" | "newest" | "rating" | "name";
 export type DiscoverySectionAppearance = {
   backgroundColor: string;

@@ -41,13 +41,14 @@ export function ReportsScreen() {
         <h1 className="text-2xl font-semibold">گزارش‌های کاربران</h1>
         <Select
           value={status}
+          placeholder="همه گزارش‌ها"
           onChange={(next) => {
             if (typeof next === "string") setStatus(next);
           }}
         >
           <Label className="sr-only">وضعیت</Label>
           <Select.Trigger className="h-11 rounded-xl border border-border bg-surface px-4 text-sm">
-            <Select.Value placeholder="همه گزارش‌ها" />
+            <Select.Value />
             <Select.Indicator />
           </Select.Trigger>
           <Select.Popover>

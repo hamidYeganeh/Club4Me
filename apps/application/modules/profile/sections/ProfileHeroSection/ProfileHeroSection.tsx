@@ -3,16 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useAccountMe } from "@api/account";
-import { Avatar, Badge, Chip, Typography } from "@heroui/react";
+import { Avatar, Badge, Chip, Skeleton, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { ThemeToggle } from "@theme/theme-toggle";
 import { useFormatter, useTranslations } from "next-intl";
 
 import { ButtonLink } from "@/components/button-link";
-import {
-  PROFILE_AVATAR_SRC,
-  PROFILE_COVER_SRC,
-} from "../../profile.constants";
+import { PROFILE_AVATAR_SRC, PROFILE_COVER_SRC } from "../../profile.constants";
 import { getProfileDisplayName } from "../../profile.utils";
 import { profileHeroSectionStyles } from "./ProfileHeroSection.styles";
 import type { ProfileHeroSectionProps } from "./ProfileHeroSection.types";
@@ -58,8 +55,13 @@ export function ProfileHeroSection({ role }: ProfileHeroSectionProps) {
         >
           <Badge.Anchor>
             <Avatar className={styles.avatar()}>
-              <Avatar.Image alt={t("avatarAlt", { name })} src={PROFILE_AVATAR_SRC} />
+              <Avatar.Image
+                alt={t("avatarAlt", { name })}
+                src={PROFILE_AVATAR_SRC}
+              />
               <Avatar.Fallback className="overflow-hidden p-0">
+                {/* Avatar fallback supports runtime and local asset URLs. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={PROFILE_AVATAR_SRC}
                   alt=""
@@ -96,12 +98,29 @@ export function ProfileHeroSection({ role }: ProfileHeroSectionProps) {
           <Icon name="sparkle-1" className={styles.badgeIcon()} />
           <Chip.Label>{t("plusBadge")}</Chip.Label>
         </Chip>
-        {joinedAt ? (
-          <Typography type="body-sm" color="muted" className={styles.joined()}>{t("memberSince", { date: joinedAt })}</Typography>
+        {me.isPending ? (
+          <div
+            className="mt-3 flex flex-col items-center gap-2"
+            aria-busy="true"
+            aria-label="در حال بارگذاری پروفایل"
+          >
+            <Skeleton className="h-3.5 w-32 rounded-lg" />
+            <Skeleton className="h-7 w-40 rounded-xl" />
+          </div>
+        ) : joinedAt ? (
+          <Typography type="body-sm" color="muted" className={styles.joined()}>
+            {t("memberSince", { date: joinedAt })}
+          </Typography>
         ) : (
-          <Typography type="body-sm" color="muted" className={styles.joined()}>{t("memberSinceFallback")}</Typography>
+          <Typography type="body-sm" color="muted" className={styles.joined()}>
+            {t("memberSinceFallback")}
+          </Typography>
         )}
-        <Typography type="h2" className={styles.name()}>{name}</Typography>
+        {!me.isPending ? (
+          <Typography type="h2" className={styles.name()}>
+            {name}
+          </Typography>
+        ) : null}
       </div>
     </section>
   );

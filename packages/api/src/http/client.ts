@@ -1,10 +1,84 @@
-import axios, { type AxiosInstance } from "axios";
+import axios, {
+  type AxiosInstance,
+  type InternalAxiosRequestConfig,
+} from "axios";
 
 import { toApiError } from "./errors";
 import type { ApiConfig, ApiSuccess } from "./types";
 
 const runtime: { config?: ApiConfig } = {};
 let httpClient: AxiosInstance | undefined;
+let refreshPromise: Promise<void> | undefined;
+
+type RetriableRequestConfig = InternalAxiosRequestConfig & {
+  _authRetry?: boolean;
+};
+
+type RefreshResponse = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+const PUBLIC_AUTH_ENDPOINT =
+  /\/auth\/(?:otp(?:\/confirm)?|login|forgot-password(?:\/confirm)?|refresh)\/?$/;
+
+function isPublicAuthRequest(url?: string): boolean {
+  return PUBLIC_AUTH_ENDPOINT.test((url ?? "").split("?")[0] ?? "");
+}
+
+function hasBearerToken(request: RetriableRequestConfig): boolean {
+  const authorization = request.headers.get("Authorization");
+  return (
+    typeof authorization === "string" &&
+    authorization.toLowerCase().startsWith("bearer ")
+  );
+}
+
+function endsSession(error: unknown): boolean {
+  const status = toApiError(error).status;
+  return status === 400 || status === 401 || status === 403;
+}
+
+async function refreshSession(
+  config: ApiConfig,
+  refreshToken: string,
+): Promise<void> {
+  if (!refreshPromise) {
+    const endpoint = config.refreshEndpoint;
+    const pending = (async () => {
+      try {
+        const response = await axios.post<ApiSuccess<RefreshResponse>>(
+          endpoint || "/account/auth/refresh",
+          { refreshToken },
+          {
+            baseURL: config.baseURL,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+        const session = response.data.data;
+        await config.onSessionRefreshed?.(
+          session.accessToken,
+          session.refreshToken,
+        );
+      } catch (error) {
+        if (endsSession(error)) {
+          await config.onUnauthorized?.();
+        }
+        throw toApiError(error);
+      }
+    })();
+
+    refreshPromise = pending;
+    const clearPendingRefresh = () => {
+      if (refreshPromise === pending) {
+        refreshPromise = undefined;
+      }
+    };
+    void pending.then(clearPendingRefresh, clearPendingRefresh);
+  }
+
+  await refreshPromise;
+}
 
 function ensureClient(): AxiosInstance {
   if (httpClient) {
@@ -15,6 +89,7 @@ function ensureClient(): AxiosInstance {
     headers: {
       "Content-Type": "application/json",
     },
+    timeout: runtime.config?.requestTimeoutMs ?? 15_000,
   });
 
   httpClient.interceptors.request.use(async (request) => {
@@ -27,6 +102,11 @@ function ensureClient(): AxiosInstance {
     }
 
     request.baseURL = config.baseURL;
+    if (isPublicAuthRequest(request.url)) {
+      request.headers.delete("Authorization");
+      return request;
+    }
+
     const token = await config.getAccessToken?.();
 
     if (token) {
@@ -38,14 +118,48 @@ function ensureClient(): AxiosInstance {
 
   httpClient.interceptors.response.use(
     (response) => response,
-    (error: unknown) => {
+    async (error: unknown) => {
       const apiError = toApiError(error);
+      const request = axios.isAxiosError(error)
+        ? (error.config as RetriableRequestConfig | undefined)
+        : undefined;
+      const config = runtime.config;
 
-      if (apiError.status === 401) {
-        runtime.config?.onUnauthorized?.();
+      if (
+        apiError.status !== 401 ||
+        !request ||
+        !config ||
+        !hasBearerToken(request)
+      ) {
+        return Promise.reject(apiError);
       }
 
-      return Promise.reject(apiError);
+      if (request._authRetry || config.refreshEndpoint === false) {
+        await config.onUnauthorized?.();
+        return Promise.reject(apiError);
+      }
+
+      const [accessToken, refreshToken] = await Promise.all([
+        config.getAccessToken?.(),
+        config.getRefreshToken?.(),
+      ]);
+
+      if (!accessToken || !refreshToken) {
+        await config.onUnauthorized?.();
+        return Promise.reject(apiError);
+      }
+
+      request._authRetry = true;
+
+      try {
+        const requestToken = request.headers.get("Authorization");
+        if (requestToken === `Bearer ${accessToken}`) {
+          await refreshSession(config, refreshToken);
+        }
+        return await getHttpClient().request(request);
+      } catch (refreshError) {
+        return Promise.reject(toApiError(refreshError));
+      }
     },
   );
 

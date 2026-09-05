@@ -34,6 +34,8 @@ export function CityCard({
       <img
         src={resolvedImageUrl}
         alt={imageAlt ?? title}
+        loading="lazy"
+        decoding="async"
         className={styles.image()}
         onError={onImageError}
       />

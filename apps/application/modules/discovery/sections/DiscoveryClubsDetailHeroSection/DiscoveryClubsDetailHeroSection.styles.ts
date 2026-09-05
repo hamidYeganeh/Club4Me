@@ -3,6 +3,9 @@ import { tv } from "tailwind-variants";
 export const discoveryClubsDetailHeroSectionStyles = tv({
   slots: {
     root: "relative isolate h-[58dvh] min-h-[58dvh] w-full overflow-hidden bg-background",
+    pullContent: "absolute inset-0 z-10 bg-background will-change-transform",
+    pullIndicator:
+      "absolute inset-x-0 top-0 z-0 flex h-24 origin-top flex-col items-center justify-center gap-1 bg-accent text-xs font-bold text-accent-foreground",
     mainSwiper:
       "absolute inset-0 h-full w-full [&_.swiper-wrapper]:h-full [&_.swiper-slide]:h-full [&_.swiper-slide]:w-full",
     slide: "relative h-full overflow-hidden",

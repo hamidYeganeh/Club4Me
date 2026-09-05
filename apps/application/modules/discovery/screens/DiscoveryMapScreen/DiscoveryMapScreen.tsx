@@ -1,15 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button, Spinner, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
+import { ClubCard } from "@ui/club-card";
 import { useCatalogClubs } from "@api/discovery";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 import { ButtonLink } from "@/components/button-link";
 import { NeshanMap, type NeshanMapMarker } from "@/components/maps/neshan-map";
-import { DiscoveryResultCard } from "@modules/discovery/components/DiscoveryResultCard";
-import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
+import { RequestFailureState } from "@/components/request-failure-state";
+import { MapResultsSkeleton } from "@/components/loading-skeletons";
 import {
   getActiveCoordinates,
   useActiveLocation,
@@ -21,6 +22,7 @@ const TEHRAN = { latitude: 35.6892, longitude: 51.389 };
 
 export function DiscoveryMapScreen() {
   const t = useTranslations("discovery.map");
+  const router = useRouter();
   const styles = discoveryMapScreenStyles();
   const { active } = useActiveLocation();
   const coords = getActiveCoordinates(active);
@@ -54,26 +56,34 @@ export function DiscoveryMapScreen() {
     id: club.id,
     latitude: club.location!.coordinates[1],
     longitude: club.location!.coordinates[0],
+    imageUrl: club.imageUrl,
     label: club.name,
   }));
 
   return (
     <main className={styles.root()}>
-      <SecondaryHeader
-        title={t("title")}
-        showFilter={false}
-        action={
+      <header className={styles.header()}>
+        <button
+          type="button"
+          aria-label="بازگشت"
+          className={styles.headerButton()}
+          onClick={() => router.back()}
+        >
+          <Icon name="chevron-right" size={22} />
+        </button>
+        <h1 className={styles.title()}>{t("title")}</h1>
+        <div className={styles.headerAction()}>
           <ButtonLink
             isIconOnly
-            variant="ghost"
+            variant="secondary"
             aria-label={t("listAria")}
             href="/discovery/clubs"
-            className="size-10 min-w-10 text-foreground"
+            className={styles.headerButton()}
           >
             <Icon name="list-two-bullet" size={22} />
           </ButtonLink>
-        }
-      />
+        </div>
+      </header>
       <div className={styles.mapWrap()}>
         <NeshanMap
           center={center}
@@ -81,65 +91,36 @@ export function DiscoveryMapScreen() {
           selectedMarkerId={selected?.id}
           zoom={13}
           className={styles.map()}
-          locateClassName="bottom-[calc(11.5rem+env(safe-area-inset-bottom))]"
+          locateClassName={styles.locate()}
           onMarkerSelect={setSelectedId}
         />
         {clubs.isLoading ? (
-          <div className={styles.status()}>
-            <Spinner />
-          </div>
+          <MapResultsSkeleton />
         ) : null}
         {clubs.isError ? (
           <div className={styles.status()}>
-            <div>
-              <Typography type="body-sm">{t("error")}</Typography>
-              <Button
-                variant="secondary"
-                className={styles.retry()}
-                onPress={() => clubs.refetch()}
-              >
-                {t("retry")}
-              </Button>
-            </div>
+            <RequestFailureState
+              compact
+              error={clubs.error}
+              onRetry={() => void clubs.refetch()}
+            />
           </div>
         ) : null}
         {!clubs.isLoading && !clubs.isError && mappable.length === 0 ? (
           <div className={styles.empty()}>{t("empty")}</div>
         ) : null}
-        {mappable.length > 0 ? (
+        {selected ? (
           <div className={styles.rail()}>
-            <div className={styles.railHeader()}>
-              <Typography type="body-sm" weight="bold">
-                {t("clubsInArea")}
-              </Typography>
-              <ButtonLink size="sm" variant="secondary" href="/discovery/clubs">
-                {t("viewList")}
-              </ButtonLink>
-            </div>
-            <div className={styles.scroller()}>
-              {mappable.map((club) => (
-                <div
-                  key={club.id}
-                  className={`${styles.card()} ${selected?.id === club.id ? styles.cardSelected() : ""}`}
-                  onClickCapture={(event) => {
-                    if (selected?.id === club.id) {
-                      return;
-                    }
-                    event.preventDefault();
-                    event.stopPropagation();
-                    setSelectedId(club.id);
-                  }}
-                >
-                  <DiscoveryResultCard
-                    title={club.name}
-                    subtitle={club.address || club.shortDescription}
-                    meta={`${club.averageRating.toLocaleString("fa-IR")} ★`}
-                    imageUrl={club.imageUrl}
-                    href={`/discovery/clubs/${club.id}`}
-                  />
-                </div>
-              ))}
-            </div>
+            <ClubCard
+              variant="compact"
+              title={selected.name}
+              location={selected.address || selected.shortDescription}
+              imageUrl={selected.imageUrl}
+              rating={selected.averageRating}
+              reviewsCount={selected.reviewsCount}
+              href={`/discovery/clubs/${selected.slug}`}
+              className={styles.card()}
+            />
           </div>
         ) : null}
       </div>

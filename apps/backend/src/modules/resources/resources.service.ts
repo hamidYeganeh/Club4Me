@@ -244,11 +244,21 @@ export class ResourcesService {
       if (typeof resolved.code === "string") {
         candidates.push({ code: normalizeCode(resolved.code) });
       }
-      const found = await model.findOne({ $or: candidates }).lean().exec();
+      const found = await model
+        .findOne({ $or: candidates })
+        .select("+normalizedName")
+        .lean()
+        .exec();
       if (found) {
-        const backfill: Record<string, unknown> = {};
-        if (!found.normalizedName) backfill.normalizedName = normalizedName;
-        if (!found.slug && generatedSlug) backfill.slug = generatedSlug;
+        const backfill = buildSeedBackfill(
+          found,
+          resolved,
+          definition,
+          normalizedName,
+        );
+        const seedSlug =
+          typeof resolved.slug === "string" ? resolved.slug : generatedSlug;
+        if (!found.slug && seedSlug) backfill.slug = seedSlug;
         if (!found.code && typeof resolved.code === "string") {
           backfill.code = normalizeCode(resolved.code);
         }
@@ -630,9 +640,7 @@ function normalizeValue(
         `HTML is not allowed in ${key}`,
       );
     if (field?.kind === "url" || key === "imageUrl") {
-      try {
-        new URL(result);
-      } catch {
+      if (!isValidResourceUrl(result)) {
         throw new AppError(400, "INVALID_URL", `${key} must be a valid URL`);
       }
     }
@@ -707,6 +715,52 @@ function normalizeText(value: string): string {
     .replace(/ي/g, "ی")
     .replace(/ك/g, "ک")
     .toLocaleLowerCase("fa");
+}
+function buildSeedBackfill(
+  found: Record<string, unknown>,
+  resolved: Record<string, string | number | boolean | string[]>,
+  definition: ServerResourceDefinition,
+  normalizedName: string,
+): Record<string, unknown> {
+  const backfill: Record<string, unknown> = {};
+  if (!found.normalizedName) {
+    const existingPrimary = found[definition.primaryField];
+    backfill.normalizedName =
+      typeof existingPrimary === "string"
+        ? normalizeText(existingPrimary)
+        : normalizedName;
+  }
+  for (const [key, value] of Object.entries(resolved)) {
+    if (
+      key === definition.primaryField ||
+      key === "name" ||
+      key === "code" ||
+      key === "slug" ||
+      key === "sortOrder" ||
+      key === "isActive"
+    ) {
+      continue;
+    }
+    if (isMissingSeedValue(found[key])) backfill[key] = value;
+  }
+  return backfill;
+}
+function isMissingSeedValue(value: unknown): boolean {
+  return (
+    value === undefined ||
+    value === null ||
+    value === "" ||
+    (Array.isArray(value) && value.length === 0)
+  );
+}
+function isValidResourceUrl(value: string): boolean {
+  if (value.startsWith("/") && !value.startsWith("//")) return true;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 function normalizeCode(value: string): string {
   return value.trim().replace(/\s+/g, "_").toUpperCase();

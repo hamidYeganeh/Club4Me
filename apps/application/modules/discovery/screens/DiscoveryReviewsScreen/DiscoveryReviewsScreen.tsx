@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button, Card, Spinner, Typography } from "@heroui/react";
+import { Button, Card, Typography } from "@heroui/react";
 import { useClubReviews, usePublicClub } from "@api";
+import { useCatalogClub } from "@api/discovery";
 import { Icon } from "@theme/icon";
 
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
+import { ReviewListSkeleton } from "@/components/loading-skeletons";
 
 type ReviewFilter = "recent" | "positive" | "negative";
 
@@ -73,8 +75,10 @@ export function DiscoveryReviewsScreen({
   type: "club" | "coach";
   id: string;
 }) {
-  const clubReviews = useClubReviews(type === "club" ? id : "");
-  const club = usePublicClub(type === "club" ? id : "");
+  const catalogClub = useCatalogClub(type === "club" ? id : "");
+  const clubId = type === "club" ? (catalogClub.data?.id ?? "") : "";
+  const clubReviews = useClubReviews(clubId);
+  const club = usePublicClub(clubId);
   const [filter, setFilter] = useState<ReviewFilter>("recent");
   const entityName = type === "club" ? (club.data?.name ?? "باشگاه") : "مربی";
   const apiItems: ReviewItem[] = (clubReviews.data?.items ?? []).map(
@@ -104,7 +108,7 @@ export function DiscoveryReviewsScreen({
 
   return (
     <main className="min-h-dvh w-full max-w-full overflow-x-hidden bg-transparent pb-[calc(2rem+env(safe-area-inset-bottom))]">
-      <SecondaryHeader title="نظر کاربران" />
+      <SecondaryHeader title={`نظر کاربران ${entityName}`} />
 
       <section className="space-y-5 px-4 pt-5">
         <Card className="app-card app-reveal p-5 shadow-none">
@@ -169,10 +173,8 @@ export function DiscoveryReviewsScreen({
           ))}
         </div>
 
-        {clubReviews.isPending && /^[a-f\d]{24}$/i.test(id) ? (
-          <div className="flex min-h-40 items-center justify-center">
-            <Spinner />
-          </div>
+        {clubReviews.isPending && Boolean(clubId) ? (
+          <ReviewListSkeleton count={3} />
         ) : (
           <div className="space-y-3">
             {visibleReviews.map((review) => (

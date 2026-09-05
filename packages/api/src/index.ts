@@ -2,6 +2,7 @@ export * from "./domains/account";
 export * from "./domains/app-releases";
 export * from "./domains/articles";
 export * from "./domains/clubs";
+export * from "./domains/commerce";
 export * from "./domains/coaching";
 export * from "./domains/discovery";
 export * from "./domains/favorites";
@@ -10,6 +11,7 @@ export * from "./domains/reports";
 export * from "./domains/resources";
 export * from "./domains/locations";
 export * from "./domains/reservations";
+export * from "./domains/support";
 export {
   ApiError,
   configureApi,

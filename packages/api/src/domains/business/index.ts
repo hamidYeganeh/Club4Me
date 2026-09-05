@@ -3,6 +3,8 @@
 import { createPortalAuth } from "../portal/create-portal-auth";
 
 export * from "./business-clubs";
+export * from "./business-operations";
+export * from "./business-classes";
 export {
   useBusinessSessions,
   useCancelBusinessSession,

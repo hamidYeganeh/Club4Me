@@ -86,6 +86,8 @@ export function SportCard({
           <img
             src={resolvedBackground}
             alt={backgroundImageAlt ?? ""}
+            loading="lazy"
+            decoding="async"
             className={styles.image()}
             onError={onError}
           />

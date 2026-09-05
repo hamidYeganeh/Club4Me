@@ -11,7 +11,7 @@ import { useTranslations } from "next-intl";
 
 import { AuthScreen } from "@/components/auth-screen";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-inset";
-import { ROLES_PATH } from "@/lib/post-auth-path";
+import { getPostAuthPath } from "@/lib/post-auth-path";
 
 const ACCOUNT_AUTH_LOGIN_FORM_ID = "account-auth-login-form";
 
@@ -66,8 +66,8 @@ export function AccountAuthLoginScreen() {
         passwordRequired={t("passwordRequired")}
         passwordMin={t("passwordMin")}
         onSubmitStateChange={handleSubmitStateChange}
-        onSuccess={() => {
-          router.replace(ROLES_PATH);
+        onSuccess={(user) => {
+          router.replace(getPostAuthPath(user));
         }}
       />
       <AccountAuthMethodActionsSection

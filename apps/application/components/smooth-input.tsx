@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/refs, react-hooks/set-state-in-effect -- This low-level caret adapter deliberately mirrors DOM selection and measurement state through refs. */
+
 import { Input, InputGroup } from "@heroui/react";
 import {
   motion,
@@ -179,8 +181,7 @@ function useSmoothCaret({
     const caretPosition = absoluteWidth - target.scrollLeft;
     const minX = paddingLeft - 1;
     const maxX = target.clientWidth - paddingRight;
-    const isCaretVisible =
-      caretPosition >= minX && caretPosition <= maxX + 1;
+    const isCaretVisible = caretPosition >= minX && caretPosition <= maxX + 1;
 
     caretX.set(Math.min(caretPosition, maxX));
 
@@ -288,7 +289,8 @@ function useSmoothCaret({
     if (!input) return;
 
     const syncHeight = () => {
-      const fontSize = parseFloat(window.getComputedStyle(input).fontSize) || 18;
+      const fontSize =
+        parseFloat(window.getComputedStyle(input).fontSize) || 18;
       setCaretHeightPx(fontSize);
     };
 

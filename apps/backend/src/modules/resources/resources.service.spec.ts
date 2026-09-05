@@ -1,6 +1,7 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose, { Connection } from "mongoose";
 
+import { resourceSeedData } from "./resources.seed-data";
 import { ResourcesService } from "./resources.service";
 
 describe("ResourcesService", () => {
@@ -154,17 +155,22 @@ describe("ResourcesService", () => {
 
   it("seeds equipment with its category and sport dependencies idempotently", async () => {
     const first = await service.seed("facilities", "equipment");
-    expect(first.created).toBeGreaterThanOrEqual(6);
+    const equipmentCount = resourceSeedData.equipment?.length ?? 0;
+    expect(first.created).toBe(equipmentCount);
     expect(first.dependenciesCreated).toBeGreaterThan(0);
-    expect((await service.list("facilities", "equipment", {})).total).toBe(6);
+    expect((await service.list("facilities", "equipment", {})).total).toBe(
+      equipmentCount,
+    );
 
     const second = await service.seed("facilities", "equipment");
     expect(second.created).toBe(0);
-    expect(second.existing).toBe(6);
-    expect((await service.list("facilities", "equipment", {})).total).toBe(6);
+    expect(second.existing).toBe(equipmentCount);
+    expect((await service.list("facilities", "equipment", {})).total).toBe(
+      equipmentCount,
+    );
   });
 
-  it("seeds Iran, Tehran and its districts and neighborhoods through dependencies", async () => {
+  it("seeds the expanded location hierarchy and local city artwork", async () => {
     await service.seed("location", "neighborhood");
 
     expect(
@@ -173,11 +179,78 @@ describe("ResourcesService", () => {
     expect(
       (await service.list("location", "province", { search: "تهران" })).total,
     ).toBe(1);
+    expect((await service.list("location", "city", {})).total).toBe(
+      resourceSeedData.cities?.length ?? 0,
+    );
+    expect((await service.list("location", "district", {})).total).toBe(
+      resourceSeedData.districts?.length ?? 0,
+    );
+    expect((await service.list("location", "neighborhood", {})).total).toBe(
+      resourceSeedData.neighborhoods?.length ?? 0,
+    );
     expect(
-      (await service.list("location", "city", { search: "تهران" })).total,
-    ).toBe(1);
-    expect((await service.list("location", "district", {})).total).toBe(5);
-    expect((await service.list("location", "neighborhood", {})).total).toBe(7);
+      (await service.list("location", "city", { search: "تهران" })).items[0],
+    ).toMatchObject({
+      slug: "tehran",
+      imageUrl: "/discovery/locations/city-modern.jpg",
+    });
+  });
+
+  it("backfills missing seed details without replacing managed content", async () => {
+    await service.seed("location", "province");
+    const province = (
+      await service.list("location", "province", { search: "تهران" })
+    ).items[0];
+    expect(province).toBeDefined();
+    if (!province) throw new Error("Tehran province seed is missing");
+    await service.create("location", "city", {
+      name: "تهران اختصاصی",
+      code: "TEHRAN_CITY",
+      provinceId: String(province.id),
+      description: "توضیح سفارشی مدیر",
+    });
+
+    await service.seed("location", "city");
+
+    const city = (
+      await service.list("location", "city", { search: "تهران اختصاصی" })
+    ).items[0];
+    expect(city).toMatchObject({
+      name: "تهران اختصاصی",
+      description: "توضیح سفارشی مدیر",
+      imageUrl: "/discovery/locations/city-modern.jpg",
+    });
+  });
+
+  it("accepts safe project-local image URLs and rejects unsafe schemes", async () => {
+    await expect(
+      service.create("location", "country", {
+        name: "کشور آزمایشی",
+        code: "TEST_COUNTRY",
+        imageUrl: "/discovery/locations/city-modern.jpg",
+      }),
+    ).resolves.toMatchObject({
+      imageUrl: "/discovery/locations/city-modern.jpg",
+    });
+    await expect(
+      service.create("location", "country", {
+        name: "کشور ناامن",
+        code: "UNSAFE_COUNTRY",
+        imageUrl: "javascript:alert(1)",
+      }),
+    ).rejects.toMatchObject({ code: "INVALID_URL" });
+  });
+
+  it("seeds a practical set of cancellation reasons idempotently", async () => {
+    const first = await service.seed("commerce", "cancellation-reason");
+    const second = await service.seed("commerce", "cancellation-reason");
+    const cancellationReasonCount =
+      resourceSeedData.cancellation_reasons?.length ?? 0;
+
+    expect(first.created).toBe(cancellationReasonCount);
+    expect(first.created).toBeGreaterThanOrEqual(12);
+    expect(second.created).toBe(0);
+    expect(second.existing).toBe(cancellationReasonCount);
   });
 
   it("creates sample published articles when article categories are seeded", async () => {

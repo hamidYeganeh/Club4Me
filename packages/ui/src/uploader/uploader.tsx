@@ -79,6 +79,7 @@ export function Uploader({
   onRemove,
   onRetry,
   onUpload,
+  onBrowseRequest,
 }: UploaderProps) {
   const reduceMotion = useReducedMotion() ?? false;
   const labels = useMemo(
@@ -163,7 +164,7 @@ export function Uploader({
     [internalFiles, isControlled, onRetry, onUpload, patchFile],
   );
 
-  const { getRootProps, getInputProps, isDragActive, isFocused } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, isFocused, open } = useDropzone({
     onDropAccepted: (accepted) => {
       void handleAccepted(accepted);
     },
@@ -172,13 +173,23 @@ export function Uploader({
     maxSize,
     multiple,
     disabled,
-    noKeyboard: false,
+    noClick: Boolean(onBrowseRequest),
+    noKeyboard: Boolean(onBrowseRequest),
   });
 
   return (
     <div dir="rtl" className={cn("flex w-full flex-col gap-3", className)}>
       <motion.div
         {...getRootProps({
+          onClick: onBrowseRequest ? () => onBrowseRequest(open) : undefined,
+          onKeyDown: onBrowseRequest
+            ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onBrowseRequest(open);
+                }
+              }
+            : undefined,
           className: cn(
             "group relative isolate flex min-h-52 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[2rem] bg-default p-2 text-center outline-none transition-colors duration-200 hover:bg-default/80",
             isDragActive && "bg-accent/10",

@@ -191,6 +191,7 @@ export class CreateReservationDto {
     .object({
       sessionId: objectId,
       participantCount: z.number().int().min(1).max(100),
+      entitlementId: objectId.optional(),
       options: z
         .array(
           z.object({
@@ -204,5 +205,6 @@ export class CreateReservationDto {
     .strict();
   sessionId: string;
   participantCount: number;
+  entitlementId?: string;
   options?: Array<{ optionId: string; quantity: number }>;
 }

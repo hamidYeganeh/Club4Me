@@ -1,3 +1,5 @@
+import type { AccountUser } from "@api/account";
+
 import type { AccountAuthForgotPasswordConfirmFormValues } from "./AccountAuthForgotPasswordConfirmForm.schema";
 
 export type AccountAuthForgotPasswordConfirmFormProps = {
@@ -21,7 +23,7 @@ export type AccountAuthForgotPasswordConfirmFormProps = {
   passwordMin: string;
   passwordMismatch: string;
   sent: string;
-  onSuccess: () => void;
+  onSuccess: (user: AccountUser) => void;
 };
 
 export type { AccountAuthForgotPasswordConfirmFormValues };

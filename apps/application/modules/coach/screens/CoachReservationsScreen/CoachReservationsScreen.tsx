@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useMemo, useState } from "react";
-import { Button, Card, Chip, Spinner, toast, Typography } from "@heroui/react";
+import { Button, Card, Chip, toast, Typography } from "@heroui/react";
 import {
   useCancelCoachSession,
   useCoachClassEnrollments,
@@ -21,6 +21,10 @@ import {
 } from "@api";
 
 import { AthleteScreenHeaderSection } from "@modules/athlete/sections/AthleteScreenHeaderSection";
+import {
+  CompactCardListSkeleton,
+  DashboardPageSkeleton,
+} from "@/components/loading-skeletons";
 
 const inputClass =
   "h-11 w-full rounded-xl border border-white/10 bg-surface-secondary px-3 text-sm outline-none focus:border-accent";
@@ -168,11 +172,7 @@ export function CoachReservationsScreen() {
     bookings.isPending ||
     coachClasses.isPending
   ) {
-    return (
-      <main className="flex min-h-dvh items-center justify-center">
-        <Spinner />
-      </main>
-    );
+    return <DashboardPageSkeleton />;
   }
 
   return (
@@ -411,8 +411,8 @@ export function CoachReservationsScreen() {
           </select>
         </label>
         {classEnrollments.isPending ? (
-          <div className="flex min-h-24 items-center justify-center">
-            <Spinner size="sm" />
+          <div className="mt-4">
+            <CompactCardListSkeleton count={3} />
           </div>
         ) : classEnrollments.isError ? (
           <Button
@@ -552,8 +552,8 @@ export function CoachReservationsScreen() {
           </select>
         </label>
         {attendance.isPending ? (
-          <div className="flex min-h-24 items-center justify-center">
-            <Spinner size="sm" />
+          <div className="mt-4">
+            <CompactCardListSkeleton count={3} />
           </div>
         ) : attendance.isError ? (
           <Button

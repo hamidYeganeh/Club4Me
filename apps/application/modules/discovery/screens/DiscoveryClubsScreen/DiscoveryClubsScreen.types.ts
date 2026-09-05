@@ -12,4 +12,5 @@ export type DiscoveryClubsScreenProps = {
   description?: string;
   layout?: "rails" | "list";
   browse?: DiscoveryClubsBrowse;
+  initialFilters?: PublicCatalogParams;
 };

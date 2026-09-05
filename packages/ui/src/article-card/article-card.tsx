@@ -63,6 +63,8 @@ export function ArticleCard({
         <img
           src={resolvedCoverUrl}
           alt={coverImageAlt ?? title}
+          loading="lazy"
+          decoding="async"
           className={styles.image()}
           onError={onCoverError}
         />

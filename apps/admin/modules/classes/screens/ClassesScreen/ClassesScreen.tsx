@@ -14,6 +14,8 @@ import {
   toast,
 } from "@heroui/react";
 import { useAdminClasses, useDisableAdminClass } from "@api/admin";
+import type { CoachClass } from "@api/coaching";
+import { EntityDetailsModal } from "@ui/entity-details-modal";
 
 const statuses = {
   draft: "پیش‌نویس",
@@ -31,6 +33,7 @@ export function ClassesScreen() {
   const deferredSearch = useDeferredValue(search);
   const classes = useAdminClasses(deferredSearch, status);
   const disable = useDisableAdminClass();
+  const [selected, setSelected] = useState<CoachClass | null>(null);
 
   const disableClass = async (classId: string) => {
     if (!window.confirm("نمایش عمومی این کلاس غیرفعال شود؟")) return;
@@ -56,13 +59,14 @@ export function ClassesScreen() {
         />
         <Select
           value={status}
+          placeholder="همه وضعیت‌ها"
           onChange={(next) => {
             if (typeof next === "string") setStatus(next);
           }}
         >
           <Label className="sr-only">وضعیت</Label>
           <Select.Trigger className="h-11 rounded-xl border border-border bg-surface px-4 text-sm">
-            <Select.Value placeholder="همه وضعیت‌ها" />
+            <Select.Value />
             <Select.Indicator />
           </Select.Trigger>
           <Select.Popover>
@@ -148,18 +152,25 @@ export function ClassesScreen() {
                         }).format(new Date(item.updatedAt))}
                       </Table.Cell>
                       <Table.Cell>
-                        {item.status === "archived" ? (
-                          <span className="text-muted">—</span>
-                        ) : (
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             size="sm"
-                            variant="secondary"
-                            isDisabled={disable.isPending}
-                            onPress={() => void disableClass(item.id)}
+                            variant="ghost"
+                            onPress={() => setSelected(item)}
                           >
-                            غیرفعال‌کردن
+                            جزئیات
                           </Button>
-                        )}
+                          {item.status !== "archived" ? (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              isDisabled={disable.isPending}
+                              onPress={() => void disableClass(item.id)}
+                            >
+                              غیرفعال‌کردن
+                            </Button>
+                          ) : null}
+                        </div>
                       </Table.Cell>
                     </Table.Row>
                   ))}
@@ -169,6 +180,76 @@ export function ClassesScreen() {
           </Table>
         )}
       </Card>
+      <EntityDetailsModal
+        isOpen={Boolean(selected)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelected(null);
+        }}
+        title={selected?.title ?? "جزئیات کلاس"}
+        description="اطلاعات کامل کلاس برای بررسی وضعیت و ظرفیت"
+        sections={
+          selected
+            ? [
+                {
+                  title: "شناسه و وضعیت",
+                  items: [
+                    { label: "شناسه کلاس", value: selected.id, dir: "ltr" },
+                    { label: "نامک", value: selected.slug, dir: "ltr" },
+                    { label: "وضعیت", value: statuses[selected.status] },
+                    {
+                      label: "تأیید باشگاه",
+                      value: selected.clubApprovalStatus,
+                    },
+                  ],
+                },
+                {
+                  title: "محتوا و ظرفیت",
+                  items: [
+                    {
+                      label: "توضیحات",
+                      value: selected.description,
+                      wide: true,
+                    },
+                    {
+                      label: "ظرفیت",
+                      value: selected.capacity.toLocaleString("fa-IR"),
+                    },
+                    {
+                      label: "ثبت‌نام‌شده",
+                      value: selected.enrollmentCount.toLocaleString("fa-IR"),
+                    },
+                  ],
+                },
+                {
+                  title: "زمان‌بندی",
+                  items: [
+                    {
+                      label: "شروع دوره",
+                      value: new Intl.DateTimeFormat("fa-IR", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(selected.courseStartAt)),
+                    },
+                    {
+                      label: "پایان دوره",
+                      value: new Intl.DateTimeFormat("fa-IR", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(selected.courseEndAt)),
+                    },
+                    {
+                      label: "آخرین تغییر",
+                      value: new Intl.DateTimeFormat("fa-IR", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(selected.updatedAt)),
+                    },
+                  ],
+                },
+              ]
+            : []
+        }
+      />
     </main>
   );
 }

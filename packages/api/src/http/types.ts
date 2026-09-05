@@ -26,6 +26,13 @@ export type ItemList<T> = {
 
 export type ApiConfig = {
   baseURL: string;
+  requestTimeoutMs?: number;
   getAccessToken?: () => string | null | Promise<string | null>;
-  onUnauthorized?: () => void;
+  getRefreshToken?: () => string | null | Promise<string | null>;
+  refreshEndpoint?: string | false;
+  onSessionRefreshed?: (
+    accessToken: string,
+    refreshToken: string,
+  ) => void | Promise<void>;
+  onUnauthorized?: () => void | Promise<void>;
 };

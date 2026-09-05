@@ -1,97 +1,171 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useUserLocations } from "@api/locations";
-import { Icon } from "@theme/icon";
-import { getCurrentPosition } from "@/lib/native-geolocation";
-
 import { Typography } from "@heroui/react";
+import { Icon } from "@theme/icon";
+
+import { BottomSheet } from "@/components/motion/bottom-sheet";
+import { RequestFailureState } from "@/components/request-failure-state";
+import { LocationCardsSkeleton } from "@/components/loading-skeletons";
 import { useActiveLocation } from "../active-location";
 
-export function ActiveLocationSelector() {
+export function ActiveLocationSelector({
+  variant = "compact",
+}: {
+  variant?: "compact" | "search";
+}) {
   const locations = useUserLocations();
-  const { active, selectGps, selectSaved } = useActiveLocation();
+  const { active, selectSaved } = useActiveLocation();
   const [open, setOpen] = useState(false);
-  const [locating, setLocating] = useState(false);
-  const [gpsError, setGpsError] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const items = locations.data?.items ?? [];
   const title =
     active?.kind === "saved"
       ? active.location.title
       : (active?.title ?? "انتخاب موقعیت");
+  const effectiveSelectedId =
+    selectedId ??
+    (active?.kind === "saved" ? active.location.id : undefined) ??
+    items.find((location) => location.isDefault)?.id ??
+    items[0]?.id;
+  const selected = items.find(
+    (location) => location.id === effectiveSelectedId,
+  );
 
-  async function locateCurrentPosition() {
-    setLocating(true);
-    setGpsError(false);
-    try {
-      // This explicit click is the only point where GPS permission is requested.
-      const position = await getCurrentPosition();
-      selectGps(position.coords.latitude, position.coords.longitude);
-      setOpen(false);
-    } catch {
-      setGpsError(true);
-    } finally {
-      setLocating(false);
-    }
+  function close() {
+    setOpen(false);
+    setSelectedId(null);
+  }
+
+  function updateLocation() {
+    if (!selected) return;
+    selectSaved(selected);
+    close();
   }
 
   return (
-    <div className="relative">
+    <div className={variant === "search" ? "w-full" : ""}>
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
         aria-expanded={open}
-        className="flex max-w-52 items-center gap-2 rounded-full bg-surface-secondary px-4 py-2.5 text-sm font-semibold text-foreground"
+        className={
+          variant === "search"
+            ? "flex h-16 w-full items-center gap-3 rounded-[1.15rem] border border-border bg-surface px-5 text-base font-semibold text-foreground shadow-sm"
+            : "flex max-w-52 items-center gap-2 rounded-full bg-surface-secondary px-4 py-2.5 text-sm font-semibold text-foreground"
+        }
       >
-        <Icon name="map-pin-1" size={16} />
+        <Icon
+          name="map-pin-1"
+          size={variant === "search" ? 22 : 16}
+          className={variant === "search" ? "text-accent" : undefined}
+        />
         <span className="truncate">{title}</span>
-        <Icon name="chevron-down" size={14} />
+        <Icon name="chevron-down" size={14} className="ms-auto" />
       </button>
 
-      {open ? (
-        <div className="absolute start-0 top-full z-30 mt-2 w-64 rounded-2xl border border-border bg-surface p-2 shadow-xl">
-          <button
-            type="button"
-            disabled={locating}
-            onClick={() => void locateCurrentPosition()}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-start text-sm hover:bg-surface-secondary disabled:opacity-50"
-          >
-            <Icon name="compass" size={18} />
-            {locating ? "در حال دریافت موقعیت..." : "موقعیت فعلی من"}
-          </button>
-          {gpsError ? (
-            <Typography type="body-xs" className="px-3 pb-2 text-danger">
-              دسترسی موقعیت ممکن نشد. مجوز GPS را بررسی کنید.
-            </Typography>
-          ) : null}
-          {(locations.data?.items ?? []).map((location) => (
-            <button
-              key={location.id}
-              type="button"
-              onClick={() => {
-                selectSaved(location);
-                setOpen(false);
-              }}
-              className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-start text-sm hover:bg-surface-secondary"
-            >
-              <span className="truncate">{location.title}</span>
-              {location.isDefault ? (
-                <Typography type="body-xs" color="muted">
-                  پیش‌فرض
-                </Typography>
-              ) : null}
-            </button>
-          ))}
-          {locations.isError ? (
-            <button
-              type="button"
-              onClick={() => void locations.refetch()}
-              className="w-full rounded-xl px-3 py-2 text-sm text-danger"
-            >
-              تلاش دوباره
-            </button>
-          ) : null}
+      <BottomSheet
+        open={open}
+        onOpenChange={(nextOpen) => !nextOpen && close()}
+        snapPoints={["auto"]}
+        title="لوکیشن‌های من"
+        description="موقعیت خود را برای نمایش باشگاه‌های نزدیک انتخاب کنید."
+        className="max-h-[88dvh]"
+      >
+        <button
+          type="button"
+          onClick={close}
+          aria-label="بستن"
+          className="absolute end-5 top-6 flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-secondary hover:text-foreground active:scale-95"
+        >
+          <Icon name="close-x" size={24} />
+        </button>
+
+        <div
+          role="radiogroup"
+          aria-label="انتخاب لوکیشن"
+          className="flex flex-col gap-3 pt-4"
+        >
+          {locations.isLoading ? (
+            <LocationCardsSkeleton count={2} />
+          ) : locations.isError ? (
+            <RequestFailureState
+              compact
+              error={locations.error}
+              onRetry={() => void locations.refetch()}
+            />
+          ) : items.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-[1.5rem] bg-surface-secondary/70 px-5 py-8 text-center">
+              <span className="flex size-14 items-center justify-center rounded-full bg-accent/12 text-accent">
+                <Icon name="map-pin-1" size={26} />
+              </span>
+              <Typography type="body" weight="bold">
+                هنوز لوکیشنی ذخیره نکرده‌اید
+              </Typography>
+            </div>
+          ) : (
+            items.map((location) => {
+              const isSelected = location.id === effectiveSelectedId;
+              return (
+                <button
+                  key={location.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => setSelectedId(location.id)}
+                  className={`flex min-h-28 items-center gap-4 rounded-[1.5rem] border p-4 text-start transition-[border-color,background-color,transform,box-shadow] active:scale-[0.99] ${
+                    isSelected
+                      ? "border-accent bg-accent/7 shadow-[0_8px_24px_color-mix(in_oklch,var(--accent)_10%,transparent)]"
+                      : "border-border bg-surface-secondary/55"
+                  }`}
+                >
+                  <span
+                    className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${isSelected ? "bg-accent/12 text-accent" : "bg-surface text-muted"}`}
+                  >
+                    <Icon name="map-pin-1" size={24} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-bold">
+                      {location.title}
+                    </span>
+                    <span className="mt-1 line-clamp-2 text-sm leading-6 text-muted">
+                      {location.address}
+                    </span>
+                  </span>
+                  <span
+                    aria-hidden
+                    className={`flex size-7 shrink-0 items-center justify-center rounded-lg border ${isSelected ? "border-accent bg-accent text-accent-foreground" : "border-border bg-surface"}`}
+                  >
+                    {isSelected ? <Icon name="check" size={16} /> : null}
+                  </span>
+                </button>
+              );
+            })
+          )}
         </div>
-      ) : null}
+
+        {items.length < 5 ? (
+          <Link
+            href="/athlete/profile/locations/new"
+            onClick={close}
+            className="mt-5 flex min-h-12 items-center justify-center gap-2 rounded-xl font-bold text-accent transition-colors hover:bg-accent/8 active:bg-accent/12"
+          >
+            افزودن لوکیشن جدید <Icon name="plus" size={20} />
+          </Link>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={updateLocation}
+          disabled={!selected || locations.isLoading}
+          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent font-bold text-accent-foreground shadow-[0_12px_30px_color-mix(in_oklch,var(--accent)_22%,transparent)] transition-transform active:scale-[0.98] disabled:opacity-50"
+        >
+          به‌روزرسانی <Icon name="check" size={20} />
+        </button>
+      </BottomSheet>
     </div>
   );
 }

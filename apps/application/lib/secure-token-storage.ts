@@ -4,6 +4,7 @@ type NativeSecureStoragePlugin = {
   getItem(options: { key: string }): Promise<{ value: string | null }>;
   setItem(options: { key: string; value: string }): Promise<void>;
   removeItem(options: { key: string }): Promise<void>;
+  hasSession(): Promise<{ value: boolean }>;
 };
 
 const nativeStorage =
@@ -20,5 +21,9 @@ export const secureTokenStorage = {
   },
   removeItem(key: string) {
     return nativeStorage.removeItem({ key });
+  },
+  async hasSession() {
+    if (!this.isAvailable()) return false;
+    return (await nativeStorage.hasSession()).value;
   },
 };

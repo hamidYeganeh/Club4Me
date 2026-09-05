@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { configureTelemetryContext, identifyUser, useAccountMe } from "@api";
+import { useAccountMe } from "@api/account";
+import { configureTelemetryContext, identifyUser } from "@api/tracking";
 
 export function ProductTelemetry() {
   const account = useAccountMe();

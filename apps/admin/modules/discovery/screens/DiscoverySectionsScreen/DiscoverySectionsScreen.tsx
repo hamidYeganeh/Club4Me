@@ -53,7 +53,8 @@ const empty: SaveDiscoverySection = {
   },
   banners: [],
 };
-const input = "h-11 rounded-xl border border-border bg-surface-secondary px-3 text-sm";
+const input =
+  "h-11 rounded-xl border border-border bg-surface-secondary px-3 text-sm";
 
 export function DiscoverySectionsScreen() {
   const list = useAdminDiscoverySections();
@@ -245,9 +246,7 @@ function SectionEditor({
           <Field label="نوع">
             <Select
               value={value.type}
-              onChange={(e) =>
-                set("type", e as DiscoverySectionType)
-              }
+              onChange={(e) => set("type", e as DiscoverySectionType)}
             >
               <Label className="text-sm">نوع</Label>
               <Select.Trigger className={input}>
@@ -268,6 +267,10 @@ function SectionEditor({
                     مربی‌ها
                     <ListBox.ItemIndicator />
                   </ListBox.Item>
+                  <ListBox.Item id="classes" textValue="کلاس‌ها">
+                    کلاس‌ها
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
                   <ListBox.Item id="articles" textValue="مقالات">
                     مقالات
                     <ListBox.ItemIndicator />
@@ -279,7 +282,9 @@ function SectionEditor({
           <Field label="چیدمان">
             <Select
               value={value.layout}
-              onChange={(selected) => set("layout", selected)}
+              onChange={(selected) =>
+                selected !== null && set("layout", String(selected))
+              }
             >
               <Label className="text-sm">چیدمان</Label>
               <Select.Trigger className={input}>
@@ -345,7 +350,7 @@ function SectionEditor({
           <Field label="نمایش دکمه مشاهده همه">
             <Checkbox
               isSelected={value.appearance.showViewAll}
-              onValueChange={(showViewAll) =>
+              onChange={(showViewAll) =>
                 set("appearance", { ...value.appearance, showViewAll })
               }
             >

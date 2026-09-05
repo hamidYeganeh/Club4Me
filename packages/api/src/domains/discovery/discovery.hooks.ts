@@ -9,6 +9,7 @@ import type {
   CreateSlotPayload,
   ListClubsParams,
   PublicCatalogParams,
+  PublicCatalogSearchParams,
   ReserveSlotPayload,
 } from "./discovery.dto";
 import { discoveryQueries } from "./discovery.queries";
@@ -17,21 +18,35 @@ import { groupClub, trackSearchPerformed } from "../../tracking/tracking";
 export function useClubs(params?: ListClubsParams) {
   return useQuery({
     queryKey: discoveryQueries.clubs.list(params),
-    queryFn: () => discoveryClient.listClubs(params),
+    queryFn: ({ signal }) => discoveryClient.listClubs(params, signal),
   });
 }
 
 export function useDiscoveryFeed() {
   return useQuery({
     queryKey: discoveryQueries.feed(),
-    queryFn: () => discoveryClient.getFeed(),
+    queryFn: ({ signal }) => discoveryClient.getFeed(signal),
+  });
+}
+
+export function useCoachSections() {
+  return useQuery({
+    queryKey: discoveryQueries.coachSections(),
+    queryFn: ({ signal }) => discoveryClient.getCoachSections(signal),
+  });
+}
+
+export function useCoaches(params?: PublicCatalogParams) {
+  return useQuery({
+    queryKey: discoveryQueries.coaches(params),
+    queryFn: ({ signal }) => discoveryClient.listCoaches(params, signal),
   });
 }
 
 export function useCatalogClubs(params?: PublicCatalogParams, enabled = true) {
   return useQuery({
     queryKey: discoveryQueries.catalog.clubs(params),
-    queryFn: () => discoveryClient.listCatalogClubs(params),
+    queryFn: ({ signal }) => discoveryClient.listCatalogClubs(params, signal),
     enabled,
   });
 }
@@ -39,7 +54,7 @@ export function useCatalogClubs(params?: PublicCatalogParams, enabled = true) {
 export function useCatalogClub(identifier: string) {
   return useQuery({
     queryKey: discoveryQueries.catalog.club(identifier),
-    queryFn: () => discoveryClient.getCatalogClub(identifier),
+    queryFn: ({ signal }) => discoveryClient.getCatalogClub(identifier, signal),
     enabled: Boolean(identifier),
   });
 }
@@ -47,14 +62,15 @@ export function useCatalogClub(identifier: string) {
 export function useCatalogCoaches(params?: PublicCatalogParams) {
   return useQuery({
     queryKey: discoveryQueries.catalog.coaches(params),
-    queryFn: () => discoveryClient.listCatalogCoaches(params),
+    queryFn: ({ signal }) => discoveryClient.listCatalogCoaches(params, signal),
   });
 }
 
 export function useCatalogCoach(identifier: string) {
   return useQuery({
     queryKey: discoveryQueries.catalog.coach(identifier),
-    queryFn: () => discoveryClient.getCatalogCoach(identifier),
+    queryFn: ({ signal }) =>
+      discoveryClient.getCatalogCoach(identifier, signal),
     enabled: Boolean(identifier),
   });
 }
@@ -62,25 +78,43 @@ export function useCatalogCoach(identifier: string) {
 export function useCatalogClasses(params?: PublicCatalogParams) {
   return useQuery({
     queryKey: discoveryQueries.catalog.classes(params),
-    queryFn: () => discoveryClient.listCatalogClasses(params),
+    queryFn: ({ signal }) => discoveryClient.listCatalogClasses(params, signal),
   });
 }
 
 export function useCatalogClass(identifier: string) {
   return useQuery({
     queryKey: discoveryQueries.catalog.class(identifier),
-    queryFn: () => discoveryClient.getCatalogClass(identifier),
+    queryFn: ({ signal }) =>
+      discoveryClient.getCatalogClass(identifier, signal),
     enabled: Boolean(identifier),
   });
 }
 
+export function useCatalogArticles(params?: PublicCatalogParams) {
+  return useQuery({
+    queryKey: discoveryQueries.catalog.articles(params),
+    queryFn: ({ signal }) =>
+      discoveryClient.listCatalogArticles(params, signal),
+  });
+}
+
+export function useCatalogArticle(slug: string) {
+  return useQuery({
+    queryKey: discoveryQueries.catalog.article(slug),
+    queryFn: ({ signal }) => discoveryClient.getCatalogArticle(slug, signal),
+    enabled: Boolean(slug),
+  });
+}
+
 export function useCatalogSearch(
-  params?: PublicCatalogParams & { kind?: string },
+  params?: PublicCatalogSearchParams,
+  enabled = true,
 ) {
   return useQuery({
     queryKey: discoveryQueries.catalog.search(params),
-    queryFn: async () => {
-      const result = await discoveryClient.searchCatalog(params);
+    queryFn: async ({ signal }) => {
+      const result = await discoveryClient.searchCatalog(params, signal);
       if (params?.q?.trim()) {
         const kind = params.kind;
         trackSearchPerformed({
@@ -99,13 +133,15 @@ export function useCatalogSearch(
       }
       return result;
     },
+    enabled,
+    gcTime: 30_000,
   });
 }
 
 export function useCatalogClubTypes(enabled = true) {
   return useQuery({
     queryKey: discoveryQueries.catalog.clubTypes(),
-    queryFn: () => discoveryClient.listCatalogClubTypes(),
+    queryFn: ({ signal }) => discoveryClient.listCatalogClubTypes(signal),
     enabled,
   });
 }
@@ -118,8 +154,8 @@ export function usePublicCatalogResource(
 ) {
   return useQuery({
     queryKey: discoveryQueries.catalog.resource(category, resource, params),
-    queryFn: () =>
-      discoveryClient.listPublicResources(category, resource, params),
+    queryFn: ({ signal }) =>
+      discoveryClient.listPublicResources(category, resource, params, signal),
     enabled: enabled && Boolean(category && resource),
   });
 }
@@ -127,7 +163,7 @@ export function usePublicCatalogResource(
 export function useClub(clubId: string, enabled = true) {
   return useQuery({
     queryKey: discoveryQueries.clubs.detail(clubId),
-    queryFn: () => discoveryClient.getClub(clubId),
+    queryFn: ({ signal }) => discoveryClient.getClub(clubId, signal),
     enabled: enabled && clubId.length > 0,
   });
 }
@@ -135,7 +171,7 @@ export function useClub(clubId: string, enabled = true) {
 export function useClubClasses(clubId: string, enabled = true) {
   return useQuery({
     queryKey: discoveryQueries.clubs.classes(clubId),
-    queryFn: () => discoveryClient.listClasses(clubId),
+    queryFn: ({ signal }) => discoveryClient.listClasses(clubId, signal),
     enabled: enabled && clubId.length > 0,
   });
 }
@@ -143,7 +179,7 @@ export function useClubClasses(clubId: string, enabled = true) {
 export function useClubSlots(clubId: string, enabled = true) {
   return useQuery({
     queryKey: discoveryQueries.clubs.slots(clubId),
-    queryFn: () => discoveryClient.listSlots(clubId),
+    queryFn: ({ signal }) => discoveryClient.listSlots(clubId, signal),
     enabled: enabled && clubId.length > 0,
   });
 }

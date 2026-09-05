@@ -82,6 +82,8 @@ export type SessionReservation = {
     unitPrice: number;
   }>;
   totalPrice: number;
+  entitlementId: string | null;
+  entitlementCoveredAmount: number;
   paymentStatus: "not_required" | "pending" | "paid" | "failed" | "refunded";
   cancellationPolicy: ClubCancellationRule;
   refundPercent: number | null;
@@ -134,5 +136,6 @@ export type CreateSessionPayload = {
 export type CreateReservationPayload = {
   sessionId: string;
   participantCount: number;
+  entitlementId?: string;
   options?: Array<{ optionId: string; quantity: number }>;
 };

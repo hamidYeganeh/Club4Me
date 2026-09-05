@@ -13,8 +13,14 @@ let memoryRefreshToken: string | null = null;
 
 export async function configureTokenPersistence(
   persistence: AsyncTokenPersistence,
+  options: { hydrate?: boolean } = {},
 ): Promise<void> {
   asyncPersistence = persistence;
+  if (options.hydrate === false) {
+    memoryAccessToken = null;
+    memoryRefreshToken = null;
+    return;
+  }
   const [secureAccess, secureRefresh] = await Promise.all([
     persistence.getItem(ACCESS_TOKEN_KEY),
     persistence.getItem(REFRESH_TOKEN_KEY),
@@ -122,6 +128,32 @@ export const tokenStore = {
 
     const primary = persist ? window.localStorage : window.sessionStorage;
     const secondary = persist ? window.sessionStorage : window.localStorage;
+
+    clearSession(secondary);
+    writeSession(primary, accessToken, refreshToken);
+  },
+  async replaceSession(
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<void> {
+    if (asyncPersistence) {
+      memoryAccessToken = accessToken;
+      memoryRefreshToken = refreshToken;
+      await Promise.all([
+        asyncPersistence.setItem(ACCESS_TOKEN_KEY, accessToken),
+        asyncPersistence.setItem(REFRESH_TOKEN_KEY, refreshToken),
+      ]);
+      return;
+    }
+    if (!canUseStorage()) {
+      return;
+    }
+
+    const persisted =
+      window.localStorage.getItem(ACCESS_TOKEN_KEY) !== null ||
+      window.localStorage.getItem(REFRESH_TOKEN_KEY) !== null;
+    const primary = persisted ? window.localStorage : window.sessionStorage;
+    const secondary = persisted ? window.sessionStorage : window.localStorage;
 
     clearSession(secondary);
     writeSession(primary, accessToken, refreshToken);

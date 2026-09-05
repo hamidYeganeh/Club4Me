@@ -60,6 +60,8 @@ describe("ReservationsService mock payment", () => {
         notifyBookingConfirmed: jest.fn(),
         notifyPaymentFailed: jest.fn(),
       } as never,
+      { refundReservation: jest.fn() } as never,
+      { finalizeReservation: jest.fn() } as never,
     );
     return { service, sessions, reservations };
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import {
@@ -12,15 +12,10 @@ import {
 import { useTranslations } from "next-intl";
 
 import { ButtonLink } from "@/components/button-link";
+import { DiscoveryResultCardSkeleton } from "@/components/loading-skeletons";
 import { DiscoveryResultCard } from "@modules/discovery/components/DiscoveryResultCard";
 import { DiscoverySearchField } from "@modules/discovery/components/DiscoverySearchField";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
-import {
-  MOCK_DISCOVERY_RAIL_CLUBS,
-  MOCK_DISCOVERY_RAIL_SPORTS,
-  formatClubCityDistrict,
-} from "@modules/discovery/discovery-clubs-rails.mock";
-import { MOCK_DISCOVERY_CLUB_TYPES } from "@modules/discovery/discovery-club-types";
 import { DiscoveryClubsCatalogSections } from "@modules/discovery/sections/DiscoveryClubsCatalogSections";
 import {
   getActiveCoordinates,
@@ -38,19 +33,18 @@ export function DiscoveryClubsScreen({
   description,
   layout = "rails",
   browse,
+  initialFilters,
 }: DiscoveryClubsScreenProps) {
   const t = useTranslations("discovery.clubs");
   const styles = discoveryClubsScreenStyles();
   const [query, setQuery] = useState("");
-  const deferredQuery = useDeferredValue(query.trim());
   const { active } = useActiveLocation();
   const coords = getActiveCoordinates(active);
-  const [filters, setFilters] = useState<PublicCatalogParams>(() =>
-    browseToFilters(browse, coords),
+  const [filters, setFilters] = useState<PublicCatalogParams>(
+    () => initialFilters ?? browseToFilters(browse, coords),
   );
   const showRails =
     layout === "rails" &&
-    !deferredQuery &&
     !browse?.sort &&
     !browse?.sportId &&
     !browse?.nearby &&
@@ -67,31 +61,25 @@ export function DiscoveryClubsScreen({
     undefined,
     !showRails,
   );
-  const clubs = useCatalogClubs(
-    { ...filters, q: deferredQuery || undefined },
-    !showRails,
-  );
+  const clubs = useCatalogClubs(filters, !showRails);
   const clubTypes = useCatalogClubTypes(Boolean(browse?.clubTypeId));
-  const selectedTypeName =
-    clubTypes.data?.items.find((entry) => entry.id === browse?.clubTypeId)
-      ?.name ??
-    MOCK_DISCOVERY_CLUB_TYPES.find((entry) => entry.id === browse?.clubTypeId)
-      ?.name;
-  const liveClubs = clubs.data?.items ?? [];
-  const visible = liveClubs.length > 0 ? liveClubs : MOCK_DISCOVERY_RAIL_CLUBS;
-  const sportFilters = sports.data?.items?.length
-    ? sports.data.items
-    : MOCK_DISCOVERY_RAIL_SPORTS;
+  const selectedTypeName = clubTypes.data?.items.find(
+    (entry) => entry.id === browse?.clubTypeId,
+  )?.name;
+  const visible = clubs.data?.items ?? [];
+  const sportFilters = sports.data?.items ?? [];
 
   useEffect(() => {
     if (!browse?.nearby) return;
     if (coords) {
-      setFilters({
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        radiusKm: 25,
+      const frame = requestAnimationFrame(() => {
+        setFilters({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          radiusKm: 25,
+        });
       });
-      return;
+      return () => cancelAnimationFrame(frame);
     }
     navigator.geolocation?.getCurrentPosition((position) => {
       setFilters({
@@ -102,7 +90,8 @@ export function DiscoveryClubsScreen({
     });
   }, [browse?.nearby, coords]);
 
-  const clearFilters = () => setFilters(browseToFilters(browse, coords));
+  const clearFilters = () =>
+    setFilters(initialFilters ?? browseToFilters(browse, coords));
   const nearby = () => {
     if (coords) {
       setFilters({
@@ -137,10 +126,14 @@ export function DiscoveryClubsScreen({
           </ButtonLink>
         }
       />
+      {description ? (
+        <p className="app-reveal px-5 text-sm text-muted">{description}</p>
+      ) : null}
       <DiscoverySearchField
         value={query}
         onChange={setQuery}
         placeholder={t("searchPlaceholder")}
+        href="/discovery/search?kind=club"
       />
       {showRails ? (
         <DiscoveryClubsCatalogSections showHero />
@@ -205,24 +198,17 @@ export function DiscoveryClubsScreen({
             </Typography>
           </div>
           <div className={styles.list()}>
+            {clubs.isPending ? (
+              <DiscoveryResultCardSkeleton count={4} />
+            ) : null}
             {visible.map((club) => (
               <DiscoveryResultCard
                 key={club.id}
                 title={club.name}
-                subtitle={
-                  formatClubCityDistrict(
-                    "city" in club ? club.city : undefined,
-                    "district" in club ? club.district : undefined,
-                  ) ??
-                  ("address" in club ? club.address : undefined) ??
-                  ("shortDescription" in club
-                    ? club.shortDescription
-                    : undefined) ??
-                  ""
-                }
+                subtitle={club.address || club.shortDescription}
                 meta={`${club.averageRating.toLocaleString("fa-IR")} ★`}
                 imageUrl={club.imageUrl}
-                href={`/discovery/clubs/${club.id}`}
+                href={`/discovery/clubs/${club.slug}`}
                 badge={t("title")}
               />
             ))}

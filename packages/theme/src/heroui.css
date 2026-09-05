@@ -59,6 +59,7 @@
   /* Border Radius */
   --radius: 0.5rem;
   --field-radius: 1rem;
+  --field-control-height: 4rem;
 
   /* Font Family */
   --font-sans: "IRANSansX", Tahoma, ui-sans-serif, system-ui, sans-serif;
@@ -109,4 +110,16 @@
   --chart-line-primary: var(--accent);
   --chart-grid: var(--separator);
   --muted-foreground: var(--muted);
+}
+
+/* Keep every single-line field control aligned to the same project-wide size. */
+:where(
+  .input:not(textarea),
+  .input-group:not(:has([data-slot="input-group-textarea"])),
+  .combo-box__input-group,
+  .autocomplete__trigger,
+  .select__trigger
+) {
+  height: var(--field-control-height);
+  min-height: var(--field-control-height);
 }

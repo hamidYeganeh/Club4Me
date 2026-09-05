@@ -82,19 +82,31 @@ export function DashboardWorkspaceSection({
       <Tabs className={styles.tabs()} defaultSelectedKey="workouts">
         <Tabs.ListContainer className="rounded-none bg-transparent">
           <Tabs.List aria-label={workouts}>
-            <Tabs.Tab className="text-muted data-[selected=true]:text-foreground" id="workouts">
+            <Tabs.Tab
+              className="text-muted data-[selected=true]:text-foreground"
+              id="workouts"
+            >
               {workouts}
               <Tabs.Indicator className="bg-accent" />
             </Tabs.Tab>
-            <Tabs.Tab className="text-muted data-[selected=true]:text-foreground" id="metrics">
+            <Tabs.Tab
+              className="text-muted data-[selected=true]:text-foreground"
+              id="metrics"
+            >
               {metrics}
               <Tabs.Indicator className="bg-accent" />
             </Tabs.Tab>
-            <Tabs.Tab className="text-muted data-[selected=true]:text-foreground" id="nutrition">
+            <Tabs.Tab
+              className="text-muted data-[selected=true]:text-foreground"
+              id="nutrition"
+            >
               {nutrition}
               <Tabs.Indicator className="bg-accent" />
             </Tabs.Tab>
-            <Tabs.Tab className="text-muted data-[selected=true]:text-foreground" id="coaches">
+            <Tabs.Tab
+              className="text-muted data-[selected=true]:text-foreground"
+              id="coaches"
+            >
               {coaches}
               <Tabs.Indicator className="bg-accent" />
             </Tabs.Tab>
@@ -103,6 +115,8 @@ export function DashboardWorkspaceSection({
       </Tabs>
 
       <Card variant="transparent" className={styles.featured()}>
+        {/* Remote demo artwork is intentionally rendered without Next image optimization. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           alt={featuredTitle}
           src="https://picsum.photos/seed/gym4me-muay/900/1200"
@@ -126,7 +140,10 @@ export function DashboardWorkspaceSection({
         </div>
       </Card>
 
-      <Card variant="transparent" className={cn(styles.card(), styles.occupancy())}>
+      <Card
+        variant="transparent"
+        className={cn(styles.card(), styles.occupancy())}
+      >
         <p className={styles.cardTitle()}>{occupancyTitle}</p>
         <p className={styles.cardValue()}>{occupancyValue}</p>
         <div className="mt-2 h-20">
@@ -136,7 +153,10 @@ export function DashboardWorkspaceSection({
         </div>
       </Card>
 
-      <Card variant="transparent" className={cn(styles.card(), styles.checkins())}>
+      <Card
+        variant="transparent"
+        className={cn(styles.card(), styles.checkins())}
+      >
         <p className={styles.cardTitle()}>{checkinsTitle}</p>
         <p className={styles.cardValue()}>{checkinsValue}</p>
         <div className="mt-2 h-20">
@@ -152,7 +172,9 @@ export function DashboardWorkspaceSection({
             <p className={styles.cardTitle()}>{scoreTitle}</p>
             <p className={styles.cardValue()}>
               {scoreValue}{" "}
-              <span className="text-base font-medium text-muted">{scoreUnit}</span>
+              <span className="text-base font-medium text-muted">
+                {scoreUnit}
+              </span>
             </p>
             <p className="mt-1 text-xs text-danger">{downtrend}</p>
           </div>

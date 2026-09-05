@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Spinner } from "@heroui/react";
 import { tokenStore } from "@api";
 import { useAccountMe } from "@api/account";
 import { AccountAuthSetPasswordForm } from "@modules/account/forms/AccountAuthSetPasswordForm";
@@ -12,18 +11,19 @@ import { useTranslations } from "next-intl";
 
 import { AuthScreen } from "@/components/auth-screen";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-inset";
-import { ROLES_PATH } from "@/lib/post-auth-path";
+import { FIRST_TIME_ROLES_PATH, getPostAuthPath } from "@/lib/post-auth-path";
 import { AUTH_PATH } from "@/lib/welcome-onboarding";
+import { AuthScreenSkeleton } from "@/components/loading-skeletons";
 
 const ACCOUNT_AUTH_SET_PASSWORD_FORM_ID = "account-auth-set-password-form";
 
 export function AccountAuthSetPasswordScreen() {
   const router = useRouter();
   const t = useTranslations("auth.setPassword");
-  const tCommon = useTranslations("common");
   const isKeyboardOpen = useKeyboardOpen();
   const [hasToken, setHasToken] = useState<boolean | null>(null);
   const me = useAccountMe(hasToken === true);
+  const observedMissingPassword = useRef(false);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -40,10 +40,20 @@ export function AccountAuthSetPasswordScreen() {
   }, [hasToken, me.isError, router]);
 
   useEffect(() => {
-    if (me.data?.hasPassword) {
-      router.replace(ROLES_PATH);
+    if (!me.data) {
+      return;
     }
-  }, [me.data?.hasPassword, router]);
+
+    if (!me.data.hasPassword) {
+      observedMissingPassword.current = true;
+    } else {
+      router.replace(
+        observedMissingPassword.current
+          ? FIRST_TIME_ROLES_PATH
+          : getPostAuthPath(me.data),
+      );
+    }
+  }, [me.data, router]);
 
   if (
     hasToken === null ||
@@ -53,11 +63,7 @@ export function AccountAuthSetPasswordScreen() {
     !me.data ||
     me.data.hasPassword
   ) {
-    return (
-      <div className="flex min-h-full flex-1 items-center justify-center">
-        <Spinner size="lg" aria-label={tCommon("loading")} />
-      </div>
-    );
+    return <AuthScreenSkeleton />;
   }
 
   return (
@@ -95,7 +101,7 @@ export function AccountAuthSetPasswordScreen() {
           strong: t("strength.strong"),
         }}
         onSuccess={() => {
-          router.replace(ROLES_PATH);
+          router.replace(FIRST_TIME_ROLES_PATH);
         }}
       />
     </AuthScreen>

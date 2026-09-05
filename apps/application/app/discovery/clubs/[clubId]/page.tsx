@@ -1,11 +1,12 @@
 import { DiscoveryClubsDetailScreen } from "@modules/discovery/screens/DiscoveryClubsDetailScreen";
+import { getDiscoverySlugParams } from "@/lib/discovery-static-params";
 
 type PageProps = {
   params: Promise<{ clubId: string }>;
 };
 
 export function generateStaticParams() {
-  return [{ clubId: "66d400000000000000000001" }];
+  return getDiscoverySlugParams("/discovery/catalog/clubs?limit=100", "clubId");
 }
 
 export default async function ClubDiscoveryPage({ params }: PageProps) {

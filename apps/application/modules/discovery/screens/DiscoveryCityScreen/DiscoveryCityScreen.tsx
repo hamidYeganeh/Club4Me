@@ -4,31 +4,48 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Card, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
+import { useCatalogClubs, usePublicCatalogResource } from "@api/discovery";
 
 import { FallbackImage } from "@/components/FallbackImage";
-import { getDiscoveryCity } from "@modules/discovery/discovery-city.constants";
-
 import { discoveryCityScreenStyles } from "./DiscoveryCityScreen.styles";
 import type { DiscoveryCityScreenProps } from "./DiscoveryCityScreen.types";
+import {
+  CityDetailSkeleton,
+  DiscoveryResultCardSkeleton,
+} from "@/components/loading-skeletons";
 
 export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
-  const city = getDiscoveryCity(cityId);
   const router = useRouter();
   const styles = discoveryCityScreenStyles();
+  const cities = usePublicCatalogResource("location", "city", {
+    search: cityId,
+  });
+  const city = cities.data?.items.find((item) => item.slug === cityId);
+  const districts = usePublicCatalogResource(
+    "location",
+    "district",
+    city ? { parentId: city.id } : undefined,
+    Boolean(city),
+  );
+  const clubs = useCatalogClubs(
+    city ? { cityId: city.id, limit: 1 } : undefined,
+    Boolean(city),
+  );
 
-  if (!city) {
+  if (cities.isPending)
+    return <CityDetailSkeleton />;
+  if (!city)
     return (
       <main className={styles.root()}>
-        <div className={styles.empty()}>اطلاعات این شهر هنوز آماده نیست.</div>
+        <div className={styles.empty()}>این شهر پیدا نشد.</div>
       </main>
     );
-  }
 
   return (
     <main className={styles.root()}>
       <section className={styles.hero()} aria-labelledby="city-title">
         <FallbackImage
-          src={city.imageUrl}
+          src={typeof city.imageUrl === "string" ? city.imageUrl : ""}
           alt={`باشگاه‌های ${city.name}`}
           fill
           priority
@@ -37,7 +54,6 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
           className={styles.heroImage()}
         />
         <div className={styles.heroOverlay()} aria-hidden />
-
         <div className={styles.topBar()}>
           <Button
             isIconOnly
@@ -50,10 +66,9 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
             <Icon name="chevron-right" size="lg" />
           </Button>
         </div>
-
         <div className={styles.heroCopy()}>
           <Typography type="body-sm" weight="bold" className={styles.eyebrow()}>
-            {city.clubsCount.toLocaleString("fa-IR")} باشگاه
+            {(clubs.data?.total ?? 0).toLocaleString("fa-IR")} باشگاه
           </Typography>
           <Typography
             id="city-title"
@@ -68,23 +83,26 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
           </Typography>
         </div>
       </section>
-
       <section className={styles.sheet()} aria-labelledby="districts-title">
         <div className={styles.sheetHeader()}>
           <Typography id="districts-title" type="h4" weight="bold">
             مناطق {city.name}
           </Typography>
           <Typography type="body-sm" color="muted">
-            {city.districts.length.toLocaleString("fa-IR")} منطقه
+            {(districts.data?.total ?? 0).toLocaleString("fa-IR")} منطقه
           </Typography>
         </div>
-
+        {districts.isPending ? <DiscoveryResultCardSkeleton count={4} /> : null}
         <div className={styles.list()}>
-          {city.districts.map((district) => (
+          {(districts.data?.items ?? []).map((district) => (
             <Card key={district.id} className={styles.card()}>
               <div className={styles.imageWrap()}>
                 <FallbackImage
-                  src={district.imageUrl}
+                  src={
+                    typeof district.imageUrl === "string"
+                      ? district.imageUrl
+                      : ""
+                  }
                   alt={district.name}
                   fill
                   unoptimized
@@ -92,27 +110,18 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
                   className={styles.image()}
                 />
               </div>
-
               <div className={styles.cardBody()}>
                 <Card.Title className={styles.cardTitle()}>
                   {district.name}
                 </Card.Title>
-                <Card.Description className={styles.count()}>
-                  <span className={styles.countNumber()}>
-                    {district.clubsCount.toLocaleString("fa-IR")}
-                  </span>{" "}
-                  باشگاه
-                </Card.Description>
               </div>
-
               <span className={styles.arrow()} aria-hidden>
                 <Icon name="arrow-left" size={20} />
               </span>
-
               <Link
-                href={`/discovery/city/${city.id}/district/${district.id}`}
+                href={`/discovery/city/${cityId}/district/${String(district.slug ?? district.id)}`}
                 className={styles.cardLink()}
-                aria-label={`${district.name}، ${district.clubsCount.toLocaleString("fa-IR")} باشگاه`}
+                aria-label={district.name}
               />
             </Card>
           ))}

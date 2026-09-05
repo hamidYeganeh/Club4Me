@@ -1,9 +1,13 @@
 import { DiscoveryProfileDetailScreen } from "@modules/discovery/screens/DiscoveryProfileDetailScreen";
+import { getDiscoverySlugParams } from "@/lib/discovery-static-params";
 
 type PageProps = { params: Promise<{ classId: string }> };
 
 export function generateStaticParams() {
-  return [{ classId: "66d500000000000000000004" }];
+  return getDiscoverySlugParams(
+    "/discovery/catalog/classes?limit=100",
+    "classId",
+  );
 }
 
 export default async function ClassPage({ params }: PageProps) {

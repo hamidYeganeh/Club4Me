@@ -37,6 +37,20 @@ export interface SearchPerformedEvent {
   result_count: number;
 }
 
+export interface DiscoveryClubViewedEvent {
+  club_id: string;
+}
+
+export interface CheckoutStartedEvent {
+  club_id: string;
+  session_id: string;
+}
+
+export interface PaymentSucceededEvent {
+  reservation_id: string;
+  club_id: string;
+}
+
 export interface FavoriteAddedEvent {
   favorite_type: "club" | "coach" | "class";
   favorite_id: string;

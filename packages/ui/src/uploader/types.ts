@@ -47,4 +47,5 @@ export type UploaderProps = {
   onRemove?: (id: string) => void;
   onRetry?: (id: string) => void;
   onUpload?: (file: File, helpers: UploaderUploadHelpers) => Promise<void>;
+  onBrowseRequest?: (openFileDialog: () => void) => void;
 };

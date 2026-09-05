@@ -39,6 +39,9 @@ export class Reservation {
   @Prop({ type: [ReservedOption], default: [] })
   selectedOptions: ReservedOption[];
   @Prop({ type: Number, required: true, min: 0 }) totalPrice: number;
+  @Prop({ type: Types.ObjectId, ref: "UserEntitlement", default: null })
+  entitlementId: Types.ObjectId | null;
+  @Prop({ type: Number, default: 0, min: 0 }) entitlementCoveredAmount: number;
   @Prop({
     type: String,
     enum: ["not_required", "pending", "paid", "failed", "refunded"],
@@ -56,6 +59,8 @@ export class Reservation {
   })
   status: "reserved" | "cancelled" | "completed" | "no_show";
   @Prop({ type: Date, default: null }) cancelledAt: Date | null;
+  @Prop({ type: Date, default: null }) reminder24hSentAt: Date | null;
+  @Prop({ type: Date, default: null }) reminder2hSentAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

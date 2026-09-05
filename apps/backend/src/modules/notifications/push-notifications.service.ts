@@ -3,6 +3,8 @@ import { InjectModel } from "@nestjs/mongoose";
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getMessaging } from "firebase-admin/messaging";
 import { Model, Types } from "mongoose";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import { AppConfigService } from "../../config/app-config.service";
 import type {
@@ -38,18 +40,30 @@ export class PushNotificationsService {
     config: AppConfigService,
   ) {
     const env = config.env;
+    const localCredentialPath = [
+      resolve(".secrets/firebase-service-account.json"),
+      resolve("apps/backend/.secrets/firebase-service-account.json"),
+    ].find((path) => existsSync(path));
+    const serviceAccountPath =
+      env.FIREBASE_SERVICE_ACCOUNT_PATH || localCredentialPath;
+    const fileCredential = serviceAccountPath
+      ? readServiceAccount(serviceAccountPath)
+      : null;
     this.configured = Boolean(
-      env.FIREBASE_PROJECT_ID &&
-      env.FIREBASE_CLIENT_EMAIL &&
-      env.FIREBASE_PRIVATE_KEY,
+      fileCredential ||
+      (env.FIREBASE_PROJECT_ID &&
+        env.FIREBASE_CLIENT_EMAIL &&
+        env.FIREBASE_PRIVATE_KEY),
     );
     if (this.configured && getApps().length === 0) {
       initializeApp({
-        credential: cert({
-          projectId: env.FIREBASE_PROJECT_ID,
-          clientEmail: env.FIREBASE_CLIENT_EMAIL,
-          privateKey: env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
-        }),
+        credential: cert(
+          fileCredential ?? {
+            projectId: env.FIREBASE_PROJECT_ID,
+            clientEmail: env.FIREBASE_CLIENT_EMAIL,
+            privateKey: env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
+          },
+        ),
       });
     }
     if (!this.configured) {
@@ -187,6 +201,22 @@ export class PushNotificationsService {
       return item ? item[category] : DEFAULT_PREFERENCES[category];
     });
   }
+}
+
+function readServiceAccount(path: string) {
+  const value = JSON.parse(readFileSync(resolve(path), "utf8")) as {
+    project_id?: string;
+    client_email?: string;
+    private_key?: string;
+  };
+  if (!value.project_id || !value.client_email || !value.private_key) {
+    throw new Error("Firebase service account file is invalid");
+  }
+  return {
+    projectId: value.project_id,
+    clientEmail: value.client_email,
+    privateKey: value.private_key,
+  };
 }
 
 function categoryFor(type: string): keyof typeof DEFAULT_PREFERENCES {

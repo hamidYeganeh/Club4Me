@@ -19,5 +19,6 @@ import { UserLocationsService } from "./user-locations.service";
   ],
   controllers: [UserLocationsController],
   providers: [UserLocationsRepository, UserLocationsService],
+  exports: [UserLocationsService],
 })
 export class UserLocationsModule {}

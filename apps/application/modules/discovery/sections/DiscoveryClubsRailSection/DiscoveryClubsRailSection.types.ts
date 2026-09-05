@@ -4,6 +4,7 @@ import type { ClubCardSport, ClubCardVariant } from "@ui/club-card";
 
 export type DiscoveryClubsRailClub = {
   id: string;
+  slug: string;
   name: string;
   city?: string;
   district?: string;

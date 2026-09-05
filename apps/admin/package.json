@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start --port 7082",
     "lint": "eslint",
-    "check-types": "tsc --noEmit"
+    "check-types": "node ../../node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
     "@heroui/react": "^3.0.0",

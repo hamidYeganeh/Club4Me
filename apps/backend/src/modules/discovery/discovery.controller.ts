@@ -62,9 +62,29 @@ export class DiscoveryFeedController {
     return this.service.getPublicClass(identifier);
   }
 
+  @Get("catalog/articles")
+  listArticles(@Query() query: Record<string, string | undefined>) {
+    return this.service.listPublicArticles(query);
+  }
+
+  @Get("catalog/articles/:slug")
+  getArticle(@Param("slug") slug: string) {
+    return this.service.getPublicArticle(slug);
+  }
+
   @Get("catalog/search")
   search(@Query() query: Record<string, string | undefined>) {
     return this.service.searchPublicCatalog(query);
+  }
+
+  @Get("coaches/sections")
+  getCoachSections() {
+    return this.service.getCoachSections();
+  }
+
+  @Get("coaches")
+  listCoachPageCoaches(@Query() query: Record<string, string | undefined>) {
+    return this.service.listPublicCoaches(query);
   }
 }
 

@@ -12,6 +12,25 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,6 +41,33 @@ jobs:
       - run: npm run check-types
       - run: npm run lint
       - run: npm test -w apps/backend -- --runInBand
+      - name: Bootstrap backend and verify health checks
+        env:
+          NODE_ENV: test
+          PORT: 7088
+          MONGODB_URL: mongodb://127.0.0.1:27017/gym4me-ci
+          REDIS_URL: redis://127.0.0.1:6379
+          JWT_SECRET: ci-only-jwt-secret-value
+          CORS_ORIGINS: http://127.0.0.1:7080
+        run: |
+          npm run build -w apps/backend
+          npm run start:ci -w apps/backend > /tmp/gym4me-backend.log 2>&1 &
+          backend_pid=$!
+          trap 'kill "$backend_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:7088/health/live >/dev/null; then
+              break
+            fi
+            if ! kill -0 "$backend_pid" 2>/dev/null; then
+              cat /tmp/gym4me-backend.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          curl --fail --show-error http://127.0.0.1:7088/health/live
+          curl --fail --show-error http://127.0.0.1:7088/health/ready
       - run: npm run build
 
   android-debug:
@@ -52,3 +98,25 @@ jobs:
           name: gym4me-debug-apk
           path: apps/application/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+  application-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/application
+      - run: npm run e2e -w apps/application
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: application-playwright-report
+          path: |
+            apps/application/playwright-report
+            apps/application/test-results
+          if-no-files-found: ignore

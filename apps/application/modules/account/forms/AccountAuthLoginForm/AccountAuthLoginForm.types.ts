@@ -1,3 +1,5 @@
+import type { AccountUser } from "@api/account";
+
 import type { AccountAuthLoginFormValues } from "./AccountAuthLoginForm.schema";
 
 export type AccountAuthLoginFormProps = {
@@ -15,7 +17,7 @@ export type AccountAuthLoginFormProps = {
   phoneInvalid: string;
   passwordRequired: string;
   passwordMin: string;
-  onSuccess: () => void;
+  onSuccess: (user: AccountUser) => void;
   onSubmitStateChange?: (state: {
     isBusy: boolean;
     isPending: boolean;
