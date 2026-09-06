@@ -1,4 +1,8 @@
 import { Injectable } from "@nestjs/common";
+import {
+  legacyProfileValues,
+  profileReferences,
+} from "./club-profile-resources";
 
 import { AppError } from "../../common/errors/app.exception";
 import { ResourcesService } from "../resources/resources.service";
@@ -25,8 +29,12 @@ export class ClubsService {
     return { items: await this.repository.listForOwner(ownerId) };
   }
 
-  get(ownerId: string, clubId: string): Promise<PublicClub> {
-    return this.repository.findForOwner(ownerId, clubId);
+  async get(ownerId: string, clubId: string): Promise<PublicClub> {
+    const club = await this.repository.findForOwner(ownerId, clubId);
+    return {
+      ...club,
+      profileResources: await this.resolveProfileResources(club),
+    };
   }
 
   async listForAdmin(): Promise<{ items: PublicClub[] }> {
@@ -35,6 +43,15 @@ export class ClubsService {
 
   getForAdmin(clubId: string): Promise<PublicClub> {
     return this.repository.findById(clubId);
+  }
+
+  verify(
+    clubId: string,
+    adminId: string,
+    kind: "identity" | "documents" | "on_site",
+    verified: boolean,
+  ) {
+    return this.repository.verify(clubId, adminId, kind, verified);
   }
 
   getPublic(clubId: string): Promise<PublicClub> {
@@ -67,6 +84,7 @@ export class ClubsService {
 
     return {
       ...club,
+      profileResources: await this.resolveProfileResources(club),
       gallery: club.gallery.flatMap((item) => {
         const found = byId.get(item.mediaId);
         return found
@@ -135,7 +153,11 @@ export class ClubsService {
     clubId: string,
     input: UpdateClubDto,
   ): Promise<PublicClub> {
-    await this.validateReferences(input);
+    const previous =
+      input.profile || input.tags
+        ? await this.repository.findForOwner(ownerId, clubId)
+        : undefined;
+    await this.validateReferences(input, previous);
     await this.media.assertOwnedReady(ownerId, [
       ...(input.gallery ?? []).map((item) => item.mediaId),
       ...(input.logoMediaId ? [input.logoMediaId] : []),
@@ -180,7 +202,86 @@ export class ClubsService {
     return club;
   }
 
-  private async validateReferences(input: Partial<ClubFields>): Promise<void> {
+  private async resolveProfileResources(club: PublicClub) {
+    const entries = await Promise.all(
+      profileReferences(club.profile).map(async (ref) => {
+        try {
+          const item = await this.resources.get(
+            ref.category,
+            ref.resource,
+            ref.id,
+          );
+          return [
+            ref.id,
+            { name: String(item.name), isActive: item.isActive === true },
+          ] as const;
+        } catch (error) {
+          if (error instanceof AppError && error.status === 404)
+            return [
+              ref.id,
+              { name: "گزینه حذف‌شده", isActive: false },
+            ] as const;
+          throw error;
+        }
+      }),
+    );
+    return Object.fromEntries(entries);
+  }
+
+  private async validateReferences(
+    input: Partial<ClubFields>,
+    previous?: PublicClub,
+  ): Promise<void> {
+    for (const tag of input.tags ?? []) {
+      if (previous?.tags.includes(tag)) continue;
+      const normalize = (value: string) =>
+        value
+          .normalize("NFKC")
+          .replace(/ي/g, "ی")
+          .replace(/ك/g, "ک")
+          .replace(/[\s\u200c]+/g, " ")
+          .trim();
+      const matches = await this.resources.list("clubs", "tag", {
+        search: tag,
+        isActive: "true",
+        limit: "100",
+      });
+      if (
+        !matches.items.some(
+          (item) => normalize(String(item.name)) === normalize(tag),
+        )
+      )
+        throw new AppError(
+          400,
+          "CLUB_TAG_CATALOG_REQUIRED",
+          "Select tags from the active admin resource",
+        );
+    }
+    if (input.profile) {
+      const previousValues = new Set(legacyProfileValues(previous?.profile));
+      if (
+        legacyProfileValues(input.profile).some(
+          (value) => !previousValues.has(value),
+        )
+      )
+        throw new AppError(
+          400,
+          "CLUB_PROFILE_CATALOG_REQUIRED",
+          "Select profile options from admin-managed resources",
+        );
+      const previousIds = new Set(
+        profileReferences(previous?.profile).map(
+          (ref) => `${ref.resource}:${ref.id}`,
+        ),
+      );
+      await Promise.all(
+        profileReferences(input.profile).map((ref) =>
+          previousIds.has(`${ref.resource}:${ref.id}`)
+            ? this.resources.get(ref.category, ref.resource, ref.id)
+            : this.resources.requireActive(ref.category, ref.resource, ref.id),
+        ),
+      );
+    }
     await Promise.all([
       ...(input.clubTypeIds ?? []).map((id) =>
         this.resources.requireActive("sports", "club-type", id),

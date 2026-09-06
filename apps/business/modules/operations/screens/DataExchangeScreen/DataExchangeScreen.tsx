@@ -11,7 +11,7 @@ import { Button, Card, Chip, toast } from "@heroui/react";
 import { type ChangeEvent, useState } from "react";
 
 const input =
-  "h-11 rounded-xl border border-border bg-surface px-3 text-sm outline-none focus:border-accent";
+  "h-11 rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm outline-none focus:border-focus focus:ring-3 focus:ring-focus/15";
 
 export function DataExchangeScreen() {
   const clubs = useBusinessClubs();
@@ -93,7 +93,7 @@ export function DataExchangeScreen() {
         <p className="mt-1 text-sm text-muted">
           خروجی CSV مالی و حضور‌وغیاب؛ ورود گروهی با اعتبارسنجی قبل از ثبت
         </p>
-        <Card className="mt-6 rounded-[1.75rem] border border-border bg-surface p-5">
+        <Card className="app-card mt-6 p-5 shadow-none active:scale-100">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="grid gap-1.5 text-sm text-muted">
               باشگاه
@@ -151,7 +151,7 @@ export function DataExchangeScreen() {
           </Button>
         </Card>
 
-        <Card className="mt-5 rounded-[1.75rem] border border-border bg-surface p-5">
+        <Card className="app-card mt-5 p-5 shadow-none active:scale-100">
           <h2 className="text-lg font-semibold">ورود گروهی</h2>
           {!(["students", "payments"] as OperationsDataKind[]).includes(
             kind,

@@ -12,6 +12,8 @@ import { DiscoveryClubsDetailHeroSection } from "@modules/discovery/sections/Dis
 import { DiscoveryClubsDetailStickyHeaderSection } from "@modules/discovery/sections/DiscoveryClubsDetailStickyHeaderSection";
 import { ClubReservationsAndReviewsSection } from "@modules/discovery/sections/ClubReservationsAndReviewsSection";
 import { ClubSlotsSection } from "@modules/discovery/sections/ClubSlotsSection";
+import { ClubProfileSection } from "@modules/discovery/sections/ClubProfileSection";
+import { ClubCoachesContextSection } from "@modules/discovery/sections/ClubCoachesContextSection";
 import { ClubSportsSection } from "@modules/discovery/sections/ClubSportsSection";
 import { ClubClassesSection } from "@modules/discovery/sections/ClubClassesSection";
 import { ClubBenefitProductsSection } from "@modules/discovery/sections/ClubBenefitProductsSection";
@@ -140,7 +142,16 @@ export function DiscoveryClubsDetailScreen({
         id: item.amenityId,
         title: item.title,
         quantity: item.quantity,
-        description: item.description,
+        description: [
+          item.availability === "paid"
+            ? `با هزینه جدا${item.price ? `: ${item.price.amount.toLocaleString("fa-IR")} ${item.price.currency}` : ""}`
+            : item.availability === "unavailable"
+              ? "فعلاً غیرفعال"
+              : "داخل شهریه",
+          item.description,
+        ]
+          .filter(Boolean)
+          .join(" · "),
         icon: item.icon,
         imageUrl: item.imageUrl,
       }),
@@ -229,10 +240,15 @@ export function DiscoveryClubsDetailScreen({
       </div>
 
       <ClubSportsSection sportIds={data.sportIds} />
+      <ClubProfileSection club={data} />
 
       <ClubSlotsSection clubId={club.id} />
 
       <ClubClassesSection clubId={club.id} />
+      <ClubCoachesContextSection
+        clubId={club.id}
+        timezone={location.timezone ?? "Asia/Tehran"}
+      />
 
       <ClubBenefitProductsSection clubId={club.id} />
 

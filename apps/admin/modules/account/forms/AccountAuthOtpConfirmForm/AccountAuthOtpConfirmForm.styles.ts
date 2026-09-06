@@ -9,7 +9,7 @@ export const accountAuthOtpConfirmFormStyles = tv({
     otpWrap: "flex w-full justify-center [direction:ltr]",
     otp: "w-full justify-center [direction:ltr]",
     otpGroup: "w-full justify-center gap-3 [direction:ltr]",
-    slot: "aspect-square size-14 shrink-0 grow-0 basis-14 rounded-2xl text-xl font-bold sm:size-16 sm:basis-16",
+    slot: "size-16 shrink-0 grow-0 basis-16 rounded-2xl text-xl font-bold",
     resend: "px-1 py-0",
     resendTimer: "inline text-sm font-semibold text-foreground",
     resendSeconds: "inline-block tabular-nums text-foreground",

@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type ComponentPropsWithoutRef,
+  type MouseEvent,
 } from "react";
 import { flushSync } from "react-dom";
 
@@ -21,29 +22,21 @@ export type TransitionVariant =
   | "rectangle"
   | "star";
 
-interface AnimatedThemeTogglerProps extends ComponentPropsWithoutRef<"button"> {
+export interface AnimatedThemeTogglerProps extends ComponentPropsWithoutRef<"button"> {
   duration?: number;
   variant?: TransitionVariant;
-  /** When true, the transition expands from the viewport center instead of the button center. */
+  /** When true, the transition expands from the viewport center. */
   fromCenter?: boolean;
-  /**
-   * Controlled theme value. When provided, the parent owns persistence
-   * (e.g. `next-themes`) and this component will not write to localStorage.
-   */
+  /** Controlled theme value. The parent owns persistence when provided. */
   theme?: "light" | "dark";
   /** Called on toggle. Pair with `theme` for controlled usage. */
   onThemeChange?: (theme: "light" | "dark") => void;
 }
 
 function polygonCollapsed(point: string, vertexCount: number): string {
-  const pairs = Array.from({ length: vertexCount }, () => point).join(", ");
-  return `polygon(${pairs})`;
+  return `polygon(${Array.from({ length: vertexCount }, () => point).join(", ")})`;
 }
 
-// All coordinates are percentages of the snapshot reference box: Chrome 150
-// renders absolute px clip-path coordinates on ::view-transition-new(root)
-// unscaled on fractional display scales (e.g. Windows 150%) for the first
-// transition after load, so px values land at the wrong position (#989).
 function getThemeTransitionClipPaths(
   variant: TransitionVariant,
   cx: number,
@@ -52,12 +45,13 @@ function getThemeTransitionClipPaths(
   viewportWidth: number,
   viewportHeight: number,
 ): [string, string] {
+  // Percentage coordinates avoid incorrect positioning on fractional display
+  // scales in the first transition after load.
   const toX = (x: number) => `${(x / viewportWidth) * 100}%`;
   const toY = (y: number) => `${(y / viewportHeight) * 100}%`;
   const point = (x: number, y: number) => `${toX(x)} ${toY(y)}`;
-  // circle() percentage radii resolve against hypot(w, h) / sqrt(2) of the reference box.
-  const toRadius = (r: number) =>
-    `${(r / (Math.hypot(viewportWidth, viewportHeight) / Math.SQRT2)) * 100}%`;
+  const toRadius = (radius: number) =>
+    `${(radius / (Math.hypot(viewportWidth, viewportHeight) / Math.SQRT2)) * 100}%`;
 
   switch (variant) {
     case "circle":
@@ -66,9 +60,9 @@ function getThemeTransitionClipPaths(
         `circle(${toRadius(maxRadius)} at ${point(cx, cy)})`,
       ];
     case "square": {
-      const halfW = Math.max(cx, viewportWidth - cx);
-      const halfH = Math.max(cy, viewportHeight - cy);
-      const halfSide = Math.max(halfW, halfH) * 1.05;
+      const halfWidth = Math.max(cx, viewportWidth - cx);
+      const halfHeight = Math.max(cy, viewportHeight - cy);
+      const halfSide = Math.max(halfWidth, halfHeight) * 1.05;
       const end = [
         point(cx - halfSide, cy - halfSide),
         point(cx + halfSide, cy - halfSide),
@@ -80,114 +74,111 @@ function getThemeTransitionClipPaths(
     case "triangle": {
       const scale = maxRadius * 2.2;
       const dx = (Math.sqrt(3) / 2) * scale;
-      const verts = [
+      const vertices = [
         point(cx, cy - scale),
-        point(cx + dx, cy + 0.5 * scale),
-        point(cx - dx, cy + 0.5 * scale),
+        point(cx + dx, cy + scale * 0.5),
+        point(cx - dx, cy + scale * 0.5),
       ].join(", ");
-      return [polygonCollapsed(point(cx, cy), 3), `polygon(${verts})`];
+      return [polygonCollapsed(point(cx, cy), 3), `polygon(${vertices})`];
     }
     case "diamond": {
-      // Slightly larger than the view-transition circle radius so axis-aligned coverage matches the circle reveal.
-      const R = maxRadius * Math.SQRT2;
+      const radius = maxRadius * Math.SQRT2;
       const end = [
-        point(cx, cy - R),
-        point(cx + R, cy),
-        point(cx, cy + R),
-        point(cx - R, cy),
+        point(cx, cy - radius),
+        point(cx + radius, cy),
+        point(cx, cy + radius),
+        point(cx - radius, cy),
       ].join(", ");
       return [polygonCollapsed(point(cx, cy), 4), `polygon(${end})`];
     }
     case "hexagon": {
-      const R = maxRadius * Math.SQRT2;
-      const verts: string[] = [];
-      for (let i = 0; i < 6; i++) {
-        const a = -Math.PI / 2 + (i * Math.PI) / 3;
-        verts.push(point(cx + R * Math.cos(a), cy + R * Math.sin(a)));
+      const radius = maxRadius * Math.SQRT2;
+      const vertices: string[] = [];
+      for (let index = 0; index < 6; index += 1) {
+        const angle = -Math.PI / 2 + (index * Math.PI) / 3;
+        vertices.push(
+          point(cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)),
+        );
       }
       return [
         polygonCollapsed(point(cx, cy), 6),
-        `polygon(${verts.join(", ")})`,
+        `polygon(${vertices.join(", ")})`,
       ];
     }
     case "rectangle": {
-      const halfW = Math.max(cx, viewportWidth - cx);
-      const halfH = Math.max(cy, viewportHeight - cy);
+      const halfWidth = Math.max(cx, viewportWidth - cx);
+      const halfHeight = Math.max(cy, viewportHeight - cy);
       const end = [
-        point(cx - halfW, cy - halfH),
-        point(cx + halfW, cy - halfH),
-        point(cx + halfW, cy + halfH),
-        point(cx - halfW, cy + halfH),
+        point(cx - halfWidth, cy - halfHeight),
+        point(cx + halfWidth, cy - halfHeight),
+        point(cx + halfWidth, cy + halfHeight),
+        point(cx - halfWidth, cy + halfHeight),
       ].join(", ");
       return [polygonCollapsed(point(cx, cy), 4), `polygon(${end})`];
     }
     case "star": {
-      // Small overscan so the last frames never leave a 1px seam before the transition group ends.
-      const R = maxRadius * Math.SQRT2 * 1.03;
+      const radius = maxRadius * Math.SQRT2 * 1.03;
       const innerRatio = 0.42;
-      const starPolygon = (radius: number) => {
-        const verts: string[] = [];
-        for (let i = 0; i < 5; i++) {
-          const outerA = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
-          verts.push(
+      const starPolygon = (currentRadius: number) => {
+        const vertices: string[] = [];
+        for (let index = 0; index < 5; index += 1) {
+          const outerAngle = -Math.PI / 2 + (index * 2 * Math.PI) / 5;
+          vertices.push(
             point(
-              cx + radius * Math.cos(outerA),
-              cy + radius * Math.sin(outerA),
+              cx + currentRadius * Math.cos(outerAngle),
+              cy + currentRadius * Math.sin(outerAngle),
             ),
           );
-          const innerA = outerA + Math.PI / 5;
-          verts.push(
+          const innerAngle = outerAngle + Math.PI / 5;
+          vertices.push(
             point(
-              cx + radius * innerRatio * Math.cos(innerA),
-              cy + radius * innerRatio * Math.sin(innerA),
+              cx + currentRadius * innerRatio * Math.cos(innerAngle),
+              cy + currentRadius * innerRatio * Math.sin(innerAngle),
             ),
           );
         }
-        return `polygon(${verts.join(", ")})`;
+        return `polygon(${vertices.join(", ")})`;
       };
-      const startR = Math.max(2, R * 0.025);
-      return [starPolygon(startR), starPolygon(R)];
+
+      return [starPolygon(Math.max(2, radius * 0.025)), starPolygon(radius)];
     }
-    default:
-      return [
-        `circle(0% at ${point(cx, cy)})`,
-        `circle(${toRadius(maxRadius)} at ${point(cx, cy)})`,
-      ];
   }
 }
 
 export function AnimatedThemeToggler({
   className,
   duration = 400,
-  variant,
+  variant = "circle",
   fromCenter = false,
   theme,
   onThemeChange,
+  onClick,
   ...props
 }: AnimatedThemeTogglerProps) {
-  const shape = variant ?? "circle";
   const isControlled = theme !== undefined;
   const [internalIsDark, setInternalIsDark] = useState(false);
   const isDark = isControlled ? theme === "dark" : internalIsDark;
   const buttonRef = useRef<HTMLButtonElement>(null);
   const isTransitioningRef = useRef(false);
-  const activeAnimRef = useRef<Animation | null>(null);
+  const activeAnimationRef = useRef<Animation | null>(null);
 
-  const cancelAnim = useCallback(() => {
-    activeAnimRef.current?.cancel();
-    activeAnimRef.current = null;
+  const cancelAnimation = useCallback(() => {
+    activeAnimationRef.current?.cancel();
+    activeAnimationRef.current = null;
   }, []);
 
   useEffect(() => {
     return () => {
-      cancelAnim();
+      cancelAnimation();
       const root = document.documentElement;
       if (root.dataset.magicuiThemeVt !== "active") return;
       delete root.dataset.magicuiThemeVt;
       root.style.removeProperty("--magicui-theme-toggle-vt-duration");
       root.style.removeProperty("--magicui-theme-vt-clip-from");
+      root.style.removeProperty("--magicui-theme-vt-clip-to");
+      root.style.removeProperty("--magicui-theme-vt-easing");
     };
-  }, [cancelAnim]);
+  }, [cancelAnimation]);
 
   useEffect(() => {
     if (isControlled) return;
@@ -195,7 +186,6 @@ export function AnimatedThemeToggler({
     const updateTheme = () => {
       setInternalIsDark(document.documentElement.classList.contains("dark"));
     };
-
     updateTheme();
 
     const observer = new MutationObserver(updateTheme);
@@ -203,61 +193,50 @@ export function AnimatedThemeToggler({
       attributes: true,
       attributeFilter: ["class"],
     });
-
     return () => observer.disconnect();
   }, [isControlled]);
 
   const toggleTheme = useCallback(() => {
     const button = buttonRef.current;
+    const root = document.documentElement;
     if (
       !button ||
       isTransitioningRef.current ||
-      document.documentElement.dataset.magicuiThemeVt === "active"
+      root.dataset.magicuiThemeVt === "active"
     ) {
       return;
     }
 
-    // innerWidth/innerHeight (not visualViewport): percentages must resolve
-    // against the snapshot reference box, which includes classic scrollbars.
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-
-    let x: number;
-    let y: number;
-    if (fromCenter) {
-      x = viewportWidth / 2;
-      y = viewportHeight / 2;
-    } else {
-      const { top, left, width, height } = button.getBoundingClientRect();
-      x = left + width / 2;
-      y = top + height / 2;
-    }
-
+    const bounds = button.getBoundingClientRect();
+    const x = fromCenter ? viewportWidth / 2 : bounds.left + bounds.width / 2;
+    const y = fromCenter ? viewportHeight / 2 : bounds.top + bounds.height / 2;
     const maxRadius = Math.hypot(
       Math.max(x, viewportWidth - x),
       Math.max(y, viewportHeight - y),
     );
+    const nextIsDark = !isDark;
+    const nextTheme = nextIsDark ? "dark" : "light";
 
     const applyTheme = () => {
-      const newTheme = !isDark;
-      // Always toggle the class synchronously so the View Transitions API
-      // snapshots the new theme inside the startViewTransition callback.
-      document.documentElement.classList.toggle("dark");
+      root.classList.toggle("dark", nextIsDark);
+      root.classList.toggle("light", !nextIsDark);
       if (isControlled) {
-        onThemeChange?.(newTheme ? "dark" : "light");
+        onThemeChange?.(nextTheme);
       } else {
-        setInternalIsDark(newTheme);
-        localStorage.setItem("theme", newTheme ? "dark" : "light");
+        setInternalIsDark(nextIsDark);
+        localStorage.setItem("theme", nextTheme);
       }
     };
 
-    if (typeof document.startViewTransition !== "function") {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       applyTheme();
       return;
     }
 
     const clipPath = getThemeTransitionClipPaths(
-      shape,
+      variant,
       x,
       y,
       maxRadius,
@@ -265,70 +244,120 @@ export function AnimatedThemeToggler({
       viewportHeight,
     );
 
-    const root = document.documentElement;
-    root.dataset.magicuiThemeVt = "active";
-    root.style.setProperty(
-      "--magicui-theme-toggle-vt-duration",
-      `${duration}ms`,
-    );
-    // Pin the collapsed clip-path via CSS so Firefox does not paint the new
-    // theme unclipped between snapshot and the ready.then() JS animation.
-    root.style.setProperty("--magicui-theme-vt-clip-from", clipPath[0]);
     const cleanup = () => {
       isTransitioningRef.current = false;
       delete root.dataset.magicuiThemeVt;
       root.style.removeProperty("--magicui-theme-toggle-vt-duration");
       root.style.removeProperty("--magicui-theme-vt-clip-from");
-      cancelAnim();
+      root.style.removeProperty("--magicui-theme-vt-clip-to");
+      root.style.removeProperty("--magicui-theme-vt-easing");
+      cancelAnimation();
     };
 
-    isTransitioningRef.current = true;
-    const transition = document.startViewTransition(() => {
+    const runFallbackTransition = () => {
+      const body = document.body;
+      const previousRootBackground = root.style.backgroundColor;
+      const previousBodyClipPath = body.style.clipPath;
+      const previousBodyTransition = body.style.transition;
+      const previousBodyWillChange = body.style.willChange;
+      const oldBackground = getComputedStyle(body).backgroundColor;
+      const pageY = y + window.scrollY;
+      const clipFrom = `circle(0px at ${x}px ${pageY}px)`;
+      const clipTo = `circle(${Math.ceil(maxRadius)}px at ${x}px ${pageY}px)`;
+
+      isTransitioningRef.current = true;
+      root.style.backgroundColor = oldBackground;
+      body.style.clipPath = clipFrom;
+      body.style.transition = "none";
+      body.style.willChange = "clip-path";
+      body.getBoundingClientRect();
       flushSync(applyTheme);
-    });
-    if (typeof transition?.finished?.finally === "function") {
-      transition.finished.finally(cleanup).catch(() => {});
-    } else {
-      cleanup();
+
+      let finished = false;
+      let timeoutId = 0;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(timeoutId);
+        body.removeEventListener("transitionend", handleTransitionEnd);
+        body.style.clipPath = previousBodyClipPath;
+        body.style.transition = previousBodyTransition;
+        body.style.willChange = previousBodyWillChange;
+        if (previousRootBackground) {
+          root.style.backgroundColor = previousRootBackground;
+        } else {
+          root.style.removeProperty("background-color");
+        }
+        cleanup();
+      };
+      const handleTransitionEnd = (event: TransitionEvent) => {
+        if (event.target === body && event.propertyName === "clip-path") {
+          finish();
+        }
+      };
+
+      body.addEventListener("transitionend", handleTransitionEnd);
+      requestAnimationFrame(() => {
+        body.style.transition = `clip-path ${duration}ms ${
+          variant === "star" ? "linear" : "ease-in-out"
+        }`;
+        body.style.clipPath = clipTo;
+        timeoutId = window.setTimeout(finish, duration + 150);
+      });
+    };
+
+    if (typeof document.startViewTransition !== "function") {
+      runFallbackTransition();
+      return;
     }
 
-    const ready = transition?.ready;
-    if (ready && typeof ready.then === "function") {
-      ready
-        .then(() => {
-          const anim = document.documentElement.animate(
-            {
-              clipPath,
-            },
-            {
-              duration,
-              // Star: linear avoids easing overshoot that fights polygon interpolation at t→1; VT group duration is synced above.
-              easing: shape === "star" ? "linear" : "ease-in-out",
-              fill: "forwards",
-              pseudoElement: "::view-transition-new(root)",
-            },
-          );
-          activeAnimRef.current = anim;
-        })
-        .catch(() => {});
+    root.dataset.magicuiThemeVt = "active";
+    root.style.setProperty(
+      "--magicui-theme-toggle-vt-duration",
+      `${duration}ms`,
+    );
+    root.style.setProperty("--magicui-theme-vt-clip-from", clipPath[0]);
+    root.style.setProperty("--magicui-theme-vt-clip-to", clipPath[1]);
+    root.style.setProperty(
+      "--magicui-theme-vt-easing",
+      variant === "star" ? "linear" : "ease-in-out",
+    );
+    isTransitioningRef.current = true;
+
+    try {
+      const transition = document.startViewTransition(() => {
+        flushSync(applyTheme);
+      });
+      transition.finished.finally(cleanup).catch(() => undefined);
+    } catch {
+      cleanup();
+      runFallbackTransition();
     }
   }, [
-    shape,
-    fromCenter,
+    cancelAnimation,
     duration,
-    isDark,
+    fromCenter,
     isControlled,
+    isDark,
     onThemeChange,
-    cancelAnim,
+    variant,
   ]);
+
+  const handleClick = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      onClick?.(event);
+      if (!event.defaultPrevented) toggleTheme();
+    },
+    [onClick, toggleTheme],
+  );
 
   return (
     <button
+      {...props}
       type="button"
       ref={buttonRef}
-      onClick={toggleTheme}
+      onClick={handleClick}
       className={cn(className)}
-      {...props}
     >
       {isDark ? <Icon name="sun" /> : <Icon name="moon" />}
       <span className="sr-only">Toggle theme</span>

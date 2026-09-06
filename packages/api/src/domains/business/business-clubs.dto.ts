@@ -1,3 +1,9 @@
+import type {
+  ClubProfile,
+  ClubBusyHour,
+  ClubGalleryCategory,
+  ClubVerifications,
+} from "./club-profile.dto";
 export type SocialPlatform =
   | "instagram"
   | "telegram"
@@ -46,6 +52,13 @@ export type ClubLocation = {
 };
 
 export type BusinessClub = {
+  profileResources?: Record<string, { name: string; isActive: boolean }>;
+  profile?: ClubProfile;
+  trialBookingEnabled?: boolean;
+  busyHours?: ClubBusyHour[];
+  busyHoursSource?: "owner_reported";
+  busyHoursUpdatedAt?: string | null;
+  verifications?: ClubVerifications;
   id: string;
   ownerId: string;
   name: string;
@@ -61,6 +74,8 @@ export type BusinessClub = {
     kind: "image" | "video";
     position: number;
     isCover: boolean;
+    category?: ClubGalleryCategory;
+    takenOn?: string;
   }>;
   equipment: Array<{
     equipmentId: string;
@@ -122,6 +137,9 @@ export type ClubResourceQuantityPayload = {
 };
 
 export type CreateBusinessClubPayload = {
+  profile?: ClubProfile;
+  trialBookingEnabled?: boolean;
+  busyHours?: ClubBusyHour[];
   name: string;
   shortDescription?: string;
   description?: string;
@@ -134,6 +152,8 @@ export type CreateBusinessClubPayload = {
     kind?: "image" | "video";
     position?: number;
     isCover?: boolean;
+    category?: ClubGalleryCategory;
+    takenOn?: string;
   }>;
   equipment?: ClubResourceQuantityPayload[];
   amenities?: Array<{
@@ -188,10 +208,15 @@ export type BusinessCatalogResponse = {
   totalPages: number;
 };
 
+export type BusinessTag = BusinessCatalogItem;
+export type BusinessTagsResponse = BusinessCatalogResponse;
+
 export type BusinessMedia = {
   id: string;
+  hash: string;
   url: string;
   mimeType: string;
+  byteSize: number;
   status: "ready" | "blocked";
   createdAt: string;
 };

@@ -118,6 +118,8 @@ export function buildCoachAnalytics(
     occupancy,
     activeClasses: activeClasses.length,
     occupancyPercent: capacity ? Math.round((occupied / capacity) * 100) : 0,
+    capacity,
+    occupied,
     income: trend.reduce((sum, item) => sum + item.income, 0),
     reservations: trend.reduce(
       (sum, item) => sum + item.bookings + item.enrollments,

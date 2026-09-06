@@ -51,7 +51,7 @@ export function ThemeToggle({
 
   return (
     <AnimatedThemeToggler
-      theme={resolvedTheme === "light" ? "light" : "dark"}
+      theme={resolvedTheme === "dark" ? "dark" : "light"}
       onThemeChange={onThemeChange}
       variant={variant}
       duration={duration}

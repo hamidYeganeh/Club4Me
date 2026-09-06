@@ -2,6 +2,7 @@
 
 import type { DiscoverySportItem } from "@api/discovery";
 import { ScrollShadow } from "@heroui/react";
+import { SportCardSkeleton } from "../../components/skeletons/SportCardSkeleton";
 import Link from "next/link";
 import { SportCard } from "@ui/sport-card";
 
@@ -17,6 +18,8 @@ const SPORT_FALLBACK_IMAGES = [
 ] as const;
 
 export function DiscoverySportsRailSection({
+  isLoading = false,
+  skeletonCount = 3,
   id,
   title,
   subtitle,
@@ -24,6 +27,8 @@ export function DiscoverySportsRailSection({
   seeAllLabel = "مشاهده همه",
   seeAllHref = "/discovery/search",
 }: {
+  isLoading?: boolean;
+  skeletonCount?: number;
   id: string;
   title: string;
   subtitle?: string;
@@ -33,7 +38,7 @@ export function DiscoverySportsRailSection({
 }) {
   const titleId = `discovery-sports-${id}`;
 
-  if (items.length === 0) {
+  if (!isLoading && items.length === 0) {
     return (
       <DiscoveryEmptySection
         title={title}
@@ -48,6 +53,7 @@ export function DiscoverySportsRailSection({
   return (
     <section className="flex flex-col gap-4" aria-labelledby={titleId}>
       <DiscoverySectionHeader
+        isLoading={isLoading}
         id={titleId}
         title={title}
         subtitle={subtitle}
@@ -63,29 +69,35 @@ export function DiscoverySportsRailSection({
         aria-label={title}
       >
         <div className="flex w-max snap-x gap-3 pb-1">
-          {items.map((sport, index) => (
-            <Link
-              key={sport.id}
-              href={`/discovery/sports/${sport.slug || sport.id}`}
-              scroll={false}
-              className="w-[12.5rem] shrink-0 snap-start rounded-[20px] outline-none focus-visible:ring-2 focus-visible:ring-focus"
-              aria-label={sport.name}
-            >
-              <SportCard
-                value={sport.name}
-                supportingText={
-                  sport.categoryName || sport.description || "رشته ورزشی"
-                }
-                icon={resolveClubTypeIcon(sport.code, sport.icon)}
-                backgroundImage={
-                  sport.imageUrl ??
-                  SPORT_FALLBACK_IMAGES[index % SPORT_FALLBACK_IMAGES.length]
-                }
-                backgroundImageAlt={sport.name}
-                className="w-full"
-              />
-            </Link>
-          ))}
+          {isLoading
+            ? Array.from({ length: skeletonCount }, (_, index) => (
+                <SportCardSkeleton key={index} />
+              ))
+            : items.map((sport, index) => (
+                <Link
+                  key={sport.id}
+                  href={`/discovery/sports/${sport.slug || sport.id}`}
+                  scroll={false}
+                  className="w-[12.5rem] shrink-0 snap-start rounded-[20px] outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                  aria-label={sport.name}
+                >
+                  <SportCard
+                    value={sport.name}
+                    supportingText={
+                      sport.categoryName || sport.description || "رشته ورزشی"
+                    }
+                    icon={resolveClubTypeIcon(sport.code, sport.icon)}
+                    backgroundImage={
+                      sport.imageUrl ??
+                      SPORT_FALLBACK_IMAGES[
+                        index % SPORT_FALLBACK_IMAGES.length
+                      ]
+                    }
+                    backgroundImageAlt={sport.name}
+                    className="w-full"
+                  />
+                </Link>
+              ))}
         </div>
       </ScrollShadow>
     </section>

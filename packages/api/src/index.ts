@@ -10,6 +10,7 @@ export * from "./domains/notifications";
 export * from "./domains/reports";
 export * from "./domains/resources";
 export * from "./domains/locations";
+export * from "./domains/media";
 export * from "./domains/reservations";
 export * from "./domains/support";
 export {

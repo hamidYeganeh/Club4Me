@@ -1,6 +1,7 @@
 "use client";
 
 import { useAccountMe, useUpdateAccountMe } from "@api/account";
+import { useCreateMedia } from "@api";
 import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
 import { ProfileImageHeroSection } from "@modules/profile/sections/ProfileImageHeroSection";
 import { toast } from "@heroui/react";
@@ -14,6 +15,7 @@ export function ProfileImageScreen({ role }: ProfileImageScreenProps) {
   const tCommon = useTranslations("common");
   const me = useAccountMe();
   const updateProfile = useUpdateAccountMe();
+  const createMedia = useCreateMedia();
   const avatarSrc =
     updateProfile.data?.avatarUrl ?? me.data?.avatarUrl ?? PROFILE_AVATAR_SRC;
 
@@ -27,11 +29,11 @@ export function ProfileImageScreen({ role }: ProfileImageScreenProps) {
         title={t("imageTitle")}
         avatarAlt={t("avatarAlt", { name: t("fallbackName") })}
         avatarSrc={avatarSrc}
-        isUploading={updateProfile.isPending}
+        isUploading={updateProfile.isPending || createMedia.isPending}
         onFile={async (file) => {
           try {
-            const avatarUrl = await fileToDataUrl(file);
-            await updateProfile.mutateAsync({ avatarUrl });
+            const media = await createMedia.mutateAsync(file);
+            await updateProfile.mutateAsync({ avatarUrl: media.url });
             toast.success(t("imageUploadSuccess"));
           } catch {
             toast.danger(t("imageUploadError"));
@@ -40,17 +42,4 @@ export function ProfileImageScreen({ role }: ProfileImageScreenProps) {
       />
     </main>
   );
-}
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () =>
-      typeof reader.result === "string"
-        ? resolve(reader.result)
-        : reject(new Error("Unable to read image"));
-    reader.onerror = () =>
-      reject(reader.error ?? new Error("Unable to read image"));
-    reader.readAsDataURL(file);
-  });
 }

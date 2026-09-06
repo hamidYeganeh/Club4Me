@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
+import type { ClubProfile, ClubBusyHour } from "../dto/club-profile.dto";
 
 export const SOCIAL_PLATFORMS = [
   "instagram",
@@ -28,6 +29,12 @@ export class ClubGalleryItem {
   kind: "image" | "video";
   @Prop({ type: Number, min: 0, default: 0 }) position: number;
   @Prop({ type: Boolean, default: false }) isCover: boolean;
+  @Prop({
+    type: String,
+    enum: ["training", "equipment", "changing_room", "entrance", "other"],
+  })
+  category?: string;
+  @Prop({ type: String }) takenOn?: string;
 }
 
 @Schema({ _id: false })
@@ -169,6 +176,16 @@ export class ClubLocationPoint {
 
 @Schema({ collection: "clubs", timestamps: true })
 export class Club {
+  @Prop({ type: Object, default: {} }) profile: ClubProfile;
+  @Prop({ type: Boolean, default: false }) trialBookingEnabled: boolean;
+  @Prop({ type: [Object], default: [] }) busyHours: ClubBusyHour[];
+  @Prop({ type: Date, default: null }) busyHoursUpdatedAt: Date | null;
+  @Prop({ type: Object, default: {} }) verifications: Partial<
+    Record<
+      "identity" | "documents" | "on_site",
+      { verifiedAt: string; verifiedBy: string }
+    >
+  >;
   @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
   ownerId: Types.ObjectId;
 

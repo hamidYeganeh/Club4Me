@@ -32,7 +32,7 @@ export function weeklyHoursToWeekAvailability(
       };
       continue;
     }
-    const periods = day.periods.slice(0, 4);
+    const periods = day.periods.slice(0, 2);
     week[key] = {
       enabled: periods.length > 0,
       ranges:
@@ -63,7 +63,7 @@ export function weekAvailabilityToWeeklyHours(
       return {
         dayOfWeek,
         isClosed: false,
-        periods: day.ranges.slice(0, 4).map((range) => ({
+        periods: day.ranges.slice(0, 2).map((range) => ({
           opensAt: range.start,
           closesAt: range.end,
         })),

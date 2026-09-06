@@ -9,16 +9,13 @@ import {
 } from "@nestjs/common";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
-import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { RolesGuard } from "../auth/guards/roles.guard";
 import type { AuthTokenPayload } from "../auth/services/token.service";
 import { CreateMediaDto } from "./dto/create-media.dto";
 import { MediaService } from "./media.service";
 
-@Controller("api/v1/business/media")
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles("owner", "coach")
+@Controller(["api/v1/media", "api/v1/business/media"])
+@UseGuards(JwtAuthGuard)
 export class MediaController {
   constructor(private readonly service: MediaService) {}
 

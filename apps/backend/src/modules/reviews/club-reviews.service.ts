@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { ResourcesService } from "../resources/resources.service";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 
@@ -27,6 +28,7 @@ export class ClubReviewsService {
     @InjectModel(Reservation.name)
     private readonly reservations: Model<ReservationDocument>,
     private readonly media: MediaService,
+    private readonly resources: ResourcesService,
   ) {}
 
   async list(clubId: string) {
@@ -49,7 +51,37 @@ export class ClubReviewsService {
         },
       ]),
     ]);
+    const criteria = await this.activeCriteria();
+    const criteriaSummary = await this.reviews.aggregate<{
+      _id: string;
+      averageRating: number;
+      reviewsCount: number;
+    }>([
+      { $match: { clubId: id, status: "published" } },
+      { $project: { scores: { $objectToArray: "$ratings" } } },
+      { $unwind: "$scores" },
+      {
+        $group: {
+          _id: "$scores.k",
+          averageRating: { $avg: "$scores.v" },
+          reviewsCount: { $sum: 1 },
+        },
+      },
+    ]);
     return {
+      criteria: criteria.map((item) => ({
+        id: item.id,
+        name: String(item.name),
+      })),
+      criteriaSummary: criteria.map((item) => {
+        const stats = criteriaSummary.find((row) => row._id === item.id);
+        return {
+          id: item.id,
+          name: String(item.name),
+          averageRating: stats?.averageRating ?? 0,
+          reviewsCount: stats?.reviewsCount ?? 0,
+        };
+      }),
       items: items.map(toPublic),
       averageRating: summary[0]?.averageRating ?? 0,
       reviewsCount: summary[0]?.reviewsCount ?? 0,
@@ -81,6 +113,15 @@ export class ClubReviewsService {
       );
     }
     await this.media.assertOwnedReady(userId, input.mediaIds);
+    const criterionLabels: Record<string, string> = {};
+    for (const id of Object.keys(input.ratings ?? {})) {
+      const criterion = await this.resources.requireActive(
+        "clubs",
+        "review-criterion",
+        id,
+      );
+      criterionLabels[id] = String(criterion.name);
+    }
     try {
       const review = await this.reviews.create({
         clubId: objectId(clubId, "CLUB_NOT_FOUND"),
@@ -90,6 +131,7 @@ export class ClubReviewsService {
         title: input.title?.trim(),
         body: input.body.trim(),
         ratings: input.ratings ?? {},
+        criterionLabels,
         mediaIds: input.mediaIds.map((id) => objectId(id, "MEDIA_NOT_FOUND")),
         isVerifiedBooking: true,
       });
@@ -163,6 +205,24 @@ export class ClubReviewsService {
       summary[0]?.reviewsCount ?? 0,
     );
   }
+
+  private async activeCriteria() {
+    const items: Array<{ id: string; name?: unknown }> = [];
+    for (let page = 1; ; page++) {
+      const result = await this.resources.list("clubs", "review-criterion", {
+        isActive: "true",
+        limit: "100",
+        page: String(page),
+      });
+      items.push(
+        ...result.items.map((item) => ({
+          id: String(item.id),
+          name: item.name,
+        })),
+      );
+      if (page >= result.totalPages) return items;
+    }
+  }
 }
 
 function toPublic(review: ClubReviewDocument) {
@@ -174,6 +234,7 @@ function toPublic(review: ClubReviewDocument) {
     title: review.title,
     body: review.body,
     ratings: review.ratings,
+    criterionLabels: review.criterionLabels ?? {},
     mediaIds: review.mediaIds.map(String),
     isVerifiedBooking: review.isVerifiedBooking,
     ownerResponse: review.ownerResponse,

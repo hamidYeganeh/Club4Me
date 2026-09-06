@@ -26,6 +26,7 @@ export type LineProps = {
   strokeWidth?: number;
   curve?: CurveKind;
   fill?: boolean;
+  showDots?: boolean;
 };
 
 export function Line(props: LineProps): null {
@@ -227,6 +228,19 @@ export function LineChart({
                           {path}
                         </motion.g>
                       )}
+                      {line.showDots
+                        ? data.map((datum) => (
+                            <circle
+                              key={`${line.dataKey}-${String(datum[xDataKey])}`}
+                              cx={getX(datum)}
+                              cy={getY(line.dataKey)(datum)}
+                              r={3.5}
+                              fill="var(--surface)"
+                              stroke={stroke}
+                              strokeWidth={2.5}
+                            />
+                          ))
+                        : null}
                     </g>
                   );
                 })}

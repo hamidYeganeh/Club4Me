@@ -11,8 +11,6 @@ import type { PanelHeaderSectionProps } from "./PanelHeaderSection.types";
 
 export function PanelHeaderSection({
   searchPlaceholder,
-  chatLabel,
-  chatHref,
   settingsHref,
   settingsLabel,
 }: PanelHeaderSectionProps) {
@@ -20,7 +18,11 @@ export function PanelHeaderSection({
 
   return (
     <header className={styles.root()}>
-      <SearchField name="panel-search" variant="secondary" className={styles.search()}>
+      <SearchField
+        name="panel-search"
+        variant="secondary"
+        className={styles.search()}
+      >
         <SearchField.Group className="w-full rounded-full">
           <SearchField.SearchIcon />
           <SearchField.Input
@@ -40,10 +42,6 @@ export function PanelHeaderSection({
           className={styles.iconBtn()}
         >
           <Icon name="gear-1" />
-        </ButtonLink>
-        <ButtonLink href={chatHref} variant="primary" className="rounded-full">
-          <Icon name="sparkle-1" />
-          {chatLabel}
         </ButtonLink>
       </div>
     </header>

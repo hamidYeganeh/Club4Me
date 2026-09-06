@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 
 import { http } from "../../http/client";
+import type { Media } from "../media";
 
 export type CoachProfile = {
   id: string;
@@ -41,7 +42,7 @@ export type CoachProfile = {
   rejectionReason: string | null;
 };
 
-export type CoachMedia = { id: string; url: string; mimeType: string };
+export type CoachMedia = Media;
 
 export type CoachClass = {
   id: string;
@@ -476,16 +477,6 @@ export function useUpdateCoachProfile() {
     mutationFn: client.updateProfile,
     onSuccess: async () =>
       queryClient.invalidateQueries({ queryKey: ["coach"] }),
-  });
-}
-
-export function useCreateCoachMedia() {
-  return useMutation({
-    mutationFn: (url: string) =>
-      http.post<CoachMedia>("/business/media", {
-        url,
-        mimeType: "image/external",
-      }),
   });
 }
 

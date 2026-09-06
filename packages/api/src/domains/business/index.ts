@@ -3,6 +3,7 @@
 import { createPortalAuth } from "../portal/create-portal-auth";
 
 export * from "./business-clubs";
+export type * from "./club-profile.dto";
 export * from "./business-operations";
 export * from "./business-classes";
 export * from "./business-memberships";
@@ -31,6 +32,8 @@ export type {
   BusinessCatalogItem,
   BusinessCatalogResponse,
   BusinessMedia,
+  BusinessTag,
+  BusinessTagsResponse,
   ClubCancellationRule,
   ClubCancellationTier,
   ClubLocation,

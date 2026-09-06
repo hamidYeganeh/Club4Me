@@ -312,15 +312,9 @@ function getReservationDetail({
 }: {
   reservationId: string;
   source: ReservationSource;
-  clubItems: ReturnType<typeof useMyReservations>["data"] extends { items: infer T }
-    ? T
-    : never;
-  coachItems: ReturnType<typeof useMyCoachBookings>["data"] extends { items: infer T }
-    ? T
-    : never;
-  classItems: ReturnType<typeof useMyClassEnrollments>["data"] extends { items: infer T }
-    ? T
-    : never;
+  clubItems: NonNullable<ReturnType<typeof useMyReservations>["data"]>["items"];
+  coachItems: NonNullable<ReturnType<typeof useMyCoachBookings>["data"]>["items"];
+  classItems: NonNullable<ReturnType<typeof useMyClassEnrollments>["data"]>["items"];
 }): ReservationDetail | null {
   if (source === "coach") {
     const item = coachItems.find((candidate) => candidate.id === reservationId);

@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
+import { createHash } from "node:crypto";
 
 import { AppError } from "../../common/errors/app.exception";
 import type { CreateMediaDto } from "./dto/create-media.dto";
@@ -8,8 +9,10 @@ import { Media, type MediaDocument } from "./schemas/media.schema";
 
 export type PublicMedia = {
   id: string;
+  hash: string;
   url: string;
   mimeType: string;
+  byteSize: number;
   status: "ready" | "blocked";
   createdAt: string;
 };
@@ -21,13 +24,29 @@ export class MediaService {
   ) {}
 
   async create(ownerId: string, input: CreateMediaDto): Promise<PublicMedia> {
-    const media = await this.model.create({
-      ownerId: toObjectId(ownerId),
-      url: input.url.trim(),
-      mimeType: input.mimeType.trim().toLowerCase(),
-      status: "ready",
-    });
-    return toPublic(media);
+    const ownerObjectId = toObjectId(ownerId);
+    const stored = prepareMedia(input.url, input.mimeType);
+    const existing = await this.model
+      .findOne({ ownerId: ownerObjectId, hash: stored.hash })
+      .exec();
+    if (existing) return toPublic(existing);
+
+    try {
+      const media = await this.model.create({
+        ownerId: ownerObjectId,
+        ...stored,
+        status: "ready",
+      });
+      return toPublic(media);
+    } catch (error) {
+      // Concurrent uploads of the same content can race on the unique index.
+      if ((error as { code?: number }).code !== 11000) throw error;
+      const duplicate = await this.model
+        .findOne({ ownerId: ownerObjectId, hash: stored.hash })
+        .exec();
+      if (!duplicate) throw error;
+      return toPublic(duplicate);
+    }
   }
 
   async list(ownerId: string): Promise<{ items: PublicMedia[] }> {
@@ -67,12 +86,34 @@ export class MediaService {
 }
 
 function toPublic(media: MediaDocument): PublicMedia {
+  const stored =
+    media.hash && media.byteSize !== undefined
+      ? null
+      : prepareMedia(media.url, media.mimeType);
   return {
     id: String(media._id),
+    hash: media.hash ?? stored!.hash,
     url: media.url,
     mimeType: media.mimeType,
+    byteSize: media.byteSize ?? stored!.byteSize,
     status: media.status,
     createdAt: media.createdAt.toISOString(),
+  };
+}
+
+export function prepareMedia(url: string, mimeType: string) {
+  const normalizedUrl = url.trim();
+  const normalizedMimeType = mimeType.trim().toLowerCase();
+  const dataUrl = /^data:([^;,]+);base64,(.+)$/is.exec(normalizedUrl);
+  const content = dataUrl
+    ? Buffer.from(dataUrl[2]!, "base64")
+    : Buffer.from(normalizedUrl, "utf8");
+
+  return {
+    url: normalizedUrl,
+    mimeType: normalizedMimeType,
+    hash: createHash("sha256").update(content).digest("hex"),
+    byteSize: content.byteLength,
   };
 }
 

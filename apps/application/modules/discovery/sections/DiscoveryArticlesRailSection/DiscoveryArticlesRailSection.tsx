@@ -1,5 +1,6 @@
 "use client";
 
+import { ArticleCardSkeleton } from "../../components/skeletons/ArticleCardSkeleton";
 import { useLocale, useTranslations } from "next-intl";
 import { FreeMode } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -26,6 +27,7 @@ export function DiscoveryArticlesRailSection({
   cardVariant = { orientation: "vertical", outlined: false },
   className,
   isLoading = false,
+  skeletonCount = 3,
 }: DiscoveryArticlesRailSectionProps) {
   const t = useTranslations("discovery.home");
   const direction = getLocaleDirection(useLocale());
@@ -33,9 +35,7 @@ export function DiscoveryArticlesRailSection({
   const styles = discoveryArticlesRailSectionStyles({ orientation });
   const titleId = `discovery-articles-rail-${id}`;
 
-  if (isLoading) return null;
-
-  if (items.length === 0) {
+  if (!isLoading && items.length === 0) {
     return (
       <DiscoveryEmptySection
         title={title}
@@ -50,6 +50,7 @@ export function DiscoveryArticlesRailSection({
   return (
     <section className={styles.root({ className })} aria-labelledby={titleId}>
       <DiscoverySectionHeader
+        isLoading={isLoading}
         id={titleId}
         title={title}
         subtitle={subtitle}
@@ -67,23 +68,33 @@ export function DiscoveryArticlesRailSection({
         watchOverflow
         className={styles.swiper()}
       >
-        {items.map((article) => (
-          <SwiperSlide key={article.id} className={styles.slide()}>
-            <ArticleCard
-              title={article.title}
-              description={article.excerpt}
-              coverImageUrl={article.coverImageUrl}
-              authorName={article.authorName}
-              readTime=""
-              tags={[]}
-              tagsLabel={t("articleTagsLabel")}
-              orientation={orientation}
-              outlined={cardVariant.outlined}
-              href={`/discovery/articles/${article.slug}`}
-              className={styles.card()}
-            />
-          </SwiperSlide>
-        ))}
+        {isLoading
+          ? Array.from({ length: skeletonCount }, (_, index) => (
+              <SwiperSlide key={index} className={styles.slide()}>
+                <ArticleCardSkeleton
+                  orientation={orientation}
+                  outlined={cardVariant.outlined}
+                  className={styles.card()}
+                />
+              </SwiperSlide>
+            ))
+          : items.map((article) => (
+              <SwiperSlide key={article.id} className={styles.slide()}>
+                <ArticleCard
+                  title={article.title}
+                  description={article.excerpt}
+                  coverImageUrl={article.coverImageUrl}
+                  authorName={article.authorName}
+                  readTime=""
+                  tags={[]}
+                  tagsLabel={t("articleTagsLabel")}
+                  orientation={orientation}
+                  outlined={cardVariant.outlined}
+                  href={`/discovery/articles/${article.slug}`}
+                  className={styles.card()}
+                />
+              </SwiperSlide>
+            ))}
       </Swiper>
     </section>
   );

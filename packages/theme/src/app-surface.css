@@ -1,0 +1,23 @@
+/* Shared application surface utilities — composition only, no HeroUI size overrides. */
+
+@layer components {
+  .app-surface {
+    @apply border border-white/7 bg-surface/72 backdrop-blur-xl;
+  }
+
+  .app-card {
+    @apply rounded-[1.35rem] border border-white/7 bg-surface/78 backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-300 ease-out hover:border-accent/30 active:scale-[0.985];
+  }
+
+  .app-icon-button {
+    @apply flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-[1rem] border border-white/8 bg-surface/72 text-foreground backdrop-blur-xl transition-transform duration-200 active:scale-95;
+  }
+
+  .app-field {
+    @apply h-13 rounded-[1.15rem] border border-white/10 bg-surface/80 px-4 text-foreground outline-none backdrop-blur-md transition-[border-color,box-shadow] duration-200 focus-within:border-focus focus-within:ring-3 focus-within:ring-focus/15;
+  }
+
+  .app-chip-row {
+    @apply -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+  }
+}

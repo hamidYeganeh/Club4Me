@@ -3,6 +3,9 @@ import { ClubFieldsSchema, type ClubFields } from "./club-fields.dto";
 export class CreateClubDto implements ClubFields {
   static schema = ClubFieldsSchema;
   name: ClubFields["name"];
+  profile?: ClubFields["profile"];
+  trialBookingEnabled?: boolean;
+  busyHours?: ClubFields["busyHours"];
   shortDescription?: ClubFields["shortDescription"];
   description?: ClubFields["description"];
   faqs?: ClubFields["faqs"];

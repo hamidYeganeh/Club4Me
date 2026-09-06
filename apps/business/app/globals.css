@@ -4,27 +4,48 @@
 @import "@repo/theme/fonts.css";
 @import "@repo/theme/icons.css";
 @import "@repo/theme/theme-transition.css";
+@import "@repo/theme/app-surface.css";
+@import "@neshan-maps-platform/maplibre-sdk/style.css";
 
 @source "../../../packages/ui/src";
 
 @layer base {
   body {
-    @apply bg-background text-foreground min-h-full;
+    /* Keep compact panel field height — do not adopt application HeroUI size overrides. */
+    --field-control-height: 2.75rem;
+    @apply min-h-full bg-background text-foreground;
   }
 }
 
-/* Unlayered — required for AnimatedThemeToggler View Transitions */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
+@layer components {
+  .business-panel {
+    @apply bg-background text-foreground;
+  }
+
+  .business-panel main {
+    @apply w-full;
+  }
+
+  /* Floating main stage — pairs with capsule rail */
+  .business-panel .panel-frame-main {
+    @apply lg:min-h-dvh lg:py-3 lg:pe-3;
+  }
+
+  .business-panel .panel-frame-body {
+    @apply overflow-y-auto lg:rounded-b-[1.75rem];
+  }
+
+  .business-panel .panel-frame-main > header {
+    @apply lg:rounded-t-[1.75rem] lg:border lg:border-b-0 lg:border-border/50;
+  }
+
+  .business-panel .panel-frame-body {
+    @apply lg:border lg:border-t-0 lg:border-border/50 lg:bg-surface/35 dark:lg:bg-surface/25;
+  }
+
+  /* Soft panel chrome without changing HeroUI control sizes */
+  .business-panel .panel-search-group {
+    @apply h-11 rounded-[1.15rem] border border-border/70 bg-surface/80 px-3 backdrop-blur-md transition-[border-color,box-shadow] duration-200 focus-within:border-focus focus-within:ring-3 focus-within:ring-focus/15;
+  }
 }
 
-/* Scoped to AnimatedThemeToggler — the toggler sets the data-attribute and the variable only during a theme toggle. */
-html[data-magicui-theme-vt="active"]::view-transition-group(root) {
-  animation-duration: var(--magicui-theme-toggle-vt-duration);
-}
-
-html[data-magicui-theme-vt="active"]::view-transition-new(root) {
-  clip-path: var(--magicui-theme-vt-clip-from);
-}

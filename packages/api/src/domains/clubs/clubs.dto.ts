@@ -19,6 +19,8 @@ export type PublicClubDetails = Omit<
     title?: string;
     url: string;
     mimeType: string;
+    category?: import("../business/club-profile.dto").ClubGalleryCategory;
+    takenOn?: string;
   }>;
   socialMedia: Array<{ platform: SocialPlatform; link: string }>;
   equipment: Array<
@@ -30,6 +32,9 @@ export type PublicClubDetails = Omit<
 };
 
 export type ClubReview = {
+  ratings?: Record<string, number>;
+  criterionLabels?: Record<string, string>;
+  isVerifiedBooking?: boolean;
   id: string;
   clubId: string;
   userId: string;
@@ -42,12 +47,20 @@ export type ClubReview = {
 };
 
 export type ClubReviewsResponse = {
+  criteria?: Array<{ id: string; name: string }>;
+  criteriaSummary?: Array<{
+    id: string;
+    name: string;
+    averageRating: number;
+    reviewsCount: number;
+  }>;
   items: ClubReview[];
   averageRating: number;
   reviewsCount: number;
 };
 
 export type CreateClubReviewPayload = {
+  ratings?: Record<string, number>;
   rating: number;
   title?: string;
   body: string;

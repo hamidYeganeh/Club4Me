@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import { useMarkNotificationRead, useNotifications } from "@api";
 import { Icon, type IconName } from "@theme/icon";
-import { ThemeToggle } from "@theme/theme-toggle";
 
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { RequestFailureState } from "@/components/request-failure-state";
@@ -94,7 +93,6 @@ export function NotificationsScreen() {
         title="اعلان‌ها"
         showFilter={false}
         backHref={`/${role}/profile`}
-        action={<ThemeToggle className="border-0 bg-transparent" />}
       />
 
       <div className="px-5 pt-4">

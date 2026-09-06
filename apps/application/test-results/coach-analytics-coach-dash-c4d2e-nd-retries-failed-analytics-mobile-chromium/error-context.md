@@ -7,7 +7,7 @@
 # Test info
 
 - Name: coach-analytics.spec.ts >> coach dashboard shows empty states and retries failed analytics
-- Location: e2e/coach-analytics.spec.ts:131:5
+- Location: e2e/coach-analytics.spec.ts:146:5
 
 # Error details
 
@@ -46,21 +46,6 @@ Call log:
 # Test source
 
 ```ts
-  55  |       booking({ bookedAt: "invalid" }),
-  56  |     ],
-  57  |     [enrollment],
-  58  |     30,
-  59  |     "IRR",
-  60  |     now,
-  61  |   );
-  62  |   expect(result.income).toBe(3_200_000);
-  63  |   expect(result.reservations).toBe(5);
-  64  |   expect(result.occupancyPercent).toBe(40);
-  65  |   expect(result.statuses.map((item) => item.value)).toEqual([0, 4, 0, 1, 0]);
-  66  |   expect(retainedPayment(booking({ paymentStatus: "refunded" }))).toBe(0);
-  67  |   expect(retainedPayment(booking({ refundAmount: 2_000_000 }))).toBe(0);
-  68  | });
-  69  | 
   70  | test("analytics uses Tehran day boundaries and excludes inactive class capacity", () => {
   71  |   const result = buildCoachAnalytics(
   72  |     [{ ...coachClass, status: "cancelled" }],
@@ -104,58 +89,73 @@ Call log:
   110 |   page.on("pageerror", (error) => errors.push(error.message));
   111 |   await page.goto("/coach");
   112 |   const section = page.getByRole("region", { name: "عملکرد شما" });
-  113 |   await expect(section.getByText("۳٬۰۰۰٬۰۰۰", { exact: true })).toBeVisible();
-  114 |   await expect(section.locator("svg")).toHaveCount(4);
-  115 |   await section.getByLabel("بازه گزارش").selectOption("7");
-  116 |   await expect(section.getByText("۳٬۰۰۰٬۰۰۰", { exact: true })).toBeVisible();
-  117 |   await section.locator("summary").first().click();
-  118 |   await expect(section.locator("table").first()).toBeVisible();
-  119 |   expect(
-  120 |     await page.evaluate(
-  121 |       () => document.documentElement.scrollWidth <= window.innerWidth,
-  122 |     ),
-  123 |   ).toBe(true);
-  124 |   await page.screenshot({
-  125 |     path: "/tmp/coach-analytics-mobile.png",
-  126 |     fullPage: true,
-  127 |   });
-  128 |   expect(errors).toEqual([]);
-  129 | });
-  130 | 
-  131 | test("coach dashboard shows empty states and retries failed analytics", async ({
-  132 |   page,
-  133 | }) => {
-  134 |   const state = createMockApiState();
-  135 |   state.user.roles = ["coach"];
-  136 |   await installApiMock(page, state);
-  137 |   await setBrowserSession(page, true);
-  138 |   let fail = true;
-  139 |   await page.route("**/api/v1/coach/**", async (route) => {
-  140 |     const path = new URL(route.request().url()).pathname;
-  141 |     if (path.endsWith("/bookings") && fail) {
-  142 |       return route.fulfill({ status: 500, json: { message: "Unavailable" } });
-  143 |     }
-  144 |     return route.fulfill({
-  145 |       json: {
-  146 |         data: path.endsWith("/profile")
-  147 |           ? { displayName: "مربی آزمایشی", reviewStatus: "approved" }
-  148 |           : { items: [] },
-  149 |       },
-  150 |     });
-  151 |   });
-  152 |   await page.goto("/coach");
-  153 |   await expect(
-  154 |     page.getByText("دریافت آمار کامل نشد. دوباره تلاش کنید."),
-> 155 |   ).toBeVisible({ timeout: 20000 });
+  113 |   await expect(
+  114 |     section.locator("p").filter({ hasText: /^۳٬۰۰۰٬۰۰۰$/ }),
+  115 |   ).toBeVisible();
+  116 |   await expect(section.locator("svg.overflow-visible")).toHaveCount(4);
+  117 |   await expect
+  118 |     .poll(() =>
+  119 |       section
+  120 |         .locator('g[class^="bar-series-"] rect')
+  121 |         .evaluateAll(
+  122 |           (bars) =>
+  123 |             bars.length > 0 &&
+  124 |             bars.every((bar) => Number(bar.getAttribute("y")) >= 0),
+  125 |         ),
+  126 |     )
+  127 |     .toBe(true);
+  128 |   await section.getByLabel("بازه گزارش").selectOption("7");
+  129 |   await expect(
+  130 |     section.locator("p").filter({ hasText: /^۳٬۰۰۰٬۰۰۰$/ }),
+  131 |   ).toBeVisible();
+  132 |   await section.locator("summary").first().click();
+  133 |   await expect(section.locator("table").first()).toBeVisible();
+  134 |   expect(
+  135 |     await page.evaluate(
+  136 |       () => document.documentElement.scrollWidth <= window.innerWidth,
+  137 |     ),
+  138 |   ).toBe(true);
+  139 |   await page.screenshot({
+  140 |     path: "/tmp/coach-analytics-mobile.png",
+  141 |     fullPage: true,
+  142 |   });
+  143 |   expect(errors).toEqual([]);
+  144 | });
+  145 | 
+  146 | test("coach dashboard shows empty states and retries failed analytics", async ({
+  147 |   page,
+  148 | }) => {
+  149 |   const state = createMockApiState();
+  150 |   state.user.roles = ["coach"];
+  151 |   await installApiMock(page, state);
+  152 |   await setBrowserSession(page, true);
+  153 |   let fail = true;
+  154 |   await page.route("**/api/v1/coach/**", async (route) => {
+  155 |     const path = new URL(route.request().url()).pathname;
+  156 |     if (path.endsWith("/bookings") && fail) {
+  157 |       return route.fulfill({ status: 500, json: { message: "Unavailable" } });
+  158 |     }
+  159 |     return route.fulfill({
+  160 |       json: {
+  161 |         data: path.endsWith("/profile")
+  162 |           ? { displayName: "مربی آزمایشی", reviewStatus: "approved" }
+  163 |           : { items: [] },
+  164 |       },
+  165 |     });
+  166 |   });
+  167 |   await page.goto("/coach");
+  168 |   await expect(
+  169 |     page.getByText("دریافت آمار کامل نشد. دوباره تلاش کنید."),
+> 170 |   ).toBeVisible({ timeout: 20000 });
       |     ^ Error: expect(locator).toBeVisible() failed
-  156 |   fail = false;
-  157 |   await page.getByRole("button", { name: "تلاش دوباره", exact: true }).click();
-  158 |   await expect(
-  159 |     page.getByText("در این بازه درآمدی ثبت نشده است."),
-  160 |   ).toBeVisible();
-  161 |   await expect(
-  162 |     page.getByText("هنوز کلاس فعالی برای نمایش وجود ندارد."),
-  163 |   ).toBeVisible();
-  164 | });
-  165 | 
+  171 |   fail = false;
+  172 |   await page.getByRole("button", { name: "تلاش دوباره", exact: true }).click();
+  173 |   await expect(
+  174 |     page.getByText("در این بازه درآمدی ثبت نشده است."),
+  175 |   ).toBeVisible();
+  176 |   await expect(
+  177 |     page.getByText("هنوز کلاس فعالی برای نمایش وجود ندارد."),
+  178 |   ).toBeVisible();
+  179 | });
+  180 | 
 ```

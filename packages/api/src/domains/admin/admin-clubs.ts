@@ -20,6 +20,22 @@ export function useAdminClubs() {
   });
 }
 
+export function useVerifyClub() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      clubId,
+      ...payload
+    }: {
+      clubId: string;
+      kind: "identity" | "documents" | "on_site";
+      verified: boolean;
+    }) =>
+      http.patch<BusinessClub>(`/admin/clubs/${clubId}/verification`, payload),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["admin", "clubs"] }),
+  });
+}
+
 export function useReviewClub() {
   const queryClient = useQueryClient();
   return useMutation({

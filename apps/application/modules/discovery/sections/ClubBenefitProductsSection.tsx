@@ -54,10 +54,12 @@ export function ClubBenefitProductsSection({ clubId }: { clubId: string }) {
             </Chip>
             <h3 className="mt-3 font-bold">{item.title}</h3>
             <p className="mt-2 text-xs leading-6 text-muted">
-              {item.description ||
-                (item.type === "session_pack"
-                  ? `${item.sessionCount} جلسه با ${item.validityDays} روز اعتبار`
-                  : `هفته‌ای ${item.weeklyLimit} مرتبه تا ${item.validityDays} روز`)}
+              {item.description}
+            </p>
+            <p className="mt-1 text-xs leading-6 text-muted">
+              {item.type === "session_pack"
+                ? `${item.sessionCount} جلسه با ${item.validityDays} روز اعتبار`
+                : `هفته‌ای ${item.weeklyLimit} مرتبه تا ${item.validityDays} روز`}
             </p>
             <div className="mt-4 flex items-center justify-between gap-3">
               <strong>{item.price.toLocaleString("fa-IR")} ریال</strong>

@@ -61,6 +61,7 @@ function isSpecialPrimary(definition: DefinitionWithGroup): string {
 
 function needsCode(definition: DefinitionWithGroup): boolean {
   const specialized = new Set([
+    "club_tags",
     "age_group_presets",
     "search_synonyms",
     "popular_searches",

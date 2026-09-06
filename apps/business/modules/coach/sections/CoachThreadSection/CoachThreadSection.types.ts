@@ -18,4 +18,8 @@ export type CoachThreadSectionProps = {
   send: string;
   attach: string;
   voice: string;
+  gptBadge: string;
+  chatsLeft: string;
+  downloadApp: string;
+  voiceDuration: string;
 };

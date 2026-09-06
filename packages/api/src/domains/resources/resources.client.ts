@@ -9,6 +9,10 @@ import type {
 } from "./resources.dto";
 import { resourcesEndpoints } from "./resources.endpoints";
 export const resourcesClient = {
+  seedAll: () =>
+    http.post<{ created: number; existing: number }>(
+      "/resources/registry?action=seed",
+    ),
   list: (category: string, resource: string, params?: ResourceListParams) =>
     http.get<ResourceListResponse>(
       resourcesEndpoints.list(category, resource),

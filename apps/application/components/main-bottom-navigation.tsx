@@ -52,7 +52,9 @@ function isDiscoveryDetail(pathname: string): boolean {
 }
 
 function isNestedProfileRoute(pathname: string): boolean {
-  return /^\/(athlete|coach)\/profile\/(edit|image)/.test(pathname);
+  return /^\/(athlete|coach)\/(?:profile\/.+|reservations(?:\/|$)|settings(?:\/|$)|favorites(?:\/|$)|notifications(?:\/|$)|benefits(?:\/|$)|support(?:\/|$)|locations(?:\/|$))/.test(
+    pathname,
+  );
 }
 
 function getNavConfig(

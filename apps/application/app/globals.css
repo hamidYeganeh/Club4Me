@@ -4,6 +4,7 @@
 @import "@repo/theme/fonts.css";
 @import "@repo/theme/icons.css";
 @import "@repo/theme/theme-transition.css";
+@import "@repo/theme/app-surface.css";
 @import "@neshan-maps-platform/maplibre-sdk/style.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -102,26 +103,6 @@
   .app-header-spacer {
     @apply h-[calc(72px+env(safe-area-inset-top))] w-full shrink-0;
   }
-
-  .app-surface {
-    @apply border border-white/7 bg-surface/72 backdrop-blur-xl;
-  }
-
-  .app-card {
-    @apply rounded-[1.35rem] border border-white/7 bg-surface/78 backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-300 ease-out hover:border-accent/30 active:scale-[0.985];
-  }
-
-  .app-icon-button {
-    @apply flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-[1rem] border border-white/8 bg-surface/72 text-foreground backdrop-blur-xl transition-transform duration-200 active:scale-95;
-  }
-
-  .app-field {
-    @apply h-13 rounded-[1.15rem] border border-white/10 bg-surface/80 px-4 text-foreground outline-none backdrop-blur-md transition-[border-color,box-shadow] duration-200 focus-within:border-focus focus-within:ring-3 focus-within:ring-focus/15;
-  }
-
-  .app-chip-row {
-    @apply -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
-  }
 }
 
 @keyframes shimmer {
@@ -130,20 +111,22 @@
   }
 }
 
-/* Unlayered — required for AnimatedThemeToggler View Transitions */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
-}
-
-/* Scoped to AnimatedThemeToggler — the toggler sets the data-attribute and the variable only during a theme toggle. */
-html[data-magicui-theme-vt="active"]::view-transition-group(root) {
-  animation-duration: var(--magicui-theme-toggle-vt-duration);
-}
-
-html[data-magicui-theme-vt="active"]::view-transition-new(root) {
-  clip-path: var(--magicui-theme-vt-clip-from);
+@keyframes splash-logo-intro {
+  0% {
+    opacity: 0;
+    transform: scale(0.72) rotate(-8deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.08) rotate(2deg);
+  }
+  78% {
+    transform: scale(0.97) rotate(-0.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 :root {
@@ -174,3 +157,26 @@ html[data-magicui-theme-vt="active"]::view-transition-new(root) {
   --chart-scale-05: var(--accent);
   --chart-scale-pattern-color: var(--surface);
 }
+
+
+.discovery-section-skeleton { pointer-events: none; user-select: none; }
+.discovery-skeleton-block, .discovery-skeleton-text {
+  background-color: color-mix(in oklch, var(--muted) 22%, var(--surface));
+  animation: discovery-skeleton-pulse 1.8s ease-in-out infinite;
+}
+.discovery-skeleton-text {
+  color: transparent;
+  border-radius: 0.3em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+@keyframes discovery-skeleton-pulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) {
+  .discovery-skeleton-block, .discovery-skeleton-text { animation: none; }
+}
+
+.discovery-skeleton-province {
+  fill: color-mix(in oklch, var(--muted) 22%, var(--surface));
+  animation: discovery-skeleton-pulse 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) { .discovery-skeleton-province { animation: none; } }

@@ -6,6 +6,7 @@ import { ResourcesModule } from "../resources/resources.module";
 import { MediaModule } from "../media/media.module";
 import { NotificationsModule } from "../notifications/notifications.module";
 import { BusinessCatalogController } from "./business-catalog.controller";
+import { BusinessTagsController } from "./business-tags.controller";
 import {
   AdminClubsController,
   ClubsController,
@@ -39,6 +40,7 @@ import {
     ClubsController,
     AdminClubsController,
     BusinessCatalogController,
+    BusinessTagsController,
     PublicClubsController,
     BusinessClubMembershipsController,
     ClubMembershipInvitationsController,

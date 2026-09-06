@@ -16,8 +16,8 @@ export const discoveryClassesRailSectionStyles = tv({
       "absolute start-2 bottom-2 rounded-full bg-background/80 px-2.5 py-1 text-[11px] font-bold text-foreground backdrop-blur-md",
     body: "mt-3 flex min-w-0 flex-col gap-1",
     sport: "text-xs font-medium text-muted",
-    name: "line-clamp-1 text-base font-extrabold leading-6 text-foreground",
-    description: "line-clamp-2 text-xs leading-5 text-muted",
+    name: "min-h-6 line-clamp-1 text-base font-extrabold leading-6 text-foreground",
+    description: "min-h-10 line-clamp-2 text-xs leading-5 text-muted",
     price: "mt-1 text-sm font-bold text-foreground",
     skeleton:
       "aspect-[4/3] w-[min(72vw,16.5rem)] min-w-[min(72vw,16.5rem)] shrink-0 rounded-2xl border border-white/7 bg-surface/72",

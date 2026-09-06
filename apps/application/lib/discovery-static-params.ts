@@ -2,7 +2,7 @@ type SlugItem = { slug?: string };
 type Page<T> = { items?: T[] };
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:7088/api/v1";
+  process.env.NEXT_PUBLIC_API_URL ?? "https://api.gym4me.ir/api/v1";
 const FALLBACK_SLUG = "unavailable";
 
 async function getItems<T>(path: string): Promise<T[]> {
@@ -32,10 +32,10 @@ export async function getDiscoverySlugParams(
 export async function getDistrictSlugParams() {
   const [cities, districts] = await Promise.all([
     getItems<SlugItem & { id: string }>(
-      "/public/catalog/location/city?limit=100",
+      "/geography/cities?action=options&limit=100",
     ),
     getItems<SlugItem & { cityId?: string }>(
-      "/public/catalog/location/district?limit=100",
+      "/geography/districts?action=options&limit=100",
     ),
   ]);
   const citySlugById = new Map(

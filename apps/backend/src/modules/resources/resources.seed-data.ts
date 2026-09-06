@@ -1,5 +1,15 @@
+import { iranResourceSeedData } from "./resources.iran-seed-data";
+
 export type ResourceSeedValue = string | number | boolean | readonly string[];
 export type ResourceSeedRecord = Readonly<Record<string, ResourceSeedValue>>;
+
+const normalizeSeedName = (value: unknown) =>
+  String(value ?? "")
+    .normalize("NFKC")
+    .replace(/ي/g, "ی")
+    .replace(/ك/g, "ک")
+    .replace(/[\s\u200c]+/g, " ")
+    .trim();
 
 const named = (...items: readonly (readonly [name: string, code: string])[]) =>
   items.map(([name, code], sortOrder) => ({ name, code, sortOrder }));
@@ -11,7 +21,7 @@ const locationImages = {
   southCoast: "/discovery/locations/city-south-coast.jpg",
 } as const;
 
-export const resourceSeedData: Readonly<
+const baseResourceSeedData: Readonly<
   Record<string, readonly ResourceSeedRecord[]>
 > = {
   sport_categories: named(
@@ -353,6 +363,38 @@ export const resourceSeedData: Readonly<
       sortOrder: 15,
     },
   ],
+  club_tags: named(
+    ["بدنسازی", "BODYBUILDING"],
+    ["فیتنس", "FITNESS"],
+    ["تمرین عملکردی", "FUNCTIONAL_TRAINING"],
+    ["کراس ترینینگ", "CROSS_TRAINING"],
+    ["یوگا", "YOGA"],
+    ["پیلاتس", "PILATES"],
+    ["فوتبال", "FOOTBALL"],
+    ["فوتسال", "FUTSAL"],
+    ["بسکتبال", "BASKETBALL"],
+    ["والیبال", "VOLLEYBALL"],
+    ["تنیس", "TENNIS"],
+    ["پدل", "PADEL"],
+    ["شنا", "SWIMMING"],
+    ["ورزش‌های رزمی", "MARTIAL_ARTS"],
+    ["ویژه بانوان", "WOMEN_ONLY"],
+    ["ویژه آقایان", "MEN_ONLY"],
+    ["مختلط", "MIXED"],
+    ["کودکان", "CHILDREN"],
+    ["خانوادگی", "FAMILY"],
+    ["مناسب مبتدیان", "BEGINNER_FRIENDLY"],
+    ["حرفه‌ای", "PROFESSIONAL"],
+    ["کلاس گروهی", "GROUP_CLASSES"],
+    ["مربی خصوصی", "PERSONAL_TRAINER"],
+    ["تمرین آزاد", "OPEN_GYM"],
+    ["شبانه‌روزی", "OPEN_24_HOURS"],
+    ["اقتصادی", "AFFORDABLE"],
+    ["لوکس", "PREMIUM"],
+    ["دارای استخر", "SWIMMING_POOL"],
+    ["دارای سونا", "SAUNA"],
+    ["دارای پارکینگ", "PARKING"],
+  ),
   coach_types: named(
     ["مربی خصوصی", "PERSONAL"],
     ["مربی گروهی", "GROUP"],
@@ -1605,3 +1647,37 @@ export const resourceSeedData: Readonly<
     ["رویداد خارج از کنترل", "FORCE_MAJEURE"],
   ),
 };
+
+export const resourceSeedData: Readonly<
+  Record<string, readonly ResourceSeedRecord[]>
+> = Object.fromEntries(
+  [
+    ...new Set([
+      ...Object.keys(baseResourceSeedData),
+      ...Object.keys(iranResourceSeedData),
+    ]),
+  ].map((key) => {
+    const records: ResourceSeedRecord[] = [];
+    for (const item of [
+      ...(baseResourceSeedData[key] ?? []),
+      ...(iranResourceSeedData[key] ?? []),
+    ]) {
+      const primary =
+        item.name ?? item.title ?? item.canonicalTerm ?? item.phrase;
+      if (
+        !records.some(
+          (existing) =>
+            (item.code && existing.code === item.code) ||
+            normalizeSeedName(
+              existing.name ??
+                existing.title ??
+                existing.canonicalTerm ??
+                existing.phrase,
+            ) === normalizeSeedName(primary),
+        )
+      )
+        records.push(item);
+    }
+    return [key, records];
+  }),
+);

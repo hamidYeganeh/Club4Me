@@ -1,5 +1,6 @@
 "use client";
 
+import { BiometricLoginButton } from "@/components/biometric-login-button";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 import { Icon } from "@theme/icon";
@@ -16,6 +17,7 @@ export function AccountAuthHomeActionsSection({
 
   return (
     <section className={styles.root()}>
+      <BiometricLoginButton />
       <Button
         variant="primary"
         size="lg"

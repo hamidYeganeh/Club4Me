@@ -1,26 +1,33 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { parseTime } from "@internationalized/date";
+import { Label, Switch, TimeField } from "@heroui/react";
+import { Plus, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useRef, useState } from "react";
-import { Switch } from "./primitives/switch";
-import { Tooltip } from "./primitives/tooltip";
-import { SPRING_LAYOUT } from "./lib/ease";
+import { useMemo, useRef } from "react";
+
 import { CopyMenu } from "./copy-menu";
 import { IconButton } from "./icon-button";
-import { TimeSelect } from "./time-select";
+import { SPRING_LAYOUT } from "./lib/ease";
+import { Tooltip } from "./primitives/tooltip";
 import {
   clampRange,
   type DayAvailability,
   type DayKey,
-  endOptions,
-  panelKey,
-  startOptions,
   type TimeOption,
   type TimeRange,
   toMinutes,
   toValue,
 } from "./types";
+
+const AUDIENCE_LABELS = ["آقایان", "بانوان"] as const;
+
+function formatTimeValue(
+  value: { hour: number; minute: number } | null,
+): string | null {
+  if (!value) return null;
+  return `${String(value.hour).padStart(2, "0")}:${String(value.minute).padStart(2, "0")}`;
+}
 
 export function DayRow({
   day,
@@ -28,96 +35,78 @@ export function DayRow({
   state,
   options,
   reduce,
-  elevated,
-  openPanel,
   onChange,
   onCopy,
-  onPanelOpenChange,
-  maxRanges = 4,
+  maxRanges = 2,
 }: {
   day: DayKey;
   label: string;
   state: DayAvailability;
   options: TimeOption[];
   reduce: boolean;
-  // True while this row holds the dropdown that opened last, which paints it
-  // above every other row. A time panel opens downward when there is room and
-  // upward when there isn't, so it has to clear the rows on either side of it
-  // — no fixed paint order can satisfy both directions. The flag stays on
-  // after the panel closes so the collapse animation stays on top too.
-  elevated: boolean;
-  /** Id of the one time panel the scheduler is holding open, if any. */
-  openPanel: string | null;
   onChange: (next: DayAvailability) => void;
   onCopy: (targets: DayKey[]) => void;
-  onPanelOpenChange: (panelId: string, open: boolean) => void;
-  /** Max time ranges per day. Club API allows up to 4. */
+  /** Max ranges per day. Clubs use 2 (men / women). */
   maxRanges?: number;
 }) {
   const idRef = useRef(0);
   const nextId = () => `${day}-n${idRef.current++}`;
-  // Same rule one level down: ranges stack against each other inside the row.
-  const [openRangeId, setOpenRangeId] = useState<string | null>(null);
-
-  const panelId = (rangeId: string, edge: "start" | "end") =>
-    panelKey(day, rangeId, edge);
-
-  const onRangePanelOpenChange = (
-    rangeId: string,
-    id: string,
-    open: boolean,
-  ) => {
-    if (open) setOpenRangeId(rangeId);
-    onPanelOpenChange(id, open);
-  };
+  const ranges = useMemo(
+    () => state.ranges.slice(0, maxRanges),
+    [maxRanges, state.ranges],
+  );
 
   const setEnabled = (enabled: boolean) => {
-    if (enabled && state.ranges.length === 0) {
+    if (enabled && ranges.length === 0) {
       onChange({
         enabled,
         ranges: [{ id: nextId(), start: "09:00", end: "17:00" }],
       });
-    } else {
-      onChange({ ...state, enabled });
+      return;
     }
+    onChange({ enabled, ranges: state.ranges.slice(0, maxRanges) });
   };
 
   const updateRange = (id: string, patch: Partial<TimeRange>) => {
     const changed: "start" | "end" = patch.start !== undefined ? "start" : "end";
     onChange({
-      ...state,
-      ranges: state.ranges.map((r) => {
-        if (r.id !== id) return r;
-        const next = { ...r, ...patch };
-        return { ...next, ...clampRange(next.start, next.end, options, changed) };
+      enabled: state.enabled,
+      ranges: state.ranges.slice(0, maxRanges).map((range) => {
+        if (range.id !== id) return range;
+        const next = { ...range, ...patch };
+        const clamped = clampRange(next.start, next.end, options, changed);
+        if (clamped.start === range.start && clamped.end === range.end) {
+          return range;
+        }
+        return { ...next, ...clamped };
       }),
     });
   };
 
   const addRange = () => {
-    if (state.ranges.length >= maxRanges) return;
-    const last = state.ranges[state.ranges.length - 1];
+    if (ranges.length >= maxRanges) return;
+    const last = ranges[ranges.length - 1];
     const start = last ? Math.min(toMinutes(last.end) + 60, 24 * 60 - 60) : 540;
     onChange({
       enabled: true,
       ranges: [
-        ...state.ranges,
+        ...ranges,
         { id: nextId(), start: toValue(start), end: toValue(start + 60) },
       ],
     });
   };
 
   const removeRange = (id: string) => {
-    const ranges = state.ranges.filter((r) => r.id !== id);
-    // Removing the last slot marks the day unavailable.
-    onChange({ enabled: ranges.length > 0, ranges });
+    const nextRanges = ranges.filter((range) => range.id !== id);
+    onChange({ enabled: nextRanges.length > 0, ranges: nextRanges });
   };
 
-  const canAdd = state.ranges.length < maxRanges;
+  const canAdd = ranges.length < maxRanges;
+  const showAudience = ranges.length === 2;
   const actions = (
     <>
       {canAdd ? (
-        <Tooltip content="افزودن بازه">
+        <Tooltip content="افزودن بازه بانوان">
           <IconButton
             label={`افزودن بازه زمانی به ${label}`}
             reduce={reduce}
@@ -135,84 +124,116 @@ export function DayRow({
     <motion.div
       layout={reduce ? false : "position"}
       transition={SPRING_LAYOUT}
-      style={{ zIndex: elevated ? 1 : undefined }}
+      data-day={day}
       className="relative flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:gap-4"
     >
-      {/* toggle + label; actions ride along on mobile */}
-      <div className="flex items-center justify-between sm:w-36 sm:shrink-0 sm:justify-start sm:pt-1">
+      <div className="flex items-center justify-between sm:w-40 sm:shrink-0 sm:justify-start sm:pt-1">
         <div className="flex items-center gap-2.5">
           <Switch
-            checked={state.enabled}
-            onCheckedChange={setEnabled}
-            ariaLabel={`Toggle ${label} availability`}
-            className="scale-90"
-          />
+            name={`availability-${day}`}
+            aria-label={`فعال‌سازی ساعات ${label}`}
+            isSelected={state.enabled}
+            onChange={setEnabled}
+          >
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+          </Switch>
           <span className="text-sm font-medium text-foreground">{label}</span>
         </div>
         <div className="flex items-center gap-1 sm:hidden">{actions}</div>
       </div>
 
-      {/* ranges or unavailable */}
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <AnimatePresence initial={false} mode="popLayout">
           {state.enabled ? (
-            state.ranges.map((r) => (
-              <motion.div
-                key={r.id}
-                layout={reduce ? false : "position"}
-                style={{ zIndex: openRangeId === r.id ? 1 : undefined }}
-                initial={
-                  reduce
-                    ? { opacity: 0 }
-                    : { opacity: 0, y: -6, filter: "blur(4px)" }
-                }
-                animate={
-                  reduce
-                    ? { opacity: 1 }
-                    : { opacity: 1, y: 0, filter: "blur(0px)" }
-                }
-                exit={
-                  reduce
-                    ? { opacity: 0 }
-                    : { opacity: 0, y: -4, filter: "blur(4px)" }
-                }
-                transition={SPRING_LAYOUT}
-                className="relative flex items-center gap-2"
-              >
-                <div className="min-w-0 flex-1 sm:max-w-[132px]">
-                  <TimeSelect
-                    value={r.start}
-                    options={startOptions(options, r.end, r.start)}
-                    onChange={(v) => updateRange(r.id, { start: v })}
-                    open={openPanel === panelId(r.id, "start")}
-                    onOpenChange={(open) =>
-                      onRangePanelOpenChange(r.id, panelId(r.id, "start"), open)
-                    }
-                  />
-                </div>
-                <span className="text-muted-foreground">–</span>
-                <div className="min-w-0 flex-1 sm:max-w-[132px]">
-                  <TimeSelect
-                    value={r.end}
-                    options={endOptions(options, r.start, r.end)}
-                    onChange={(v) => updateRange(r.id, { end: v })}
-                    open={openPanel === panelId(r.id, "end")}
-                    onOpenChange={(open) =>
-                      onRangePanelOpenChange(r.id, panelId(r.id, "end"), open)
-                    }
-                  />
-                </div>
-                <Tooltip content="حذف">
-                  <IconButton
-                    label="حذف بازه زمانی"
-                    reduce={reduce}
-                    onClick={() => removeRange(r.id)}
+            ranges.map((range, index) => {
+              const audienceLabel = showAudience
+                ? AUDIENCE_LABELS[index]
+                : null;
+
+              return (
+                <motion.div
+                  key={`${day}-${range.id}`}
+                  layout={reduce ? false : "position"}
+                  initial={
+                    reduce
+                      ? { opacity: 0 }
+                      : { opacity: 0, y: -6, filter: "blur(4px)" }
+                  }
+                  animate={
+                    reduce
+                      ? { opacity: 1 }
+                      : { opacity: 1, y: 0, filter: "blur(0px)" }
+                  }
+                  exit={
+                    reduce
+                      ? { opacity: 0 }
+                      : { opacity: 0, y: -4, filter: "blur(4px)" }
+                  }
+                  transition={SPRING_LAYOUT}
+                  className="relative flex flex-wrap items-end gap-2"
+                >
+                  {audienceLabel ? (
+                    <span className="w-14 shrink-0 self-end pb-2.5 text-sm font-medium text-foreground">
+                      {audienceLabel}
+                    </span>
+                  ) : null}
+                  <TimeField
+                    name={`hours-${day}-${range.id}-start`}
+                    className="min-w-[8.5rem] flex-1"
+                    granularity="minute"
+                    hourCycle={24}
+                    value={parseTime(range.start)}
+                    onChange={(value) => {
+                      const next = formatTimeValue(value);
+                      if (!next || next === range.start) return;
+                      updateRange(range.id, { start: next });
+                    }}
                   >
-                    <X className="h-4 w-4" />
-                  </IconButton>
-                </Tooltip>
-              </motion.div>
-            ))
+                    <Label>شروع</Label>
+                    <TimeField.Group variant="secondary" dir="ltr">
+                      <TimeField.Input>
+                        {(segment) => <TimeField.Segment segment={segment} />}
+                      </TimeField.Input>
+                    </TimeField.Group>
+                  </TimeField>
+                  <span className="pb-2.5 text-muted-foreground">–</span>
+                  <TimeField
+                    name={`hours-${day}-${range.id}-end`}
+                    className="min-w-[8.5rem] flex-1"
+                    granularity="minute"
+                    hourCycle={24}
+                    value={parseTime(range.end)}
+                    onChange={(value) => {
+                      const next = formatTimeValue(value);
+                      if (!next || next === range.end) return;
+                      updateRange(range.id, { end: next });
+                    }}
+                  >
+                    <Label>پایان</Label>
+                    <TimeField.Group variant="secondary" dir="ltr">
+                      <TimeField.Input>
+                        {(segment) => <TimeField.Segment segment={segment} />}
+                      </TimeField.Input>
+                    </TimeField.Group>
+                  </TimeField>
+                  <Tooltip content="حذف">
+                    <IconButton
+                      label={
+                        audienceLabel
+                          ? `حذف بازه ${audienceLabel} ${label}`
+                          : `حذف بازه زمانی ${label}`
+                      }
+                      reduce={reduce}
+                      onClick={() => removeRange(range.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </IconButton>
+                  </Tooltip>
+                </motion.div>
+              );
+            })
           ) : (
             <motion.span
               key="unavailable"
@@ -229,7 +250,6 @@ export function DayRow({
         </AnimatePresence>
       </div>
 
-      {/* actions (desktop) */}
       <div className="hidden shrink-0 items-center gap-1 pt-0.5 sm:flex">
         {actions}
       </div>

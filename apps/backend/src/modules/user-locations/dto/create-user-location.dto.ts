@@ -13,7 +13,7 @@ export const UserLocationFieldsSchema = z.object({
   cityId: objectId,
   districtId: objectId.nullish(),
   cityRegionId: objectId.nullish(),
-  address: z.string().trim().min(1).max(300),
+  address: z.string().trim().max(300).optional(),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
   isDefault: z.boolean().optional(),
@@ -27,7 +27,7 @@ export class CreateUserLocationDto {
   cityId: string;
   districtId?: string | null;
   cityRegionId?: string | null;
-  address: string;
+  address?: string;
   latitude: number;
   longitude: number;
   isDefault?: boolean;

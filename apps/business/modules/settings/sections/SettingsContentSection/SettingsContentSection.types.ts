@@ -16,4 +16,16 @@ export type SettingsContentSectionProps = {
   paymentsTitle: string;
   paymentsHint: string;
   autoPayout: string;
+  searchPlaceholder: string;
+  navHome: string;
+  navHealth: string;
+  navAssistant: string;
+  navAppointment: string;
+  navRecommendation: string;
+  navSettings: string;
+  navHelp: string;
+  proPromo: string;
+  goProNow: string;
+  memberBasic: string;
+  logoutLabel: string;
 };

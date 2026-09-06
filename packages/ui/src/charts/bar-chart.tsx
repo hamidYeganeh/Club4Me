@@ -33,6 +33,7 @@ export type BarChartProps = {
   xDataKey?: string;
   className?: string;
   layout?: "vertical" | "horizontal";
+  showAxis?: boolean;
   children: ReactNode;
 };
 
@@ -46,6 +47,7 @@ export function BarChart({
   xDataKey = "label",
   className,
   layout = "vertical",
+  showAxis = true,
   children,
 }: BarChartProps) {
   const reduceMotion = useReducedMotion();
@@ -71,7 +73,12 @@ export function BarChart({
             return null;
           }
 
-          const margin = { top: 8, right: 8, bottom: 28, left: 8 };
+          const margin = {
+            top: 8,
+            right: 8,
+            bottom: showAxis ? 28 : 8,
+            left: 8,
+          };
           const innerWidth = Math.max(1, width - margin.left - margin.right);
           const innerHeight = Math.max(1, height - margin.top - margin.bottom);
           const labels = data.map((d) => String(d[xDataKey] ?? ""));
@@ -209,14 +216,16 @@ export function BarChart({
                           />
                         </motion.g>
                       )}
-                      <text
-                        x={x + barWidth / 2}
-                        y={innerHeight + 18}
-                        textAnchor="middle"
-                        className="fill-muted text-[10px]"
-                      >
-                        {label}
-                      </text>
+                      {showAxis ? (
+                        <text
+                          x={x + barWidth / 2}
+                          y={innerHeight + 18}
+                          textAnchor="middle"
+                          className="fill-muted text-[10px]"
+                        >
+                          {label}
+                        </text>
+                      ) : null}
                     </g>
                   );
                 })}

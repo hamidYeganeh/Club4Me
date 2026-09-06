@@ -1,8 +1,9 @@
 "use client";
 
-import { Button, ScrollShadow, Skeleton, Typography } from "@heroui/react";
+import { Button, ScrollShadow, Typography } from "@heroui/react";
 import { useCatalogClubs } from "@api/discovery";
 import { Icon, type IconName } from "@theme/icon";
+import { ClubCardSkeleton } from "../../components/skeletons/ClubCardSkeleton";
 import { ClubCard } from "@ui/club-card";
 import { useTranslations } from "next-intl";
 
@@ -38,6 +39,8 @@ export function DiscoveryClubsRailSection({
   items,
   tone = "surface",
   cardVariant = "compact",
+  isLoading = false,
+  skeletonCount = 3,
 }: DiscoveryClubsRailSectionProps) {
   const t = useTranslations("discovery.clubs");
   const styles = discoveryClubsRailSectionStyles({ tone, cardVariant });
@@ -45,7 +48,7 @@ export function DiscoveryClubsRailSection({
   const clubs = useCatalogClubs(params, enabled && !hasProvidedItems);
   const visible: DiscoveryClubsRailClub[] = items ?? clubs.data?.items ?? [];
   const titleId = `discovery-clubs-rail-${id}`;
-  const isPending = !hasProvidedItems && clubs.isPending;
+  const isPending = isLoading || (!hasProvidedItems && clubs.isPending);
   const isError = !hasProvidedItems && clubs.isError;
   const isAccent = tone === "accent";
 
@@ -84,6 +87,7 @@ export function DiscoveryClubsRailSection({
 
       <div className={styles.header()}>
         <DiscoverySectionHeader
+          isLoading={isPending}
           id={titleId}
           title={title}
           subtitle={subtitle}
@@ -106,23 +110,12 @@ export function DiscoveryClubsRailSection({
             aria-busy="true"
             aria-label="در حال بارگذاری باشگاه‌ها"
           >
-            {Array.from({ length: 3 }, (_, index) => (
-              <div
+            {Array.from({ length: skeletonCount }, (_, index) => (
+              <ClubCardSkeleton
                 key={index}
-                className={`${styles.skeleton()} overflow-hidden`}
-              >
-                <Skeleton
-                  className={`${cardVariant === "editorial" ? "h-[65%]" : "h-[58%]"} w-full rounded-none`}
-                />
-                <div className="space-y-2.5 p-4">
-                  <Skeleton className="h-4 w-2/3 rounded-lg" />
-                  <Skeleton className="h-3 w-full rounded-lg" />
-                  <div className="flex justify-between gap-3 pt-1">
-                    <Skeleton className="h-3 w-16 rounded-lg" />
-                    <Skeleton className="h-3 w-20 rounded-lg" />
-                  </div>
-                </div>
-              </div>
+                variant={cardVariant}
+                className={styles.card()}
+              />
             ))}
           </div>
         </ScrollShadow>
@@ -143,7 +136,7 @@ export function DiscoveryClubsRailSection({
         </div>
       ) : null}
 
-      {visible.length > 0 ? (
+      {!isPending && visible.length > 0 ? (
         <ScrollShadow
           hideScrollBar
           orientation="horizontal"

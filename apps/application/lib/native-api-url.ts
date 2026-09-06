@@ -1,6 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 
-const DEFAULT_API_URL = "http://localhost:7088/api/v1";
+const DEFAULT_API_URL = "https://api.gym4me.ir/api/v1";
 
 export function resolveNativeApiUrl(url = DEFAULT_API_URL): string {
   if (Capacitor.getPlatform() !== "android") {

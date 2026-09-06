@@ -65,6 +65,7 @@ export type ReservableSession = {
   status: "active" | "cancelled" | "completed";
 };
 export type SessionReservation = {
+  isTrial?: boolean;
   id: string;
   clubId: string;
   sessionId: string;
@@ -134,6 +135,7 @@ export type CreateSessionPayload = {
   cancellationPolicy: ClubCancellationRule;
 };
 export type CreateReservationPayload = {
+  isTrial?: boolean;
   sessionId: string;
   participantCount: number;
   entitlementId?: string;

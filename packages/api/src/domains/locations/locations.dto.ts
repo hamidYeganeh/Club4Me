@@ -23,7 +23,7 @@ export type CreateUserLocationPayload = {
   cityId: string;
   districtId?: string | null;
   cityRegionId?: string | null;
-  address: string;
+  address?: string;
   latitude: number;
   longitude: number;
   isDefault?: boolean;

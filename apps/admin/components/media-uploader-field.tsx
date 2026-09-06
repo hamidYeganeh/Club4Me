@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@heroui/react";
+import { useCreateMedia } from "@api";
 import { Icon } from "@theme/icon";
 import {
   imageUploaderAccept,
@@ -16,21 +17,13 @@ type MediaUploaderFieldProps = {
   onChange: (value: string) => void;
 };
 
-function readAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
 export function MediaUploaderField({
   value,
   label,
   disabled,
   onChange,
 }: MediaUploaderFieldProps) {
+  const createMedia = useCreateMedia();
   const t = useTranslations("uploader");
   const labels: UploaderLabels = {
     clickToUpload: t("clickToUpload"),
@@ -78,14 +71,14 @@ export function MediaUploaderField({
       <Uploader
         key={value ? "replace" : "empty"}
         multiple={false}
-        disabled={disabled}
+        disabled={disabled || createMedia.isPending}
         accept={imageUploaderAccept}
         maxSize={10 * 1024 * 1024}
         labels={labels}
         className="admin-media-uploader"
-        onDrop={(files) => {
-          const file = files[0];
-          if (file) void readAsDataUrl(file).then(onChange);
+        onUpload={async (file) => {
+          const media = await createMedia.mutateAsync(file);
+          onChange(media.url);
         }}
       />
     </section>

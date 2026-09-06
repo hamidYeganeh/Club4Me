@@ -18,6 +18,7 @@ import type { AuthTokenPayload } from "../auth/services/token.service";
 import { CreateClubDto } from "./dto/create-club.dto";
 import { UpdateClubDto } from "./dto/update-club.dto";
 import { ReviewClubDto } from "./dto/review-club.dto";
+import { VerifyClubDto } from "./dto/verify-club.dto";
 import { ClubsService } from "./clubs.service";
 
 @Controller("api/v1/business/clubs")
@@ -79,6 +80,15 @@ export class AdminClubsController {
   @Patch(":clubId/review")
   review(@Param("clubId") clubId: string, @Body() body: ReviewClubDto) {
     return this.service.review(clubId, body.status, body.reason);
+  }
+
+  @Patch(":clubId/verification")
+  verify(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Body() body: VerifyClubDto,
+  ) {
+    return this.service.verify(clubId, user.sub, body.kind, body.verified);
   }
 }
 

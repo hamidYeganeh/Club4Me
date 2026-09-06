@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@heroui/react";
 import {
@@ -24,6 +24,7 @@ import {
 import type { TimelineReservation } from "../../reservations.types";
 import {
   buildDateStrip,
+  buildMonthDates,
   toDateKey,
   toReservationDateKey,
 } from "../../reservations.utils";
@@ -59,12 +60,38 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
   const [selectedDateKey, setSelectedDateKey] = useState(() =>
     toDateKey(new Date()),
   );
+  const [monthExpanded, setMonthExpanded] = useState(false);
+  const pageRef = useRef<HTMLElement>(null);
+  const pullStart = useRef<{ x: number; y: number } | null>(null);
+  const monthDates = useMemo(
+    () => buildMonthDates(new Date(`${selectedDateKey}T12:00:00`)),
+    [selectedDateKey],
+  );
   const [sortNewestFirst, setSortNewestFirst] = useState(true);
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [actionReservationId, setActionReservationId] = useState<string | null>(
     null,
   );
+
+  useEffect(() => {
+    const page = pageRef.current;
+    if (!page || monthExpanded) return;
+    const onMove = (event: TouchEvent) => {
+      const start = pullStart.current;
+      const touch = event.touches[0];
+      if (!start || !touch) return;
+      const dy = touch.clientY - start.y;
+      if (
+        dy > 8 &&
+        dy > Math.abs(touch.clientX - start.x) * 1.5 &&
+        event.cancelable
+      )
+        event.preventDefault();
+    };
+    page.addEventListener("touchmove", onMove, { passive: false });
+    return () => page.removeEventListener("touchmove", onMove);
+  }, [monthExpanded, actionReservationId]);
 
   const items = useMemo<TimelineReservation[]>(() => {
     if (
@@ -130,11 +157,11 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
   const dates = useMemo(
     () =>
       buildDateStrip(
-        new Date(),
+        new Date(`${selectedDateKey}T12:00:00`),
         RESERVATION_DATE_PAST_DAYS,
         RESERVATION_DATE_FUTURE_DAYS,
       ),
-    [],
+    [selectedDateKey],
   );
 
   const visibleItems = useMemo(() => {
@@ -245,7 +272,35 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
   }
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col bg-background">
+    <main
+      ref={pageRef}
+      className="flex min-h-0 flex-1 flex-col bg-background overscroll-y-contain"
+      onTouchStart={(event) => {
+        const touch = event.touches[0];
+        let element = event.target as HTMLElement | null;
+        while (element && element.scrollTop <= 0)
+          element = element.parentElement;
+        pullStart.current =
+          touch && !element && window.scrollY <= 0
+            ? { x: touch.clientX, y: touch.clientY }
+            : null;
+      }}
+      onTouchEnd={(event) => {
+        const start = pullStart.current;
+        const touch = event.changedTouches[0];
+        pullStart.current = null;
+        if (
+          start &&
+          touch &&
+          touch.clientY - start.y > 60 &&
+          touch.clientY - start.y > Math.abs(touch.clientX - start.x) * 1.5
+        )
+          setMonthExpanded(true);
+      }}
+      onTouchCancel={() => {
+        pullStart.current = null;
+      }}
+    >
       <ReservationsHeaderSection
         title={t("title")}
         backLabel={common("back")}
@@ -254,7 +309,9 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
         historyLabel={t("historyLabel")}
         historyActive={showAllHistory}
         onShowHistory={() => setShowAllHistory(true)}
-        dates={dates}
+        dates={monthExpanded ? monthDates : dates}
+        monthExpanded={monthExpanded}
+        onToggleMonth={() => setMonthExpanded((value) => !value)}
         selectedDateKey={selectedDateKey}
         onSelectDate={(key) => {
           setSelectedDateKey(key);
@@ -295,9 +352,7 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
           );
         }}
         renewLabel={t("renew")}
-        onRenew={(item) =>
-          router.push(item.changeTimeHref ?? "/discovery")
-        }
+        onRenew={(item) => router.push(item.changeTimeHref ?? "/discovery")}
         onCancel={setActionReservationId}
         cancelPending={
           cancel.isPending || cancelCoach.isPending || cancelClass.isPending

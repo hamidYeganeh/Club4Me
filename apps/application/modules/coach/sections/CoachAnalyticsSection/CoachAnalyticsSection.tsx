@@ -13,6 +13,15 @@ import { Bar } from "@/components/charts/bar";
 import { BarXAxis } from "@/components/charts/bar-x-axis";
 import { Grid } from "@/components/charts/grid";
 import { ChartTooltip } from "@/components/charts/tooltip";
+import {
+  DashboardMetricCard,
+  MetricBarVisual,
+  MetricHeatmapVisual,
+  MetricLineVisual,
+  MetricRingVisual,
+} from "@ui/dashboard-metric-card";
+import { DashboardHistoryCard } from "@ui/dashboard-history-card";
+import { Icon } from "@theme/icon";
 import { buildCoachAnalytics, numberFormat } from "./coach-analytics";
 
 const primary = "var(--accent)";
@@ -113,36 +122,105 @@ export function CoachAnalyticsSection() {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3" aria-busy={loading}>
-            <Metric
-              label="درآمد پس از بازپرداخت"
+          <div
+            className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-busy={loading}
+          >
+            <DashboardMetricCard
+              title="درآمد خالص"
               value={loading ? "—" : numberFormat.format(analytics.income)}
-              detail={currencyLabel(currency)}
+              unit={currencyLabel(currency)}
+              icon={<Icon name="wallet" size={20} />}
+              visual={
+                <MetricBarVisual
+                  data={analytics.trend.map((item) => ({
+                    label: item.label,
+                    value: item.income,
+                  }))}
+                />
+              }
+              className="bg-warning text-warning-foreground"
             />
-            <Metric
-              label="رزرو و ثبت‌نام"
+            <DashboardMetricCard
+              title="رزرو و ثبت‌نام"
               value={
                 loading ? "—" : numberFormat.format(analytics.reservations)
               }
-              detail="در بازه انتخاب‌شده"
+              unit="مورد"
+              icon={<Icon name="calendar-check" size={20} />}
+              visual={
+                <MetricLineVisual
+                  data={analytics.trend.map((item) => ({
+                    label: item.label,
+                    primary: item.bookings,
+                    secondary: item.enrollments,
+                  }))}
+                  secondaryKey="secondary"
+                />
+              }
+              className="bg-accent text-accent-foreground"
             />
-            <Metric
-              label="کلاس‌های فعال"
+            <DashboardMetricCard
+              title="کلاس فعال"
               value={
                 loading ? "—" : numberFormat.format(analytics.activeClasses)
               }
-              detail="وضعیت فعلی"
+              unit="کلاس"
+              icon={<Icon name="weight" size={20} />}
+              visual={<MetricHeatmapVisual value={analytics.activeClasses} />}
+              className="bg-surface-tertiary text-foreground"
             />
-            <Metric
-              label="تکمیل ظرفیت"
+            <DashboardMetricCard
+              title="تکمیل ظرفیت"
               value={
                 loading
                   ? "—"
                   : `${numberFormat.format(analytics.occupancyPercent)}٪`
               }
-              detail="کلاس‌های فعال فعلی"
+              icon={<Icon name="users-two" size={20} />}
+              visual={
+                <MetricRingVisual
+                  value={analytics.occupied}
+                  max={analytics.capacity}
+                />
+              }
+              className="bg-success text-success-foreground"
             />
           </div>
+          {!loading && analytics.reservations > 0 ? (
+            <div className="flex flex-col gap-3">
+              <Typography type="h5" weight="bold">
+                گزارش‌های اخیر
+              </Typography>
+              {analytics.trend
+                .filter((item) => item.bookings + item.enrollments > 0)
+                .slice(-3)
+                .reverse()
+                .map((bucket) => {
+                  const bucketTotal = bucket.bookings + bucket.enrollments;
+                  return (
+                    <DashboardHistoryCard
+                      key={bucket.fullLabel}
+                      date={bucket.fullLabel}
+                      meta={`${numberFormat.format(days)} روز`}
+                      value={numberFormat.format(bucketTotal)}
+                      unit="درخواست"
+                      status={`${numberFormat.format(bucket.income)} ${currencyLabel(currency)} درآمد`}
+                      statusIcon={<Icon name="chart-trend-up" size={18} />}
+                      chartColor="var(--accent)"
+                      data={analytics.trend.map((item) => ({
+                        label: item.label,
+                        value: item.bookings + item.enrollments,
+                        color:
+                          item.fullLabel === bucket.fullLabel
+                            ? "var(--accent)"
+                            : "color-mix(in oklch, var(--accent) 24%, transparent)",
+                      }))}
+                    />
+                  );
+                })}
+            </div>
+          ) : null}
           <ChartCard
             title="روند درآمد"
             description="پرداخت‌های رزرو جلسه و ثبت‌نام کلاس، پس از کسر بازپرداخت؛ بر اساس تاریخ ثبت درخواست، نه تاریخ تسویه مربی."
@@ -230,24 +308,6 @@ export function CoachAnalyticsSection() {
         </>
       )}
     </section>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-}) {
-  return (
-    <Card className="min-w-0 rounded-2xl bg-surface p-4 shadow-none">
-      <p className="text-xs text-muted">{label}</p>
-      <p className="break-words text-2xl font-bold tabular-nums">{value}</p>
-      <p className="text-xs text-muted">{detail}</p>
-    </Card>
   );
 }
 

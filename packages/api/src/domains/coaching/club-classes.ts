@@ -39,7 +39,12 @@ export type PublicClubClass = {
     slug?: string;
     location?: { latitude: number; longitude: number } | null;
   };
-  coach: { id: string; name: string } | null;
+  coach: {
+    id: string;
+    name: string;
+    profileSlug?: string | null;
+    verifiedCredentialsCount?: number;
+  } | null;
   branch: { id: string; name: string; address: string } | null;
   sessions: ClubClassSession[];
 };

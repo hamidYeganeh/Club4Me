@@ -146,11 +146,82 @@ export const resourceGroups = [
     ],
   },
   {
+    id: "clubs",
+    segment: "clubs",
+    title: "اطلاعات باشگاه",
+    priority: "P0",
+    items: [
+      resource(
+        "club_review_criteria",
+        "review-criterion",
+        "club_review_criteria",
+        "معیارهای نظر‌دهی باشگاه",
+        "تعریف، ترتیب و فعال‌سازی معیارهای امتیازدهی باشگاه",
+      ),
+      resource(
+        "club_tags",
+        "tag",
+        "club_tags",
+        "برچسب‌های باشگاه",
+        "مدیریت برچسب‌های قابل انتخاب برای باشگاه‌ها",
+      ),
+    ],
+  },
+  {
     id: "facilities",
     segment: "facilities",
     title: "امکانات و تجهیزات",
     priority: "P0",
     items: [
+      resource(
+        "roof_types",
+        "roof-type",
+        "roof_types",
+        "انواع سقف",
+        "مدیریت نوع سقف و پوشش فضاهای ورزشی",
+      ),
+      resource(
+        "lighting_types",
+        "lighting-type",
+        "lighting_types",
+        "انواع نورپردازی",
+        "مدیریت روشنایی زمین، سالن و استخر",
+      ),
+      resource(
+        "water_treatment_types",
+        "water-treatment-type",
+        "water_treatment_types",
+        "روش‌های تصفیه آب",
+        "مدیریت روش تصفیه و گندزدایی آب استخر",
+      ),
+      resource(
+        "ventilation_types",
+        "ventilation-type",
+        "ventilation_types",
+        "سیستم‌های تهویه",
+        "مدیریت انواع تهویه فضاهای ورزشی",
+      ),
+      resource(
+        "cooling_types",
+        "cooling-type",
+        "cooling_types",
+        "سیستم‌های سرمایش",
+        "مدیریت انواع سرمایش باشگاه",
+      ),
+      resource(
+        "parking_types",
+        "parking-type",
+        "parking_types",
+        "انواع پارکینگ",
+        "مدیریت وضعیت و نوع پارکینگ",
+      ),
+      resource(
+        "accessibility_types",
+        "accessibility-type",
+        "accessibility_types",
+        "سطوح دسترس‌پذیری",
+        "مدیریت دسترسی به فضاهای باشگاه",
+      ),
       resource(
         "amenities",
         "amenity",
@@ -666,12 +737,23 @@ export const resourceDefinitions = resourceGroups.flatMap((group) =>
 
 export function findResourceDefinition(category: string, segment: string) {
   return resourceDefinitions.find(
-    (item) => item.groupSegment === category && item.segment === segment,
+    (item) =>
+      (item.groupSegment === category && item.segment === segment) ||
+      ((item.groupSegment === "location" ? "geography" : item.groupSegment) ===
+        category &&
+        item.key === segment),
   );
 }
 
 export const resourcePagePath = (category: string, segment: string) =>
   `/resources/${category}/${segment}` as const;
 
-export const resourceApiPath = (category: string, segment: string) =>
-  `/resources/${category}/${segment}` as const;
+export const resourceApiPath = (category: string, segment: string) => {
+  const definition = findResourceDefinition(category, segment);
+  if (!definition) throw new Error(`Unknown resource: ${category}/${segment}`);
+  const domain =
+    definition.groupSegment === "location"
+      ? "geography"
+      : definition.groupSegment;
+  return `/${domain}/${definition.key}`;
+};

@@ -23,9 +23,11 @@ export function PanelFrame({
         .join(" ")}
     >
       {rail}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="panel-frame-main flex min-w-0 flex-1 flex-col">
         {header}
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        <div className="panel-frame-body flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
+          {children}
+        </div>
       </div>
     </div>
   );

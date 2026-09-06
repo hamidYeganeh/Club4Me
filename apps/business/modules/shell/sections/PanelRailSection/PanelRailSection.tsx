@@ -49,6 +49,7 @@ export function PanelRailSection({
               variant="ghost"
               className={cn(styles.item(), active && styles.itemActive())}
             >
+              {active ? <span className={styles.activeMark()} aria-hidden /> : null}
               <Icon name={item.icon} size="lg" />
             </ButtonLink>
           );
@@ -60,14 +61,14 @@ export function PanelRailSection({
             isIconOnly
             variant="tertiary"
             aria-label={avatarAlt}
-            className="rounded-full p-0"
+            className={styles.avatarBtn()}
           >
-            <Avatar className="size-10">
+            <Avatar className="size-10 rounded-[0.85rem]">
               <Avatar.Image alt={avatarAlt} src={avatarSrc} />
               <Avatar.Fallback>{avatarAlt.slice(0, 1)}</Avatar.Fallback>
             </Avatar>
           </Button>
-          <Badge color="danger" size="sm">
+          <Badge color="accent" size="sm">
             {badge}
           </Badge>
         </Badge.Anchor>

@@ -4,6 +4,7 @@ import type { CoachCardType } from "@ui/coach-card";
 import type { DiscoveryCoachItem } from "@api/discovery";
 
 export type DiscoveryCoachesRailSectionProps = {
+  skeletonCount?: number;
   id: string;
   title: string;
   subtitle?: string;

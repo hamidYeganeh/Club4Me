@@ -2,8 +2,10 @@ import { PanelFrame } from "@ui/panel-frame";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 
+import { PanelBreadcrumbsSection } from "@modules/shell/sections/PanelBreadcrumbsSection";
 import { PanelHeaderSection } from "@modules/shell/sections/PanelHeaderSection";
 import { PanelRailSection } from "@modules/shell/sections/PanelRailSection";
+import type { PanelRailItem } from "@modules/shell/sections/PanelRailSection/PanelRailSection.types";
 
 type PanelShellScreenProps = {
   children: ReactNode;
@@ -12,8 +14,78 @@ type PanelShellScreenProps = {
 export async function PanelShellScreen({ children }: PanelShellScreenProps) {
   const t = await getTranslations();
 
+  const items: PanelRailItem[] = [
+    {
+      href: "/",
+      icon: "house-1",
+      label: t("panel.dashboard"),
+      exact: true,
+    },
+    {
+      href: "/clubs",
+      icon: "grid-four",
+      label: t("panel.clubs"),
+    },
+    {
+      href: "/students",
+      icon: "users-two",
+      label: t("panel.students"),
+    },
+    {
+      href: "/coaches",
+      icon: "user",
+      label: t("panel.coaches"),
+    },
+    {
+      href: "/classes",
+      icon: "calendar-1",
+      label: t("panel.classes"),
+    },
+    {
+      href: "/payments",
+      icon: "wallet",
+      label: t("panel.payments"),
+    },
+    {
+      href: "/memberships",
+      icon: "ticket",
+      label: t("panel.memberships"),
+    },
+    {
+      href: "/reviews",
+      icon: "star-full",
+      label: t("panel.reviews"),
+    },
+    {
+      href: "/attendance",
+      icon: "chart-bar-1",
+      label: t("panel.attendance"),
+    },
+    {
+      href: "/branches",
+      icon: "building-1",
+      label: t("panel.branches"),
+    },
+    {
+      href: "/data",
+      icon: "database",
+      label: t("panel.data"),
+    },
+    {
+      href: "/coach",
+      icon: "chat",
+      label: t("panel.coach"),
+    },
+    {
+      href: "/settings",
+      icon: "gear-1",
+      label: t("panel.settings"),
+    },
+  ];
+
   return (
     <PanelFrame
+      className="business-panel"
       rail={
         <PanelRailSection
           addHref="/clubs/new"
@@ -21,86 +93,25 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
           avatarSrc="https://picsum.photos/seed/gym4me-business/160/160"
           avatarAlt={t("businessDashboard.profileName")}
           badge="2"
-          items={[
-            {
-              href: "/",
-              icon: "grid-four",
-              label: t("panel.dashboard"),
-              exact: true,
-            },
-            {
-              href: "/clubs",
-              icon: "building-2",
-              label: t("panel.clubs"),
-            },
-            {
-              href: "/students",
-              icon: "users-two",
-              label: t("panel.students"),
-            },
-            {
-              href: "/coaches",
-              icon: "user",
-              label: t("panel.coaches"),
-            },
-            {
-              href: "/classes",
-              icon: "calendar-1",
-              label: t("panel.classes"),
-            },
-            {
-              href: "/payments",
-              icon: "wallet",
-              label: t("panel.payments"),
-            },
-            {
-              href: "/memberships",
-              icon: "ticket",
-              label: "بسته‌ها و عضویت",
-            },
-            {
-              href: "/reviews",
-              icon: "star-full",
-              label: "نظرهای باشگاه",
-            },
-            {
-              href: "/data",
-              icon: "database",
-              label: "ورود و خروج داده",
-            },
-            {
-              href: "/attendance",
-              icon: "calendar-check",
-              label: t("panel.attendance"),
-            },
-            {
-              href: "/branches",
-              icon: "building-1",
-              label: t("panel.branches"),
-            },
-            {
-              href: "/coach",
-              icon: "chat",
-              label: t("panel.coach"),
-            },
-            {
-              href: "/settings",
-              icon: "gear-1",
-              label: t("panel.settings"),
-            },
-          ]}
+          items={items}
         />
       }
       header={
         <PanelHeaderSection
           searchPlaceholder={t("panel.searchPlaceholder")}
-          chatLabel={t("panel.chatAi")}
-          chatHref="/coach"
           settingsHref="/settings"
           settingsLabel={t("panel.settings")}
+          notificationsLabel={t("panel.notifications")}
+          menuLabel={t("panel.menu")}
+          openMenuLabel={t("nav.openMenu")}
+          closeMenuLabel={t("nav.closeMenu")}
+          addHref="/clubs/new"
+          addLabel={t("panel.add")}
+          items={items}
         />
       }
     >
+      <PanelBreadcrumbsSection />
       {children}
     </PanelFrame>
   );

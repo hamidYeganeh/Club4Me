@@ -24,6 +24,7 @@ export function FormTextField<TFieldValues extends FieldValues>({
   name,
   transform,
   children,
+  variant = "secondary",
   ...props
 }: FormTextFieldProps<TFieldValues>) {
   const { control } = useFormContext<TFieldValues>();
@@ -35,6 +36,7 @@ export function FormTextField<TFieldValues extends FieldValues>({
       render={({ field, fieldState }) => (
         <TextField
           {...props}
+          variant={variant}
           name={field.name}
           value={typeof field.value === "string" ? field.value : ""}
           validationBehavior="aria"

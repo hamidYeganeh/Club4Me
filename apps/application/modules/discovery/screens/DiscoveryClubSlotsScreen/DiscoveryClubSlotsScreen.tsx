@@ -15,6 +15,7 @@ import {
 } from "@heroui/react";
 import {
   tokenStore,
+  ApiError,
   trackCheckoutStarted,
   trackPaymentSucceeded,
   usePublicClub,
@@ -26,7 +27,6 @@ import {
 } from "@api";
 import { useCatalogClub } from "@api/discovery";
 import { Icon } from "@theme/icon";
-import { ThemeToggle } from "@theme/theme-toggle";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import NumberFlow from "@number-flow/react";
@@ -174,6 +174,8 @@ export function DiscoveryClubSlotsScreen({
   const [onlyAvailableDates, setOnlyAvailableDates] = useState(true);
   const [sessionId, setSessionId] = useState<string>("");
   const [entitlementId, setEntitlementId] = useState("");
+  const [isTrial, setIsTrial] = useState(false);
+  const [bookingError, setBookingError] = useState<string>();
   const [entitlementSheetOpen, setEntitlementSheetOpen] = useState(false);
   const [pendingPayment, setPendingPayment] = useState<{
     id: string;
@@ -417,6 +419,7 @@ export function DiscoveryClubSlotsScreen({
   );
 
   const book = async () => {
+    setBookingError(undefined);
     if (!selectedSession) return;
     if (!tokenStore.get()) {
       router.push("/auth");
@@ -430,7 +433,8 @@ export function DiscoveryClubSlotsScreen({
       const result = await reserve.mutateAsync({
         sessionId: selectedSession.id,
         participantCount: 1,
-        ...(selectedEntitlement
+        isTrial,
+        ...(!isTrial && selectedEntitlement
           ? { entitlementId: selectedEntitlement.id }
           : {}),
       });
@@ -445,7 +449,18 @@ export function DiscoveryClubSlotsScreen({
         setShowReview(false);
         setReservationResult("success");
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError) {
+        const messages: Record<string, string> = {
+          TRIAL_ALREADY_USED:
+            "جلسه آزمایشی این باشگاه را قبلاً رزرو یا استفاده کرده‌اید. رزروهای خود را بررسی کنید.",
+          TRIAL_NOT_AVAILABLE:
+            "باشگاه در حال حاضر رزرو آزمایشی نمی‌پذیرد. برای رزرو عادی، گزینه آزمایشی را خاموش کنید.",
+          INVALID_TRIAL_BOOKING:
+            "رزرو آزمایشی فقط برای یک نفر و بدون خدمات جانبی امکان‌پذیر است.",
+        };
+        setBookingError(messages[error.code]);
+      }
       setShowReview(false);
       setReservationResult("failed");
     }
@@ -511,6 +526,7 @@ export function DiscoveryClubSlotsScreen({
     return (
       <ReservationResultScreen
         status={reservationResult}
+        message={reservationResult === "failed" ? bookingError : undefined}
         entity={{
           kind: "club",
           title: clubName,
@@ -545,8 +561,7 @@ export function DiscoveryClubSlotsScreen({
         entity={{
           kind: "club",
           title: clubName,
-          subtitle:
-            catalogClub.data?.shortDescription || "رزرو سانس باشگاه",
+          subtitle: catalogClub.data?.shortDescription || "رزرو سانس باشگاه",
           imageUrl: coverUrl ?? catalogClub.data?.imageUrl,
           rating: catalogClub.data?.averageRating,
           reviewsCount: catalogClub.data?.reviewsCount,
@@ -558,12 +573,15 @@ export function DiscoveryClubSlotsScreen({
           deliveryMode: "club",
           address: publicClub.data?.location?.address,
           participantCount: 1,
-          amount: selectedSession.basePrice,
+          amount: isTrial ? 0 : selectedSession.basePrice,
           currency: selectedSession.currency,
-          paymentLabel: selectedEntitlement?.title,
-          coveredAmount: selectedEntitlement
-            ? selectedSession.basePrice
-            : undefined,
+          paymentLabel: isTrial
+            ? "جلسه آزمایشی رایگان"
+            : selectedEntitlement?.title,
+          coveredAmount:
+            !isTrial && selectedEntitlement
+              ? selectedSession.basePrice
+              : undefined,
           cancellationPolicy: selectedSession.cancellationPolicy,
         }}
         isPending={reserve.isPending}
@@ -654,8 +672,6 @@ export function DiscoveryClubSlotsScreen({
           >
             <Icon name="chevron-right" size="lg" />
           </Button>
-
-          <ThemeToggle className={styles.themeButton()} />
         </div>
 
         <div data-slots-title className={styles.heroCopy()}>
@@ -865,7 +881,26 @@ export function DiscoveryClubSlotsScreen({
               </div>
             </div>
 
-            {selectedSession ? (
+            {publicClub.data?.trialBookingEnabled && (
+              <label className="flex items-start gap-3 rounded-2xl bg-surface-secondary p-4 text-sm">
+                <input
+                  type="checkbox"
+                  checked={isTrial}
+                  onChange={(e) => {
+                    setIsTrial(e.target.checked);
+                    if (e.target.checked) setEntitlementId("");
+                  }}
+                />
+                <span>
+                  رزرو جلسه آزمایشی رایگان
+                  <small className="mt-1 block text-muted">
+                    یک بار برای هر کاربر در این باشگاه، برای یک نفر و بدون خدمات
+                    جانبی. لغو جلسه امکان رزرو مجدد می‌دهد.
+                  </small>
+                </span>
+              </label>
+            )}
+            {selectedSession && !isTrial ? (
               <div data-slots-section className={styles.section()}>
                 <Label className={styles.sectionLabel()}>
                   استفاده از بسته یا عضویت
@@ -902,7 +937,9 @@ export function DiscoveryClubSlotsScreen({
                     <>
                       <NumberFlow
                         value={
-                          selectedEntitlement ? 0 : selectedSession.basePrice
+                          isTrial || selectedEntitlement
+                            ? 0
+                            : selectedSession.basePrice
                         }
                         locales="fa-IR"
                         format={{ useGrouping: true }}

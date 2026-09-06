@@ -17,7 +17,7 @@ export type SportCardProps = {
   className?: string;
 };
 
-const sportCardStyles = tv({
+export const sportCardStyles = tv({
   slots: {
     root: "relative isolate h-[220px] w-full gap-0 overflow-hidden rounded-[20px] p-4 shadow-none",
     image: "absolute inset-0 size-full object-cover",

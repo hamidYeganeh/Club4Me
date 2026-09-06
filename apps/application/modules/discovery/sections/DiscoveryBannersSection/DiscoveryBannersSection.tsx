@@ -1,5 +1,6 @@
 "use client";
 
+import { BannerCardSkeleton } from "../../components/skeletons/BannerCardSkeleton";
 import Link from "next/link";
 import { useReducedMotion } from "motion/react";
 import { useLocale } from "next-intl";
@@ -28,6 +29,8 @@ export function DiscoveryBannersSection({
   slidesPerView = 1.2,
   spaceBetween = 12,
   autoplay = true,
+  isLoading = false,
+  skeletonCount = 3,
   className,
 }: DiscoveryBannersSectionProps) {
   const direction = getLocaleDirection(useLocale());
@@ -41,14 +44,14 @@ export function DiscoveryBannersSection({
   });
   const titleId = id ? `discovery-banners-${id}` : undefined;
 
-  if (items.length === 0) {
+  if (!isLoading && items.length === 0) {
     return null;
   }
 
   const modules = [
     ...(isAuto ? [FreeMode] : []),
     ...(isSingle ? [Pagination] : []),
-    ...(autoplay && !reduceMotion ? [Autoplay] : []),
+    ...(!isLoading && autoplay && !reduceMotion ? [Autoplay] : []),
   ];
 
   return (
@@ -59,6 +62,7 @@ export function DiscoveryBannersSection({
     >
       {title ? (
         <DiscoverySectionHeader
+          isLoading={isLoading}
           id={titleId}
           title={title}
           subtitle={subtitle}
@@ -74,10 +78,10 @@ export function DiscoveryBannersSection({
         spaceBetween={spaceBetween}
         freeMode={isAuto}
         watchOverflow
-        loop={!isAuto && items.length > 1}
+        loop={!isLoading && !isAuto && items.length > 1}
         pagination={isSingle ? { clickable: true } : undefined}
         autoplay={
-          autoplay && !reduceMotion
+          !isLoading && autoplay && !reduceMotion
             ? {
                 delay: 4200,
                 disableOnInteraction: false,
@@ -86,60 +90,71 @@ export function DiscoveryBannersSection({
         }
         className={styles.swiper()}
       >
-        {items.map((item, index) => {
-          const key = item.id ?? `${item.imageUrl}-${index}`;
-          const imageUrl = item.imageUrl.includes("images.unsplash.com")
-            ? index % 2 === 0
-              ? "/welcome/introduce/discover-iran-v2.png"
-              : "/welcome/introduce/book-iran-v2.png"
-            : item.imageUrl;
-          const card = (
-            <>
-              <FallbackImage
-                src={imageUrl}
-                alt={item.title}
-                fill
-                unoptimized
-                priority={index === 0}
-                sizes={
-                  isAuto
-                    ? "(max-width: 640px) 60vw, 240px"
-                    : isSingle
-                      ? "100vw"
-                      : "85vw"
-                }
-                className={styles.image()}
-              />
-              <div aria-hidden className={styles.overlay()} />
-              <div className={styles.content()}>
-                <strong className={styles.title()}>{item.title}</strong>
-                {item.subtitle ? (
-                  <span className={styles.subtitle()}>{item.subtitle}</span>
-                ) : null}
-                {item.actionLabel ? (
-                  <span className={styles.action()}>{item.actionLabel}</span>
-                ) : null}
-              </div>
-            </>
-          );
+        {isLoading
+          ? Array.from({ length: skeletonCount }, (_, index) => (
+              <SwiperSlide key={index} className={styles.slide()}>
+                <BannerCardSkeleton
+                  aspectRatio={aspectRatio}
+                  slidesPerView={slidesPerView}
+                />
+              </SwiperSlide>
+            ))
+          : items.map((item, index) => {
+              const key = item.id ?? `${item.imageUrl}-${index}`;
+              const imageUrl = item.imageUrl.includes("images.unsplash.com")
+                ? index % 2 === 0
+                  ? "/welcome/introduce/discover-iran-v2.png"
+                  : "/welcome/introduce/book-iran-v2.png"
+                : item.imageUrl;
+              const card = (
+                <>
+                  <FallbackImage
+                    src={imageUrl}
+                    alt={item.title}
+                    fill
+                    unoptimized
+                    priority={index === 0}
+                    sizes={
+                      isAuto
+                        ? "(max-width: 640px) 60vw, 240px"
+                        : isSingle
+                          ? "100vw"
+                          : "85vw"
+                    }
+                    className={styles.image()}
+                  />
+                  <div aria-hidden className={styles.overlay()} />
+                  <div className={styles.content()}>
+                    <strong className={styles.title()}>{item.title}</strong>
+                    {item.subtitle ? (
+                      <span className={styles.subtitle()}>{item.subtitle}</span>
+                    ) : null}
+                    {item.actionLabel ? (
+                      <span className={styles.action()}>
+                        {item.actionLabel}
+                      </span>
+                    ) : null}
+                  </div>
+                </>
+              );
 
-          return (
-            <SwiperSlide key={key} className={styles.slide()}>
-              {item.actionUrl ? (
-                <Link
-                  href={item.actionUrl}
-                  scroll={false}
-                  className={styles.card()}
-                  aria-label={item.title}
-                >
-                  {card}
-                </Link>
-              ) : (
-                <div className={styles.card()}>{card}</div>
-              )}
-            </SwiperSlide>
-          );
-        })}
+              return (
+                <SwiperSlide key={key} className={styles.slide()}>
+                  {item.actionUrl ? (
+                    <Link
+                      href={item.actionUrl}
+                      scroll={false}
+                      className={styles.card()}
+                      aria-label={item.title}
+                    >
+                      {card}
+                    </Link>
+                  ) : (
+                    <div className={styles.card()}>{card}</div>
+                  )}
+                </SwiperSlide>
+              );
+            })}
       </Swiper>
     </section>
   );

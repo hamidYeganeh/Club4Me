@@ -6,6 +6,7 @@ import { FallbackImage } from "@/components/FallbackImage";
 
 type ReservationResultScreenProps = {
   status: "success" | "failed";
+  message?: string;
   entity: {
     kind: "coach" | "club";
     title: string;
@@ -19,6 +20,7 @@ type ReservationResultScreenProps = {
 
 export function ReservationResultScreen({
   status,
+  message,
   entity,
   onPrimary,
   onSecondary,
@@ -35,7 +37,9 @@ export function ReservationResultScreen({
         <section className="flex flex-1 flex-col items-center justify-center py-8 text-center">
           <div
             className={`relative mb-8 grid size-36 place-items-center rounded-full ${
-              succeeded ? "bg-success/12 text-success" : "bg-danger/12 text-danger"
+              succeeded
+                ? "bg-success/12 text-success"
+                : "bg-danger/12 text-danger"
             }`}
           >
             <span
@@ -51,10 +55,7 @@ export function ReservationResultScreen({
                   : "rotate-[8deg] bg-danger text-danger-foreground"
               }`}
             >
-              <Icon
-                name={succeeded ? "check" : "close-x"}
-                size={52}
-              />
+              <Icon name={succeeded ? "check" : "close-x"} size={52} />
             </span>
           </div>
 
@@ -62,9 +63,10 @@ export function ReservationResultScreen({
             {succeeded ? "رزرو شما با موفقیت انجام شد" : "رزرو انجام نشد"}
           </h1>
           <p className="mt-3 max-w-sm text-sm leading-7 text-muted">
-            {succeeded
-              ? "جزئیات رزرو در برنامه شما ثبت شد و همیشه از بخش رزروها در دسترس است."
-              : "پرداخت یا ثبت رزرو کامل نشد. ظرفیت برای شما ثبت نشده و می‌توانید دوباره تلاش کنید."}
+            {message ??
+              (succeeded
+                ? "جزئیات رزرو در برنامه شما ثبت شد و همیشه از بخش رزروها در دسترس است."
+                : "پرداخت یا ثبت رزرو کامل نشد. پیش از تلاش دوباره، وضعیت رزروهایتان را بررسی کنید.")}
           </p>
 
           <Card className="app-card mt-8 flex w-full flex-row items-center gap-3 rounded-[1.5rem] p-3 text-start shadow-none">
@@ -88,7 +90,9 @@ export function ReservationResultScreen({
               <Card.Description className="mt-1 line-clamp-1 text-xs text-muted">
                 {entity.subtitle}
               </Card.Description>
-              <p className="mt-2 text-xs font-bold text-accent">{entity.meta}</p>
+              <p className="mt-2 text-xs font-bold text-accent">
+                {entity.meta}
+              </p>
             </div>
           </Card>
         </section>

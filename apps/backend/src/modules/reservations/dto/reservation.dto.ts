@@ -190,6 +190,7 @@ export class CreateReservationDto {
   static schema = z
     .object({
       sessionId: objectId,
+      isTrial: z.boolean().optional(),
       participantCount: z.number().int().min(1).max(100),
       entitlementId: objectId.optional(),
       options: z
@@ -204,6 +205,7 @@ export class CreateReservationDto {
     })
     .strict();
   sessionId: string;
+  isTrial?: boolean;
   participantCount: number;
   entitlementId?: string;
   options?: Array<{ optionId: string; quantity: number }>;

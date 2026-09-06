@@ -3,26 +3,36 @@ import { tv } from "tailwind-variants";
 export const dashboardWorkspaceSectionStyles = tv({
   slots: {
     root: "grid flex-1 gap-4 lg:grid-cols-12",
-    tabs: "col-span-full flex flex-wrap items-center justify-between gap-3",
-    tab: "pb-2 text-sm text-muted",
-    tabActive: "text-foreground border-b-2 border-accent",
-    featured:
-      "relative min-h-[22rem] overflow-hidden rounded-[1.75rem] border border-border lg:col-span-5 lg:row-span-2",
-    featuredImage: "absolute inset-0 size-full object-cover",
-    featuredScrim:
-      "absolute inset-0 bg-linear-to-t from-background via-background/30 to-transparent",
-    featuredBody: "absolute inset-x-0 bottom-0 p-6",
-    featuredTitle: "text-4xl font-semibold",
-    featuredMeta: "mt-1 text-sm text-muted",
-    featuredActions: "mt-4 flex items-center gap-2",
-    card: "rounded-[1.75rem] border border-border bg-surface p-5",
-    occupancy: "lg:col-span-3 min-h-[10rem]",
-    checkins: "lg:col-span-4 min-h-[10rem]",
-    score: "lg:col-span-7 min-h-[16rem]",
-    mix: "lg:col-span-5 min-h-[12rem]",
-    ai: "flex w-full items-center justify-between gap-4 bg-accent text-accent-foreground lg:col-span-7",
+    tabsRow: "col-span-full flex flex-wrap items-center justify-between gap-3",
+    welcome:
+      "app-card col-span-full flex min-h-[8.5rem] items-center justify-between gap-4 border-transparent bg-accent p-6 text-accent-foreground shadow-none lg:col-span-8",
+    welcomeCopy: "min-w-0",
+    welcomeTitle: "text-2xl font-semibold tracking-tight sm:text-3xl",
+    welcomeSubtitle: "mt-1 text-sm text-accent-foreground/80",
+    welcomeAction:
+      "flex size-12 shrink-0 items-center justify-center rounded-full bg-foreground text-background",
+    calorie:
+      "app-card col-span-full flex min-h-[14rem] flex-col p-5 shadow-none lg:col-span-4",
+    steps: "app-card col-span-full min-h-[12rem] p-5 shadow-none sm:col-span-6 lg:col-span-4",
+    hydration:
+      "app-card col-span-full min-h-[12rem] p-5 shadow-none sm:col-span-6 lg:col-span-4",
+    upcoming:
+      "app-card col-span-full flex min-h-[14rem] flex-col justify-between border-transparent bg-[var(--chart-2)] p-5 text-white shadow-none lg:col-span-4",
+    score: "app-card col-span-full min-h-[16rem] p-5 shadow-none lg:col-span-8",
+    movements: "app-card col-span-full overflow-hidden p-5 shadow-none",
+    table: "mt-4 w-full min-w-[36rem] border-separate border-spacing-y-2 text-sm",
+    chipEasy: "rounded-full bg-[var(--chart-2)]/15 px-2.5 py-1 text-xs text-[var(--chart-2)]",
+    chipHard: "rounded-full bg-danger/15 px-2.5 py-1 text-xs text-danger",
+    chipNormal: "rounded-full bg-muted/20 px-2.5 py-1 text-xs text-muted",
+    progressTrack: "h-2 w-28 overflow-hidden rounded-full bg-surface-secondary",
+    progressFill: "h-full rounded-full",
+    suggestion:
+      "app-card col-span-full flex items-center justify-between gap-4 border-transparent bg-accent p-5 text-accent-foreground shadow-none",
+    aiBanner:
+      "app-card col-span-full flex items-center justify-between gap-4 border-transparent bg-[var(--chart-2)] p-5 text-white shadow-none",
     cardTitle: "text-sm text-muted",
     cardValue: "mt-1 text-2xl font-semibold tabular-nums",
-    legend: "mt-3 flex gap-4 text-xs text-muted",
+    legend: "mt-3 flex flex-wrap gap-4 text-xs text-muted",
+    legendDot: "inline-block size-2 rounded-full",
   },
 });

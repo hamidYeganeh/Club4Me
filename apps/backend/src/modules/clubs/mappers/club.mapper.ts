@@ -1,6 +1,16 @@
 import type { ClubDocument } from "../schemas/club.schema";
+import type { ClubProfile, ClubBusyHour } from "../dto/club-profile.dto";
 
 export type PublicClub = {
+  profileResources?: Record<string, { name: string; isActive: boolean }>;
+  profile: ClubProfile;
+  trialBookingEnabled: boolean;
+  busyHours: ClubBusyHour[];
+  busyHoursSource: "owner_reported";
+  busyHoursUpdatedAt: string | null;
+  verifications: Partial<
+    Record<"identity" | "documents" | "on_site", { verifiedAt: string }>
+  >;
   id: string;
   ownerId: string;
   name: string;
@@ -16,6 +26,8 @@ export type PublicClub = {
     kind: "image" | "video";
     position: number;
     isCover: boolean;
+    category?: string;
+    takenOn?: string;
   }>;
   equipment: Array<{
     equipmentId: string;
@@ -92,6 +104,17 @@ export type PublicClub = {
 
 export function toPublicClub(club: ClubDocument): PublicClub {
   return {
+    profile: club.profile ?? {},
+    trialBookingEnabled: club.trialBookingEnabled ?? false,
+    busyHours: club.busyHours ?? [],
+    busyHoursSource: "owner_reported",
+    busyHoursUpdatedAt: club.busyHoursUpdatedAt?.toISOString() ?? null,
+    verifications: Object.fromEntries(
+      Object.entries(club.verifications ?? {}).map(([key, value]) => [
+        key,
+        { verifiedAt: value.verifiedAt },
+      ]),
+    ),
     id: String(club._id),
     ownerId: String(club.ownerId),
     name: club.name,
@@ -107,6 +130,8 @@ export function toPublicClub(club: ClubDocument): PublicClub {
       kind: item.kind ?? "image",
       position: item.position ?? 0,
       isCover: item.isCover ?? false,
+      category: item.category,
+      takenOn: item.takenOn,
     })),
     equipment: club.equipment.map((item) => ({
       equipmentId: String(item.resourceId),

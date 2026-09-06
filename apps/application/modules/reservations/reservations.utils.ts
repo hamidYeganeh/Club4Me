@@ -93,3 +93,18 @@ export function buildDateStrip(
     };
   });
 }
+
+/** Days of the Persian month containing the selected local date, including leap Esfand. */
+export function buildMonthDates(center: Date): ReservationDateOption[] {
+  const formatter = new Intl.DateTimeFormat("en-US-u-ca-persian", {
+    year: "numeric",
+    month: "numeric",
+  });
+  const month = formatter.format(center);
+  let start = startOfDay(center);
+  while (formatter.format(addDays(start, -1)) === month)
+    start = addDays(start, -1);
+  let count = 1;
+  while (formatter.format(addDays(start, count)) === month) count += 1;
+  return buildDateStrip(start, 0, count - 1);
+}

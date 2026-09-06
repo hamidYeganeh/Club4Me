@@ -68,7 +68,7 @@ export function PermissionGrantSheet({
             alt={copy.alt}
             fill
             sizes="(max-width: 576px) 100vw, 576px"
-            className="object-contain"
+            className="object-cover"
           />
         </div>
 

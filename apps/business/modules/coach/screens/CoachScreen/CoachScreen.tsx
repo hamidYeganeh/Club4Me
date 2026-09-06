@@ -29,6 +29,10 @@ export async function CoachScreen() {
       send={t("coachPage.send")}
       attach={t("coachPage.attach")}
       voice={t("coachPage.voice")}
+      gptBadge={t("coachPage.gptBadge")}
+      chatsLeft={t("coachPage.chatsLeft")}
+      downloadApp={t("panel.downloadApp")}
+      voiceDuration={t("coachPage.voiceDuration")}
     />
   );
 }

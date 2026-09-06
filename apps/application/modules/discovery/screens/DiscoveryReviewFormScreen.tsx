@@ -54,8 +54,9 @@ export function DiscoveryReviewFormScreen({
       <section className="px-4 pt-5">
         <ReviewForm
           entityName={entityName}
+          criteria={type === "club" ? clubReviews.data?.criteria : []}
           isPending={createReview.isPending}
-          onSubmit={async ({ rating, body }) => {
+          onSubmit={async ({ rating, body, ratings }) => {
             if (type !== "club") {
               toast.success(
                 "نظر شما دریافت شد؛ ثبت نظر این بخش به‌زودی فعال می‌شود",
@@ -64,7 +65,7 @@ export function DiscoveryReviewFormScreen({
               return;
             }
             try {
-              await createReview.mutateAsync({ rating, body });
+              await createReview.mutateAsync({ rating, body, ratings });
               await clubReviews.refetch();
               toast.success("نظر شما با موفقیت ثبت شد");
               router.replace(reviewsPath);

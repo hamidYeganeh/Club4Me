@@ -14,6 +14,7 @@
     "./commerce": "./src/domains/commerce/index.ts",
     "./discovery": "./src/domains/discovery/index.ts",
     "./favorites": "./src/domains/favorites/index.ts",
+    "./media": "./src/domains/media/index.ts",
     "./tracking": "./src/tracking/index.ts"
   },
   "scripts": {

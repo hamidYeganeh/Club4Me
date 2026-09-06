@@ -7,7 +7,7 @@ type PageProps = {
 
 export function generateStaticParams() {
   return getDiscoverySlugParams(
-    "/public/catalog/location/city?limit=100",
+    "/geography/cities?action=options&limit=100",
     "cityId",
   );
 }

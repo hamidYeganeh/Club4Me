@@ -2,6 +2,10 @@ import type { CapacitorConfig } from "@capacitor/cli";
 import { KeyboardResize, KeyboardStyle } from "@capacitor/keyboard";
 
 const devServerUrl = process.env.CAPACITOR_DEV_URL;
+const hostedServerUrl = process.env.CAPACITOR_SERVER_URL;
+if (hostedServerUrl && new URL(hostedServerUrl).protocol !== "https:") {
+  throw new Error("CAPACITOR_SERVER_URL must use HTTPS");
+}
 const allowCleartext =
   process.env.CAPACITOR_ALLOW_CLEARTEXT === "1" || Boolean(devServerUrl);
 const isDemoBuild = process.env.CAPACITOR_DEMO === "1";
@@ -9,8 +13,8 @@ const isDemoBuild = process.env.CAPACITOR_DEMO === "1";
 const config: CapacitorConfig = {
   appId: "com.gym4me.app",
   appName: "Gym4Me",
-  webDir: "out",
-  backgroundColor: "#c6ff4e",
+  webDir: hostedServerUrl ? "native-shell" : "out",
+  backgroundColor: "#1eff6d",
   android: {
     allowMixedContent: allowCleartext,
     ...(isDemoBuild
@@ -35,7 +39,7 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchAutoHide: false,
-      backgroundColor: "#c6ff4e",
+      backgroundColor: "#1eff6d",
       androidSplashResourceName: "splash",
       androidScaleType: "CENTER_CROP",
       splashFullScreen: true,
@@ -55,7 +59,9 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: "https",
     iosScheme: "https",
-    ...(devServerUrl
+    ...(hostedServerUrl
+      ? { url: hostedServerUrl, cleartext: false }
+      : devServerUrl
       ? {
           url: devServerUrl,
           cleartext: true,

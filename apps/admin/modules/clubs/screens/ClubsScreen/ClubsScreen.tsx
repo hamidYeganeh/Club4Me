@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Card, Chip, Spinner, Table, toast } from "@heroui/react";
-import { useAdminClubs, useReviewClub } from "@api/admin";
+import { useAdminClubs, useReviewClub, useVerifyClub } from "@api/admin";
 import type { BusinessClub } from "@api/business";
 import { EntityDetailsModal } from "@ui/entity-details-modal";
 import { useTranslations } from "next-intl";
@@ -11,6 +11,7 @@ export function ClubsScreen() {
   const t = useTranslations("clubsPage");
   const clubs = useAdminClubs();
   const review = useReviewClub();
+  const verification = useVerifyClub();
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<BusinessClub | null>(null);
 
@@ -102,6 +103,37 @@ export function ClubsScreen() {
                           >
                             جزئیات
                           </Button>
+                          {(
+                            [
+                              ["identity", "هویت"],
+                              ["documents", "مدارک"],
+                              ["on_site", "بازدید حضوری"],
+                            ] as const
+                          ).map(([kind, label]) => (
+                            <Button
+                              key={kind}
+                              size="sm"
+                              variant="secondary"
+                              isDisabled={verification.isPending}
+                              onPress={async () => {
+                                try {
+                                  await verification.mutateAsync({
+                                    clubId: club.id,
+                                    kind,
+                                    verified: !club.verifications?.[kind],
+                                  });
+                                  toast.success("نشان تأیید به‌روزرسانی شد");
+                                } catch {
+                                  toast.danger("به‌روزرسانی نشان انجام نشد");
+                                }
+                              }}
+                            >
+                              {club.verifications?.[kind]
+                                ? "لغو تأیید"
+                                : "تأیید"}{" "}
+                              {label}
+                            </Button>
+                          ))}
                           {club.reviewStatus === "pending" ? (
                             <>
                               <Button

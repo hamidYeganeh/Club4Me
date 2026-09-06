@@ -109,8 +109,6 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
       header={
         <PanelHeaderSection
           searchPlaceholder={t("panel.searchPlaceholder")}
-          chatLabel={t("panel.chatAi")}
-          chatHref="/coach"
           settingsHref="/settings"
           settingsLabel={t("panel.settings")}
         />

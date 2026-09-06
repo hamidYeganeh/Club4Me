@@ -13,6 +13,7 @@ export type ReviewCardItem = {
   body: string;
   createdAt: string;
   verified?: boolean;
+  criteria?: Array<{ name: string; value: number }>;
   likes?: number;
   dislikes?: number;
 };
@@ -43,7 +44,11 @@ export function ReviewCard({ review }: { review: ReviewCardItem }) {
           </Avatar.Fallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <Typography type="body-sm" weight="bold" className="truncate text-base">
+          <Typography
+            type="body-sm"
+            weight="bold"
+            className="truncate text-base"
+          >
             {review.author}
           </Typography>
           <Typography type="body-xs" color="muted" className="mt-1">
@@ -52,13 +57,21 @@ export function ReviewCard({ review }: { review: ReviewCardItem }) {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-2" dir="ltr" aria-label={`${review.rating} از ۵ ستاره`}>
+      <div
+        className="mt-4 flex items-center gap-2"
+        dir="ltr"
+        aria-label={`${review.rating} از ۵ ستاره`}
+      >
         {[1, 2, 3, 4, 5].map((star) => (
           <Icon
             key={star}
             name="star-full"
             size={20}
-            className={star <= Math.round(review.rating) ? "text-accent" : "text-muted/45"}
+            className={
+              star <= Math.round(review.rating)
+                ? "text-accent"
+                : "text-muted/45"
+            }
           />
         ))}
         <strong className="ms-1 text-sm tabular-nums text-foreground">
@@ -81,13 +94,27 @@ export function ReviewCard({ review }: { review: ReviewCardItem }) {
           تجربه تأییدشده
         </div>
       ) : null}
+      {review.criteria?.length ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {review.criteria.map((item) => (
+            <span
+              key={item.name}
+              className="rounded-lg bg-surface-secondary px-2 py-1 text-xs"
+            >
+              {item.name}: {item.value} از ۵
+            </span>
+          ))}
+        </div>
+      ) : null}
 
       <div className="mt-5 flex items-center gap-1 border-t border-white/7 pt-3">
         <Button
           size="sm"
           variant="ghost"
           aria-pressed={reaction === "like"}
-          onPress={() => setReaction((current) => current === "like" ? null : "like")}
+          onPress={() =>
+            setReaction((current) => (current === "like" ? null : "like"))
+          }
           className={reaction === "like" ? "text-accent" : "text-muted"}
         >
           <Icon name="thumbs-up" size={18} />
@@ -97,11 +124,16 @@ export function ReviewCard({ review }: { review: ReviewCardItem }) {
           size="sm"
           variant="ghost"
           aria-pressed={reaction === "dislike"}
-          onPress={() => setReaction((current) => current === "dislike" ? null : "dislike")}
+          onPress={() =>
+            setReaction((current) => (current === "dislike" ? null : "dislike"))
+          }
           className={reaction === "dislike" ? "text-danger" : "text-muted"}
         >
           <Icon name="thumbs-down" size={18} />
-          غیرمفید {review.dislikes ? `(${review.dislikes.toLocaleString("fa-IR")})` : ""}
+          غیرمفید{" "}
+          {review.dislikes
+            ? `(${review.dislikes.toLocaleString("fa-IR")})`
+            : ""}
         </Button>
         <Button
           size="sm"

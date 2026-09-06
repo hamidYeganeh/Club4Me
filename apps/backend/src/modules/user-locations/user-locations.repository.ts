@@ -44,7 +44,7 @@ export class UserLocationsRepository {
           userId: ownerId,
           title: input.title,
           geo: toGeo(input),
-          address: input.address,
+          address: input.address ?? "",
           location: toPoint(input.longitude, input.latitude),
           isDefault: false,
           slot,

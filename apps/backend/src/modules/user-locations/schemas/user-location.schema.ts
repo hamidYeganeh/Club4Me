@@ -39,7 +39,7 @@ export class UserLocation {
   @Prop({ type: UserLocationGeo, required: true })
   geo: UserLocationGeo;
 
-  @Prop({ required: true, trim: true, maxlength: 300 })
+  @Prop({ default: "", trim: true, maxlength: 300 })
   address: string;
 
   @Prop({ type: GeoJsonPoint, required: true })

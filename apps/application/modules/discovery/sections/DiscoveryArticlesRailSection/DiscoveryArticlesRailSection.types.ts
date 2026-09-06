@@ -9,6 +9,7 @@ export type DiscoveryArticlesCardVariant = {
 };
 
 export type DiscoveryArticlesRailSectionProps = {
+  skeletonCount?: number;
   id: string;
   title: string;
   subtitle?: string;

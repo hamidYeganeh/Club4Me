@@ -7,12 +7,11 @@ export class CreateClubReviewDto {
       title: z.string().trim().min(2).max(120).optional(),
       body: z.string().trim().max(2000).default(""),
       ratings: z
-        .object({
-          cleanliness: z.number().int().min(1).max(5).optional(),
-          staff: z.number().int().min(1).max(5).optional(),
-          equipment: z.number().int().min(1).max(5).optional(),
-          value: z.number().int().min(1).max(5).optional(),
-        })
+        .record(
+          z.string().regex(/^[a-f\d]{24}$/i),
+          z.number().int().min(1).max(5),
+        )
+        .refine((value) => Object.keys(value).length <= 30, "Too many criteria")
         .optional(),
       mediaIds: z.array(z.string()).max(10).default([]),
     })

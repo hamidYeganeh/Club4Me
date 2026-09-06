@@ -1,11 +1,13 @@
 "use client";
 
+import { SkeletonBlock, SkeletonText } from "./skeletons/primitives";
 import { Typography } from "@heroui/react";
 import { Icon, type IconName } from "@theme/icon";
 
 import { ButtonLink } from "@/components/button-link";
 
 type DiscoverySectionHeaderProps = {
+  isLoading?: boolean;
   title: string;
   subtitle?: string;
   icon?: IconName;
@@ -17,6 +19,7 @@ type DiscoverySectionHeaderProps = {
 };
 
 export function DiscoverySectionHeader({
+  isLoading = false,
   title,
   subtitle,
   icon,
@@ -39,7 +42,11 @@ export function DiscoverySectionHeader({
                 accent ? "text-[#24272c]" : "text-accent"
               }`}
             >
-              <Icon name={icon} size={18} />
+              {isLoading ? (
+                <SkeletonBlock className="size-[18px] rounded-md" />
+              ) : (
+                <Icon name={icon} size={18} />
+              )}
             </span>
           ) : null}
           <Typography
@@ -48,7 +55,7 @@ export function DiscoverySectionHeader({
             weight="bold"
             className={accent ? "text-[#24272c]" : "text-foreground"}
           >
-            {title}
+            {isLoading ? <SkeletonText>{title}</SkeletonText> : title}
           </Typography>
         </div>
         {subtitle ? (
@@ -59,7 +66,7 @@ export function DiscoverySectionHeader({
               accent ? "mt-1 text-[#66591f]" : icon ? "mt-1 ms-7" : "mt-1"
             }
           >
-            {subtitle}
+            {isLoading ? <SkeletonText>{subtitle}</SkeletonText> : subtitle}
           </Typography>
         ) : null}
       </div>
@@ -74,7 +81,11 @@ export function DiscoverySectionHeader({
               : "bg-accent/10 text-accent"
           }`}
         >
-          {viewAllLabel}
+          {isLoading ? (
+            <SkeletonText>{viewAllLabel}</SkeletonText>
+          ) : (
+            viewAllLabel
+          )}
         </ButtonLink>
       ) : null}
     </div>

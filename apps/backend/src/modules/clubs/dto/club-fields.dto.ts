@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import { z } from "zod";
+import { ClubProfileSchema, BusyHoursSchema } from "./club-profile.dto";
 
 const objectId = z
   .string()
@@ -16,6 +17,16 @@ const titledMedia = z.object({
   kind: z.enum(["image", "video"]).default("image"),
   position: z.number().int().min(0).default(0),
   isCover: z.boolean().default(false),
+  category: z
+    .enum(["training", "equipment", "changing_room", "entrance", "other"])
+    .optional(),
+  takenOn: z.iso
+    .date()
+    .refine(
+      (value) => value <= new Date().toISOString().slice(0, 10),
+      "Photo date cannot be in the future",
+    )
+    .optional(),
 });
 const countedResource = z
   .object({
@@ -201,6 +212,9 @@ export function refineClubFields(
 export const ClubFieldsObjectSchema = z
   .object({
     name: z.string().trim().min(2).max(120),
+    profile: ClubProfileSchema.optional(),
+    trialBookingEnabled: z.boolean().optional(),
+    busyHours: BusyHoursSchema.optional(),
     shortDescription: z.string().trim().max(300).optional(),
     description: z.string().trim().max(5000).optional(),
     logoMediaId: objectId.nullish(),
@@ -237,7 +251,20 @@ export const ClubFieldsObjectSchema = z
         latitude: z.number().min(-90).max(90),
         longitude: z.number().min(-180).max(180),
         postalCode: z.string().trim().max(20).optional(),
-        timezone: z.string().trim().min(3).max(80).default("Asia/Tehran"),
+        timezone: z
+          .string()
+          .trim()
+          .min(3)
+          .max(80)
+          .refine((value) => {
+            try {
+              new Intl.DateTimeFormat("en", { timeZone: value });
+              return true;
+            } catch {
+              return false;
+            }
+          }, "Invalid time zone")
+          .default("Asia/Tehran"),
         locationNotes: z.string().trim().max(500).optional(),
       })
       .optional(),

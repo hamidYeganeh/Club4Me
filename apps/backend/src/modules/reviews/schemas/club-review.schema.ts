@@ -28,6 +28,7 @@ export class ClubReview {
 
   @Prop({ type: Object, default: {} })
   ratings: Record<string, number>;
+  @Prop({ type: Object, default: {} }) criterionLabels: Record<string, string>;
 
   @Prop({ type: [Types.ObjectId], ref: "Media", default: [] })
   mediaIds: Types.ObjectId[];

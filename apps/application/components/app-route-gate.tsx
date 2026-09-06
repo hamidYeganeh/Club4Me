@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { DiscoveryHomeSkeleton } from "@modules/discovery/screens/DiscoveryHomeScreen/DiscoveryHomeScreen";
 import { tokenStore } from "@api/http";
 
 import { getAppRouteRedirect, hasSeenWelcome } from "@/lib/welcome-onboarding";
@@ -39,6 +40,8 @@ export function AppRouteGate({ children }: AppRouteGateProps) {
   }, [redirectTo, router]);
 
   if (!mounted || redirectTo) {
+    if (pathname.replace(/\/$/, "") === "/discovery")
+      return <DiscoveryHomeSkeleton />;
     if (pathname.startsWith("/auth") || pathname.startsWith("/welcome")) {
       return <AuthScreenSkeleton />;
     }

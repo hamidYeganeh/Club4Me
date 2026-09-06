@@ -8,9 +8,11 @@ import { ResourcesService } from "../resources/resources.service";
 
 const ALLOWED = new Set([
   "sports/club-type",
+  "sports/sport",
   "sports/court-type",
   "facilities/amenity",
   "facilities/equipment",
+  "classes/age-group",
   "location/country",
   "location/province",
   "location/city",
@@ -25,7 +27,7 @@ export class BusinessCatalogController {
   constructor(private readonly resources: ResourcesService) {}
 
   @Get(":category/:resource")
-  list(
+  async list(
     @Param("category") category: string,
     @Param("resource") resource: string,
     @Query() query: Record<string, string | undefined>,
@@ -37,10 +39,11 @@ export class BusinessCatalogController {
         "Resource type not found",
       );
     }
-    return this.resources.list(category, resource, {
+    const listQuery = {
       ...query,
       isActive: "true",
-      limit: query.limit ?? "100",
-    });
+      limit: query.limit ?? "50",
+    };
+    return this.resources.list(category, resource, listQuery);
   }
 }

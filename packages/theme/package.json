@@ -5,6 +5,7 @@
   "exports": {
     "./heroui.css": "./src/heroui.css",
     "./globals.css": "./src/globals.css",
+    "./app-surface.css": "./src/app-surface.css",
     "./fonts.css": "./src/fonts.css",
     "./icons.css": "./src/icons.css",
     "./theme-transition.css": "./src/theme-transition.css",

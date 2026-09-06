@@ -52,7 +52,7 @@ export function RequestFailureState({
           height={560}
           unoptimized
           className={cn(
-            "h-auto max-w-full object-contain",
+            "h-auto max-w-full object-cover",
             compact ? "w-40" : "w-64",
           )}
         />

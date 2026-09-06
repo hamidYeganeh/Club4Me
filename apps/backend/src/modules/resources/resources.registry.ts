@@ -40,6 +40,8 @@ const rows: readonly Row[] = [
   ["sports", "court-type", "court_types", "court_types"],
   ["sports", "coach-specialty", "coach_specialties", "coach_specialties"],
   ["sports", "skill-level", "skill_levels", "skill_levels"],
+  ["clubs", "tag", "club_tags", "club_tags"],
+  ["clubs", "review-criterion", "club_review_criteria", "club_review_criteria"],
   ["facilities", "amenity", "amenities", "amenities"],
   ["facilities", "equipment", "equipment", "equipment"],
   [
@@ -67,6 +69,23 @@ const rows: readonly Row[] = [
     "court_feature_types",
   ],
   ["facilities", "service-type", "service_types", "service_types"],
+  ["facilities", "roof-type", "roof_types", "roof_types"],
+  ["facilities", "lighting-type", "lighting_types", "lighting_types"],
+  [
+    "facilities",
+    "water-treatment-type",
+    "water_treatment_types",
+    "water_treatment_types",
+  ],
+  ["facilities", "ventilation-type", "ventilation_types", "ventilation_types"],
+  ["facilities", "cooling-type", "cooling_types", "cooling_types"],
+  ["facilities", "parking-type", "parking_types", "parking_types"],
+  [
+    "facilities",
+    "accessibility-type",
+    "accessibility_types",
+    "accessibility_types",
+  ],
   ["location", "country", "countries", "countries"],
   ["location", "province", "provinces", "provinces"],
   ["location", "city", "cities", "cities"],
@@ -264,6 +283,7 @@ const primaryFields: Record<string, string> = {
   discovery_sections: "title",
 };
 const specialized = new Set([
+  "club_tags",
   "age_group_presets",
   "search_synonyms",
   "popular_searches",
@@ -290,6 +310,16 @@ export function getServerResource(
   segment: string,
 ): ServerResourceDefinition | undefined {
   return serverResourceDefinitions.find(
-    (item) => item.category === category && item.segment === segment,
+    (item) =>
+      (item.category === category && item.segment === segment) ||
+      (resourceDomain(item) === category && item.key === segment),
   );
+}
+
+export function resourceDomain(definition: ServerResourceDefinition): string {
+  return definition.category === "location" ? "geography" : definition.category;
+}
+
+export function resourcePath(definition: ServerResourceDefinition): string {
+  return `${resourceDomain(definition)}/${definition.key}`;
 }

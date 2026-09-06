@@ -20,6 +20,19 @@ export function ClubReservationsAndReviewsSection({
   return (
     <section className="mx-auto w-full max-w-4xl space-y-8 px-4 pb-8">
       <div>
+        <div className="mb-4 grid gap-2 sm:grid-cols-2">
+          {reviews.data?.criteriaSummary?.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-xl bg-surface-secondary p-3 text-sm"
+            >
+              {item.name}:{" "}
+              {item.reviewsCount
+                ? `${item.averageRating.toFixed(1)} از ۵ · ${item.reviewsCount} رأی`
+                : "هنوز ارزیابی نشده"}
+            </div>
+          ))}
+        </div>
         <div className="flex items-end justify-between">
           <Typography type="h4">{t("reviews")}</Typography>
           <Typography type="body-sm" color="muted">
@@ -65,6 +78,11 @@ export function ClubReservationsAndReviewsSection({
                 <Typography type="body-sm" weight="semibold">
                   {t("stars", { count: review.rating })}
                 </Typography>
+                {review.isVerifiedBooking && (
+                  <p className="mt-1 text-xs text-muted">
+                    دارای رزرو تکمیل‌شده
+                  </p>
+                )}
                 {review.title && (
                   <Typography type="h6" weight="medium" className="mt-2">
                     {review.title}

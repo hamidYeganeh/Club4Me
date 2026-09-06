@@ -226,7 +226,8 @@ export async function installApiMock(page: Page, state: MockApiState) {
     }
 
     if (
-      path === "/public/catalog/commerce/cancellation-reason" &&
+      (path === "/public/catalog/commerce/cancellation-reason" ||
+        path === "/commerce/cancellation_reasons") &&
       method === "GET"
     ) {
       return success(route, {

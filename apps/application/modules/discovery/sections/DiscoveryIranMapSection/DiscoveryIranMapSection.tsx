@@ -1,5 +1,6 @@
 "use client";
 
+import { DiscoveryIranMapSkeleton } from "../../components/skeletons/DiscoveryIranMapSkeleton";
 import type { CSSProperties, KeyboardEvent } from "react";
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -62,7 +63,9 @@ export function DiscoveryIranMapSection() {
   const maxClubs = Math.max(
     1,
     ...IRAN_PROVINCES.map((province) =>
-      provinceValue(resourcesByName.get(normalizeProvinceName(province.nameFa))),
+      provinceValue(
+        resourcesByName.get(normalizeProvinceName(province.nameFa)),
+      ),
     ),
   );
   const selectedCount = provinceValue(selectedResource);
@@ -78,6 +81,8 @@ export function DiscoveryIranMapSection() {
     event.preventDefault();
     setSelectedId(province.id);
   }
+
+  if (provinces.isPending) return <DiscoveryIranMapSkeleton />;
 
   return (
     <section className={styles.root()} aria-labelledby="iran-map-title">

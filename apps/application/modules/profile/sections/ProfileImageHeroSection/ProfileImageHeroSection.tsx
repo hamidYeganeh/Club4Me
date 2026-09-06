@@ -2,6 +2,7 @@
 
 /* eslint-disable react-hooks/refs -- react-dropzone prop getters attach managed refs during render. */
 
+import { ImageCropper } from "@/components/image-cropper";
 import { useRef, useState } from "react";
 import { Avatar, Badge, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
@@ -26,6 +27,7 @@ export function ProfileImageHeroSection({
   isUploading = false,
   onFile,
 }: ProfileImageHeroSectionProps) {
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const styles = profileImageHeroSectionStyles();
   const t = useTranslations("profile");
   const [cameraPrimerOpen, setCameraPrimerOpen] = useState(false);
@@ -39,7 +41,7 @@ export function ProfileImageHeroSection({
     noKeyboard: true,
     onDropAccepted: ([file]) => {
       if (file) {
-        onFile(file);
+        setCropFile(file);
       }
     },
   });
@@ -51,6 +53,16 @@ export function ProfileImageHeroSection({
 
   return (
     <section className={styles.root()}>
+      {cropFile ? (
+        <ImageCropper
+          file={cropFile}
+          onCancel={() => setCropFile(null)}
+          onConfirm={async (file) => {
+            setCropFile(null);
+            await onFile(file);
+          }}
+        />
+      ) : null}
       <Typography type="h2" align="center" className={styles.title()}>
         {title}
       </Typography>
@@ -111,7 +123,11 @@ export function ProfileImageHeroSection({
               className: isUploading ? "opacity-70" : undefined,
             })}
           >
-            <Avatar.Image alt={avatarAlt} src={resolveImageSrc(avatarSrc)} />
+            <Avatar.Image
+              className="object-cover"
+              alt={avatarAlt}
+              src={resolveImageSrc(avatarSrc)}
+            />
             <Avatar.Fallback
               className={`${styles.avatarFallback()} overflow-hidden p-0`}
             >

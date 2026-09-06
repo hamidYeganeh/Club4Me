@@ -47,7 +47,7 @@ export default async function RootLayout({
             <ApiProvider
               baseURL={
                 process.env.NEXT_PUBLIC_API_URL ??
-                "http://localhost:7088/api/v1"
+                "https://api.gym4me.ir/api/v1"
               }
               refreshEndpoint="/admin/auth/refresh"
             >

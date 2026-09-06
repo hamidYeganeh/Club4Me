@@ -3,7 +3,7 @@ import { tv } from "tailwind-variants";
 export const accountAuthOtpHeroSectionStyles = tv({
   slots: {
     root: "relative flex w-full shrink-0 items-center justify-center",
-    image: "h-auto max-h-full object-contain transition-[width,max-height] duration-300 ease-out",
+    image: "h-auto max-h-full object-cover transition-[width,max-height] duration-300 ease-out",
   },
   variants: {
     size: {

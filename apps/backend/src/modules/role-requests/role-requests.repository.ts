@@ -37,7 +37,6 @@ export class RoleRequestsRepository {
       .findOne({
         userId,
         role: input.role,
-        details: input.details,
         status: "pending",
       })
       .exec();
@@ -51,6 +50,7 @@ export class RoleRequestsRepository {
         userId,
         phone: input.phone,
         role: input.role,
+        details: input.details,
         status: "pending",
       });
       return toPublicRoleRequest(created);

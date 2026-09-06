@@ -1,3 +1,4 @@
+import { resourceApiPath } from "../resources/resources.registry";
 export const discoveryEndpoints = {
   feed: "/discovery/sections",
   catalogClubs: "/discovery/catalog/clubs",
@@ -15,7 +16,7 @@ export const discoveryEndpoints = {
   coachSections: "/discovery/coaches/sections",
   coaches: "/discovery/coaches",
   publicResource: (category: string, resource: string) =>
-    `/public/catalog/${category}/${resource}`,
+    resourceApiPath(category, resource),
   clubs: "/discovery/clubs",
   club: (clubId: string) => `/discovery/clubs/${clubId}`,
   classes: (clubId: string) => `/discovery/clubs/${clubId}/classes`,

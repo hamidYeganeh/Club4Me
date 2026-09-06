@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 
@@ -30,6 +30,7 @@ import { EntitlementsService } from "../commerce/entitlements.service";
 
 @Injectable()
 export class ReservationsService {
+  private readonly logger = new Logger(ReservationsService.name);
   constructor(
     @InjectModel(Court.name) private readonly courts: Model<CourtDocument>,
     @InjectModel(ReservableSession.name)
@@ -387,6 +388,36 @@ export class ReservationsService {
         "Reservable session not found",
       );
     const club = await this.clubs.getPublic(String(session.clubId));
+    if (input.isTrial) {
+      if (!club.trialBookingEnabled)
+        throw new AppError(
+          409,
+          "TRIAL_NOT_AVAILABLE",
+          "Trial booking is not enabled for this club",
+        );
+      if (
+        input.participantCount !== 1 ||
+        input.entitlementId ||
+        input.options?.length
+      )
+        throw new AppError(
+          400,
+          "INVALID_TRIAL_BOOKING",
+          "Trial bookings are for one person without extras or a membership",
+        );
+      const used = await this.reservations.exists({
+        clubId: session.clubId,
+        userId: oid(userId),
+        isTrial: true,
+        status: { $in: ["reserved", "completed", "no_show"] },
+      });
+      if (used)
+        throw new AppError(
+          409,
+          "TRIAL_ALREADY_USED",
+          "Trial booking has already been used for this club",
+        );
+    }
     if (club.operationalStatus !== "active") {
       throw new AppError(
         409,
@@ -482,9 +513,11 @@ export class ReservationsService {
       0,
     );
     const reservationId = new Types.ObjectId();
-    const totalPrice = input.entitlementId
-      ? optionsTotal
-      : baseTotal + optionsTotal;
+    const totalPrice = input.isTrial
+      ? 0
+      : input.entitlementId
+        ? optionsTotal
+        : baseTotal + optionsTotal;
     try {
       if (input.entitlementId) {
         await this.entitlements.reserveForReservation({
@@ -506,6 +539,7 @@ export class ReservationsService {
         sessionStartsAt: session.startsAt,
         sessionEndsAt: session.endsAt,
         participantCount: input.participantCount,
+        isTrial: input.isTrial ?? false,
         selectedOptions: selected,
         totalPrice,
         entitlementId: input.entitlementId ? oid(input.entitlementId) : null,
@@ -515,16 +549,25 @@ export class ReservationsService {
         status: "reserved",
       });
       if (reservation.paymentStatus === "not_required") {
-        await this.entitlements.finalizeReservation(reservation._id, true);
-        await this.notifications.notifyBookingConfirmed({
-          userId: reservation.userId,
-          bookingId: reservation._id,
-          title: reservation.sessionTitle,
-        });
+        if (!input.isTrial)
+          await this.entitlements.finalizeReservation(reservation._id, true);
+        try {
+          await this.notifications.notifyBookingConfirmed({
+            userId: reservation.userId,
+            bookingId: reservation._id,
+            title: reservation.sessionTitle,
+          });
+        } catch {
+          // A notification failure must never release a persisted booking's seat.
+          this.logger.warn(
+            `Booking ${reservation._id} confirmed but notification failed`,
+          );
+        }
       }
       return publicReservation(reservation);
     } catch (error) {
-      await this.entitlements.finalizeReservation(reservationId, false);
+      if (!input.isTrial)
+        await this.entitlements.finalizeReservation(reservationId, false);
       await this.releaseInventory(
         session._id,
         input.participantCount,
@@ -533,8 +576,10 @@ export class ReservationsService {
       if (duplicate(error))
         throw new AppError(
           409,
-          "RESERVATION_EXISTS",
-          "An active reservation already exists",
+          input.isTrial ? "TRIAL_ALREADY_USED" : "RESERVATION_EXISTS",
+          input.isTrial
+            ? "Trial booking has already been used for this club"
+            : "An active reservation already exists",
         );
       throw error;
     }
@@ -931,6 +976,7 @@ function publicReservation(value: ReservationDocument) {
     sessionStartsAt: value.sessionStartsAt.toISOString(),
     sessionEndsAt: value.sessionEndsAt.toISOString(),
     participantCount: value.participantCount,
+    isTrial: value.isTrial ?? false,
     selectedOptions: value.selectedOptions.map((item) => ({
       optionId: String(item.optionId),
       type: item.type,

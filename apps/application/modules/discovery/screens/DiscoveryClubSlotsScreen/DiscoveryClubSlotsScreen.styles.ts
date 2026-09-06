@@ -63,7 +63,7 @@ export const discoveryClubSlotsScreenStyles = tv({
     timeScroller: "w-full pb-1",
     timeEmpty:
       "flex min-h-36 w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-foreground/20 bg-surface-tertiary/50 px-4 py-5 text-center text-sm text-muted",
-    timeEmptyImage: "size-16 object-contain",
+    timeEmptyImage: "size-16 object-cover",
     timeContent:
       "w-full rounded-2xl border border-transparent bg-surface-tertiary px-4 py-3 text-center text-base font-semibold tracking-tight text-foreground/55 transition-[transform,border-color,background-color,color] duration-300 ease-out group-data-[hovered=true]:scale-[1.02]",
     timeContentSelected: "border-transparent bg-accent text-accent-foreground",
@@ -77,7 +77,7 @@ export const discoveryClubSlotsScreenStyles = tv({
     disclaimer: "mt-3 px-3 text-center text-[0.64rem] leading-5 text-muted/90",
     empty:
       "flex flex-1 flex-col items-center justify-center gap-4 py-8 text-center",
-    emptyImage: "size-36 object-contain drop-shadow-lg sm:size-40",
+    emptyImage: "size-36 object-cover drop-shadow-lg sm:size-40",
     emptyText: "max-w-[28ch] text-sm leading-6 text-muted",
     controlHidden: "sr-only",
   },

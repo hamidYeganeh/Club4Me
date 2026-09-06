@@ -1,0 +1,86 @@
+[
+  {
+    "url": "https://gym4me.ir/",
+    "status": 200,
+    "bytes": 570642,
+    "passed": true
+  },
+  {
+    "url": "https://gym4me.ir/privacy",
+    "status": 200,
+    "bytes": 51343,
+    "passed": true
+  },
+  {
+    "url": "https://gym4me.ir/terms",
+    "status": 200,
+    "bytes": 49547,
+    "passed": true
+  },
+  {
+    "url": "https://gym4me.ir/support",
+    "status": 200,
+    "bytes": 46325,
+    "passed": true
+  },
+  {
+    "url": "https://gym4me.ir/account-deletion",
+    "status": 200,
+    "bytes": 48443,
+    "passed": true
+  },
+  {
+    "url": "https://app.gym4me.ir/",
+    "status": 200,
+    "bytes": 69913,
+    "passed": true
+  },
+  {
+    "url": "https://app.gym4me.ir/discovery",
+    "status": 200,
+    "bytes": 80475,
+    "passed": true
+  },
+  {
+    "url": "https://app.gym4me.ir/club-memberships/test-membership",
+    "status": 200,
+    "bytes": 71501,
+    "passed": true
+  },
+  {
+    "url": "https://app.gym4me.ir/athlete/reservations/test-reservation?source=coach",
+    "status": 200,
+    "bytes": 80561,
+    "passed": true
+  },
+  {
+    "url": "https://admin.gym4me.ir/",
+    "status": 200,
+    "bytes": 55295,
+    "passed": true
+  },
+  {
+    "url": "https://business.gym4me.ir/",
+    "status": 200,
+    "bytes": 52927,
+    "passed": true
+  },
+  {
+    "url": "https://api.gym4me.ir/health/ready",
+    "status": 200,
+    "bytes": 55,
+    "passed": true
+  },
+  {
+    "url": "https://api.gym4me.ir/api/v1/discovery",
+    "status": 200,
+    "bytes": 3520,
+    "passed": true
+  },
+  {
+    "url": "https://api.gym4me.ir/api/v1/discovery/catalog/clubs?limit=1",
+    "status": 200,
+    "bytes": 1555,
+    "passed": true
+  }
+]

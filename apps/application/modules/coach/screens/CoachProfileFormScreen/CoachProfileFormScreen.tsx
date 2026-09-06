@@ -1,11 +1,12 @@
 "use client";
 
+import { CroppedImageUpload } from "@/components/cropped-image-upload";
 import { type FormEvent, useEffect, useState } from "react";
 import { Button, Card, Skeleton, toast, Typography } from "@heroui/react";
 import {
   useCoachProfile,
-  useCreateCoachMedia,
   useCoachSports,
+  useCreateMedia,
   useReplaceCoachSports,
   useUpdateCoachProfile,
 } from "@api";
@@ -22,7 +23,7 @@ export function CoachProfileFormScreen() {
   const update = useUpdateCoachProfile();
   const coachSports = useCoachSports();
   const replaceSports = useReplaceCoachSports();
-  const createMedia = useCreateCoachMedia();
+  const createMedia = useCreateMedia();
   const sportsCatalog = usePublicCatalogResource("sports", "sport");
   const [displayName, setDisplayName] = useState("");
   const [shortBio, setShortBio] = useState("");
@@ -37,7 +38,9 @@ export function CoachProfileFormScreen() {
   const [experienceSummary, setExperienceSummary] = useState("");
   const [experience, setExperience] = useState("");
   const [faqs, setFaqs] = useState("");
-  const [portfolioUrls, setPortfolioUrls] = useState("");
+  const [portfolioMedia, setPortfolioMedia] = useState<
+    Array<{ id: string; url: string }>
+  >([]);
 
   useEffect(() => {
     if (!profile.data) return;
@@ -105,24 +108,13 @@ export function CoachProfileFormScreen() {
               const existingMediaId = image?.startsWith("media:")
                 ? image.slice("media:".length)
                 : undefined;
-              const created = image && !existingMediaId
-                ? await createMedia.mutateAsync(image)
-                : undefined;
+
               return {
                 title,
                 description,
-                ...((existingMediaId || created?.id)
-                  ? { imageMediaId: existingMediaId ?? created!.id }
-                  : {}),
+                ...(existingMediaId ? { imageMediaId: existingMediaId } : {}),
               };
             }),
-          );
-          const createdPortfolio = await Promise.all(
-            portfolioUrls
-              .split("\n")
-              .map((url) => url.trim())
-              .filter(Boolean)
-              .map((url) => createMedia.mutateAsync(url)),
           );
           return update.mutateAsync({
             displayName,
@@ -154,12 +146,13 @@ export function CoachProfileFormScreen() {
             })),
             galleryMediaIds: [
               ...profile.data!.galleryMediaIds,
-              ...createdPortfolio.map((item) => item.id),
+              ...portfolioMedia.map((item) => item.id),
             ],
           });
         })(),
         replaceSports.mutateAsync(sportIds),
       ]);
+      setPortfolioMedia([]);
       toast.success("پروفایل حرفه‌ای ذخیره شد");
     } catch {
       toast.danger("ذخیره پروفایل ناموفق بود");
@@ -299,21 +292,75 @@ export function CoachProfileFormScreen() {
               value={trainingStyles}
               onChange={(event) => setTrainingStyles(event.target.value)}
               className={`${input} min-h-32 py-3`}
-              placeholder="تمرین قدرتی دقیق | تمرکز بر فرم و پیشرفت تدریجی | https://example.com/style.jpg"
+              placeholder="تمرین قدرتی دقیق | تمرکز بر فرم و پیشرفت تدریجی"
             />
             <p className="mt-1 text-xs leading-6 text-muted">
-              هر خط: عنوان | توضیح | آدرس تصویر (اختیاری)
+              هر خط: عنوان | توضیح. تصویر هر سبک را با دکمه زیر انتخاب کنید.
             </p>
           </Field>
-          <Field label="افزودن تصاویر نمونه‌کار">
-            <textarea
-              value={portfolioUrls}
-              onChange={(event) => setPortfolioUrls(event.target.value)}
-              className={`${input} min-h-24 py-3`}
-              dir="ltr"
-              placeholder="https://example.com/result-1.jpg\nhttps://example.com/result-2.jpg"
+          {trainingStyles.split("\n").map((row, index) => {
+            const [title, description] = row
+              .split("|")
+              .map((part) => part.trim());
+            if (!title || !description) return null;
+            return (
+              <CroppedImageUpload
+                key={index}
+                label={`تصویر ${title}`}
+                disabled={createMedia.isPending}
+                onFile={async (file) => {
+                  const media = await createMedia.mutateAsync(file);
+                  setTrainingStyles((value) =>
+                    value
+                      .split("\n")
+                      .map((line, lineIndex) =>
+                        lineIndex === index
+                          ? `${line.split("|").slice(0, 2).join(" | ")} | media:${media.id}`
+                          : line,
+                      )
+                      .join("\n"),
+                  );
+                }}
+              />
+            );
+          })}
+          <div className="space-y-3">
+            <p className="text-sm font-bold">افزودن تصاویر نمونه‌کار</p>
+            <CroppedImageUpload
+              disabled={createMedia.isPending}
+              onFile={async (file) => {
+                const media = await createMedia.mutateAsync(file);
+                setPortfolioMedia((items) => [
+                  ...items,
+                  { id: media.id, url: media.url },
+                ]);
+              }}
             />
-          </Field>
+            <div className="flex flex-wrap gap-2">
+              {portfolioMedia.map((media) => (
+                <div key={media.id} className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={media.url}
+                    alt="تصویر نمونه‌کار"
+                    className="size-24 rounded-xl object-cover"
+                  />
+                  <button
+                    type="button"
+                    className="absolute top-1 right-1 rounded bg-background px-2"
+                    aria-label="حذف تصویر"
+                    onClick={() =>
+                      setPortfolioMedia((items) =>
+                        items.filter((item) => item.id !== media.id),
+                      )
+                    }
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
           <Field label="سوابق حرفه‌ای">
             <textarea
               value={experienceSummary}

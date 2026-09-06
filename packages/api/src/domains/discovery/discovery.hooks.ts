@@ -101,8 +101,9 @@ export function useCatalogCoach(identifier: string) {
   });
 }
 
-export function useCatalogClasses(params?: PublicCatalogParams) {
+export function useCatalogClasses(params?: PublicCatalogParams, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: discoveryQueries.catalog.classes(params),
     queryFn: ({ signal }) => discoveryClient.listCatalogClasses(params, signal),
   });

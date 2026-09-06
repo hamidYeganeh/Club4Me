@@ -18,8 +18,10 @@ import {
 } from "@api/business";
 import { useTranslations } from "next-intl";
 
+import { PanelNumberField } from "@/components/form/PanelNumberField";
+
 const input =
-  "h-11 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm outline-none focus:border-accent";
+  "h-11 w-full rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm outline-none focus:border-accent";
 
 type OptionDraft = {
   type: "equipment" | "amenity";
@@ -149,7 +151,7 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
         <div className="mt-6 grid gap-5 lg:grid-cols-2">
           <Card
             variant="transparent"
-            className="rounded-2xl border border-border bg-surface p-5"
+            className="app-card shadow-none active:scale-100 p-5"
           >
             <h2 className="font-semibold">{t("newCourt")}</h2>
             <form onSubmit={addCourt} className="mt-4 space-y-3">
@@ -175,13 +177,11 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
                 ))}
               </select>
               <label className="block space-y-2">
-                <span className="text-sm">{t("capacity")}</span>
-                <input
-                  type="number"
-                  min={1}
+                <PanelNumberField
+                  label={t("capacity")}
+                  minValue={1}
                   value={courtCapacity}
-                  onChange={(e) => setCourtCapacity(Number(e.target.value))}
-                  className={input}
+                  onChange={setCourtCapacity}
                 />
               </label>
               <Button
@@ -208,7 +208,7 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
           </Card>
           <Card
             variant="transparent"
-            className="rounded-2xl border border-border bg-surface p-5"
+            className="app-card shadow-none active:scale-100 p-5"
           >
             <h2 className="font-semibold">{t("newSession")}</h2>
             <form onSubmit={addSession} className="mt-4 space-y-3">
@@ -367,20 +367,18 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
                             "unitPrice",
                           ] as const
                         ).map((fieldName) => (
-                          <input
+                          <PanelNumberField
                             key={fieldName}
-                            type="number"
-                            min={fieldName === "unitPrice" ? 0 : 1}
-                            className={input}
+                            aria-label={t(fieldName)}
+                            minValue={fieldName === "unitPrice" ? 0 : 1}
                             value={option[fieldName]}
-                            placeholder={t(fieldName)}
-                            onChange={(event) =>
+                            onChange={(next) =>
                               setOptions((items) =>
                                 items.map((item, itemIndex) =>
                                   itemIndex === index
                                     ? {
                                         ...item,
-                                        [fieldName]: Number(event.target.value),
+                                        [fieldName]: next,
                                       }
                                     : item,
                                 ),
@@ -394,21 +392,17 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="number"
-                  min={1}
+                <PanelNumberField
+                  aria-label={t("capacity")}
+                  minValue={1}
                   value={capacity}
-                  onChange={(e) => setCapacity(Number(e.target.value))}
-                  className={input}
-                  placeholder={t("capacity")}
+                  onChange={setCapacity}
                 />
-                <input
-                  type="number"
-                  min={0}
+                <PanelNumberField
+                  aria-label={t("price")}
+                  minValue={0}
                   value={basePrice}
-                  onChange={(e) => setBasePrice(Number(e.target.value))}
-                  className={input}
-                  placeholder={t("price")}
+                  onChange={setBasePrice}
                 />
               </div>
               <Button
@@ -428,7 +422,7 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
               <Card
                 key={item.id}
                 variant="transparent"
-                className="rounded-2xl border border-border bg-surface p-4"
+                className="app-card shadow-none active:scale-100 p-4"
               >
                 <div className="flex justify-between gap-3">
                   <strong>{item.title}</strong>
@@ -486,7 +480,7 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
               <Card
                 key={item.id}
                 variant="transparent"
-                className="rounded-2xl border border-border bg-surface p-4"
+                className="app-card shadow-none active:scale-100 p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>

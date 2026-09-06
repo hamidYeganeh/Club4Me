@@ -63,6 +63,16 @@ export class ResourcesService {
   constructor(@InjectConnection() private readonly connection: Connection) {}
 
   async list(category: string, segment: string, query: ListQuery) {
+    if (
+      Object.values(query).some(
+        (value) => value !== undefined && typeof value !== "string",
+      )
+    )
+      throw new AppError(
+        400,
+        "INVALID_QUERY",
+        "Query parameters must be single strings",
+      );
     const definition = this.requireDefinition(category, segment);
     const model = this.getModel(definition);
     const page = parseInteger(query.page, 1, 1, 100_000);
@@ -80,14 +90,29 @@ export class ResourcesService {
       }
       filter[parentField.name] = new Types.ObjectId(query.parentId);
     }
-    if (query.search?.trim()) {
-      const pattern = new RegExp(escapeRegex(normalizeText(query.search)), "i");
+    const search = query.search ?? query.q;
+    if (search && search.length > 200)
+      throw new AppError(
+        400,
+        "INVALID_SEARCH",
+        "Search is limited to 200 characters",
+      );
+    if (search?.trim()) {
+      const pattern = new RegExp(
+        escapeRegex(normalizeText(search))
+          .replace(/ی/g, "[یي]")
+          .replace(/ک/g, "[کك]")
+          .replace(/ /g, "[\\s‌]+"),
+        "i",
+      );
       filter.$or = [
         "name",
         definition.primaryField,
         "code",
         "slug",
         "normalizedName",
+        "aliases",
+        "description",
       ].map((field) => ({ [field]: pattern }));
     }
 
@@ -170,6 +195,9 @@ export class ResourcesService {
       );
     }
     const payload = await this.preparePayload(definition, body, false);
+    validateRanges(definition, { ...existing, ...payload });
+    if (Object.keys(payload).length === 0)
+      throw new AppError(400, "EMPTY_UPDATE", "At least one field is required");
     try {
       const updated = await model
         .findByIdAndUpdate(
@@ -199,14 +227,45 @@ export class ResourcesService {
     return { success: true as const };
   }
 
-  async seed(category: string, segment: string): Promise<SeedResult> {
+  async seed(
+    category: string,
+    segment: string,
+    options: { includeSampleArticles?: boolean } = {},
+  ): Promise<SeedResult> {
     const definition = this.requireDefinition(category, segment);
     const result = await this.seedDefinition(definition, new Set());
     const articlesCreated =
-      definition.key === "article_categories"
+      definition.key === "article_categories" &&
+      options.includeSampleArticles !== false
         ? await this.seedSampleArticles()
         : 0;
     return { ...result, articlesCreated };
+  }
+
+  async seedAll() {
+    const visited = new Set<string>();
+    const results = [];
+    for (const definition of serverResourceDefinitions) {
+      const result = await this.seedDefinition(definition, visited);
+      results.push({
+        domain:
+          definition.category === "location"
+            ? "geography"
+            : definition.category,
+        feature: definition.key,
+        ...result,
+      });
+    }
+    const created = results.reduce(
+      (sum, item) => sum + item.created + item.dependenciesCreated,
+      0,
+    );
+    const seedCount = serverResourceDefinitions.reduce(
+      (sum, definition) =>
+        sum + (resourceSeedData[definition.key]?.length ?? 0),
+      0,
+    );
+    return { items: results, created, existing: seedCount - created };
   }
 
   private async seedDefinition(
@@ -478,6 +537,15 @@ export class ResourcesService {
     }
 
     const primaryValue = payload[definition.primaryField];
+    if (
+      primaryValue !== undefined &&
+      (typeof primaryValue !== "string" || !primaryValue)
+    )
+      throw new AppError(
+        400,
+        "RESOURCE_NAME_REQUIRED",
+        `${definition.primaryField} cannot be empty`,
+      );
     if (creating && (typeof primaryValue !== "string" || !primaryValue)) {
       throw new AppError(
         400,
@@ -559,6 +627,41 @@ export class ResourcesService {
     definition: ServerResourceDefinition,
     id: Types.ObjectId,
   ) {
+    const profileReferences: Record<string, string[]> = {
+      court_surface_types: ["profile.spaces.floorTypeId"],
+      roof_types: ["profile.spaces.roofTypeId"],
+      lighting_types: ["profile.spaces.lightingTypeId"],
+      water_treatment_types: ["profile.spaces.waterTreatmentTypeId"],
+      ventilation_types: ["profile.ventilationTypeId"],
+      cooling_types: ["profile.coolingTypeId"],
+      parking_types: ["profile.parkingTypeId"],
+      accessibility_types: ["profile.accessibilityTypeId"],
+      required_item_types: ["profile.firstVisit.requiredItemIds"],
+      club_types: ["clubTypeIds"],
+      sports: ["sportIds"],
+      amenities: ["amenities.resourceId"],
+      equipment: ["equipment.resourceId"],
+      countries: ["geo.countryId"],
+      provinces: ["geo.provinceId"],
+      cities: ["geo.cityId"],
+      districts: ["geo.districtId"],
+      city_regions: ["geo.cityRegionIds"],
+    };
+    const paths = profileReferences[definition.key];
+    if (
+      paths &&
+      (await this.connection
+        .collection("clubs")
+        .findOne(
+          { $or: paths.map((path) => ({ [path]: { $in: [id, String(id)] } })) },
+          { projection: { _id: 1 } },
+        ))
+    )
+      throw new AppError(
+        409,
+        "RESOURCE_IN_USE",
+        "Resource is used by a club; deactivate it instead",
+      );
     for (const candidate of serverResourceDefinitions) {
       for (const field of candidate.fields) {
         if (
@@ -632,6 +735,43 @@ function normalizeValue(
   value: unknown,
   field?: ServerResourceField,
 ): unknown {
+  if (value === null && field && !field.required) return null;
+  if (key === "isActive" && typeof value !== "boolean")
+    throw new AppError(400, "INVALID_BOOLEAN", "isActive must be a boolean");
+  const isNumber = key === "sortOrder" || field?.kind === "number";
+  const isArray =
+    key === "aliases" ||
+    field?.kind === "string-list" ||
+    field?.kind === "relation-list";
+  if (
+    isNumber &&
+    (typeof value !== "number" ||
+      !Number.isFinite(value) ||
+      value < 0 ||
+      (key === "sortOrder" && !Number.isInteger(value)))
+  )
+    throw new AppError(
+      400,
+      "INVALID_NUMBER",
+      `${key} must be a non-negative number`,
+    );
+  if (
+    isArray &&
+    (!Array.isArray(value) ||
+      value.some((item) => typeof item !== "string") ||
+      value.length > 100)
+  )
+    throw new AppError(
+      400,
+      "INVALID_LIST",
+      `${key} must be a list of at most 100 strings`,
+    );
+  if (!isArray && !isNumber && key !== "isActive" && typeof value !== "string")
+    throw new AppError(400, "INVALID_TEXT", `${key} must be text`);
+  if (typeof value === "string" && key !== "imageUrl" && value.length > 5000)
+    throw new AppError(400, "TEXT_TOO_LONG", `${key} is too long`);
+  if (field?.kind === "enum" && !field.options?.includes(String(value)))
+    throw new AppError(400, "INVALID_ENUM", `Invalid ${key}`);
   if (typeof value === "string") {
     const result = value.trim();
     if (/<\/?[a-z][\s\S]*>/i.test(result))
@@ -711,6 +851,8 @@ function validateRanges(
 
 function normalizeText(value: string): string {
   return value
+    .normalize("NFKC")
+    .replace(/\u200c/g, " ")
     .trim()
     .replace(/\s+/g, " ")
     .replace(/ي/g, "ی")

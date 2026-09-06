@@ -55,7 +55,11 @@ export function SplashScreen() {
 
   return (
     <div className={styles.root()} role="status" aria-label={t("appName")}>
-      <Logo size={96} label={t("appName")} className="text-surface" />
+      <Logo
+        size={96}
+        label={t("appName")}
+        className={`${styles.logo()} text-surface`}
+      />
     </div>
   );
 }

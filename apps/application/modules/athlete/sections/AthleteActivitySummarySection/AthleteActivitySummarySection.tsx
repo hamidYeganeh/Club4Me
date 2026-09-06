@@ -2,55 +2,106 @@
 
 import Link from "next/link";
 import { useAthleteClubClasses, useSavedItems, useMyReservations } from "@api";
-import { Skeleton, Typography } from "@heroui/react";
-import { Icon, type IconName } from "@theme/icon";
+import { Typography } from "@heroui/react";
+import { Icon } from "@theme/icon";
+import {
+  DashboardMetricCard,
+  MetricBarVisual,
+  MetricHeatmapVisual,
+  MetricLineVisual,
+  MetricRingVisual,
+} from "@ui/dashboard-metric-card";
+import { DashboardHistoryCard } from "@ui/dashboard-history-card";
 
-type SummaryItem = {
-  href: string;
-  label: string;
-  value: number | null | undefined;
-  icon: IconName;
-};
+const formatNumber = (value: number) => value.toLocaleString("fa-IR");
+const dateFormat = new Intl.DateTimeFormat("fa-IR", {
+  timeZone: "Asia/Tehran",
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+});
+const timeFormat = new Intl.DateTimeFormat("fa-IR", {
+  timeZone: "Asia/Tehran",
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 export function AthleteActivitySummarySection() {
   const reservations = useMyReservations();
   const clubClasses = useAthleteClubClasses();
   const favorites = useSavedItems();
 
-  const reservationCount = reservations.isError
-    ? undefined
-    : (reservations.data?.items.filter(
-        (item) => item.status === "reserved" || item.status === "completed",
-      ).length ?? 0);
-  const activeClassCount = clubClasses.isError
-    ? undefined
-    : (clubClasses.data?.items.filter((item) =>
-        ["pending", "active", "waitlisted"].includes(item.status),
-      ).length ?? 0);
-  const favoriteCount = favorites.isError
-    ? undefined
-    : (favorites.data?.items.length ?? 0);
-
-  const items: SummaryItem[] = [
-    {
-      href: "/athlete/reservations",
-      label: "رزرو",
-      value: reservations.isPending ? null : reservationCount,
-      icon: "ticket",
+  const reservationItems = reservations.data?.items ?? [];
+  const classItems = clubClasses.data?.items ?? [];
+  const favoriteItems = favorites.data?.items ?? [];
+  const reservationCount = reservationItems.filter((item) =>
+    ["reserved", "completed"].includes(item.status),
+  ).length;
+  const activeClassCount = classItems.filter((item) =>
+    ["pending", "active", "waitlisted"].includes(item.status),
+  ).length;
+  const completedCount = reservationItems.filter(
+    (item) => item.status === "completed",
+  ).length;
+  const outcomeCount = reservationItems.filter((item) =>
+    ["completed", "no_show"].includes(item.status),
+  ).length;
+  const completionRate = outcomeCount
+    ? Math.round((completedCount / outcomeCount) * 100)
+    : 0;
+  const reservationStatusData = [
+    "reserved",
+    "completed",
+    "cancelled",
+    "no_show",
+  ].map((status) => ({
+    label: status,
+    value: reservationItems.filter((item) => item.status === status).length,
+  }));
+  const classStatusData = ["pending", "active", "waitlisted", "completed"].map(
+    (status) => ({
+      label: status,
+      primary: classItems.filter((item) => item.status === status).length,
+    }),
+  );
+  const metricValue = (unavailable: boolean, value: number) =>
+    unavailable ? "—" : formatNumber(value);
+  const recentReservations = [...reservationItems]
+    .sort(
+      (a, b) =>
+        new Date(b.sessionStartsAt).getTime() -
+        new Date(a.sessionStartsAt).getTime(),
+    )
+    .slice(0, 3);
+  const recentReservationSeries = [...reservationItems]
+    .sort(
+      (a, b) =>
+        new Date(a.sessionStartsAt).getTime() -
+        new Date(b.sessionStartsAt).getTime(),
+    )
+    .slice(-7);
+  const reservationStatus = {
+    reserved: {
+      label: "رزرو فعال",
+      color: "var(--accent)",
+      icon: "ticket" as const,
     },
-    {
-      href: "/athlete/classes",
-      label: "کلاس فعال",
-      value: clubClasses.isPending ? null : activeClassCount,
-      icon: "weight",
+    completed: {
+      label: "تکمیل‌شده",
+      color: "var(--success)",
+      icon: "check-circle" as const,
     },
-    {
-      href: "/athlete/favorites",
-      label: "ذخیره‌شده",
-      value: favorites.isPending ? null : favoriteCount,
-      icon: "bookmark",
+    cancelled: {
+      label: "لغوشده",
+      color: "var(--warning)",
+      icon: "close-x-circle" as const,
     },
-  ];
+    no_show: {
+      label: "عدم حضور",
+      color: "var(--danger)",
+      icon: "info-circle" as const,
+    },
+  };
 
   return (
     <section
@@ -78,40 +129,113 @@ export function AthleteActivitySummarySection() {
         </Link>
       </div>
 
-      <div className="app-card grid grid-cols-3 overflow-hidden p-1">
-        {items.map((item, index) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-label={`${item.label}: ${
-              item.value === null
-                ? "در حال دریافت"
-                : item.value === undefined
-                  ? "نامشخص"
-                  : item.value.toLocaleString("fa-IR")
-            }`}
-            className={`flex min-w-0 flex-col items-center gap-2 rounded-[1.05rem] px-2 py-4 text-center text-foreground transition-colors active:bg-surface-secondary ${
-              index > 0 ? "border-r border-white/7" : ""
-            }`}
-          >
-            <Icon name={item.icon} size={19} className="text-accent" />
-            {item.value === null ? (
-              <Skeleton aria-hidden className="h-6 w-8 rounded-md" />
-            ) : item.value === undefined ? (
-              <strong aria-hidden className="text-xl leading-6 text-muted">
-                -
-              </strong>
-            ) : (
-              <strong className="text-xl leading-6 font-black tabular-nums">
-                {item.value.toLocaleString("fa-IR")}
-              </strong>
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <Link
+          href="/athlete/reservations"
+          aria-label="رزروهای من"
+          className="shrink-0 rounded-[32px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        >
+          <DashboardMetricCard
+            title="رزروها"
+            value={metricValue(
+              reservations.isPending || reservations.isError,
+              reservationCount,
             )}
-            <span className="truncate text-[0.7rem] text-muted">
-              {item.label}
-            </span>
-          </Link>
-        ))}
+            unit="رزرو"
+            icon={<Icon name="ticket" size={20} />}
+            visual={<MetricBarVisual data={reservationStatusData} />}
+            className="bg-warning text-warning-foreground"
+          />
+        </Link>
+        <Link
+          href="/athlete/classes"
+          aria-label="کلاس‌های فعال من"
+          className="shrink-0 rounded-[32px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        >
+          <DashboardMetricCard
+            title="کلاس‌های من"
+            value={metricValue(
+              clubClasses.isPending || clubClasses.isError,
+              activeClassCount,
+            )}
+            unit="فعال"
+            icon={<Icon name="weight" size={20} />}
+            visual={<MetricLineVisual data={classStatusData} />}
+            className="bg-accent text-accent-foreground"
+          />
+        </Link>
+        <Link
+          href="/athlete/favorites"
+          aria-label="موارد ذخیره‌شده من"
+          className="shrink-0 rounded-[32px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        >
+          <DashboardMetricCard
+            title="ذخیره‌شده"
+            value={metricValue(
+              favorites.isPending || favorites.isError,
+              favoriteItems.length,
+            )}
+            unit="مورد"
+            icon={<Icon name="bookmark" size={20} />}
+            visual={<MetricHeatmapVisual value={favoriteItems.length} />}
+            className="bg-surface-tertiary text-foreground"
+          />
+        </Link>
+        <Link
+          href="/athlete/reservations"
+          aria-label="نرخ تکمیل رزروها"
+          className="shrink-0 rounded-[32px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        >
+          <DashboardMetricCard
+            title="نرخ تکمیل"
+            value={metricValue(
+              reservations.isPending || reservations.isError,
+              completionRate,
+            )}
+            unit="٪"
+            icon={<Icon name="check-circle" size={20} />}
+            visual={<MetricRingVisual value={completionRate} />}
+            className="bg-success text-success-foreground"
+          />
+        </Link>
       </div>
+
+      {recentReservations.length ? (
+        <div className="mt-2 flex flex-col gap-3">
+          <Typography type="h5" weight="bold">
+            فعالیت‌های اخیر
+          </Typography>
+          {recentReservations.map((reservation) => {
+            const status = reservationStatus[reservation.status];
+            const startsAt = new Date(reservation.sessionStartsAt);
+            return (
+              <Link
+                key={reservation.id}
+                href={`/athlete/reservations/${reservation.id}`}
+                className="rounded-[28px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              >
+                <DashboardHistoryCard
+                  date={dateFormat.format(startsAt)}
+                  meta={timeFormat.format(startsAt)}
+                  value={formatNumber(reservation.participantCount)}
+                  unit="نفر"
+                  status={status.label}
+                  statusIcon={<Icon name={status.icon} size={18} />}
+                  chartColor={status.color}
+                  data={recentReservationSeries.map((item) => ({
+                    label: item.id,
+                    value: item.participantCount,
+                    color:
+                      item.id === reservation.id
+                        ? status.color
+                        : `color-mix(in oklch, ${status.color} 24%, transparent)`,
+                  }))}
+                />
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
     </section>
   );
 }

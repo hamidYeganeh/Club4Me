@@ -40,10 +40,17 @@ import {
   useRef,
   useState,
 } from "react";
+
+import {
+  createListColumnHelper,
+  DataTable,
+  ListPagePanel,
+} from "@/components/data-table";
+import { PanelNumberField } from "@/components/form/PanelNumberField";
 import QRCode from "qrcode";
 
 const input =
-  "h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-foreground outline-none transition focus:border-accent";
+  "h-11 w-full rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm text-foreground outline-none transition focus:border-accent";
 const dateText = (value: string) =>
   new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium" }).format(
     new Date(value),
@@ -89,6 +96,17 @@ const weekdays = [
   { value: 4, label: "پنجشنبه" },
   { value: 5, label: "جمعه" },
 ];
+
+const classColumnHelper = createListColumnHelper<BusinessTrainingClass>();
+
+const scheduleHint = (item: BusinessTrainingClass) => {
+  const first = item.schedule[0];
+  if (!first) return "بدون برنامه";
+  const day = weekdays.find((entry) => entry.value === first.dayOfWeek)?.label;
+  const extra =
+    item.schedule.length > 1 ? ` +${item.schedule.length - 1}` : "";
+  return `${day ?? "—"} ${first.startTime}${extra}`;
+};
 
 function Shell({
   title,
@@ -144,6 +162,123 @@ export function BusinessClassesScreen() {
   const [picked, setPicked] = useState("");
   const clubId = picked || clubs.data?.items[0]?.id || "";
   const classes = useBusinessClasses(clubId);
+  const [draftFilters, setDraftFilters] = useState({
+    query: "",
+    status: "" as "" | BusinessClassStatus,
+    model: "" as "" | BusinessClassModel,
+  });
+  const [filters, setFilters] = useState({
+    query: "",
+    status: "" as "" | BusinessClassStatus,
+    model: "" as "" | BusinessClassModel,
+  });
+
+  const items = classes.data?.items ?? [];
+  const filtered = useMemo(() => {
+    const query = filters.query.trim().toLowerCase();
+    return items.filter((item) => {
+      if (filters.status && item.status !== filters.status) return false;
+      if (filters.model && item.model !== filters.model) return false;
+      if (!query) return true;
+      return (
+        item.title.toLowerCase().includes(query) ||
+        item.sport.toLowerCase().includes(query) ||
+        item.level.toLowerCase().includes(query)
+      );
+    });
+  }, [filters, items]);
+
+  const filterActiveCount =
+    (filters.query.trim() ? 1 : 0) +
+    (filters.status ? 1 : 0) +
+    (filters.model ? 1 : 0);
+
+  const columns = useMemo(
+    () =>
+      classColumnHelper.columns([
+        classColumnHelper.accessor("title", {
+          header: "عنوان",
+          cell: (info) => {
+            const item = info.row.original;
+            return (
+              <div className="min-w-0">
+                <p className="font-medium">{item.title}</p>
+                <p className="mt-0.5 text-xs text-muted">
+                  {item.sport || "رشته ثبت نشده"}
+                  {item.level ? ` · ${item.level}` : ""}
+                </p>
+              </div>
+            );
+          },
+        }),
+        classColumnHelper.accessor("model", {
+          header: "مدل",
+          cell: (info) => (
+            <Chip size="sm" variant="soft">
+              {modelLabels[info.getValue()]}
+            </Chip>
+          ),
+        }),
+        classColumnHelper.accessor("status", {
+          header: "وضعیت",
+          cell: (info) => (
+            <Chip
+              size="sm"
+              color={info.getValue() === "active" ? "success" : "default"}
+              variant="soft"
+            >
+              {statusLabels[info.getValue()]}
+            </Chip>
+          ),
+        }),
+        classColumnHelper.display({
+          id: "capacity",
+          header: "ظرفیت",
+          cell: (info) => {
+            const item = info.row.original;
+            return (
+              <span className="tabular-nums">
+                {item.enrollmentCount.toLocaleString("fa-IR")} از{" "}
+                {item.capacity.toLocaleString("fa-IR")}
+              </span>
+            );
+          },
+        }),
+        classColumnHelper.display({
+          id: "schedule",
+          header: "برنامه",
+          cell: (info) => (
+            <span className="text-sm text-muted">
+              {scheduleHint(info.row.original)}
+            </span>
+          ),
+        }),
+        classColumnHelper.display({
+          id: "actions",
+          header: "عملیات",
+          cell: (info) => (
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="ghost">
+                <Link
+                  href={`/clubs/${clubId}/classes/${info.row.original.id}`}
+                >
+                  جزئیات
+                </Link>
+              </Button>
+              <Button size="sm" variant="secondary">
+                <Link
+                  href={`/clubs/${clubId}/classes/${info.row.original.id}/edit`}
+                >
+                  ویرایش
+                </Link>
+              </Button>
+            </div>
+          ),
+        }),
+      ]),
+    [clubId],
+  );
+
   return (
     <Shell
       title="کلاس‌ها"
@@ -172,66 +307,99 @@ export function BusinessClassesScreen() {
         </div>
       }
     >
-      <div className="mt-6">
-        {classes.isPending ? (
-          <Loading />
-        ) : !classes.data?.items.length ? (
-          <Empty>
-            <div>
-              <Icon name="calendar-plus" size={28} />
-              <p className="mt-3">هنوز کلاسی برای این باشگاه ساخته نشده است.</p>
-            </div>
-          </Empty>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {classes.data.items.map((item) => (
-              <Link key={item.id} href={`/clubs/${clubId}/classes/${item.id}`}>
-                <Card className="h-full rounded-2xl border border-border bg-surface p-5 transition hover:border-accent">
-                  <div className="flex items-start justify-between gap-3">
-                    <Chip size="sm" variant="soft">
-                      {modelLabels[item.model]}
-                    </Chip>
-                    <Chip
-                      size="sm"
-                      color={item.status === "active" ? "success" : "default"}
-                      variant="soft"
-                    >
-                      {statusLabels[item.status]}
-                    </Chip>
-                  </div>
-                  <h2 className="mt-4 text-lg font-semibold">{item.title}</h2>
-                  <p className="mt-1 text-sm text-muted">
-                    {item.sport || "رشته ثبت نشده"}
-                    {item.level ? ` · ${item.level}` : ""}
-                  </p>
-                  <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-muted">ظرفیت</span>
-                      <p className="mt-1 font-medium">
-                        {item.enrollmentCount} از {item.capacity}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-muted">شهریه</span>
-                      <p className="mt-1 font-medium">
-                        {money(item.price)} ریال
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-muted">مدل پرداخت</span>
-                      <p className="mt-1">{pricingLabels[item.pricingModel]}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted">بازه</span>
-                      <p className="mt-1">{dateText(item.startDate)}</p>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+      <ListPagePanel
+        title="فهرست کلاس‌ها"
+        description={`${filtered.length.toLocaleString("fa-IR")} کلاس`}
+        filterActiveCount={filterActiveCount}
+        filterTitle="فیلتر کلاس‌ها"
+        onFilterApply={() => setFilters(draftFilters)}
+        onFilterReset={() => {
+          const empty = {
+            query: "",
+            status: "" as const,
+            model: "" as const,
+          };
+          setDraftFilters(empty);
+          setFilters(empty);
+        }}
+        filterContent={
+          <>
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-muted">جست‌وجو</span>
+              <input
+                className={input}
+                value={draftFilters.query}
+                onChange={(event) =>
+                  setDraftFilters((current) => ({
+                    ...current,
+                    query: event.target.value,
+                  }))
+                }
+                placeholder="عنوان، رشته یا سطح"
+              />
+            </label>
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-muted">وضعیت</span>
+              <select
+                className={input}
+                value={draftFilters.status}
+                onChange={(event) =>
+                  setDraftFilters((current) => ({
+                    ...current,
+                    status: event.target.value as "" | BusinessClassStatus,
+                  }))
+                }
+              >
+                <option value="">همه</option>
+                {Object.entries(statusLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-muted">مدل کلاس</span>
+              <select
+                className={input}
+                value={draftFilters.model}
+                onChange={(event) =>
+                  setDraftFilters((current) => ({
+                    ...current,
+                    model: event.target.value as "" | BusinessClassModel,
+                  }))
+                }
+              >
+                <option value="">همه</option>
+                {Object.entries(modelLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        }
+      >
+        <DataTable
+          ariaLabel="فهرست کلاس‌ها"
+          data={filtered}
+          columns={columns}
+          getRowId={(row) => row.id}
+          rowHeaderColumnId="title"
+          isLoading={classes.isPending}
+          emptyContent={
+            <Empty>
+              <div>
+                <Icon name="calendar-plus" size={28} />
+                <p className="mt-3">
+                  هنوز کلاسی برای این باشگاه ساخته نشده است.
+                </p>
+              </div>
+            </Empty>
+          }
+        />
+      </ListPagePanel>
     </Shell>
   );
 }
@@ -339,7 +507,7 @@ function ClassForm({
       description="نوع کلاس، مدل مالی و برنامه هفتگی را مشخص کنید"
     >
       <form onSubmit={save} className="mt-6 grid gap-5">
-        <Card className="grid gap-4 rounded-2xl border border-border bg-surface p-5 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="grid gap-4 app-card shadow-none active:scale-100 p-5 md:grid-cols-2 lg:grid-cols-3">
           {!fixedClubId && (
             <Field label="باشگاه">
               <select
@@ -395,14 +563,13 @@ function ClassForm({
             </select>
           </Field>
           <Field label="ظرفیت">
-            <input
-              required
+            <PanelNumberField
               name="capacity"
-              type="number"
-              min="1"
-              max={model === "private" ? 4 : 1000}
+              minValue={1}
+              maxValue={model === "private" ? 4 : 1000}
               defaultValue={initial?.capacity ?? (model === "private" ? 1 : 12)}
-              className={input}
+              isRequired
+              aria-label="ظرفیت"
             />
           </Field>
           <Field label="وضعیت">
@@ -488,7 +655,7 @@ function ClassForm({
             </Field>
           </div>
         </Card>
-        <Card className="grid gap-4 rounded-2xl border border-border bg-surface p-5 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="grid gap-4 app-card shadow-none active:scale-100 p-5 md:grid-cols-2 lg:grid-cols-4">
           <Field label="مدل پرداخت">
             <select
               className={input}
@@ -505,24 +672,22 @@ function ClassForm({
             </select>
           </Field>
           <Field label="مبلغ (ریال)">
-            <input
-              required
-              min="0"
+            <PanelNumberField
               name="price"
-              type="number"
+              minValue={0}
               defaultValue={initial?.price ?? 0}
-              className={input}
+              isRequired
+              aria-label="مبلغ (ریال)"
             />
           </Field>
           {pricingModel === "package" && (
             <Field label="تعداد جلسات پکیج">
-              <input
-                required
-                min="1"
+              <PanelNumberField
                 name="packageSessionCount"
-                type="number"
+                minValue={1}
                 defaultValue={initial?.packageSessionCount ?? 8}
-                className={input}
+                isRequired
+                aria-label="تعداد جلسات پکیج"
               />
             </Field>
           )}
@@ -545,7 +710,7 @@ function ClassForm({
             />
           </Field>
         </Card>
-        <Card className="rounded-2xl border border-border bg-surface p-5">
+        <Card className="app-card shadow-none active:scale-100 p-5">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-semibold">برنامه کلاس</h2>
@@ -598,6 +763,7 @@ function ClassForm({
                 <Field label="ساعت شروع">
                   <input
                     type="time"
+                    dir="ltr"
                     value={row.startTime}
                     onChange={(e) =>
                       setScheduleField(index, "startTime", e.target.value)
@@ -606,19 +772,14 @@ function ClassForm({
                   />
                 </Field>
                 <Field label="مدت (دقیقه)">
-                  <input
-                    type="number"
-                    min="15"
-                    max="480"
+                  <PanelNumberField
+                    minValue={15}
+                    maxValue={480}
                     value={row.durationMinutes}
-                    onChange={(e) =>
-                      setScheduleField(
-                        index,
-                        "durationMinutes",
-                        Number(e.target.value),
-                      )
+                    onChange={(next) =>
+                      setScheduleField(index, "durationMinutes", next)
                     }
-                    className={input}
+                    aria-label="مدت (دقیقه)"
                   />
                 </Field>
                 {schedule.length > 1 && (
@@ -843,32 +1004,32 @@ export function BusinessClassDetailScreen({
       }
     >
       <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="rounded-2xl border border-border bg-surface p-4">
+        <Card className="app-card shadow-none active:scale-100 p-4">
           <p className="text-sm text-muted">ثبت‌نام فعال</p>
           <p className="mt-2 text-2xl font-semibold">
             {item.data.enrollmentCount} / {item.data.capacity}
           </p>
         </Card>
-        <Card className="rounded-2xl border border-border bg-surface p-4">
+        <Card className="app-card shadow-none active:scale-100 p-4">
           <p className="text-sm text-muted">مدل مالی</p>
           <p className="mt-2 font-semibold">
             {pricingLabels[item.data.pricingModel]}
           </p>
           <p className="mt-1 text-sm">{money(item.data.price)} ریال</p>
         </Card>
-        <Card className="rounded-2xl border border-border bg-surface p-4">
+        <Card className="app-card shadow-none active:scale-100 p-4">
           <p className="text-sm text-muted">مربی</p>
           <p className="mt-2 font-semibold">
             {coach ? `${coach.firstName} ${coach.lastName}` : "تعیین نشده"}
           </p>
         </Card>
-        <Card className="rounded-2xl border border-border bg-surface p-4">
+        <Card className="app-card shadow-none active:scale-100 p-4">
           <p className="text-sm text-muted">شعبه</p>
           <p className="mt-2 font-semibold">{branch?.name ?? "تعیین نشده"}</p>
         </Card>
       </section>
       {showEnroll && (
-        <Card className="mt-4 rounded-2xl border border-accent/40 bg-surface p-5">
+        <Card className="app-card mt-4 border-accent/40 p-5 shadow-none active:scale-100">
           <form
             onSubmit={addStudent}
             className="grid gap-4 md:grid-cols-2 lg:grid-cols-5"
@@ -900,13 +1061,12 @@ export function BusinessClassDetailScreen({
               </select>
             </Field>
             <Field label="مبلغ توافقی">
-              <input
-                required
+              <PanelNumberField
                 name="agreedPrice"
-                type="number"
-                min="0"
+                minValue={0}
                 defaultValue={item.data.price}
-                className={input}
+                isRequired
+                aria-label="مبلغ توافقی"
               />
             </Field>
             <Field label="وضعیت پرداخت">
@@ -918,12 +1078,11 @@ export function BusinessClassDetailScreen({
               </select>
             </Field>
             <Field label="تعداد جلسات">
-              <input
+              <PanelNumberField
                 name="totalSessions"
-                type="number"
-                min="1"
+                minValue={1}
                 defaultValue={item.data.packageSessionCount ?? undefined}
-                className={input}
+                aria-label="تعداد جلسات"
               />
             </Field>
             <div className="flex gap-2 lg:col-span-5">
@@ -946,7 +1105,7 @@ export function BusinessClassDetailScreen({
         </Card>
       )}
       <section className="mt-4 grid gap-4 xl:grid-cols-[1.1fr_1fr]">
-        <Card className="rounded-2xl border border-border bg-surface p-5">
+        <Card className="app-card shadow-none active:scale-100 p-5">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-semibold">شاگردهای کلاس</h2>
@@ -1061,7 +1220,7 @@ export function BusinessClassDetailScreen({
             )}
           </div>
         </Card>
-        <Card className="rounded-2xl border border-border bg-surface p-5">
+        <Card className="app-card shadow-none active:scale-100 p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="font-semibold">جلسات و حضور</h2>

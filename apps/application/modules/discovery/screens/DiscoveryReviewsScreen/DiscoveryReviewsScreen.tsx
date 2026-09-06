@@ -47,7 +47,12 @@ export function DiscoveryReviewsScreen({
       title: review.title,
       body: review.body,
       createdAt: review.createdAt,
-      verified: true,
+      verified: review.isVerifiedBooking === true,
+      criteria: Object.entries(review.ratings ?? {}).flatMap(([id, value]) =>
+        review.criterionLabels?.[id]
+          ? [{ name: review.criterionLabels[id]!, value }]
+          : [],
+      ),
     }),
   );
   const average =
@@ -92,6 +97,21 @@ export function DiscoveryReviewsScreen({
           count={reviewCount}
           href={`/discovery/${type === "class" ? "classes" : `${type}s`}/${id}/reviews/new`}
         />
+        {type === "club" && (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {clubReviews.data?.criteriaSummary?.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-xl bg-surface-secondary p-3 text-sm"
+              >
+                {item.name}:{" "}
+                {item.reviewsCount
+                  ? `${item.averageRating.toFixed(1)} از ۵ · ${item.reviewsCount} رأی`
+                  : "هنوز ارزیابی نشده"}
+              </div>
+            ))}
+          </div>
+        )}
         <div className="pt-2">
           <h2 className="text-lg font-black text-foreground">نظر کاربران</h2>
           <p className="mt-1 text-xs text-muted">

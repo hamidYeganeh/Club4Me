@@ -4,6 +4,7 @@ import { AppError } from "../../common/errors/app.exception";
 import { ResourcesService } from "./resources.service";
 
 const PUBLIC_RESOURCES = new Set([
+  "clubs/review-criterion",
   "sports/sport",
   "sports/club-type",
   "sports/coach-type",

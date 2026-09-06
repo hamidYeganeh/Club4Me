@@ -14,6 +14,7 @@ export class ReservedOption {
 
 @Schema({ collection: "session_reservations", timestamps: true })
 export class Reservation {
+  @Prop({ type: Boolean, default: false }) isTrial: boolean;
   @Prop({ type: Types.ObjectId, ref: "Club", required: true, index: true })
   clubId: Types.ObjectId;
   @Prop({
@@ -69,4 +70,17 @@ export const ReservationSchema = SchemaFactory.createForClass(Reservation);
 ReservationSchema.index(
   { sessionId: 1, userId: 1 },
   { unique: true, partialFilterExpression: { status: "reserved" } },
+);
+// A cancelled trial releases eligibility; attendance and no-shows consume it.
+// The unique index, not a preflight read, protects simultaneous requests.
+ReservationSchema.index(
+  { clubId: 1, userId: 1, isTrial: 1 },
+  {
+    name: "one_trial_per_club_user",
+    unique: true,
+    partialFilterExpression: {
+      isTrial: true,
+      status: { $in: ["reserved", "completed", "no_show"] },
+    },
+  },
 );

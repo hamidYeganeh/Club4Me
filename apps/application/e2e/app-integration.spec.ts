@@ -39,7 +39,7 @@ test("account outage preserves the session and retry restores the screen", async
 test("coach discovery navigation returns to coach screens", async ({
   page,
 }) => {
-  await page.goto("/coach/settings");
+  await page.goto("/coach/profile");
   await page.locator('nav a[href="/discovery"]').click();
   await expect(page).toHaveURL(/\/discovery$/);
   await expect(page.locator('nav a[href="/coach/profile"]')).toBeVisible();

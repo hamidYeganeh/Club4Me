@@ -7,6 +7,6 @@ export const accountAuthOtpFormStyles = tv({
     group: "w-full",
     field: "w-full",
     inputGroup: "h-16 w-full rounded-2xl border border-border bg-surface shadow-none",
-    input: "min-w-0 flex-1 px-4 text-start text-xl font-medium tracking-wide",
+    input: "min-w-0 flex-1 px-4 text-start text-base font-medium tracking-wide",
   },
 });

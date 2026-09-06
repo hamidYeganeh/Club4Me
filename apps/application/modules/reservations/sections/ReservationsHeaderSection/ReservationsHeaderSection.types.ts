@@ -1,4 +1,6 @@
 export type ReservationsHeaderSectionProps = {
+  monthExpanded: boolean;
+  onToggleMonth: () => void;
   title: string;
   backLabel: string;
   backHref: string;

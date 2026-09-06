@@ -89,6 +89,16 @@ export class ClubsRepository {
     if (input.name !== undefined) {
       payload.normalizedName = normalizeText(input.name);
     }
+    if (input.busyHours !== undefined) {
+      const normalized = (items: typeof input.busyHours) =>
+        JSON.stringify(
+          [...(items ?? [])].sort(
+            (a, b) => a.dayOfWeek - b.dayOfWeek || a.hour - b.hour,
+          ),
+        );
+      if (normalized(input.busyHours) === normalized(club.busyHours))
+        delete payload.busyHoursUpdatedAt;
+    }
     Object.assign(club, payload);
     club.updatedBy = toObjectId(ownerId);
     if (club.reviewStatus === "rejected") club.reviewStatus = "draft";
@@ -175,6 +185,34 @@ export class ClubsRepository {
     );
   }
 
+  async verify(
+    clubId: string,
+    adminId: string,
+    kind: "identity" | "documents" | "on_site",
+    verified: boolean,
+  ) {
+    if (!Types.ObjectId.isValid(clubId)) throw clubNotFound();
+    const field = `verifications.${kind}`;
+    const club = await this.model
+      .findByIdAndUpdate(
+        clubId,
+        verified
+          ? {
+              $set: {
+                [field]: {
+                  verifiedAt: new Date().toISOString(),
+                  verifiedBy: adminId,
+                },
+              },
+            }
+          : { $unset: { [field]: 1 } },
+        { new: true, runValidators: true },
+      )
+      .exec();
+    if (!club) throw clubNotFound();
+    return toPublicClub(club);
+  }
+
   private findDocumentForOwner(ownerId: string, clubId: string) {
     if (!Types.ObjectId.isValid(clubId)) return null;
     return this.model
@@ -202,6 +240,8 @@ function toPersistence(input: Partial<ClubFields>): Record<string, unknown> {
       kind: item.kind ?? "image",
       position: item.position ?? 0,
       isCover: item.isCover ?? false,
+      category: item.category,
+      takenOn: item.takenOn,
     }));
   }
   if (input.equipment !== undefined) {
@@ -275,6 +315,13 @@ function toPersistence(input: Partial<ClubFields>): Record<string, unknown> {
     }));
   }
   if (input.weeklyHours !== undefined) result.weeklyHours = input.weeklyHours;
+  if (input.profile !== undefined) result.profile = input.profile;
+  if (input.trialBookingEnabled !== undefined)
+    result.trialBookingEnabled = input.trialBookingEnabled;
+  if (input.busyHours !== undefined) {
+    result.busyHours = input.busyHours;
+    result.busyHoursUpdatedAt = new Date();
+  }
   if (input.closures !== undefined) result.closures = input.closures;
   for (const field of [
     "audience",

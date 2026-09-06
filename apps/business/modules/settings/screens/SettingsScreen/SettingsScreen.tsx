@@ -23,6 +23,18 @@ export async function SettingsScreen() {
       paymentsTitle={t("settingsPage.paymentsTitle")}
       paymentsHint={t("settingsPage.paymentsHint")}
       autoPayout={t("settingsPage.autoPayout")}
+      searchPlaceholder={t("panel.searchPlaceholder")}
+      navHome={t("settingsPage.home")}
+      navHealth={t("settingsPage.health")}
+      navAssistant={t("settingsPage.assistant")}
+      navAppointment={t("settingsPage.appointment")}
+      navRecommendation={t("settingsPage.recommendation")}
+      navSettings={t("settingsPage.title")}
+      navHelp={t("settingsPage.help")}
+      proPromo={t("settingsPage.proPromo")}
+      goProNow={t("settingsPage.goProNow")}
+      memberBasic={t("settingsPage.memberBasic")}
+      logoutLabel={t("settingsPage.logout")}
     />
   );
 }

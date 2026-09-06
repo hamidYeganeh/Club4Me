@@ -4,7 +4,7 @@ import { getDiscoverySlugParams } from "@/lib/discovery-static-params";
 type PageProps = { params: Promise<{ typeId: string }> };
 export function generateStaticParams() {
   return getDiscoverySlugParams(
-    "/public/catalog/sports/club-type?limit=100",
+    "/sports/club_types?action=options&limit=100",
     "typeId",
   );
 }

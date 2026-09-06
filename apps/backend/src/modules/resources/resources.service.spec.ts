@@ -170,6 +170,28 @@ describe("ResourcesService", () => {
     );
   });
 
+  it("seeds Persian club tags idempotently and allows tags without a code", async () => {
+    const first = await service.seed("clubs", "tag");
+    const tagCount = resourceSeedData.club_tags?.length ?? 0;
+
+    expect(first.created).toBe(tagCount);
+    expect(
+      (await service.list("clubs", "tag", { search: "بدنسازی" })).items[0],
+    ).toMatchObject({ name: "بدنسازی", code: "BODYBUILDING" });
+
+    const custom = await service.create("clubs", "tag", {
+      name: "تمرین صبحگاهی",
+    });
+    expect(custom).toMatchObject({
+      name: "تمرین صبحگاهی",
+      isActive: true,
+    });
+
+    const second = await service.seed("clubs", "tag");
+    expect(second.created).toBe(0);
+    expect(second.existing).toBe(tagCount);
+  });
+
   it("seeds the expanded location hierarchy and local city artwork", async () => {
     await service.seed("location", "neighborhood");
 

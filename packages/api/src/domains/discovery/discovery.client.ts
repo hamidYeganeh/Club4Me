@@ -118,7 +118,7 @@ export const discoveryClient = {
   ) =>
     http.get<PublicResourcePage>(
       discoveryEndpoints.publicResource(category, resource),
-      params,
+      { ...params, action: "options" },
       signal,
     ),
 

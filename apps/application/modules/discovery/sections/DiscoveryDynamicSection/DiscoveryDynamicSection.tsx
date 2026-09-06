@@ -39,8 +39,12 @@ const sectionIcons = {
 
 export function DiscoveryDynamicSection({
   section,
+  isLoading = false,
+  skeletonCount = 3,
 }: {
   section: DiscoverySection;
+  isLoading?: boolean;
+  skeletonCount?: number;
 }) {
   const title = section.appearance.showHeader ? section.title : "";
   const subtitle = section.appearance.showHeader ? section.subtitle : "";
@@ -51,7 +55,7 @@ export function DiscoveryDynamicSection({
     ? section.viewAllLabel || "مشاهده همه"
     : "";
 
-  if (!section.items.length) {
+  if (!isLoading && !section.items.length) {
     return (
       <DiscoveryEmptySection
         title={title}
@@ -69,12 +73,15 @@ export function DiscoveryDynamicSection({
     );
     return (
       <DiscoveryBannersSection
+        isLoading={isLoading}
+        skeletonCount={skeletonCount}
         id={section.id}
         title={title}
         subtitle={subtitle}
         viewAllLabel={viewAllLabel}
         viewAllUrl={viewAllUrl}
         items={section.items}
+        autoplay={!isLoading}
         aspectRatio={aspectRatio}
         slidesPerView={slidesPerView}
       />
@@ -94,6 +101,8 @@ export function DiscoveryDynamicSection({
     }));
     return (
       <DiscoveryClubsRailSection
+        isLoading={isLoading}
+        skeletonCount={skeletonCount}
         id={section.id}
         title={title}
         subtitle={subtitle}
@@ -113,6 +122,8 @@ export function DiscoveryDynamicSection({
     }));
     return (
       <DiscoveryCoachesRailSection
+        isLoading={isLoading}
+        skeletonCount={skeletonCount}
         id={section.id}
         title={title}
         subtitle={subtitle}
@@ -136,6 +147,8 @@ export function DiscoveryDynamicSection({
     }));
     return (
       <DiscoveryClassesRailSection
+        isLoading={isLoading}
+        skeletonCount={skeletonCount}
         id={section.id}
         title={title}
         subtitle={subtitle}
@@ -150,6 +163,8 @@ export function DiscoveryDynamicSection({
   if (section.type === "sports") {
     return (
       <DiscoverySportsRailSection
+        isLoading={isLoading}
+        skeletonCount={skeletonCount}
         id={section.id}
         title={title}
         subtitle={subtitle}
@@ -167,6 +182,8 @@ export function DiscoveryDynamicSection({
   }));
   return (
     <DiscoveryArticlesRailSection
+      isLoading={isLoading}
+      skeletonCount={skeletonCount}
       id={section.id}
       title={title}
       subtitle={subtitle}

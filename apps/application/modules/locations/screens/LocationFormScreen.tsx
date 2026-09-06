@@ -115,7 +115,7 @@ export function LocationFormScreen({ role, locationId }: Props) {
 
       <Form key={existing?.id ?? "new"} onSubmit={(event) => void submit(event)} className="app-reveal flex flex-col gap-4">
         <FormField label="عنوان" name="title" defaultValue={existing?.title} minLength={2} maxLength={30} isRequired />
-        <FormField label="آدرس" name="address" defaultValue={existing?.address} maxLength={300} isRequired multiline />
+        <FormField label="آدرس (اختیاری)" name="address" defaultValue={existing?.address} maxLength={300} multiline />
         <fieldset className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <legend className="sr-only">محدوده جغرافیایی</legend>
           {(Object.keys(selectors) as Level[]).map((level) => {

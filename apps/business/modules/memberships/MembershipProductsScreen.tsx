@@ -6,12 +6,25 @@ import {
   useCreateBenefitProduct,
   useUpdateBenefitProduct,
 } from "@api";
-import { useBusinessClubMemberships, useBusinessClubs, useInviteBusinessClubMember } from "@api/business";
-import { Button, Card, Chip, Spinner, toast } from "@heroui/react";
-import { type FormEvent, useState } from "react";
+import {
+  useBusinessClubMemberships,
+  useBusinessClubs,
+  useInviteBusinessClubMember,
+} from "@api/business";
+import { Button, Card, Chip, toast } from "@heroui/react";
+import { type FormEvent, useMemo, useState } from "react";
+
+import {
+  createListColumnHelper,
+  DataTable,
+  ListPagePanel,
+} from "@/components/data-table";
+import { PanelNumberField } from "@/components/form/PanelNumberField";
 
 const input =
-  "h-11 rounded-xl border border-border bg-surface px-3 text-sm outline-none focus:border-accent";
+  "h-11 rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm outline-none focus:border-accent";
+
+const productColumnHelper = createListColumnHelper<BenefitProduct>();
 
 export function MembershipProductsScreen() {
   const clubs = useBusinessClubs();
@@ -24,6 +37,111 @@ export function MembershipProductsScreen() {
   const inviteMember = useInviteBusinessClubMember(clubId);
   const [type, setType] = useState<BenefitProduct["type"]>("session_pack");
   const [open, setOpen] = useState(false);
+  const [draftFilters, setDraftFilters] = useState({
+    query: "",
+    type: "" as "" | BenefitProduct["type"],
+    status: "" as "" | BenefitProduct["status"],
+  });
+  const [filters, setFilters] = useState({
+    query: "",
+    type: "" as "" | BenefitProduct["type"],
+    status: "" as "" | BenefitProduct["status"],
+  });
+
+  const items = products.data?.items ?? [];
+  const filtered = useMemo(() => {
+    const query = filters.query.trim().toLowerCase();
+    return items.filter((item) => {
+      if (filters.type && item.type !== filters.type) return false;
+      if (filters.status && item.status !== filters.status) return false;
+      if (!query) return true;
+      return (
+        item.title.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query)
+      );
+    });
+  }, [filters, items]);
+
+  const filterActiveCount =
+    (filters.query.trim() ? 1 : 0) +
+    (filters.type ? 1 : 0) +
+    (filters.status ? 1 : 0);
+
+  const columns = useMemo(
+    () =>
+      productColumnHelper.columns([
+        productColumnHelper.accessor("title", {
+          header: "عنوان",
+          cell: (info) => (
+            <span className="font-medium">{info.getValue()}</span>
+          ),
+        }),
+        productColumnHelper.accessor("type", {
+          header: "نوع",
+          cell: (info) => (
+            <Chip size="sm" variant="soft">
+              {info.getValue() === "session_pack" ? "بسته جلسه" : "عضویت زمانی"}
+            </Chip>
+          ),
+        }),
+        productColumnHelper.display({
+          id: "limits",
+          header: "محدودیت‌ها",
+          cell: (info) => {
+            const item = info.row.original;
+            return (
+              <span className="text-sm text-muted">
+                {item.type === "session_pack"
+                  ? `${item.sessionCount} جلسه`
+                  : `هفته‌ای ${item.weeklyLimit} بار`}{" "}
+                · {item.validityDays} روز
+              </span>
+            );
+          },
+        }),
+        productColumnHelper.accessor("price", {
+          header: "قیمت",
+          cell: (info) => (
+            <span className="font-semibold tabular-nums">
+              {info.getValue().toLocaleString("fa-IR")} ریال
+            </span>
+          ),
+        }),
+        productColumnHelper.accessor("status", {
+          header: "وضعیت",
+          cell: (info) => (
+            <Chip
+              size="sm"
+              color={info.getValue() === "active" ? "success" : "default"}
+            >
+              {info.getValue() === "active" ? "فعال" : "غیرفعال"}
+            </Chip>
+          ),
+        }),
+        productColumnHelper.display({
+          id: "actions",
+          header: "عملیات",
+          cell: (info) => {
+            const item = info.row.original;
+            return (
+              <Button
+                size="sm"
+                variant="secondary"
+                onPress={() =>
+                  update.mutate({
+                    productId: item.id,
+                    status: item.status === "active" ? "inactive" : "active",
+                  })
+                }
+              >
+                {item.status === "active" ? "غیرفعال‌کردن" : "فعال‌کردن"}
+              </Button>
+            );
+          },
+        }),
+      ]),
+    [update],
+  );
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -58,7 +176,11 @@ export function MembershipProductsScreen() {
     try {
       await inviteMember.mutateAsync({
         userId: String(data.get("userId")),
-        role: String(data.get("role")) as "manager" | "receptionist" | "finance" | "coach",
+        role: String(data.get("role")) as
+          | "manager"
+          | "receptionist"
+          | "finance"
+          | "coach",
         permissions: data.getAll("permissions").map(String),
       });
       form.reset();
@@ -99,7 +221,7 @@ export function MembershipProductsScreen() {
           </div>
         </div>
         {open ? (
-          <Card className="mt-5 rounded-2xl border border-border bg-surface p-5">
+          <Card className="mt-5 app-card shadow-none active:scale-100 p-5">
             <form className="grid gap-4 md:grid-cols-2" onSubmit={submit}>
               <label className="grid gap-1 text-sm text-muted">
                 عنوان
@@ -118,40 +240,30 @@ export function MembershipProductsScreen() {
                   <option value="time_membership">عضویت زمانی</option>
                 </select>
               </label>
-              <label className="grid gap-1 text-sm text-muted">
-                قیمت (ریال)
-                <input
-                  required
-                  name="price"
-                  type="number"
-                  min={1}
-                  className={input}
-                />
-              </label>
-              <label className="grid gap-1 text-sm text-muted">
-                مدت اعتبار (روز)
-                <input
-                  required
-                  name="validityDays"
-                  type="number"
-                  min={1}
-                  max={730}
-                  defaultValue={30}
-                  className={input}
-                />
-              </label>
-              <label className="grid gap-1 text-sm text-muted">
-                {type === "session_pack"
-                  ? "تعداد جلسه"
-                  : "حداکثر استفاده هفتگی"}
-                <input
-                  required
-                  name="limit"
-                  type="number"
-                  min={1}
-                  className={input}
-                />
-              </label>
+              <PanelNumberField
+                label="قیمت (ریال)"
+                name="price"
+                minValue={1}
+                isRequired
+              />
+              <PanelNumberField
+                label="مدت اعتبار (روز)"
+                name="validityDays"
+                minValue={1}
+                maxValue={730}
+                defaultValue={30}
+                isRequired
+              />
+              <PanelNumberField
+                label={
+                  type === "session_pack"
+                    ? "تعداد جلسه"
+                    : "حداکثر استفاده هفتگی"
+                }
+                name="limit"
+                minValue={1}
+                isRequired
+              />
               <label className="grid gap-2 text-sm text-muted">
                 قابل استفاده برای
                 <div className="flex flex-wrap gap-3 text-foreground">
@@ -195,81 +307,160 @@ export function MembershipProductsScreen() {
             </form>
           </Card>
         ) : null}
-        <Card className="mt-5 rounded-2xl border border-border bg-surface p-5">
+        <Card className="mt-5 app-card shadow-none active:scale-100 p-5">
           <h2 className="text-lg font-semibold">اعضای تیم باشگاه</h2>
-          <form className="mt-4 grid gap-3 md:grid-cols-[1fr_12rem_auto]" onSubmit={invite}>
-            <input required name="userId" minLength={24} maxLength={24} className={input} placeholder="شناسه ۲۴ کاراکتری کاربر" dir="ltr" />
+          <form
+            className="mt-4 grid gap-3 md:grid-cols-[1fr_12rem_auto]"
+            onSubmit={invite}
+          >
+            <input
+              required
+              name="userId"
+              minLength={24}
+              maxLength={24}
+              className={input}
+              placeholder="شناسه ۲۴ کاراکتری کاربر"
+              dir="ltr"
+            />
             <select name="role" className={input} defaultValue="manager">
-              <option value="manager">مدیر</option><option value="receptionist">پذیرش</option><option value="finance">مالی</option><option value="coach">مربی</option>
+              <option value="manager">مدیر</option>
+              <option value="receptionist">پذیرش</option>
+              <option value="finance">مالی</option>
+              <option value="coach">مربی</option>
             </select>
-            <Button type="submit" variant="secondary" isPending={inviteMember.isPending} isDisabled={!clubId}>ارسال دعوت</Button>
+            <Button
+              type="submit"
+              variant="secondary"
+              isPending={inviteMember.isPending}
+              isDisabled={!clubId}
+            >
+              ارسال دعوت
+            </Button>
             <div className="flex flex-wrap gap-4 text-sm md:col-span-3">
-              {[['members','اعضا'],['reservations','رزروها'],['finance','مالی'],['classes','کلاس‌ها']].map(([value,label]) => <label key={value} className="flex items-center gap-2"><input type="checkbox" name="permissions" value={value} />{label}</label>)}
+              {[
+                ["members", "اعضا"],
+                ["reservations", "رزروها"],
+                ["finance", "مالی"],
+                ["classes", "کلاس‌ها"],
+              ].map(([value, label]) => (
+                <label key={value} className="flex items-center gap-2">
+                  <input type="checkbox" name="permissions" value={value} />
+                  {label}
+                </label>
+              ))}
             </div>
           </form>
           <div className="mt-4 grid gap-2">
-            {(team.data?.items ?? []).map((member) => <div key={member.id} className="flex items-center justify-between rounded-xl bg-surface-secondary p-3 text-sm"><span dir="ltr">{member.userId}</span><div className="flex gap-2"><Chip size="sm">{member.role}</Chip><Chip size="sm" color={member.status === "accepted" ? "success" : member.status === "invited" ? "warning" : "default"}>{member.status}</Chip></div></div>)}
-            {!team.isPending && !team.data?.items.length ? <p className="text-sm text-muted">عضوی ثبت نشده است.</p> : null}
-          </div>
-        </Card>
-        <div className="mt-5">
-          {products.isPending ? (
-            <div className="flex justify-center py-16">
-              <Spinner />
-            </div>
-          ) : !products.data?.items.length ? (
-            <p className="rounded-2xl border border-dashed border-border p-12 text-center text-muted">
-              محصولی تعریف نشده است.
-            </p>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {products.data.items.map((item) => (
-                <Card
-                  key={item.id}
-                  className="rounded-2xl border border-border bg-surface p-5"
-                >
-                  <div className="flex justify-between gap-3">
-                    <Chip size="sm">
-                      {item.type === "session_pack"
-                        ? "بسته جلسه"
-                        : "عضویت زمانی"}
-                    </Chip>
-                    <Chip
-                      size="sm"
-                      color={item.status === "active" ? "success" : "default"}
-                    >
-                      {item.status === "active" ? "فعال" : "غیرفعال"}
-                    </Chip>
-                  </div>
-                  <h2 className="mt-4 font-semibold">{item.title}</h2>
-                  <p className="mt-2 text-sm text-muted">
-                    {item.type === "session_pack"
-                      ? `${item.sessionCount} جلسه`
-                      : `هفته‌ای ${item.weeklyLimit} بار`}{" "}
-                    · {item.validityDays} روز
-                  </p>
-                  <p className="mt-3 text-lg font-bold">
-                    {item.price.toLocaleString("fa-IR")} ریال
-                  </p>
-                  <Button
-                    className="mt-4 w-full"
+            {(team.data?.items ?? []).map((member) => (
+              <div
+                key={member.id}
+                className="flex items-center justify-between rounded-xl bg-surface-secondary p-3 text-sm"
+              >
+                <span dir="ltr">{member.userId}</span>
+                <div className="flex gap-2">
+                  <Chip size="sm">{member.role}</Chip>
+                  <Chip
                     size="sm"
-                    variant="secondary"
-                    onPress={() =>
-                      update.mutate({
-                        productId: item.id,
-                        status:
-                          item.status === "active" ? "inactive" : "active",
-                      })
+                    color={
+                      member.status === "accepted"
+                        ? "success"
+                        : member.status === "invited"
+                          ? "warning"
+                          : "default"
                     }
                   >
-                    {item.status === "active" ? "غیرفعال‌کردن" : "فعال‌کردن"}
-                  </Button>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+                    {member.status}
+                  </Chip>
+                </div>
+              </div>
+            ))}
+            {!team.isPending && !team.data?.items.length ? (
+              <p className="text-sm text-muted">عضوی ثبت نشده است.</p>
+            ) : null}
+          </div>
+        </Card>
+        <ListPagePanel
+          title="فهرست محصولات"
+          description={`${filtered.length.toLocaleString("fa-IR")} محصول`}
+          filterActiveCount={filterActiveCount}
+          filterTitle="فیلتر محصولات"
+          onFilterApply={() => setFilters(draftFilters)}
+          onFilterReset={() => {
+            const empty = {
+              query: "",
+              type: "" as const,
+              status: "" as const,
+            };
+            setDraftFilters(empty);
+            setFilters(empty);
+          }}
+          filterContent={
+            <>
+              <label className="grid gap-1.5 text-sm">
+                <span className="text-muted">جست‌وجو</span>
+                <input
+                  className={input}
+                  value={draftFilters.query}
+                  onChange={(event) =>
+                    setDraftFilters((current) => ({
+                      ...current,
+                      query: event.target.value,
+                    }))
+                  }
+                  placeholder="عنوان یا توضیح"
+                />
+              </label>
+              <label className="grid gap-1.5 text-sm">
+                <span className="text-muted">نوع</span>
+                <select
+                  className={input}
+                  value={draftFilters.type}
+                  onChange={(event) =>
+                    setDraftFilters((current) => ({
+                      ...current,
+                      type: event.target.value as "" | BenefitProduct["type"],
+                    }))
+                  }
+                >
+                  <option value="">همه</option>
+                  <option value="session_pack">بسته جلسه</option>
+                  <option value="time_membership">عضویت زمانی</option>
+                </select>
+              </label>
+              <label className="grid gap-1.5 text-sm">
+                <span className="text-muted">وضعیت</span>
+                <select
+                  className={input}
+                  value={draftFilters.status}
+                  onChange={(event) =>
+                    setDraftFilters((current) => ({
+                      ...current,
+                      status: event.target.value as "" | BenefitProduct["status"],
+                    }))
+                  }
+                >
+                  <option value="">همه</option>
+                  <option value="active">فعال</option>
+                  <option value="inactive">غیرفعال</option>
+                </select>
+              </label>
+            </>
+          }
+        >
+          <DataTable
+            ariaLabel="فهرست محصولات عضویت"
+            data={filtered}
+            columns={columns}
+            getRowId={(row) => row.id}
+            rowHeaderColumnId="title"
+            isLoading={products.isPending}
+            emptyContent={
+              <p className="grid min-h-48 place-items-center p-8 text-center text-muted">
+                محصولی تعریف نشده است.
+              </p>
+            }
+          />
+        </ListPagePanel>
       </div>
     </main>
   );

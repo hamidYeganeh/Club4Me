@@ -4,7 +4,7 @@ import { getDiscoverySlugParams } from "@/lib/discovery-static-params";
 type PageProps = { params: Promise<{ sportId: string }> };
 export function generateStaticParams() {
   return getDiscoverySlugParams(
-    "/public/catalog/sports/sport?limit=100",
+    "/sports/sports?action=options&limit=100",
     "sportId",
   );
 }

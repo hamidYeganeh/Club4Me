@@ -1,12 +1,21 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import { http } from "../../http/client";
+import { resourceApiPath } from "../resources/resources.registry";
+import { mediaClient, useCreateMedia, useMedia } from "../media";
 import type {
   BusinessClub,
   BusinessCatalogResponse,
   BusinessMedia,
+  BusinessTag,
+  BusinessTagsResponse,
   CreateBusinessClubPayload,
   ListBusinessClubsResponse,
   UpdateBusinessClubPayload,
@@ -17,8 +26,9 @@ export const businessClubEndpoints = {
   detail: (clubId: string) => `/business/clubs/${clubId}` as const,
   submit: (clubId: string) => `/business/clubs/${clubId}/submit` as const,
   catalog: (category: string, resource: string) =>
-    `/business/catalog/${category}/${resource}` as const,
-  media: "/business/media",
+    resourceApiPath(category, resource),
+  media: "/media",
+  tags: "/business/tags",
 };
 
 export const businessClubsClient = {
@@ -38,12 +48,15 @@ export const businessClubsClient = {
   ) =>
     http.get<BusinessCatalogResponse>(
       businessClubEndpoints.catalog(category, resource),
-      params,
+      { ...params, action: "options" },
     ),
-  listMedia: () =>
-    http.get<{ items: BusinessMedia[] }>(businessClubEndpoints.media),
+  listMedia: () => mediaClient.list() as Promise<{ items: BusinessMedia[] }>,
   createMedia: (payload: { url: string; mimeType: string }) =>
-    http.post<BusinessMedia>(businessClubEndpoints.media, payload),
+    mediaClient.upload(payload) as Promise<BusinessMedia>,
+  listTags: (params?: Record<string, unknown>) =>
+    http.get<BusinessTagsResponse>(businessClubEndpoints.tags, params),
+  createTag: (payload: { name: string }) =>
+    http.post<BusinessTag>(businessClubEndpoints.tags, payload),
 };
 
 export const businessClubQueries = {
@@ -51,6 +64,7 @@ export const businessClubQueries = {
   list: () => [...businessClubQueries.all(), "list"] as const,
   detail: (clubId: string) =>
     [...businessClubQueries.all(), "detail", clubId] as const,
+  tags: () => [...businessClubQueries.all(), "tags"] as const,
 };
 
 export function useBusinessClubs() {
@@ -125,20 +139,53 @@ export function useBusinessCatalog(
   });
 }
 
-export function useBusinessMedia() {
-  return useQuery({
-    queryKey: ["business", "media"],
-    queryFn: () => businessClubsClient.listMedia(),
+const CATALOG_PAGE_SIZE = 50;
+
+export function useInfiniteBusinessCatalog(
+  category: string,
+  resource: string,
+  params?: Omit<Record<string, unknown>, "page" | "limit">,
+  enabled = true,
+) {
+  return useInfiniteQuery({
+    queryKey: ["business", "catalog", "infinite", category, resource, params],
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      businessClubsClient.catalog(category, resource, {
+        ...params,
+        page: pageParam,
+        limit: CATALOG_PAGE_SIZE,
+      }),
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    enabled: enabled && Boolean(category && resource),
   });
 }
 
+export function useBusinessMedia() {
+  return useMedia();
+}
+
 export function useCreateBusinessMedia() {
+  return useCreateMedia();
+}
+
+export function useBusinessTags() {
+  return useQuery({
+    queryKey: businessClubQueries.tags(),
+    queryFn: () => businessClubsClient.listTags({ limit: 100 }),
+  });
+}
+
+export function useCreateBusinessTag() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { url: string; mimeType: string }) =>
-      businessClubsClient.createMedia(payload),
+    mutationFn: (payload: { name: string }) =>
+      businessClubsClient.createTag(payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["business", "media"] });
+      await queryClient.invalidateQueries({
+        queryKey: businessClubQueries.tags(),
+      });
     },
   });
 }

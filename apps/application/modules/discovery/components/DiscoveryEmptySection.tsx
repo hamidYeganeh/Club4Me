@@ -30,7 +30,7 @@ export function DiscoveryEmptySection({
           alt=""
           width={160}
           height={104}
-          className="h-24 w-auto object-contain opacity-90 drop-shadow-lg"
+          className="h-24 w-auto object-cover opacity-90 drop-shadow-lg"
         />
         <p className="mt-3 text-sm font-bold text-foreground">
           هنوز نتیجه‌ای در این بخش نیست

@@ -10,19 +10,30 @@ type ThemeProviderProps = {
 const THEME_VT_STYLE_ID = "gym4me-theme-vt-css";
 
 const THEME_VT_CSS = `
-::view-transition-old(root),
-::view-transition-new(root) {
+html[data-magicui-theme-vt="active"]::view-transition-old(root),
+html[data-magicui-theme-vt="active"]::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
 }
 
-/* Scoped to AnimatedThemeToggler — the toggler sets the data-attribute and the variable only during a theme toggle. */
 html[data-magicui-theme-vt="active"]::view-transition-group(root) {
   animation-duration: var(--magicui-theme-toggle-vt-duration);
 }
 
 html[data-magicui-theme-vt="active"]::view-transition-new(root) {
   clip-path: var(--magicui-theme-vt-clip-from);
+  animation: magicui-theme-reveal var(--magicui-theme-toggle-vt-duration)
+    var(--magicui-theme-vt-easing) both;
+}
+
+@keyframes magicui-theme-reveal {
+  from {
+    clip-path: var(--magicui-theme-vt-clip-from);
+  }
+
+  to {
+    clip-path: var(--magicui-theme-vt-clip-to);
+  }
 }
 `;
 

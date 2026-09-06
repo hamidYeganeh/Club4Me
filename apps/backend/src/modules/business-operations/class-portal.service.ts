@@ -799,6 +799,29 @@ export class BusinessClassPortalService {
         .sort({ startsAt: 1 })
         .limit(20),
     ]);
+    // Only published coach profiles and reviewed credentials become public.
+    const publicCoach =
+      coach?.userId && coach.status === "active"
+        ? await this.coaches.db
+            .collection("coaches")
+            .findOne(
+              {
+                userId: coach.userId,
+                reviewStatus: "approved",
+                visibility: "public",
+              },
+              { projection: { _id: 1, slug: 1 } },
+            )
+        : null;
+    const verifiedCredentialsCount = publicCoach
+      ? await this.coaches.db
+          .collection("coach_sports")
+          .countDocuments({
+            coachId: publicCoach._id,
+            verificationStatus: "verified",
+            "certificateMediaIds.0": { $exists: true },
+          })
+      : 0;
     return {
       ...classBaseDto(item),
       enrollmentCount,
@@ -814,12 +837,15 @@ export class BusinessClassPortalService {
             }
           : null,
       },
-      coach: coach
-        ? {
-            id: String(coach._id),
-            name: `${coach.firstName} ${coach.lastName}`.trim(),
-          }
-        : null,
+      coach:
+        coach && coach.status === "active"
+          ? {
+              id: String(coach._id),
+              name: `${coach.firstName} ${coach.lastName}`.trim(),
+              profileSlug: publicCoach?.slug ?? null,
+              verifiedCredentialsCount,
+            }
+          : null,
       branch: branch
         ? { id: String(branch._id), name: branch.name, address: branch.address }
         : null,

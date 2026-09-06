@@ -8,12 +8,12 @@ const CreateMediaSchema = z
       .string()
       .trim()
       .refine((value) => {
-        if (value.startsWith("data:image/")) {
+        if (/^data:(?:image|video)\//i.test(value)) {
           return value.length <= MAX_INLINE_IMAGE_URL_LENGTH;
         }
         const result = z.url().max(2000).safeParse(value);
         return result.success;
-      }, "url must be a valid external URL or data:image payload"),
+      }, "url must be a valid external URL or base64 image/video payload"),
     mimeType: z
       .string()
       .trim()

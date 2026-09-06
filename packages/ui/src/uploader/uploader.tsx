@@ -178,7 +178,7 @@ export function Uploader({
   });
 
   return (
-    <div dir="rtl" className={cn("flex w-full flex-col gap-3", className)}>
+    <div dir="rtl" className={cn("flex w-full min-w-0 max-w-full flex-col gap-3", className)}>
       <motion.div
         {...getRootProps({
           onClick: onBrowseRequest ? () => onBrowseRequest(open) : undefined,
@@ -191,7 +191,7 @@ export function Uploader({
               }
             : undefined,
           className: cn(
-            "group relative isolate flex min-h-52 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[2rem] bg-default p-2 text-center outline-none transition-colors duration-200 hover:bg-default/80",
+            "group relative isolate flex min-h-52 w-full min-w-0 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[2rem] bg-default p-2 text-center outline-none transition-colors duration-200 hover:bg-default/80",
             isDragActive && "bg-accent/10",
             isFocused &&
               "ring-2 ring-accent ring-offset-2 ring-offset-background",
@@ -226,18 +226,18 @@ export function Uploader({
         >
           <UploadCloud className="size-[18px]" />
         </motion.span>
-        <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">
+        <p className="px-2 text-sm font-semibold tracking-[-0.01em] text-foreground">
           {labels.clickToUpload}
         </p>
-        <p className="mt-1 max-w-xs text-xs leading-5 text-muted">
+        <p className="mt-1 max-w-xs px-3 text-xs leading-5 text-muted">
           {labels.dropHint.trim()} {labels.formats}
         </p>
       </motion.div>
 
       {items.length > 0 ? (
-        <ul className="flex flex-col gap-3" aria-live="polite">
+        <ul className="flex w-full min-w-0 max-w-full flex-col gap-3" aria-live="polite">
           {items.map((item) => (
-            <li key={item.id}>
+            <li key={item.id} className="min-w-0 max-w-full">
               <UploaderFileItem
                 item={item}
                 labels={labels}

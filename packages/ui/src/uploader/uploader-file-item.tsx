@@ -72,24 +72,32 @@ export function UploaderFileItem({
       animate={{ opacity: 1, y: 0 }}
       exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
-      className="relative overflow-hidden rounded-2xl border border-border bg-surface p-3"
+      className="relative w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-border bg-surface p-3"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-start gap-3">
         <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-default text-muted">
           {renderFileIcon(item)}
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 text-start">
-              <p className="truncate text-sm font-medium text-foreground">
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <div className="flex min-w-0 items-start gap-2">
+            <div className="min-w-0 flex-1 overflow-hidden text-start">
+              <p
+                className="truncate text-sm font-medium text-foreground"
+                title={item.name}
+                dir="auto"
+              >
                 {item.name}
               </p>
-              <p className="mt-0.5 text-xs text-muted">
-                {fileKind(item)} · {formatBytes(item.size)}
-                {item.status === "error" ? ` · ${labels.error}` : null}
+              <p className="mt-0.5 truncate text-xs text-muted">
+                <span dir="ltr" className="tabular-nums">
+                  {fileKind(item)} · {formatBytes(item.size)}
+                </span>
+                {item.status === "error" ? (
+                  <span className="text-danger"> · {labels.error}</span>
+                ) : null}
               </p>
             </div>
-            <div className="flex shrink-0 items-center gap-1">
+            <div className="flex shrink-0 items-center gap-0.5">
               <span
                 className={cn(
                   "grid size-7 place-items-center",
@@ -161,11 +169,13 @@ export function UploaderFileItem({
             </div>
           ) : null}
           {item.status === "uploading" ? (
-            <div className="mt-2 flex justify-between text-xs text-muted">
-              <span>
+            <div className="mt-2 flex justify-between gap-2 text-xs text-muted">
+              <span className="min-w-0 truncate tabular-nums" dir="ltr">
                 {formatBytes(item.loaded)} / {formatBytes(item.size)}
               </span>
-              <span>{formatPercent(progress)}</span>
+              <span className="shrink-0 tabular-nums">
+                {formatPercent(progress)}
+              </span>
             </div>
           ) : null}
         </div>

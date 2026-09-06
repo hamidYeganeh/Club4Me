@@ -12,7 +12,7 @@ export const reservationsTimelineSectionStyles = tv({
     empty: "flex min-h-[calc(100dvh-15rem)] flex-1 flex-col items-center justify-center px-2 pb-[calc(2rem+env(safe-area-inset-bottom))] text-center",
     emptyVisual: "relative isolate mb-2 grid w-full max-w-[17rem] place-items-center",
     emptyGlow: "absolute bottom-[10%] -z-10 h-12 w-3/4 rounded-full bg-accent/18 blur-2xl",
-    emptyImage: "size-full object-contain",
+    emptyImage: "size-full object-cover",
     emptyCopy: "mt-1 flex flex-col items-center gap-2",
     emptyTitle: "text-balance text-2xl leading-9 font-black text-foreground",
     emptyDescription: "max-w-[28ch] text-sm leading-6 text-muted",

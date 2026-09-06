@@ -21,6 +21,8 @@ export type DiscoveryClubsRailClub = {
 export type DiscoveryClubsRailTone = "accent" | "surface";
 
 export type DiscoveryClubsRailSectionProps = {
+  skeletonCount?: number;
+  isLoading?: boolean;
   id: string;
   title: string;
   subtitle?: string;

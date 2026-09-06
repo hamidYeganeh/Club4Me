@@ -15,24 +15,37 @@ const experiences: Array<{ icon: IconName; label: string }> = [
 export function ReviewForm({
   entityName,
   isPending,
+  criteria = [],
   onSubmit,
 }: {
   entityName: string;
   isPending?: boolean;
+  criteria?: Array<{ id: string; name: string }>;
   onSubmit: (value: {
     rating: number;
     body: string;
     experience: number;
+    ratings: Record<string, number>;
   }) => Promise<void> | void;
 }) {
   const bodyId = useId();
   const [rating, setRating] = useState(0);
+  const [ratings, setRatings] = useState<Record<string, number>>({});
   const [body, setBody] = useState("");
   const [experience, setExperience] = useState(0);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (isPending || !rating || !body.trim()) return;
-    await onSubmit({ rating, body: body.trim(), experience });
+    await onSubmit({
+      rating,
+      body: body.trim(),
+      experience,
+      ratings: Object.fromEntries(
+        Object.entries(ratings).filter(([id]) =>
+          criteria.some((c) => c.id === id),
+        ),
+      ),
+    });
   };
 
   return (
@@ -42,6 +55,32 @@ export function ReviewForm({
         نظر شما درباره {entityName}
       </Card.Description>
       <form onSubmit={submit} className="mt-6 space-y-6">
+        {criteria.map((criterion) => (
+          <label key={criterion.id} className="block text-sm font-bold">
+            {criterion.name}
+            <select
+              disabled={isPending}
+              className="mt-2 w-full rounded-xl border border-border bg-surface p-3"
+              value={ratings[criterion.id] ?? ""}
+              onChange={(e) =>
+                setRatings((current) => {
+                  const next = { ...current };
+                  if (e.target.value)
+                    next[criterion.id] = Number(e.target.value);
+                  else delete next[criterion.id];
+                  return next;
+                })
+              }
+            >
+              <option value="">ارزیابی نکرده‌ام</option>
+              {[1, 2, 3, 4, 5].map((score) => (
+                <option key={score} value={score}>
+                  {score} از ۵
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
         <fieldset disabled={isPending}>
           <legend className="text-sm font-bold">امتیاز شما</legend>
           <div className="mt-3 flex justify-between gap-1" dir="ltr">

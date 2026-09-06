@@ -56,6 +56,7 @@ export function DiscoveryClubGalleryScreen({
   const [swiper, setSwiper] = useState<SwiperType | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [gridVisible, setGridVisible] = useState(false);
+  const [category, setCategory] = useState("");
 
   if (catalogClub.isPending || club.isPending) {
     return <GallerySkeleton />;
@@ -69,9 +70,12 @@ export function DiscoveryClubGalleryScreen({
     );
   }
 
-  const images = club.data.gallery
-    .filter((item) => item.mimeType.startsWith("image/"))
-    .map((item) => item.url);
+  const gallery = club.data.gallery.filter(
+    (item) =>
+      item.mimeType.startsWith("image/") &&
+      (!category || (item.category ?? "other") === category),
+  );
+  const images = gallery.map((item) => item.url);
   const slides = images.length > 0 ? images : [FALLBACK_IMAGE_SRC];
 
   return (
@@ -79,6 +83,38 @@ export function DiscoveryClubGalleryScreen({
       className="flex min-h-dvh flex-col overflow-hidden bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]"
       dir="rtl"
     >
+      <label className="mt-3 text-sm">
+        دسته عکس
+        <select
+          className="ms-3 rounded-xl border border-border bg-surface p-2"
+          value={category}
+          onChange={(e) => {
+            setCategory(e.target.value);
+            setActiveIndex(0);
+            swiper?.slideTo(0);
+          }}
+        >
+          <option value="">همه عکس‌ها</option>
+          <option value="training">فضای تمرین</option>
+          <option value="equipment">تجهیزات</option>
+          <option value="changing_room">رختکن</option>
+          <option value="entrance">نمای ورودی</option>
+          <option value="other">سایر</option>
+        </select>
+      </label>
+      {gallery[activeIndex]?.takenOn && (
+        <p className="mt-2 text-xs text-muted">
+          تاریخ عکس (اعلام باشگاه):{" "}
+          {new Date(
+            `${gallery[activeIndex]!.takenOn}T12:00:00`,
+          ).toLocaleDateString("fa-IR")}
+        </p>
+      )}
+      {!images.length && (
+        <p className="mt-3 text-sm text-muted">
+          عکسی در این دسته ثبت نشده است.
+        </p>
+      )}
       <header className="grid h-16 shrink-0 grid-cols-[3rem_1fr_3rem] items-center gap-3">
         <Button
           isIconOnly

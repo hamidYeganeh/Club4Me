@@ -255,7 +255,7 @@ export function OTPInput({
                 data-active={isActive}
                 data-filled={character !== ""}
                 className={cn(
-                  "relative grid h-14 w-12 place-items-center overflow-hidden rounded-xl border bg-surface text-xl font-semibold text-surface-foreground tabular-nums transition-[color,background-color,border-color,box-shadow,opacity] duration-200",
+                  "relative grid size-16 place-items-center overflow-hidden rounded-xl border bg-surface text-xl font-semibold text-surface-foreground tabular-nums transition-[color,background-color,border-color,box-shadow,opacity] duration-200",
                   slotClassName,
                   showSuccess
                     ? "border-success bg-success/10 text-success"

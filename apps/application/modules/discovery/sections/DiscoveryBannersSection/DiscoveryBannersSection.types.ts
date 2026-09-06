@@ -12,6 +12,8 @@ export type DiscoveryBannerItem = {
 };
 
 export type DiscoveryBannersSectionProps = {
+  skeletonCount?: number;
+  isLoading?: boolean;
   id?: string;
   title?: string;
   subtitle?: string;

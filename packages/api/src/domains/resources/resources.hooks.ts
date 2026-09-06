@@ -1,5 +1,10 @@
 "use client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { resourcesClient } from "./resources.client";
 import type {
   ResourceListParams,
@@ -7,6 +12,17 @@ import type {
   ResourceMutationPayload,
 } from "./resources.dto";
 import { resourcesQueries } from "./resources.queries";
+
+const RESOURCE_PAGE_SIZE = 50;
+
+export function useSeedAllResources() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: resourcesClient.seedAll,
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: resourcesQueries.all() }),
+  });
+}
 
 export function useResources(
   category: string,
@@ -17,6 +33,31 @@ export function useResources(
   return useQuery({
     queryKey: resourcesQueries.list(category, resource, params),
     queryFn: () => resourcesClient.list(category, resource, params),
+    enabled: enabled && Boolean(category && resource),
+  });
+}
+
+export function useInfiniteResources(
+  category: string,
+  resource: string,
+  params: Omit<ResourceListParams, "page" | "limit"> = {},
+  enabled = true,
+) {
+  return useInfiniteQuery({
+    queryKey: [
+      ...resourcesQueries.resource(category, resource),
+      "infinite",
+      params,
+    ],
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      resourcesClient.list(category, resource, {
+        ...params,
+        page: pageParam,
+        limit: RESOURCE_PAGE_SIZE,
+      }),
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
     enabled: enabled && Boolean(category && resource),
   });
 }

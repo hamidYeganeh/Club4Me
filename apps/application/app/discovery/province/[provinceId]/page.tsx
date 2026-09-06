@@ -5,7 +5,7 @@ type PageProps = { params: Promise<{ provinceId: string }> };
 
 export function generateStaticParams() {
   return getDiscoverySlugParams(
-    "/public/catalog/location/province?limit=100",
+    "/geography/provinces?action=options&limit=100",
     "provinceId",
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { ClassCardSkeleton } from "../../components/skeletons/ClassCardSkeleton";
 import Link from "next/link";
 import { ScrollShadow, Typography } from "@heroui/react";
 import { useTranslations } from "next-intl";
@@ -22,15 +23,19 @@ export function DiscoveryClassesRailSection({
   items,
   params,
   className,
+  isLoading = false,
+  skeletonCount = 3,
 }: DiscoveryClassesRailSectionProps) {
   const t = useTranslations("discovery.classes");
   const tHome = useTranslations("discovery.home");
   const styles = discoveryClassesRailSectionStyles();
-  const query = useCatalogClasses(params);
+  const query = useCatalogClasses(params, items === undefined && !isLoading);
   const visible: PublicCatalogClass[] = items ?? query.data?.items ?? [];
   const titleId = `discovery-classes-rail-${id}`;
 
-  if (!query.isPending && visible.length === 0) {
+  const isPending = isLoading || (items === undefined && query.isPending);
+
+  if (!isPending && visible.length === 0) {
     return (
       <DiscoveryEmptySection
         title={title}
@@ -48,6 +53,7 @@ export function DiscoveryClassesRailSection({
       aria-labelledby={titleId}
     >
       <DiscoverySectionHeader
+        isLoading={isPending}
         id={titleId}
         title={title}
         subtitle={subtitle}
@@ -64,54 +70,61 @@ export function DiscoveryClassesRailSection({
         aria-label={title}
       >
         <div className={styles.track()}>
-          {visible.map((item) => {
-            const remaining = Math.max(0, item.capacity - item.enrollmentCount);
-            const modeLabel =
-              item.deliveryMode === "online"
-                ? t("modeOnline")
-                : item.deliveryMode === "hybrid"
-                  ? t("modeHybrid")
-                  : t("modeInPerson");
+          {isPending
+            ? Array.from({ length: skeletonCount }, (_, index) => (
+                <ClassCardSkeleton key={index} />
+              ))
+            : visible.map((item) => {
+                const remaining = Math.max(
+                  0,
+                  item.capacity - item.enrollmentCount,
+                );
+                const modeLabel =
+                  item.deliveryMode === "online"
+                    ? t("modeOnline")
+                    : item.deliveryMode === "hybrid"
+                      ? t("modeHybrid")
+                      : t("modeInPerson");
 
-            return (
-              <Link
-                key={item.id}
-                href={`/discovery/classes/${item.slug}`}
-                scroll={false}
-                className={styles.card()}
-                aria-label={item.title}
-              >
-                <div className={styles.imageWrap()}>
-                  <FallbackImage
-                    src={item.imageUrl}
-                    alt={item.title}
-                    fill
-                    unoptimized
-                    sizes="(max-width: 640px) 72vw, 264px"
-                    className={styles.image()}
-                  />
-                  <span className={styles.badge()}>{modeLabel}</span>
-                  <span className={styles.seats()}>
-                    {t("seatsLeft", {
-                      count: remaining.toLocaleString("fa-IR"),
-                    })}
-                  </span>
-                </div>
-                <div className={styles.body()}>
-                  <Typography type="body-xs" className={styles.sport()}>
-                    {item.deliveryMode === "online" ? "آنلاین" : "حضوری"}
-                  </Typography>
-                  <h3 className={styles.name()}>{item.title}</h3>
-                  <p className={styles.description()}>{item.description}</p>
-                  <p className={styles.price()}>
-                    {t("fromPrice", {
-                      price: item.price.amount.toLocaleString("fa-IR"),
-                    })}
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
+                return (
+                  <Link
+                    key={item.id}
+                    href={`/discovery/classes/${item.slug}`}
+                    scroll={false}
+                    className={styles.card()}
+                    aria-label={item.title}
+                  >
+                    <div className={styles.imageWrap()}>
+                      <FallbackImage
+                        src={item.imageUrl}
+                        alt={item.title}
+                        fill
+                        unoptimized
+                        sizes="(max-width: 640px) 72vw, 264px"
+                        className={styles.image()}
+                      />
+                      <span className={styles.badge()}>{modeLabel}</span>
+                      <span className={styles.seats()}>
+                        {t("seatsLeft", {
+                          count: remaining.toLocaleString("fa-IR"),
+                        })}
+                      </span>
+                    </div>
+                    <div className={styles.body()}>
+                      <Typography type="body-xs" className={styles.sport()}>
+                        {item.deliveryMode === "online" ? "آنلاین" : "حضوری"}
+                      </Typography>
+                      <h3 className={styles.name()}>{item.title}</h3>
+                      <p className={styles.description()}>{item.description}</p>
+                      <p className={styles.price()}>
+                        {t("fromPrice", {
+                          price: item.price.amount.toLocaleString("fa-IR"),
+                        })}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
         </div>
       </ScrollShadow>
     </section>
