@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { http } from "../../http/client";
 import { tokenStore } from "../../http/token-store";
 import { trackFavoriteAdded } from "../../tracking/tracking";
+import { useOffline } from "../../offline/provider";
 import type {
   Favorite,
   FavoriteEntityType,
@@ -28,9 +29,13 @@ export const savesClient = {
 const queries = { all: () => ["favorites"] as const };
 
 export function useSavedItems(enabled = true) {
+  const offline = useOffline();
   return useQuery({
     queryKey: queries.all(),
-    queryFn: savesClient.list,
+    queryFn: async () => {
+      const data = await savesClient.list();
+      return offline?.overlayFavorites(data) ?? data;
+    },
     enabled: enabled && Boolean(tokenStore.get()),
   });
 }
@@ -40,6 +45,7 @@ export function useToggleSave(
   entityId: string,
 ) {
   const queryClient = useQueryClient();
+  const offline = useOffline();
   const favorites = useSavedItems();
   const active = Boolean(
     favorites.data?.items.some(
@@ -47,7 +53,25 @@ export function useToggleSave(
     ),
   );
   const mutation = useMutation({
+    networkMode: "always",
     mutationFn: async () => {
+      if (offline?.saveFavorite) {
+        const createdAt = new Date().toISOString();
+        await offline.saveFavorite({
+          entityType,
+          entityId,
+          saved: !active,
+          createdAt,
+        });
+        return active
+          ? undefined
+          : {
+              id: `offline:${entityType}:${entityId}`,
+              entityType,
+              entityId,
+              createdAt,
+            };
+      }
       if (active) {
         await savesClient.remove(entityType, entityId);
       } else {
@@ -56,8 +80,7 @@ export function useToggleSave(
     },
     onSuccess: async (savedItem) => {
       queryClient.setQueryData<FavoritesResponse>(queries.all(), (previous) => {
-        if (!previous) return previous;
-        const items = previous.items.filter(
+        const items = (previous?.items ?? []).filter(
           (item) =>
             item.entityType !== entityType || item.entityId !== entityId,
         );
@@ -70,7 +93,8 @@ export function useToggleSave(
           ...(entityType === "club" ? { club_id: entityId } : {}),
         });
       }
-      await queryClient.invalidateQueries({ queryKey: queries.all() });
+      if (!offline?.saveFavorite)
+        await queryClient.invalidateQueries({ queryKey: queries.all() });
     },
   });
   return { active, isLoading: favorites.isLoading, mutation };

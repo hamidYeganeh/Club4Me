@@ -11,7 +11,6 @@ import {
 
 import { AppError } from "../../common/errors/app.exception";
 import { slugify } from "../articles/lib/slugify";
-import { MAX_INLINE_IMAGE_URL_LENGTH } from "../media/media.constants";
 import type { CreateResourceDto, UpdateResourceDto } from "./dto/resource.dto";
 import {
   getServerResource,
@@ -76,7 +75,7 @@ export class ResourcesService {
     const definition = this.requireDefinition(category, segment);
     const model = this.getModel(definition);
     const page = parseInteger(query.page, 1, 1, 100_000);
-    const limit = parseInteger(query.limit, 20, 1, 100);
+    const limit = parseInteger(query.limit, 50, 1, 100);
     const filter: Record<string, unknown> = {};
 
     if (query.isActive !== undefined)
@@ -897,12 +896,6 @@ function isMissingSeedValue(value: unknown): boolean {
   );
 }
 function isValidResourceUrl(value: string): boolean {
-  if (
-    value.startsWith("data:image/") &&
-    value.includes(";base64,") &&
-    value.length <= MAX_INLINE_IMAGE_URL_LENGTH
-  )
-    return true;
   if (value.startsWith("/") && !value.startsWith("//")) return true;
   try {
     const parsed = new URL(value);

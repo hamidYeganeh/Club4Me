@@ -28,9 +28,9 @@ All management operations require an authenticated active user with the admin ro
 | DELETE | /:id   | delete                                      |
 | POST   | base   | seed (required for seeding; no body needed) |
 
-Examples: `GET /api/v1/geography/countries?page=1&limit=20&search=ایران`, `POST /api/v1/facilities/roof_types` with `{ "name": "سقف متحرک", "code": "RETRACTABLE" }`, `PATCH /api/v1/facilities/roof_types/:id?action=deactivate`.
+Examples: `GET /api/v1/geography/countries?page=1&limit=50&search=ایران`, `POST /api/v1/facilities/roof_types` with `{ "name": "سقف متحرک", "code": "RETRACTABLE" }`, `PATCH /api/v1/facilities/roof_types/:id?action=deactivate`.
 
-Lists return `{items, page, limit, total, totalPages}`. Defaults are page 1 and limit 20, maximum limit 100. Filters: `search` (or `q`, max 200 characters), `isActive=true|false`, `parentId`; sorting: `sortBy` and `sortDirection=asc|desc`. Search includes names, primary display fields, codes, slugs, aliases and descriptions, with Persian/Arabic ی and ک and spacing normalization. Parent filters use the catalog's first hierarchy relation. Invalid IDs, payload types, repeated query parameters and unsupported actions return client errors.
+Lists return `{items, page, limit, total, totalPages}`. Defaults are page 1 and limit 50, maximum limit 100. Filters: `search` (or `q`, max 200 characters), `isActive=true|false`, `parentId`; sorting: `sortBy` and `sortDirection=asc|desc`. Search includes names, primary display fields, codes, slugs, aliases and descriptions, with Persian/Arabic ی and ک and spacing normalization. Parent filters use the resource's first hierarchy relation. Invalid IDs, payload types, repeated query parameters and unsupported actions return client errors.
 
 Names are normalized for uniqueness. Codes are stable and immutable after creation. In-use hierarchy/profile options cannot be deleted; deactivate them instead. Geography maintains explicit country → province → city → district → neighborhood relationships.
 

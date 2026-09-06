@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import Image from "next/image";
+import type { FormEvent } from "react";
 import {
   Button,
   Chip,
@@ -40,6 +41,8 @@ export function AccountAuthRolesOptionsSection({
   ownerLabel,
   grantedRoles,
   isFirstTime,
+  requestRole: formRole,
+  onRequestRoleChange,
   onSelectRole,
 }: AccountAuthRolesOptionsSectionProps) {
   const styles = accountAuthRolesOptionsSectionStyles();
@@ -47,7 +50,6 @@ export function AccountAuthRolesOptionsSection({
   const tRoles = useTranslations("auth.roles");
   const requestRole = useRequestRole();
   const requests = useMyRoleRequests();
-  const [formRole, setFormRole] = useState<RequestableRole | null>(null);
   const options: AccountAuthRoleOption[] = [
     { id: "athlete", label: athleteLabel, icon: "weight", tone: "athlete" },
     { id: "coach", label: coachLabel, icon: "whistle", tone: "coach" },
@@ -84,12 +86,27 @@ export function AccountAuthRolesOptionsSection({
       toast.success(tRoles("requestSentTitle"), {
         description: tRoles("requestSentBody"),
       });
-      setFormRole(null);
+      onRequestRoleChange(null);
     } catch (error) {
       toast.danger(t("requestErrorTitle"), {
         description: getAccountApiErrorMessage(error, t),
       });
     }
+  }
+
+  if (formRole) {
+    return (
+      <section
+        className={styles.formRoot()}
+        aria-labelledby="role-request-title"
+      >
+        <RoleRequestForm
+          role={formRole}
+          pending={requestRole.isPending}
+          onSubmit={submit}
+        />
+      </section>
+    );
   }
 
   return (
@@ -121,9 +138,7 @@ export function AccountAuthRolesOptionsSection({
                   onSelectRole(option.id);
                 } else if (option.id !== "athlete") {
                   const requestableRole = option.id;
-                  setFormRole((current) =>
-                    current === requestableRole ? null : requestableRole,
-                  );
+                  onRequestRoleChange(requestableRole);
                 }
               }}
             >
@@ -175,14 +190,6 @@ export function AccountAuthRolesOptionsSection({
           <Spinner size="sm" />
         </div>
       ) : null}
-      {formRole ? (
-        <RoleRequestForm
-          role={formRole}
-          pending={requestRole.isPending}
-          onSubmit={submit}
-          onCancel={() => setFormRole(null)}
-        />
-      ) : null}
     </section>
   );
 }
@@ -191,50 +198,77 @@ function RoleRequestForm({
   role,
   pending,
   onSubmit,
-  onCancel,
 }: {
   role: RequestableRole;
   pending: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onCancel: () => void;
 }) {
-  const input = "border border-border bg-surface-secondary";
+  const styles = accountAuthRolesOptionsSectionStyles();
+  const isCoach = role === "coach";
   return (
-    <div className="app-reveal rounded-[1.75rem] border border-border bg-surface p-5 shadow-sm">
-      <Typography type="h4" weight="bold">
-        درخواست نقش {role === "coach" ? "مربی" : "مالک مجموعه"}
-      </Typography>
-      <p className="mt-1 text-sm leading-6 text-muted">
-        این اطلاعات برای بررسی درخواست در اختیار مدیر قرار می‌گیرد.
-      </p>
-      <Form onSubmit={onSubmit} className="mt-5 flex flex-col gap-4">
+    <>
+      <div className={styles.hero()}>
+        <Image
+          src="/role-request-upload.png"
+          alt="ارسال اطلاعات برای بررسی درخواست نقش"
+          width={768}
+          height={416}
+          priority
+          className={styles.heroImage()}
+        />
+        <Typography
+          type="h2"
+          weight="bold"
+          id="role-request-title"
+          className={styles.heroTitle()}
+        >
+          {isCoach ? "درخواست مربیگری" : "درخواست مدیریت مجموعه"}
+        </Typography>
+        <Typography
+          type="body-sm"
+          color="muted"
+          className={styles.heroDescription()}
+        >
+          اطلاعات واقعی فعالیت خود را وارد کنید تا درخواست شما سریع‌تر بررسی
+          شود.
+        </Typography>
+      </div>
+      <Form onSubmit={onSubmit} className={styles.form()}>
         <RoleField
           name="displayName"
           label="نام و نام خانوادگی"
-          className={input}
+          placeholder="نام کامل خود را وارد کنید"
+          icon="user"
+          className={styles.field()}
           minLength={2}
           maxLength={100}
         />
         <RoleField
           name="city"
           label="شهر محل فعالیت"
-          className={input}
+          placeholder="مثلاً تهران"
+          icon="pin-1"
+          className={styles.field()}
           minLength={2}
           maxLength={100}
         />
-        {role === "coach" ? (
+        {isCoach ? (
           <>
             <RoleField
               name="specialty"
               label="رشته یا تخصص ورزشی"
-              className={input}
+              placeholder="مثلاً بدنسازی و تناسب اندام"
+              icon="weight"
+              className={styles.field()}
               minLength={2}
               maxLength={200}
             />
             <RoleField
               name="experienceYears"
               label="سابقه مربیگری (سال)"
-              className={input}
+              placeholder="مثلاً ۵"
+              icon="calendar-1"
+              className={styles.field()}
               type="number"
               min={0}
               max={80}
@@ -242,7 +276,8 @@ function RoleRequestForm({
             <RoleField
               name="credentials"
               label="مدارک و گواهی‌ها (اختیاری)"
-              className={input}
+              placeholder="مدارک تخصصی یا گواهی‌های معتبر"
+              className={styles.field()}
               maxLength={500}
               multiline
               optional
@@ -253,14 +288,18 @@ function RoleRequestForm({
             <RoleField
               name="businessName"
               label="نام باشگاه یا مجموعه"
-              className={input}
+              placeholder="نام رسمی مجموعه"
+              icon="building-2"
+              className={styles.field()}
               minLength={2}
               maxLength={150}
             />
             <RoleField
               name="businessType"
               label="نوع مجموعه (باشگاه، استودیو و...)"
-              className={input}
+              placeholder="مثلاً باشگاه بدنسازی"
+              icon="building-1"
+              className={styles.field()}
               minLength={2}
               maxLength={100}
             />
@@ -269,30 +308,33 @@ function RoleRequestForm({
         <RoleField
           name="description"
           label={
-            role === "coach"
+            isCoach
               ? "درباره سابقه و شیوه مربیگری"
               : "درباره مجموعه و برنامه فعالیت"
           }
-          className={input}
+          placeholder={
+            isCoach
+              ? "خلاصه‌ای از تجربه، تخصص و شیوه کار خود بنویسید"
+              : "خلاصه‌ای از خدمات، امکانات و برنامه فعالیت مجموعه بنویسید"
+          }
+          className={styles.field()}
           minLength={20}
           maxLength={1000}
           multiline
         />
-        <div className="flex gap-2 pt-1">
-          <Button type="submit" variant="primary" fullWidth isPending={pending}>
-            ارسال درخواست
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            isDisabled={pending}
-            onPress={onCancel}
-          >
-            انصراف
-          </Button>
-        </div>
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          isPending={pending}
+          className={styles.submit()}
+        >
+          {!pending ? <Icon name="paper-plane-diagonal" size={20} /> : null}
+          {pending ? "در حال ارسال..." : "ارسال درخواست"}
+        </Button>
       </Form>
-    </div>
+    </>
   );
 }
 
@@ -303,6 +345,8 @@ function RoleField({
   className,
   min,
   max,
+  icon,
+  placeholder,
   ...props
 }: React.ComponentProps<typeof TextField> & {
   label: string;
@@ -311,15 +355,22 @@ function RoleField({
   className?: string;
   min?: number;
   max?: number;
+  icon?: React.ComponentProps<typeof Icon>["name"];
+  placeholder?: string;
 }) {
   return (
     <TextField {...props} isRequired={!optional}>
       <Label>{label}</Label>
       <InputGroup variant="secondary" className={className}>
+        {icon ? (
+          <InputGroup.Prefix className="text-muted">
+            <Icon name={icon} size={20} />
+          </InputGroup.Prefix>
+        ) : null}
         {multiline ? (
-          <InputGroup.TextArea rows={3} />
+          <InputGroup.TextArea rows={3} placeholder={placeholder} />
         ) : (
-          <InputGroup.Input min={min} max={max} />
+          <InputGroup.Input min={min} max={max} placeholder={placeholder} />
         )}
       </InputGroup>
     </TextField>

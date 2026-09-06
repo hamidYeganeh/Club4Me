@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { tokenStore } from "@api";
 import { useAccountMe } from "@api/account";
+import type { RequestableRole } from "@api/account";
 import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
 import { AccountAuthRolesCopySection } from "@modules/account/sections/AccountAuthRolesCopySection";
 import { AccountAuthRolesOptionsSection } from "@modules/account/sections/AccountAuthRolesOptionsSection";
@@ -17,6 +18,7 @@ import {
 } from "@/lib/post-auth-path";
 import { AUTH_PATH } from "@/lib/welcome-onboarding";
 import { AuthScreenSkeleton } from "@/components/loading-skeletons";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
 export function AccountAuthRolesScreen() {
   const router = useRouter();
@@ -24,6 +26,7 @@ export function AccountAuthRolesScreen() {
   const t = useTranslations("auth.roles");
   const tCommon = useTranslations("common");
   const [hasToken, setHasToken] = useState<boolean | null>(null);
+  const [requestRole, setRequestRole] = useState<RequestableRole | null>(null);
   const me = useAccountMe(hasToken === true);
   const isFirstTime = searchParams.get("firstTime") === "1";
   const isManaging = searchParams.get("manage") === "1";
@@ -73,26 +76,38 @@ export function AccountAuthRolesScreen() {
 
   return (
     <AuthScreen>
-      <AccountAuthOtpHeaderSection
-        backLabel={tCommon("back")}
-        href={isManaging ? `/${roles[0] ?? "athlete"}/profile` : "/auth"}
-        overlay
-        transparent
-      />
-      <AccountAuthRolesCopySection
-        title={isManaging ? "نقش‌های من" : t("title")}
-        subtitle={
-          isManaging
-            ? "نقش فعال خود را ببینید یا برای نقش تازه درخواست ثبت کنید."
-            : t("subtitle")
-        }
-      />
+      {requestRole ? (
+        <SecondaryHeader
+          title="درخواست نقش"
+          showFilter={false}
+          onBack={() => setRequestRole(null)}
+        />
+      ) : (
+        <>
+          <AccountAuthOtpHeaderSection
+            backLabel={tCommon("back")}
+            href={isManaging ? `/${roles[0] ?? "athlete"}/profile` : "/auth"}
+            overlay
+            transparent
+          />
+          <AccountAuthRolesCopySection
+            title={isManaging ? "نقش‌های من" : t("title")}
+            subtitle={
+              isManaging
+                ? "نقش فعال خود را ببینید یا برای نقش تازه درخواست ثبت کنید."
+                : t("subtitle")
+            }
+          />
+        </>
+      )}
       <AccountAuthRolesOptionsSection
         athleteLabel={t("athlete")}
         coachLabel={t("coach")}
         ownerLabel={t("owner")}
         grantedRoles={roles}
         isFirstTime={isFirstTime}
+        requestRole={requestRole}
+        onRequestRoleChange={setRequestRole}
         onSelectRole={(role) => {
           const path = getRolePath(role);
           if (path.startsWith("http")) {

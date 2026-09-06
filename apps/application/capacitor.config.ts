@@ -1,5 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 import { KeyboardResize, KeyboardStyle } from "@capacitor/keyboard";
+import "@capawesome/capacitor-live-update";
+import { nativeUpdateConfiguration } from "./scripts/native-runtime.mjs";
 
 const devServerUrl = process.env.CAPACITOR_DEV_URL;
 const hostedServerUrl = process.env.CAPACITOR_SERVER_URL;
@@ -9,6 +11,7 @@ if (hostedServerUrl && new URL(hostedServerUrl).protocol !== "https:") {
 const allowCleartext =
   process.env.CAPACITOR_ALLOW_CLEARTEXT === "1" || Boolean(devServerUrl);
 const isDemoBuild = process.env.CAPACITOR_DEMO === "1";
+const updates = nativeUpdateConfiguration();
 
 const config: CapacitorConfig = {
   appId: "com.gym4me.app",
@@ -28,6 +31,7 @@ const config: CapacitorConfig = {
             "@capacitor/preferences",
             "@capacitor/splash-screen",
             "@capacitor/status-bar",
+            "@capawesome/capacitor-live-update",
           ],
         }
       : {}),
@@ -37,6 +41,19 @@ const config: CapacitorConfig = {
     preferredContentMode: "mobile",
   },
   plugins: {
+    UpdateConfiguration: {
+      enabled: updates.enabled && !hostedServerUrl && !devServerUrl,
+      runtimeVersion: updates.runtimeVersion,
+      manifestUrl: updates.manifestUrl,
+      publicKey: updates.publicKey,
+    },
+    LiveUpdate: {
+      publicKey: updates.publicKey || undefined,
+      readyTimeout: hostedServerUrl || devServerUrl ? 0 : 30_000,
+      autoBlockRolledBackBundles: true,
+      autoDeleteBundles: true,
+      autoUpdateStrategy: "none",
+    },
     SplashScreen: {
       launchAutoHide: false,
       backgroundColor: "#1eff6d",
@@ -62,11 +79,11 @@ const config: CapacitorConfig = {
     ...(hostedServerUrl
       ? { url: hostedServerUrl, cleartext: false }
       : devServerUrl
-      ? {
-          url: devServerUrl,
-          cleartext: true,
-        }
-      : {}),
+        ? {
+            url: devServerUrl,
+            cleartext: true,
+          }
+        : {}),
   },
 };
 

@@ -41,6 +41,8 @@ const values = {
   JWT_REFRESH_EXPIRES_IN: "30d",
   MOCK_PAYMENT_CALLBACK_SECRET:
     previous.MOCK_PAYMENT_CALLBACK_SECRET || secret(),
+  MEDIA_LOCAL_DIR: "/data/media",
+  MEDIA_PUBLIC_BASE_URL: "https://api.gym4me.ir",
   EXPORT_STORAGE_DRIVER: "gcs",
   EXPORT_GCS_BUCKET: storageBucket,
   EXPORT_SIGNED_URL_MINUTES: "15",
@@ -68,7 +70,7 @@ const values = {
   KAVENEGAR_PAYMENT_FAILED_TEMPLATE: "gym4mepaymentfailed",
   KAVENEGAR_WAITLIST_TEMPLATE: "gym4mewaitlist",
   CORS_ORIGINS:
-    "https://gym4me.ir,https://www.gym4me.ir,https://app.gym4me.ir,https://admin.gym4me.ir,https://business.gym4me.ir",
+    "https://gym4me.ir,https://www.gym4me.ir,https://app.gym4me.ir,https://admin.gym4me.ir,https://business.gym4me.ir,https://localhost",
   NEXT_PUBLIC_API_URL: "https://api.gym4me.ir/api/v1",
   NEXT_PUBLIC_WEBSITE_URL: "https://gym4me.ir",
   NEXT_PUBLIC_APP_RELEASE: release,

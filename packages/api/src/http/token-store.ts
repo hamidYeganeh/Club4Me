@@ -10,6 +10,26 @@ type AsyncTokenPersistence = {
 let asyncPersistence: AsyncTokenPersistence | undefined;
 let memoryAccessToken: string | null = null;
 let memoryRefreshToken: string | null = null;
+const sessionListeners = new Set<() => void>();
+
+function notifySession() {
+  for (const listener of sessionListeners) listener();
+}
+
+/** This is a local cache namespace, never an authorization decision. */
+export function sessionIdentity(token: string | null): string {
+  if (!token) return "guest";
+  try {
+    const payload = JSON.parse(
+      atob(token.split(".")[1]!.replace(/-/g, "+").replace(/_/g, "/")),
+    ) as { sub?: unknown };
+    if (typeof payload.sub === "string" && payload.sub)
+      return `user:${payload.sub}`;
+  } catch {
+    /* Opaque sessions are isolated by a hash when persisted. */
+  }
+  return `opaque:${token}`;
+}
 
 export async function configureTokenPersistence(
   persistence: AsyncTokenPersistence,
@@ -19,6 +39,7 @@ export async function configureTokenPersistence(
   if (options.hydrate === false) {
     memoryAccessToken = null;
     memoryRefreshToken = null;
+    notifySession();
     return;
   }
   const [secureAccess, secureRefresh] = await Promise.all([
@@ -45,6 +66,7 @@ export async function configureTokenPersistence(
     clearSession(window.localStorage);
     clearSession(window.sessionStorage);
   }
+  notifySession();
 }
 
 function canUseStorage(): boolean {
@@ -65,7 +87,7 @@ function clearSession(storage: Storage): void {
   storage.removeItem(REFRESH_TOKEN_KEY);
 }
 
-export const tokenStore = {
+const storageTokenStore = {
   get(): string | null {
     if (asyncPersistence) return memoryAccessToken;
     if (!canUseStorage()) {
@@ -174,5 +196,35 @@ export const tokenStore = {
 
     clearSession(window.localStorage);
     clearSession(window.sessionStorage);
+  },
+};
+
+export const tokenStore = {
+  ...storageTokenStore,
+  identity: () => sessionIdentity(storageTokenStore.get()),
+  subscribe: (listener: () => void) => {
+    sessionListeners.add(listener);
+    const onStorage = () => listener();
+    if (canUseStorage()) window.addEventListener("storage", onStorage);
+    return () => {
+      sessionListeners.delete(listener);
+      if (canUseStorage()) window.removeEventListener("storage", onStorage);
+    };
+  },
+  set: (token: string) => {
+    storageTokenStore.set(token);
+    notifySession();
+  },
+  setSession: (access: string, refresh: string, persist = true) => {
+    storageTokenStore.setSession(access, refresh, persist);
+    notifySession();
+  },
+  replaceSession: async (access: string, refresh: string) => {
+    await storageTokenStore.replaceSession(access, refresh);
+    notifySession();
+  },
+  clear: () => {
+    storageTokenStore.clear();
+    notifySession();
   },
 };

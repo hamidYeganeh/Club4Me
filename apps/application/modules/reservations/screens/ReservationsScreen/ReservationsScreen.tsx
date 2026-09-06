@@ -250,9 +250,15 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
     (item) => item.id === actionReservationId,
   );
   const loadFailure =
-    getQueryFailure(reservations.error, reservations.fetchStatus) ??
-    getQueryFailure(coachBookings.error, coachBookings.fetchStatus) ??
-    getQueryFailure(classEnrollments.error, classEnrollments.fetchStatus);
+    (reservations.data
+      ? null
+      : getQueryFailure(reservations.error, reservations.fetchStatus)) ??
+    (coachBookings.data
+      ? null
+      : getQueryFailure(coachBookings.error, coachBookings.fetchStatus)) ??
+    (classEnrollments.data
+      ? null
+      : getQueryFailure(classEnrollments.error, classEnrollments.fetchStatus));
 
   if (actionReservation) {
     return (

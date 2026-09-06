@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, Card, Chip, Spinner, Table, toast } from "@heroui/react";
 import { type AdminCoach, useAdminCoaches, useReviewCoach } from "@api/admin";
+import { coachLevelLabels } from "@api";
 import { EntityDetailsModal } from "@ui/entity-details-modal";
 
 const labels = {
@@ -220,6 +221,131 @@ export function CoachScreen() {
                       label: "امتیاز و نظرها",
                       value: `${selected.averageRating.toLocaleString("fa-IR")} از ۵ (${selected.reviewsCount.toLocaleString("fa-IR")} نظر)`,
                     },
+                  ],
+                },
+                {
+                  title: "معرفی تخصصی و روش همکاری",
+                  items: [
+                    {
+                      label: "مخاطب مناسب",
+                      value: selected.professionalProfile?.audience,
+                      wide: true,
+                    },
+                    {
+                      label: "هدف‌ها",
+                      value: selected.professionalProfile?.goals.join("، "),
+                    },
+                    {
+                      label: "سطح شاگرد",
+                      value: selected.professionalProfile?.levels
+                        .map((level) => coachLevelLabels[level])
+                        .join("، "),
+                    },
+                    {
+                      label: "شرایط پذیرش",
+                      value: selected.professionalProfile?.prerequisites,
+                      wide: true,
+                    },
+                    {
+                      label: "جلسه اول",
+                      value: selected.professionalProfile?.firstSession,
+                      wide: true,
+                    },
+                    {
+                      label: "شخصی‌سازی برنامه",
+                      value: selected.professionalProfile?.planning,
+                      wide: true,
+                    },
+                    {
+                      label: "پشتیبانی",
+                      value: selected.professionalProfile?.followUp,
+                      wide: true,
+                    },
+                    {
+                      label: "ارزیابی پیشرفت",
+                      value: selected.professionalProfile?.progressTracking,
+                      wide: true,
+                    },
+                    {
+                      label: "ویدئوی معرفی",
+                      value: selected.professionalProfile?.introductionVideoUrl,
+                      wide: true,
+                      dir: "ltr",
+                    },
+                  ],
+                },
+                {
+                  title: "مدارک و نمونه‌های حرفه‌ای",
+                  items: [
+                    ...(selected.professionalProfile?.credentials ?? []).map(
+                      (credential, index) => {
+                        const attachment = selected.credentialAttachments?.find(
+                          (item) => item.id === credential.mediaId,
+                        );
+                        return {
+                          label: `مدرک ${index + 1}`,
+                          wide: true,
+                          value: (
+                            <div className="space-y-2">
+                              <p>
+                                {[
+                                  credential.title,
+                                  credential.issuer,
+                                  credential.year,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </p>
+                              {credential.expiresOn ? (
+                                <p>تاریخ انقضا: {credential.expiresOn}</p>
+                              ) : null}
+                              {attachment ? (
+                                <a
+                                  href={attachment.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-accent underline"
+                                >
+                                  مشاهده تصویر مدرک
+                                </a>
+                              ) : null}
+                              <p className="text-xs text-muted">
+                                تأیید پروفایل به معنی تأیید اصالت این مدرک نیست.
+                              </p>
+                            </div>
+                          ),
+                        };
+                      },
+                    ),
+                    ...(selected.professionalProfile?.achievements ?? []).map(
+                      (item, index) => ({
+                        label: `افتخار ${index + 1}`,
+                        wide: true,
+                        value: [item.title, item.organization, item.year]
+                          .filter(Boolean)
+                          .join(" · "),
+                      }),
+                    ),
+                    ...(selected.professionalProfile?.successStories ?? []).map(
+                      (item, index) => ({
+                        label: `نمونه پیشرفت ${index + 1}`,
+                        wide: true,
+                        value: (
+                          <div className="space-y-2">
+                            <p>
+                              {item.title} · {item.duration}
+                            </p>
+                            <p>هدف: {item.goal}</p>
+                            <p>{item.outcome}</p>
+                            <p>
+                              {item.consent
+                                ? "رضایت انتشار توسط مربی اعلام شده"
+                                : "بدون رضایت انتشار"}
+                            </p>
+                          </div>
+                        ),
+                      }),
+                    ),
                   ],
                 },
                 {

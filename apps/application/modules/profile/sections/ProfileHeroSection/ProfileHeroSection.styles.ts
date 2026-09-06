@@ -7,6 +7,8 @@ export const profileHeroSectionStyles = tv({
       "app-scroll-media relative h-[min(42dvh,22rem)] w-full overflow-hidden bg-surface-tertiary after:pointer-events-none after:absolute after:inset-0 after:bg-linear-to-t after:from-background/65 after:via-transparent after:to-black/10",
     cover: "object-cover object-center saturate-75 contrast-110",
     notch: "hidden",
+    backButton:
+      "absolute end-5 top-[calc(env(safe-area-inset-top)+1rem)] z-[2] border border-white/10 bg-background/72 backdrop-blur-xl",
     overlap:
       "relative z-[2] -mt-[3.875rem] flex items-center justify-between px-[max(1.25rem,calc(18.5%-1.5rem))]",
     sideButton:

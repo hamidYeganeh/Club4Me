@@ -33,7 +33,6 @@ import {
 import { Icon } from "@theme/icon";
 import type { IconName } from "@theme/icon";
 import {
-  useBusinessCatalog,
   useBusinessClub,
   useBusinessMedia,
   useBusinessTags,
@@ -155,8 +154,8 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const createMedia = useCreateBusinessMedia();
   const tagsQuery = useBusinessTags();
   const submitClub = useSubmitBusinessClub(clubId ?? "");
-  const ageGroups = useBusinessCatalog("classes", "age-group");
-  const countries = useBusinessCatalog("location", "country");
+  const ageGroups = useInfiniteBusinessCatalog("classes", "age-group");
+  const countries = useInfiniteBusinessCatalog("location", "country");
   const [activeStep, setActiveStep] = useState<ClubFormStep>("basic");
 
   const [name, setName] = useState("");
@@ -220,19 +219,19 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
     name: "faqs",
   });
 
-  const provinces = useBusinessCatalog(
+  const provinces = useInfiniteBusinessCatalog(
     "location",
     "province",
     { parentId: countryId },
     Boolean(countryId),
   );
-  const cities = useBusinessCatalog(
+  const cities = useInfiniteBusinessCatalog(
     "location",
     "city",
     { parentId: provinceId },
     Boolean(provinceId),
   );
-  const districts = useBusinessCatalog(
+  const districts = useInfiniteBusinessCatalog(
     "location",
     "district",
     { parentId: cityId },
@@ -384,7 +383,8 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
 
   const ageGroupOptions = useMemo(
     () =>
-      (ageGroups.data?.items ?? [])
+      (ageGroups.data?.pages ?? [])
+        .flatMap((page) => page.items)
         .map((item) => {
           const min = Number(item.minAge);
           const max = Number(item.maxAge);
@@ -397,7 +397,24 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
           };
         })
         .filter((item): item is NonNullable<typeof item> => item !== null),
-    [ageGroups.data?.items],
+    [ageGroups.data?.pages],
+  );
+
+  const countryItems = useMemo(
+    () => (countries.data?.pages ?? []).flatMap((page) => page.items),
+    [countries.data?.pages],
+  );
+  const provinceItems = useMemo(
+    () => (provinces.data?.pages ?? []).flatMap((page) => page.items),
+    [provinces.data?.pages],
+  );
+  const cityItems = useMemo(
+    () => (cities.data?.pages ?? []).flatMap((page) => page.items),
+    [cities.data?.pages],
+  );
+  const districtItems = useMemo(
+    () => (districts.data?.pages ?? []).flatMap((page) => page.items),
+    [districts.data?.pages],
   );
 
   useEffect(() => {
@@ -1332,7 +1349,10 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 <CatalogComboBox
                   label={t("country")}
                   value={countryId}
-                  items={countries.data?.items ?? []}
+                  items={countryItems}
+                  hasNextPage={Boolean(countries.hasNextPage)}
+                  isFetchingNextPage={countries.isFetchingNextPage}
+                  onLoadMore={() => void countries.fetchNextPage()}
                   placeholder={t("locationSearchPlaceholder", {
                     field: t("country"),
                   })}
@@ -1346,7 +1366,10 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 <CatalogComboBox
                   label={t("province")}
                   value={provinceId}
-                  items={provinces.data?.items ?? []}
+                  items={provinceItems}
+                  hasNextPage={Boolean(provinces.hasNextPage)}
+                  isFetchingNextPage={provinces.isFetchingNextPage}
+                  onLoadMore={() => void provinces.fetchNextPage()}
                   placeholder={t("locationSearchPlaceholder", {
                     field: t("province"),
                   })}
@@ -1360,7 +1383,10 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 <CatalogComboBox
                   label={t("city")}
                   value={cityId}
-                  items={cities.data?.items ?? []}
+                  items={cityItems}
+                  hasNextPage={Boolean(cities.hasNextPage)}
+                  isFetchingNextPage={cities.isFetchingNextPage}
+                  onLoadMore={() => void cities.fetchNextPage()}
                   placeholder={t("locationSearchPlaceholder", {
                     field: t("city"),
                   })}
@@ -1373,7 +1399,10 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 <CatalogComboBox
                   label={t("district")}
                   value={districtId}
-                  items={districts.data?.items ?? []}
+                  items={districtItems}
+                  hasNextPage={Boolean(districts.hasNextPage)}
+                  isFetchingNextPage={districts.isFetchingNextPage}
+                  onLoadMore={() => void districts.fetchNextPage()}
                   placeholder={t("locationSearchPlaceholder", {
                     field: t("district"),
                   })}
@@ -1565,6 +1594,18 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                           </ListBox.Item>
                         )}
                       </ListBox>
+                      <CatalogScrollSentinel
+                        hasNextPage={Boolean(ageGroups.hasNextPage)}
+                        isFetchingNextPage={ageGroups.isFetchingNextPage}
+                        onLoadMore={() => {
+                          if (
+                            ageGroups.hasNextPage &&
+                            !ageGroups.isFetchingNextPage
+                          ) {
+                            void ageGroups.fetchNextPage();
+                          }
+                        }}
+                      />
                     </Select.Popover>
                   </Select>
                   {ageGroupOptions.length === 0 ? (
@@ -2496,6 +2537,9 @@ function CatalogComboBox({
   items,
   placeholder,
   isDisabled = false,
+  hasNextPage = false,
+  isFetchingNextPage = false,
+  onLoadMore,
   onChange,
 }: {
   label: string;
@@ -2503,6 +2547,9 @@ function CatalogComboBox({
   items: Array<{ id: string; name: string }>;
   placeholder: string;
   isDisabled?: boolean;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  onLoadMore?: () => void;
   onChange: (value: string) => void;
 }) {
   return (
@@ -2528,6 +2575,13 @@ function CatalogComboBox({
             </ListBox.Item>
           )}
         </ListBox>
+        <CatalogScrollSentinel
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={() => {
+            if (hasNextPage) onLoadMore?.();
+          }}
+        />
       </ComboBox.Popover>
     </ComboBox>
   );

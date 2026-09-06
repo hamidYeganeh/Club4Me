@@ -1,3 +1,4 @@
+import { publicProfessionalProfile } from "../coaching/dto/professional-profile";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
@@ -171,6 +172,9 @@ export class DiscoveryFeedService {
         { displayName: pattern },
         { shortBio: pattern },
         { bio: pattern },
+        { "specialties.title": pattern },
+        { "professionalProfile.goals": pattern },
+        { "professionalProfile.audience": pattern },
       ];
     }
     if (query.sportId) {
@@ -891,6 +895,11 @@ function publicCoach(item: Record<string, any>) {
     slug: item.slug,
     displayName: item.displayName,
     shortBio: item.shortBio ?? "",
+    bio: item.bio ?? "",
+    languages: item.languages ?? [],
+    minAcceptedAge: item.minAcceptedAge ?? null,
+    maxAcceptedAge: item.maxAcceptedAge ?? null,
+    professionalProfile: publicProfessionalProfile(item.professionalProfile),
     avatarMediaId: item.avatarMediaId ? String(item.avatarMediaId) : null,
     coverMediaId: item.coverMediaId ? String(item.coverMediaId) : null,
     galleryMediaIds: (item.galleryMediaIds ?? []).map(String),
@@ -899,7 +908,9 @@ function publicCoach(item: Record<string, any>) {
     trainingStyles: (item.trainingStyles ?? []).map(
       (style: Record<string, any>) => ({
         ...style,
-        imageMediaId: style.imageMediaId ? String(style.imageMediaId) : undefined,
+        imageMediaId: style.imageMediaId
+          ? String(style.imageMediaId)
+          : undefined,
       }),
     ),
     experienceSummary: item.experienceSummary ?? "",

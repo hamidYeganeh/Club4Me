@@ -79,8 +79,11 @@ services:
     env_file: .env.production
     environment:
       NODE_OPTIONS: "--dns-result-order=ipv4first --tls-max-v1.2"
+      MEDIA_LOCAL_DIR: /data/media
+      MEDIA_PUBLIC_BASE_URL: https://api.gym4me.ir
     volumes:
       - ./.secrets/firebase-service-account.json:/run/secrets/firebase-service-account.json:ro
+      - media_data:/data/media
     depends_on:
       mongodb:
         condition: service_healthy
@@ -222,3 +225,4 @@ networks:
 volumes:
   mongo_data:
   redis_data:
+  media_data:

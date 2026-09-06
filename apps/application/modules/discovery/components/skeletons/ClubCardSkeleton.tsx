@@ -1,7 +1,7 @@
-import { Card } from "@heroui/react";
+import { Card, Typography } from "@heroui/react";
 import { clubCardStyles } from "@ui/club-card/club-card.styles";
 import type { ClubCardVariant } from "@ui/club-card";
-import { SkeletonBlock, SkeletonLines } from "./primitives";
+import { SkeletonBlock, SkeletonLines, SkeletonText } from "./primitives";
 
 export function ClubCardSkeleton({
   variant,
@@ -33,6 +33,12 @@ export function ClubCardSkeleton({
               <Card.Title className={styles.title()}>
                 <SkeletonLines lines={1} />
               </Card.Title>
+              <div className={styles.details()}>
+                <SkeletonBlock className="size-4 shrink-0 rounded-md" />
+                <Typography type="body-sm" className={styles.detailText()}>
+                  <SkeletonText>آدرس مجموعه ورزشی</SkeletonText>
+                </Typography>
+              </div>
             </div>
           </div>
         </div>

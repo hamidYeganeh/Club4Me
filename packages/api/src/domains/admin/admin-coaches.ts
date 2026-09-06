@@ -4,7 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { http } from "../../http/client";
 
+import type { CoachProfessionalProfile } from "../coaching/professional-profile";
+
 export type AdminCoach = {
+  professionalProfile?: CoachProfessionalProfile;
+  credentialAttachments?: Array<{ id: string; url: string }>;
   id: string;
   userId: string;
   displayName: string;

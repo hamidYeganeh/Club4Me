@@ -1,5 +1,7 @@
+"use client";
+
 import { WelcomeIntroduceCarouselSection } from "@modules/welcome/sections/WelcomeIntroduceCarouselSection";
-import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 
 const SLIDE_KEYS = ["discover", "score", "book", "progress"] as const;
 
@@ -10,8 +12,8 @@ const SLIDE_IMAGES = {
   progress: "/welcome/introduce/progress-iran-v2.png",
 } as const;
 
-export async function WelcomeIntroduceScreen() {
-  const t = await getTranslations("welcome.introduce");
+export function WelcomeIntroduceScreen() {
+  const t = useTranslations("welcome.introduce");
   const slides = SLIDE_KEYS.map((key) => ({
     title: t(`slides.${key}.title`),
     subtitle: t(`slides.${key}.subtitle`),

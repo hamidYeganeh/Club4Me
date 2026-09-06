@@ -8,6 +8,8 @@ export type AccountAuthRolesOptionsSectionProps = {
   ownerLabel: string;
   grantedRoles: ApplicationRole[];
   isFirstTime?: boolean;
+  requestRole: RequestableRole | null;
+  onRequestRoleChange: (role: RequestableRole | null) => void;
   onSelectRole: (role: ApplicationRole) => void;
 };
 

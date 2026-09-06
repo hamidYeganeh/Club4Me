@@ -1,1 +1,3 @@
+export const MAX_MEDIA_BYTES = 10 * 1024 * 1024;
+
 export const MAX_INLINE_IMAGE_URL_LENGTH = 14 * 1024 * 1024;

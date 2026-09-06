@@ -23,18 +23,16 @@ export const mediaEndpoints = {
 export const mediaClient = {
   list: () => http.get<{ items: Media[] }>(mediaEndpoints.list),
   upload: async (input: MediaUpload) => {
-    const payload =
-      typeof File !== "undefined" && input instanceof File
-        ? {
-            url: await readAsDataUrl(input),
-            mimeType: input.type || "image/jpeg",
-          }
-        : {
-            url: (input as { url: string }).url,
-            mimeType:
-              (input as { mimeType?: string }).mimeType ?? "image/external",
-          };
-    return http.post<Media>(mediaEndpoints.list, payload);
+    if (typeof File !== "undefined" && input instanceof File) {
+      const form = new FormData();
+      form.append("file", input);
+      return http.post<Media>(`${mediaEndpoints.list}/upload`, form);
+    }
+    const remote = input as { url: string; mimeType?: string };
+    return http.post<Media>(mediaEndpoints.list, {
+      url: remote.url,
+      mimeType: remote.mimeType ?? "image/external",
+    });
   },
 };
 
@@ -52,18 +50,5 @@ export function useCreateMedia() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["media"] });
     },
-  });
-}
-
-function readAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () =>
-      typeof reader.result === "string"
-        ? resolve(reader.result)
-        : reject(new Error("Unable to read media"));
-    reader.onerror = () =>
-      reject(reader.error ?? new Error("Unable to read media"));
-    reader.readAsDataURL(file);
   });
 }

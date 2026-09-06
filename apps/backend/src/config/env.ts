@@ -19,6 +19,11 @@ const envSchema = z
       .string()
       .min(16)
       .default("local-mock-payment-secret"),
+    MEDIA_LOCAL_DIR: z.string().min(1).default(".artifacts/media"),
+    MEDIA_PUBLIC_BASE_URL: z
+      .url()
+      .regex(/^https?:\/\//)
+      .default("http://localhost:7088"),
     EXPORT_STORAGE_DRIVER: z.enum(["local", "gcs"]).default("local"),
     EXPORT_LOCAL_DIR: z.string().default(".artifacts/exports"),
     EXPORT_GCS_BUCKET: z.string().trim().optional(),
@@ -65,7 +70,7 @@ const envSchema = z
     CORS_ORIGINS: z
       .string()
       .default(
-        "http://localhost:7080,http://localhost:7081,http://localhost:7082,http://localhost:7083",
+        "http://localhost:7080,http://localhost:7081,http://localhost:7082,http://localhost:7083,http://localhost:7091,http://127.0.0.1:7080,http://127.0.0.1:7081,http://127.0.0.1:7082,http://127.0.0.1:7083,http://127.0.0.1:7091",
       )
       .transform((value) =>
         value
@@ -73,6 +78,10 @@ const envSchema = z
           .map((origin) => origin.trim())
           .filter(Boolean),
       ),
+    ALLOW_LOCAL_CORS: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((value) => value === "true"),
   })
   .superRefine((value, context) => {
     if (value.EXPORT_STORAGE_DRIVER === "gcs" && !value.EXPORT_GCS_BUCKET) {
@@ -145,14 +154,20 @@ const envSchema = z
     }
     if (
       value.CORS_ORIGINS.length === 0 ||
-      value.CORS_ORIGINS.some(
-        (origin) => !origin.startsWith("https://") || isLocalServiceUrl(origin),
-      )
+      (value.CORS_ORIGINS.some(
+        // Capacitor serves the signed native bundle from this exact local origin.
+        // The runtime CORS policy always adds it to the production allowlist.
+        (origin) =>
+          origin !== "https://localhost" &&
+          (!origin.startsWith("https://") || isLocalServiceUrl(origin)),
+      ) &&
+        !value.ALLOW_LOCAL_CORS)
     ) {
       context.addIssue({
         code: "custom",
         path: ["CORS_ORIGINS"],
-        message: "CORS_ORIGINS must contain only production HTTPS origins",
+        message:
+          "CORS_ORIGINS must contain only production HTTPS origins unless ALLOW_LOCAL_CORS=true",
       });
     }
     if (!value.KAVENEGAR_API_KEY) {

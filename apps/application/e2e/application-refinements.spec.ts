@@ -76,15 +76,19 @@ test("navigation is visible on profile and hidden in its internal pages", async 
 test("avatar crop can be cancelled and uploads only the confirmed square", async ({
   page,
 }) => {
-  const uploads: string[] = [];
-  await page.route("**/api/v1/media", async (route) => {
-    const body = route.request().postDataJSON() as { url: string };
-    uploads.push(body.url);
+  const uploads: Buffer[] = [];
+  await page.route("**/api/v1/media/upload", async (route) => {
+    const request = route.request();
+    expect(request.headers()["content-type"]).toContain("multipart/form-data");
+    const body = request.postDataBuffer()!;
+    const start = body.indexOf(Buffer.from("\r\n\r\n")) + 4;
+    const end = body.lastIndexOf(Buffer.from("\r\n--"));
+    uploads.push(body.subarray(start, end));
     await route.fulfill({
       json: {
         data: {
           id: "cropped-avatar",
-          url: body.url,
+          url: "http://localhost:7088/media/cropped-avatar/file",
           mimeType: "image/png",
           status: "ready",
         },
@@ -117,7 +121,7 @@ test("avatar crop can be cancelled and uploads only the confirmed square", async
   await page.locator('input[type="file"]').setInputFiles(file);
   await page.getByRole("button", { name: "تأیید برش", exact: true }).click();
   await expect.poll(() => uploads.length).toBe(1);
-  const png = Buffer.from(uploads[0]!.split(",")[1]!, "base64");
+  const png = uploads[0]!;
   expect(png.readUInt32BE(16)).toBe(100);
   expect(png.readUInt32BE(20)).toBe(100);
 });
@@ -189,4 +193,75 @@ test("discovery keeps the configured card dimensions while loading", async ({
   const after = await card.boundingBox();
   expect(after?.width).toBeCloseTo(before!.width, 0);
   expect(after?.height).toBeCloseTo(before!.height, 0);
+});
+
+test("discovery reveal animations follow the application scroll container", async ({
+  page,
+}) => {
+  const sections = Array.from({ length: 6 }, (_, index) => ({
+    id: `motion-banner-${index}`,
+    key: `motion-banner-${index}`,
+    type: "banners",
+    position: index,
+    title: `پیشنهاد ${index + 1}`,
+    subtitle: "پیشنهاد ورزشی امروز",
+    layout: "16/9:1",
+    viewAllLabel: "مشاهده",
+    viewAllUrl: "/discovery/search",
+    appearance: {
+      backgroundColor: "",
+      textColor: "",
+      accentColor: "",
+      showHeader: true,
+      showViewAll: true,
+      headerAlignment: "start",
+      viewAllVariant: "link",
+    },
+    items: [
+      {
+        title: `بنر ${index + 1}`,
+        subtitle: "برای شروع تمرین آماده‌ای؟",
+        imageUrl:
+          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'%3E%3Cpath fill='%23576782' d='M0 0h320v180H0z'/%3E%3C/svg%3E",
+        actionLabel: "شروع",
+        actionUrl: "/discovery/search",
+      },
+    ],
+  }));
+
+  await page.addInitScript((layouts) => {
+    localStorage.setItem(
+      "discovery-section-layouts-v1",
+      JSON.stringify(layouts),
+    );
+  }, sections);
+  await page.route("**/api/v1/discovery/sections", (route) =>
+    route.fulfill({ json: { data: sections } }),
+  );
+
+  await page.goto("/discovery");
+  await expect(page.locator("[data-discovery-section]")).toHaveCount(
+    sections.length,
+  );
+  await expect
+    .poll(() =>
+      page
+        .locator("main.app-page")
+        .evaluate((element) => getComputedStyle(element).overflowY),
+    )
+    .toBe("visible");
+
+  const scroller = page.locator(".app-scroll-root");
+  await expect
+    .poll(() =>
+      scroller.evaluate((element) => element.scrollHeight > element.clientHeight),
+    )
+    .toBe(true);
+  await scroller.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
+
+  const lastSection = page
+    .locator('[data-discovery-section="motion-banner-5"] section')
+    .first();
+  await expect(lastSection).toBeInViewport();
+  await expect(lastSection).toBeVisible();
 });

@@ -6,7 +6,6 @@ import {
   type UserActivityLevel,
   type UserGender,
 } from "../../users/schemas/user.schema";
-import { MAX_INLINE_IMAGE_URL_LENGTH } from "../../media/media.constants";
 
 const profileName = z.string().trim().min(2).max(100);
 
@@ -25,8 +24,9 @@ export const UpdateProfileSchema = z
     avatarUrl: z
       .string()
       .trim()
-      .max(MAX_INLINE_IMAGE_URL_LENGTH)
-      .regex(/^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i)
+      .max(2000)
+      .url()
+      .regex(/^https?:\/\//i)
       .optional(),
   })
   .strict()

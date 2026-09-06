@@ -76,7 +76,7 @@ export function DiscoveryHomeScreen() {
     : sections;
 
   return (
-    <main className="app-page gap-6">
+    <main className="app-page gap-6 pb-[calc(130px+env(safe-area-inset-bottom))]">
       <SecondaryHeader />
       {failure ? (
         <RequestFailureState
@@ -143,7 +143,10 @@ export function DiscoveryHomeSkeleton() {
   const mapBanner = sections.find((section) => section.type === "banners");
   const content = sections.filter((section) => section.id !== mapBanner?.id);
   return (
-    <main className="app-page gap-6" aria-busy="true">
+    <main
+      className="app-page gap-6 pb-[calc(130px+env(safe-area-inset-bottom))]"
+      aria-busy="true"
+    >
       <SecondaryHeader />
       <span role="status" className="sr-only">
         در حال بارگذاری بخش‌های کشف

@@ -39,9 +39,15 @@ yarn-error.log*
 *.pem
 
 # Native binaries
+.ota/
+apps/application/.tmp/
+release-artifacts/
 *.apk
 *.aab
 *.ipa
 *.jks
 *.keystore
 google-services.json
+
+# Uploaded media and generated exports
+.artifacts/

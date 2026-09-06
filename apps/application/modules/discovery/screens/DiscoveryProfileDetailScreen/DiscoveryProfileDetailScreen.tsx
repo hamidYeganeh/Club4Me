@@ -31,11 +31,19 @@ import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGate
 import { ReservationResultScreen } from "@modules/reservations/components/ReservationResultScreen";
 import { ReservationReviewScreen } from "@modules/reservations/components/ReservationReviewScreen";
 import { CoachReservationSuccessScreen } from "@modules/reservations/components/CoachReservationSuccessScreen";
-import { DetailSocialSection, coachSocialLinks } from "@modules/discovery/components/DetailSocialSection";
+import {
+  DetailSocialSection,
+  coachSocialLinks,
+} from "@modules/discovery/components/DetailSocialSection";
 import { DetailFaqSection } from "@modules/discovery/components/DetailFaqSection";
 import { DetailGallerySection } from "@modules/discovery/components/DetailGallerySection";
 import { CoachTrainingStylesSection } from "@modules/discovery/components/CoachTrainingStylesSection";
+import { CoachProfessionalSections } from "@modules/discovery/components/CoachProfessionalSections";
 import { CoachExperienceSection } from "@modules/discovery/components/CoachExperienceSection";
+import {
+  ReviewEmptyState,
+  ReviewSummary,
+} from "@modules/discovery/components/reviews";
 import {
   CompactCardListSkeleton,
   DetailPageSkeleton,
@@ -74,8 +82,9 @@ function CoachDetails({ id }: { id: string }) {
     "success" | "failed" | null
   >(null);
   const [reviewSession, setReviewSession] = useState<CoachSession | null>(null);
-  const [completedBooking, setCompletedBooking] =
-    useState<CoachBooking | null>(null);
+  const [completedBooking, setCompletedBooking] = useState<CoachBooking | null>(
+    null,
+  );
   if (query.isLoading || (coach && sessions.isPending)) return <Loading />;
   if (!coach) return <Missing retry={() => query.refetch()} />;
   const phone = firstString(coach.contact, ["phone", "mobile", "telephone"]);
@@ -154,7 +163,8 @@ function CoachDetails({ id }: { id: string }) {
         phone={phone ?? undefined}
         cancelPending={cancelCoachBooking.isPending}
         onCall={() => {
-          if (phone) window.location.href = `tel:${phone.replace(/[^+\d]/g, "")}`;
+          if (phone)
+            window.location.href = `tel:${phone.replace(/[^+\d]/g, "")}`;
         }}
         onReschedule={() => {
           setCompletedBooking(null);
@@ -246,12 +256,18 @@ function CoachDetails({ id }: { id: string }) {
       meta={`${coach.averageRating.toLocaleString("fa-IR")} ★ · ${coach.experienceYears.toLocaleString("fa-IR")} سال تجربه`}
       description={coach.shortBio || "اطلاعات این مربی به‌زودی تکمیل می‌شود."}
       imageUrl={coach.imageUrl}
-      badge="مربی تأییدشده"
-      facts={[
-        "برنامه منعطف",
-        coach.serviceModes.includes("online") ? "آنلاین" : "حضوری",
-        "پیشنهاد کاربران",
-      ]}
+      badge="پروفایل مربی"
+      facts={coach.serviceModes.flatMap((mode) => {
+        const label = (
+          {
+            club: "در باشگاه",
+            online: "آنلاین",
+            home: "در منزل",
+            outdoor: "فضای باز",
+          } as Record<string, string>
+        )[mode];
+        return label ? [label] : [];
+      })}
       actionLabel={
         availableSessions.length > 0
           ? "انتخاب سانس"
@@ -268,6 +284,7 @@ function CoachDetails({ id }: { id: string }) {
       }
       galleryHref={`/discovery/coaches/${id}/gallery`}
     >
+      <CoachProfessionalSections coach={coach} section="introduction" />
       <DetailGallerySection
         title="نمونه‌کارها"
         images={coach.portfolio.map((image) => image.url)}
@@ -299,23 +316,33 @@ function CoachDetails({ id }: { id: string }) {
           </div>
         </Card>
       ) : null}
-      <CoachExperienceSection summary={coach.experienceSummary} items={coach.experience} />
+      <CoachExperienceSection
+        summary={coach.experienceSummary}
+        items={coach.experience}
+      />
+      <CoachProfessionalSections coach={coach} section="experience" />
       <DetailSocialSection items={coachSocialLinks(coach.contact ?? {})} />
       <DetailFaqSection items={coach.faqs} />
-      <Card className="app-card app-stack-card p-5 shadow-none">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <Card.Title>نظر ورزشکاران</Card.Title>
-            <Card.Description className="mt-2 text-muted">
-              {coach.reviewsCount.toLocaleString("fa-IR")} نظر · میانگین {coach.averageRating.toLocaleString("fa-IR")} از ۵
-            </Card.Description>
-          </div>
-          <Icon name="star-full" size={28} className="text-accent" />
-        </div>
-        <ButtonLink href={`/discovery/coaches/${id}/reviews`} variant="secondary" className="mt-4 w-full">
+      <section className="space-y-3">
+        <ReviewSummary
+          type="coach"
+          average={coach.averageRating}
+          count={coach.reviewsCount}
+        />
+        {!coach.reviewsCount ? (
+          <ReviewEmptyState
+            title="هنوز نظری برای این مربی ثبت نشده"
+            description="پس از تمرین با این مربی، تجربه شما می‌تواند به انتخاب بهتر دیگران کمک کند."
+          />
+        ) : null}
+        <ButtonLink
+          href={`/discovery/coaches/${id}/reviews`}
+          variant="secondary"
+          className="w-full"
+        >
           مشاهده و ثبت نظر
         </ButtonLink>
-      </Card>
+      </section>
       <Card
         id="coach-sessions"
         className="app-card app-stack-card scroll-mt-6 p-5 shadow-none"
@@ -510,18 +537,20 @@ function ClassDetails({ id }: { id: string }) {
         viewAllHref={`/discovery/classes/${id}/gallery`}
       />
       <DetailFaqSection items={item.faqs} />
-      <Card className="app-card app-stack-card p-5 shadow-none">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <Card.Title>نظر شرکت‌کنندگان</Card.Title>
-            <Card.Description className="mt-2 text-muted">تجربه شرکت در این کلاس را بخوانید یا نظر خودتان را ثبت کنید.</Card.Description>
-          </div>
-          <Icon name="star-full" size={28} className="text-accent" />
-        </div>
-        <ButtonLink href={`/discovery/classes/${id}/reviews`} variant="secondary" className="mt-4 w-full">
+      <section className="space-y-3">
+        <ReviewSummary type="class" average={0} count={0} />
+        <ReviewEmptyState
+          title="هنوز نظری برای این کلاس ثبت نشده"
+          description="اولین نفری باشید که تجربه شرکت در این کلاس را با دیگران به اشتراک می‌گذارد."
+        />
+        <ButtonLink
+          href={`/discovery/classes/${id}/reviews`}
+          variant="secondary"
+          className="w-full"
+        >
           مشاهده و ثبت نظر
         </ButtonLink>
-      </Card>
+      </section>
       <Card className="app-card app-stack-card p-5 shadow-none">
         <Card.Title>جزئیات ثبت‌نام</Card.Title>
         <div className="mt-4 grid gap-3 text-sm text-muted">
@@ -635,8 +664,14 @@ function DetailLayout({
       galleryPullRef.current = 0;
       setGalleryPull(0);
     };
-    media.addEventListener("touchstart", onTouchStart, { passive: true, capture: true });
-    media.addEventListener("touchmove", onTouchMove, { passive: false, capture: true });
+    media.addEventListener("touchstart", onTouchStart, {
+      passive: true,
+      capture: true,
+    });
+    media.addEventListener("touchmove", onTouchMove, {
+      passive: false,
+      capture: true,
+    });
     media.addEventListener("touchend", onTouchEnd, { capture: true });
     media.addEventListener("touchcancel", onTouchEnd, { capture: true });
     return () => {
@@ -650,14 +685,29 @@ function DetailLayout({
   return (
     <main className="min-h-dvh w-full max-w-full overflow-x-hidden bg-transparent pb-[calc(7rem+env(safe-area-inset-bottom))]">
       <DiscoveryPageHeader title="" overlay />
-      <div ref={mediaRef} className="app-scroll-media relative aspect-4/5 max-h-[62dvh] overflow-hidden bg-background">
+      <div
+        ref={mediaRef}
+        className="app-scroll-media relative aspect-4/5 max-h-[62dvh] overflow-hidden bg-background"
+      >
         {galleryHref ? (
-          <div className="absolute inset-x-0 top-4 flex flex-col items-center gap-1 text-xs font-bold text-accent" aria-hidden>
-            <Icon name="chevron-down" size={20} className={galleryPull >= 52 ? "rotate-180" : ""} />
-            {galleryPull >= 52 ? "رها کن و گالری را ببین" : "برای دیدن گالری بکش"}
+          <div
+            className="absolute inset-x-0 top-4 flex flex-col items-center gap-1 text-xs font-bold text-accent"
+            aria-hidden
+          >
+            <Icon
+              name="chevron-down"
+              size={20}
+              className={galleryPull >= 52 ? "rotate-180" : ""}
+            />
+            {galleryPull >= 52
+              ? "رها کن و گالری را ببین"
+              : "برای دیدن گالری بکش"}
           </div>
         ) : null}
-        <div className="absolute inset-0 z-10 transition-transform duration-150 ease-out" style={{ transform: `translateY(${galleryPull}px)` }}>
+        <div
+          className="absolute inset-0 z-10 transition-transform duration-150 ease-out"
+          style={{ transform: `translateY(${galleryPull}px)` }}
+        >
           <FallbackImage
             src={imageUrl}
             alt={title}

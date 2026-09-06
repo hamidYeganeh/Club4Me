@@ -9,6 +9,7 @@ import {
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import {
   ReviewCard,
+  ReviewEmptyState,
   ReviewersCard,
   ReviewSummary,
   type ReviewCardItem,
@@ -126,12 +127,10 @@ export function DiscoveryReviewsScreen({
               <ReviewCard key={review.id} review={review} />
             ))}
             {!visibleReviews.length ? (
-              <div className="rounded-3xl border border-dashed border-border px-6 py-12 text-center">
-                <p className="font-bold text-foreground">هنوز نظری ثبت نشده</p>
-                <p className="mt-2 text-sm text-muted">
-                  اولین نفری باشید که تجربه‌اش را به اشتراک می‌گذارد.
-                </p>
-              </div>
+              <ReviewEmptyState
+                title="هنوز نظری ثبت نشده"
+                description="اولین نفری باشید که تجربه‌اش را به اشتراک می‌گذارد."
+              />
             ) : null}
           </div>
         )}

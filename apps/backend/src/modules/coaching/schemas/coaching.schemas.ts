@@ -26,6 +26,9 @@ import {
   type TrainingSessionStatus,
 } from "../coaching.constants";
 
+import { ProfessionalProfileSchema } from "./professional-profile.schema";
+import type { CoachProfessionalProfile } from "../dto/professional-profile";
+
 @Schema({ _id: false })
 export class CoachGeo {
   @Prop({ type: Types.ObjectId }) countryId?: Types.ObjectId;
@@ -38,6 +41,8 @@ export class CoachGeo {
 
 @Schema({ collection: "coaches", timestamps: true })
 export class Coach {
+  @Prop({ type: ProfessionalProfileSchema, default: () => ({}) })
+  professionalProfile: CoachProfessionalProfile;
   @Prop({ type: Types.ObjectId, ref: "User", required: true, unique: true })
   userId: Types.ObjectId;
   @Prop({ required: true, unique: true }) slug: string;
@@ -55,7 +60,9 @@ export class Coach {
   })
   specialties: Array<{ title: string; description: string; icon?: string }>;
   @Prop({
-    type: [{ title: String, description: String, imageMediaId: Types.ObjectId }],
+    type: [
+      { title: String, description: String, imageMediaId: Types.ObjectId },
+    ],
     default: [],
     _id: false,
   })

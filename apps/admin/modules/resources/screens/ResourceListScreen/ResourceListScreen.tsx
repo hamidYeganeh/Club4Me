@@ -144,7 +144,7 @@ export function ResourceListScreen({
     isActive: status === "all" ? undefined : status === "active",
     parentId: parentId || undefined,
     page,
-    limit: 20,
+    limit: 50,
     sortBy,
     sortDirection,
   });

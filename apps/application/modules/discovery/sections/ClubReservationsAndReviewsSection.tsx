@@ -1,10 +1,12 @@
 "use client";
 
-import { ClubEmptyState } from "@modules/discovery/components/ClubEmptyState";
-
 import { Button, Typography } from "@heroui/react";
 import { useClubReviews } from "@api";
 import { useTranslations } from "next-intl";
+import {
+  ReviewEmptyState,
+  ReviewSummary,
+} from "@modules/discovery/components/reviews";
 
 import { ReviewListSkeleton } from "@/components/loading-skeletons";
 import { ButtonLink } from "@/components/button-link";
@@ -16,11 +18,24 @@ export function ClubReservationsAndReviewsSection({
 }) {
   const t = useTranslations("discovery.clubBooking");
   const reviews = useClubReviews(clubId);
+  const items = reviews.data?.items ?? [];
+  const distribution = [5, 4, 3, 2, 1].map(
+    (rating) =>
+      items.filter((review) => Math.round(review.rating) === rating).length,
+  );
 
   return (
     <section className="mx-auto w-full max-w-4xl space-y-8 px-4 pb-8">
       <div>
-        <div className="mb-4 grid gap-2 sm:grid-cols-2">
+        {!reviews.isPending && reviews.data ? (
+          <ReviewSummary
+            type="club"
+            average={reviews.data.averageRating}
+            count={reviews.data.reviewsCount}
+            distribution={distribution}
+          />
+        ) : null}
+        <div className="mb-4 mt-4 grid gap-2 sm:grid-cols-2">
           {reviews.data?.criteriaSummary?.map((item) => (
             <div
               key={item.id}
@@ -33,15 +48,12 @@ export function ClubReservationsAndReviewsSection({
             </div>
           ))}
         </div>
-        <div className="flex items-end justify-between">
-          <Typography type="h4">{t("reviews")}</Typography>
-          <Typography type="body-sm" color="muted">
-            {t("ratingSummary", {
-              rating: (reviews.data?.averageRating ?? 0).toFixed(1),
-              count: reviews.data?.reviewsCount ?? 0,
-            })}
-          </Typography>
-        </div>
+        <Typography
+          type="h4"
+          className={reviews.data?.reviewsCount ? "mt-8" : undefined}
+        >
+          {t("reviews")}
+        </Typography>
         <ButtonLink
           href={`/discovery/clubs/${clubId}/reviews`}
           variant="secondary"
@@ -64,13 +76,13 @@ export function ClubReservationsAndReviewsSection({
               </Button>
             </div>
           ) : !reviews.isPending && !reviews.data?.items.length ? (
-            <ClubEmptyState
+            <ReviewEmptyState
               title="هنوز نظری ثبت نشده است"
               description="پس از تجربه این باشگاه، نظر شما می‌تواند به انتخاب دیگران کمک کند."
             />
           ) : null}
           {!reviews.isPending &&
-            (reviews.data?.items ?? []).map((review) => (
+            items.map((review) => (
               <article
                 key={review.id}
                 className="rounded-2xl bg-surface-secondary p-4"

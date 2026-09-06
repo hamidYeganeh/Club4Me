@@ -21,6 +21,7 @@ const feed = defaultDiscoveryLayouts.map((layout) => ({
         return {
           ...common,
           name: "باشگاه آفتاب",
+          address: "تهران، خیابان ولیعصر",
           shortDescription: "تمرین حرفه‌ای",
           logoMediaId: null,
           coverMediaId: null,
@@ -139,7 +140,7 @@ for (const { width, theme } of [
       },
     );
     await page.goto("/discovery", { waitUntil: "domcontentloaded" });
-    await expect(page.locator("[data-discovery-section]")).toHaveCount(15);
+    await expect(page.locator("[data-discovery-section]")).toHaveCount(defaultDiscoveryLayouts.length);
     await expect(
       page.locator('[data-skeleton-section="iran-map"] path'),
     ).toHaveCount(31);

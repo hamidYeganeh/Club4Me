@@ -30,7 +30,7 @@ export const faMessages = {
   uploader: {
     clickToUpload: "برای آپلود فایل کلیک کنید",
     dropHint: " یا فایل را در اینجا رها کنید.",
-    formats: "فرمت‌های مجاز: SVG، JPG، PNG (حداکثر ۱۰ مگابایت)",
+    formats: "فرمت‌های مجاز: JPG، PNG، WebP (حداکثر ۱۰ مگابایت)",
     progress: "پیشرفت",
     success: "بارگذاری با موفقیت انجام شد",
     error: "آپلود ناموفق بود!",

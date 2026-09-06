@@ -12,7 +12,7 @@ const CreateMediaSchema = z
           return value.length <= MAX_INLINE_IMAGE_URL_LENGTH;
         }
         const result = z.url().max(2000).safeParse(value);
-        return result.success;
+        return /^https?:\/\//i.test(value) && result.success;
       }, "url must be a valid external URL or base64 image/video payload"),
     mimeType: z
       .string()

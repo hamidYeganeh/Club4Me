@@ -6,7 +6,12 @@ import {
   HttpStatus,
   Post,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from "@nestjs/common";
+
+import { FileInterceptor } from "@nestjs/platform-express";
+import { MAX_MEDIA_BYTES } from "./media.constants";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -22,6 +27,20 @@ export class MediaController {
   @Get()
   list(@CurrentUser() user: AuthTokenPayload) {
     return this.service.list(user.sub);
+  }
+
+  @Post("upload")
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: MAX_MEDIA_BYTES, files: 1, fields: 0 },
+    }),
+  )
+  upload(
+    @CurrentUser() user: AuthTokenPayload,
+    @UploadedFile() file?: { buffer: Buffer; mimetype: string },
+  ) {
+    return this.service.upload(user.sub, file);
   }
 
   @Post()

@@ -44,36 +44,21 @@ function createRoleNav(role: "athlete" | "coach"): NavConfig {
 const athleteNav = createRoleNav("athlete");
 const coachNav = createRoleNav("coach");
 
-function isDiscoveryDetail(pathname: string): boolean {
-  return (
-    /^\/discovery\/(clubs|coaches|classes|articles)\/[^/]+/.test(pathname) ||
-    pathname === "/discovery/business-class"
-  );
-}
-
-function isNestedProfileRoute(pathname: string): boolean {
-  return /^\/(athlete|coach)\/(?:profile\/.+|reservations(?:\/|$)|settings(?:\/|$)|favorites(?:\/|$)|notifications(?:\/|$)|benefits(?:\/|$)|support(?:\/|$)|locations(?:\/|$))/.test(
-    pathname,
-  );
-}
-
 function getNavConfig(
   pathname: string,
   discoveryRole: "athlete" | "coach",
 ): NavConfig | null {
-  if (isNestedProfileRoute(pathname)) {
-    return null;
-  }
-
-  if (pathname.startsWith("/athlete")) {
+  // The bottom navigation belongs only to the role home and the root
+  // discovery screen. Detail and nested screens should remain unobstructed.
+  if (pathname === "/athlete") {
     return athleteNav;
   }
 
-  if (pathname.startsWith("/coach")) {
+  if (pathname === "/coach") {
     return coachNav;
   }
 
-  if (pathname.startsWith("/discovery") && !isDiscoveryDetail(pathname)) {
+  if (pathname === "/discovery") {
     return discoveryRole === "coach" ? coachNav : athleteNav;
   }
 

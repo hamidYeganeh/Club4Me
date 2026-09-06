@@ -1,9 +1,11 @@
+"use client";
+
 import { WelcomeCopySection } from "@modules/welcome/sections/WelcomeCopySection";
 import { WelcomeHeroSection } from "@modules/welcome/sections/WelcomeHeroSection";
-import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 
-export async function WelcomeHomeScreen() {
-  const t = await getTranslations("welcome");
+export function WelcomeHomeScreen() {
+  const t = useTranslations("welcome");
 
   return (
     <main className="flex min-h-dvh flex-col bg-background">

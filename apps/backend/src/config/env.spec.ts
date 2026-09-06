@@ -29,6 +29,15 @@ describe("production environment", () => {
     });
   });
 
+  it("allows the exact Capacitor Android origin when explicitly configured", () => {
+    expect(
+      parseEnv({
+        ...productionEnv,
+        CORS_ORIGINS: `${productionEnv.CORS_ORIGINS},https://localhost`,
+      }).CORS_ORIGINS,
+    ).toContain("https://localhost");
+  });
+
   it.each([
     ["KAVENEGAR_API_KEY", ""],
     ["EXPORT_STORAGE_DRIVER", "local"],
@@ -38,6 +47,8 @@ describe("production environment", () => {
     ["MONGODB_URL", "mongodb://localhost:27017/gym4me"],
     ["REDIS_URL", "redis://127.0.0.1:6379"],
     ["CORS_ORIGINS", "http://localhost:7081"],
+    ["CORS_ORIGINS", "https://localhost:7081"],
+    ["CORS_ORIGINS", "https://127.0.0.1"],
   ])("rejects unsafe %s", (key, value) => {
     expect(() => parseEnv({ ...productionEnv, [key]: value })).toThrow(
       "Invalid environment variables",
@@ -53,5 +64,30 @@ describe("production environment", () => {
         FIREBASE_PRIVATE_KEY: "",
       }),
     ).toThrow("Firebase Admin credentials are required in production");
+  });
+});
+
+describe("development environment", () => {
+  it("allows every local web and native development server by default", () => {
+    const { CORS_ORIGINS } = parseEnv({
+      MONGODB_URL: "mongodb://localhost:27017/gym4me",
+      REDIS_URL: "redis://localhost:6379",
+      JWT_SECRET: "development-secret",
+    });
+
+    expect(CORS_ORIGINS).toEqual(
+      expect.arrayContaining([
+        "http://localhost:7080",
+        "http://localhost:7081",
+        "http://localhost:7082",
+        "http://localhost:7083",
+        "http://localhost:7091",
+        "http://127.0.0.1:7080",
+        "http://127.0.0.1:7081",
+        "http://127.0.0.1:7082",
+        "http://127.0.0.1:7083",
+        "http://127.0.0.1:7091",
+      ]),
+    );
   });
 });

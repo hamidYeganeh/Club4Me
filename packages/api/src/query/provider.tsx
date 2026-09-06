@@ -1,6 +1,6 @@
 "use client";
 
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 
 import { configureApi } from "../http/client";
@@ -9,6 +9,7 @@ import type { ApiConfig } from "../http/types";
 import { createQueryClient } from "./client";
 
 type ApiProviderProps = {
+  queryClient?: QueryClient;
   children: ReactNode;
   baseURL: string;
   requestTimeoutMs?: ApiConfig["requestTimeoutMs"];
@@ -20,6 +21,7 @@ type ApiProviderProps = {
 };
 
 export function ApiProvider({
+  queryClient: suppliedClient,
   children,
   baseURL,
   requestTimeoutMs,
@@ -43,6 +45,8 @@ export function ApiProvider({
   });
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={suppliedClient ?? queryClient}>
+      {children}
+    </QueryClientProvider>
   );
 }

@@ -8,6 +8,7 @@ import helmet from "helmet";
 
 import { AppModule } from "./app.module";
 import { AppConfigService } from "./config/app-config.service";
+import { corsOptionsFor } from "./config/cors";
 
 loadDotenv({ path: ".env" });
 
@@ -34,12 +35,7 @@ async function bootstrap() {
     app.getHttpAdapter().getInstance().set("trust proxy", 1);
   }
 
-  app.enableCors({
-    origin: config.env.CORS_ORIGINS,
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  });
+  app.enableCors(corsOptionsFor(config.env));
 
   await app.listen(config.env.PORT);
   Logger.log(`Backend running on http://localhost:${config.env.PORT}`);

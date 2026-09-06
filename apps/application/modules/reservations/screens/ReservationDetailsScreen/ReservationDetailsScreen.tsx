@@ -10,6 +10,7 @@ import {
 import { Icon, type IconName } from "@theme/icon";
 
 import { RequestFailureState } from "@/components/request-failure-state";
+import { getQueryFailure } from "@/lib/request-failure";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
 import {
@@ -64,6 +65,9 @@ export function ReservationDetailsScreen({
       : source === "class"
         ? classEnrollments
         : clubReservations;
+  const failure = activeQuery.data
+    ? null
+    : getQueryFailure(activeQuery.error, activeQuery.fetchStatus);
 
   return (
     <main className="min-h-dvh bg-background pb-[calc(7rem+env(safe-area-inset-bottom))] text-foreground">
@@ -74,9 +78,14 @@ export function ReservationDetailsScreen({
       />
 
       <div className="mx-auto flex w-full max-w-xl flex-col gap-5 px-5 pt-5">
-        {activeQuery.isPending ? (
+        {failure ? (
+          <RequestFailureState
+            error={failure}
+            onRetry={() => void activeQuery.refetch()}
+          />
+        ) : activeQuery.isPending ? (
           <ReservationDetailsSkeleton />
-        ) : activeQuery.isError ? (
+        ) : activeQuery.isError && !detail ? (
           <RequestFailureState
             error={activeQuery.error}
             onRetry={() => void activeQuery.refetch()}
@@ -90,7 +99,8 @@ export function ReservationDetailsScreen({
             </span>
             <h2 className="mt-5 text-xl font-black">رزرو پیدا نشد</h2>
             <p className="mt-2 max-w-[28ch] text-sm leading-6 text-muted">
-              ممکن است این رزرو حذف شده باشد یا دیگر به حساب شما تعلق نداشته باشد.
+              ممکن است این رزرو حذف شده باشد یا دیگر به حساب شما تعلق نداشته
+              باشد.
             </p>
             <Link
               href="/athlete/reservations"
@@ -168,7 +178,11 @@ function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
             icon="users-two"
           />
           {detail.location ? (
-            <DetailRow label="محل برگزاری" value={detail.location} icon="map-pin-1" />
+            <DetailRow
+              label="محل برگزاری"
+              value={detail.location}
+              icon="map-pin-1"
+            />
           ) : null}
         </div>
       </DetailSection>
@@ -195,7 +209,12 @@ function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
       <DetailSection title="اطلاعات رزرو" icon="info">
         <div className="grid gap-4">
           <DetailRow label="تاریخ ثبت" value={bookedAt} icon="calendar-1" />
-          <DetailRow label="شناسه رزرو" value={detail.id.slice(-8)} icon="qr-code" ltr />
+          <DetailRow
+            label="شناسه رزرو"
+            value={detail.id.slice(-8)}
+            icon="qr-code"
+            ltr
+          />
           {detail.cancellationPolicy ? (
             <DetailRow
               label="قانون لغو"
@@ -313,8 +332,12 @@ function getReservationDetail({
   reservationId: string;
   source: ReservationSource;
   clubItems: NonNullable<ReturnType<typeof useMyReservations>["data"]>["items"];
-  coachItems: NonNullable<ReturnType<typeof useMyCoachBookings>["data"]>["items"];
-  classItems: NonNullable<ReturnType<typeof useMyClassEnrollments>["data"]>["items"];
+  coachItems: NonNullable<
+    ReturnType<typeof useMyCoachBookings>["data"]
+  >["items"];
+  classItems: NonNullable<
+    ReturnType<typeof useMyClassEnrollments>["data"]
+  >["items"];
 }): ReservationDetail | null {
   if (source === "coach") {
     const item = coachItems.find((candidate) => candidate.id === reservationId);

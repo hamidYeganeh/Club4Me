@@ -69,10 +69,9 @@ export function NotificationsScreen() {
   const [filter, setFilter] = useState<NotificationFilter>("unread");
   const notifications = useNotifications();
   const markRead = useMarkNotificationRead();
-  const failure = getQueryFailure(
-    notifications.error,
-    notifications.fetchStatus,
-  );
+  const failure = notifications.data
+    ? null
+    : getQueryFailure(notifications.error, notifications.fetchStatus);
   const groups = useMemo(() => {
     const matchingItems = (notifications.data?.items ?? []).filter((item) =>
       filter === "read" ? Boolean(item.readAt) : !item.readAt,

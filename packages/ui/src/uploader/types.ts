@@ -1,7 +1,6 @@
 import type { Accept } from "react-dropzone";
 
 export const imageUploaderAccept: Accept = {
-  "image/svg+xml": [".svg"],
   "image/jpeg": [".jpg", ".jpeg"],
   "image/png": [".png"],
   "image/webp": [".webp"],

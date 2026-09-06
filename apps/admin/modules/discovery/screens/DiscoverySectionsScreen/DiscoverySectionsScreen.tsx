@@ -332,6 +332,12 @@ function SectionEditor({
                     اسلایدر
                     <ListBox.ItemIndicator />
                   </ListBox.Item>
+                  {value.type === "clubs" ? (
+                    <ListBox.Item id="cards" textValue="کارت‌های روی هم">
+                      کارت‌های روی هم
+                      <ListBox.ItemIndicator />
+                    </ListBox.Item>
+                  ) : null}
                   <ListBox.Item id="grid" textValue="گرید">
                     گرید
                     <ListBox.ItemIndicator />

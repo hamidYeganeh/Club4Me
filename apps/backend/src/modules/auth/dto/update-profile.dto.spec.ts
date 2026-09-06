@@ -13,14 +13,16 @@ describe("UpdateProfileSchema", () => {
     });
     expect(
       UpdateProfileSchema.parse({
-        avatarUrl: "data:image/png;base64,aGVsbG8=",
+        avatarUrl: "https://example.com/media/avatar/file",
       }),
-    ).toEqual({ avatarUrl: "data:image/png;base64,aGVsbG8=" });
+    ).toEqual({ avatarUrl: "https://example.com/media/avatar/file" });
   });
 
   it("rejects unsafe avatar URLs", () => {
     expect(() =>
-      UpdateProfileSchema.parse({ avatarUrl: "https://example.com/me.png" }),
+      UpdateProfileSchema.parse({
+        avatarUrl: "data:image/png;base64,aGVsbG8=",
+      }),
     ).toThrow();
     expect(() =>
       UpdateProfileSchema.parse({

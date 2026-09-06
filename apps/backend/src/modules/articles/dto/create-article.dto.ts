@@ -1,17 +1,15 @@
 import { z } from "zod";
 
-import { MAX_INLINE_IMAGE_URL_LENGTH } from "../../media/media.constants";
 import { ARTICLE_STATUSES } from "../schemas/article.schema";
 
 const coverImageUrl = z
   .string()
   .trim()
-  .max(MAX_INLINE_IMAGE_URL_LENGTH)
+  .max(2000)
   .refine(
     (value) =>
       value === "" ||
-      (value.startsWith("data:image/") && value.includes(";base64,")) ||
-      z.url().safeParse(value).success,
+      (/^https?:\/\//i.test(value) && z.url().safeParse(value).success),
     "Invalid cover image URL",
   );
 

@@ -103,7 +103,9 @@ FROM node:24-bookworm-slim AS backend
 ENV NODE_ENV=production
 WORKDIR /app
 RUN groupadd --system --gid 1001 nodejs \
-    && useradd --system --uid 1001 --gid nodejs backend
+    && useradd --system --uid 1001 --gid nodejs backend \
+    && mkdir -p /data/media \
+    && chown backend:nodejs /data/media
 COPY --from=backend-dependencies --chown=backend:nodejs /app/node_modules ./node_modules
 COPY --from=backend-builder --chown=backend:nodejs /app/apps/backend/dist ./dist
 USER backend

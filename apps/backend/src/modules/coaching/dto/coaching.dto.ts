@@ -63,8 +63,14 @@ const faqSchema = z.object({
   answer: z.string().trim().min(2).max(2000),
 });
 
+import {
+  CoachProfessionalProfileSchema,
+  type CoachProfessionalProfile,
+} from "./professional-profile";
+
 const CoachProfileInputSchema = z
   .object({
+    professionalProfile: CoachProfessionalProfileSchema,
     displayName: z.string().trim().min(2).max(120),
     shortBio: z.string().trim().max(300),
     bio: z.string().trim().max(5000),
@@ -126,6 +132,7 @@ const CoachProfileInputSchema = z
 export type CoachProfileInput = z.infer<typeof CoachProfileInputSchema>;
 export class UpdateCoachProfileDto implements CoachProfileInput {
   static schema = CoachProfileInputSchema;
+  professionalProfile?: CoachProfessionalProfile;
   displayName?: string;
   shortBio?: string;
   bio?: string;

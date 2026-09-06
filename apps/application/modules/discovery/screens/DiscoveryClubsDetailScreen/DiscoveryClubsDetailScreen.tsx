@@ -94,8 +94,12 @@ export function DiscoveryClubsDetailScreen({
   }, [heroElement]);
 
   const loadError =
-    getQueryFailure(catalogClub.error, catalogClub.fetchStatus) ??
-    getQueryFailure(publicClub.error, publicClub.fetchStatus);
+    (!catalogClub.data
+      ? getQueryFailure(catalogClub.error, catalogClub.fetchStatus)
+      : null) ??
+    (!publicClub.data
+      ? getQueryFailure(publicClub.error, publicClub.fetchStatus)
+      : null);
 
   if (loadError) {
     return (

@@ -11,6 +11,9 @@ export class Media {
   @Prop({ required: true, trim: true, maxlength: MAX_INLINE_IMAGE_URL_LENGTH })
   url: string;
 
+  @Prop({ trim: true })
+  storageKey?: string;
+
   @Prop({ required: true, trim: true })
   mimeType: string;
 

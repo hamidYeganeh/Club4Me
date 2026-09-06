@@ -1,10 +1,13 @@
 import axios, {
   type AxiosInstance,
   type InternalAxiosRequestConfig,
+  type AxiosRequestConfig,
 } from "axios";
 
 import { toApiError } from "./errors";
 import type { ApiConfig, ApiSuccess } from "./types";
+import { ApiError } from "./errors";
+import { tokenStore } from "./token-store";
 
 const runtime: { config?: ApiConfig } = {};
 let httpClient: AxiosInstance | undefined;
@@ -12,6 +15,7 @@ let refreshPromise: Promise<void> | undefined;
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
   _authRetry?: boolean;
+  expectedSessionIdentity?: string;
 };
 
 type RefreshResponse = {
@@ -55,13 +59,22 @@ async function refreshSession(
             headers: { "Content-Type": "application/json" },
           },
         );
+        if ((await config.getRefreshToken?.()) !== refreshToken) {
+          throw new ApiError("Session changed during authentication refresh", {
+            code: "SESSION_CHANGED",
+            status: 401,
+          });
+        }
         const session = response.data.data;
         await config.onSessionRefreshed?.(
           session.accessToken,
           session.refreshToken,
         );
       } catch (error) {
-        if (endsSession(error)) {
+        if (
+          endsSession(error) &&
+          (await config.getRefreshToken?.()) === refreshToken
+        ) {
           await config.onUnauthorized?.();
         }
         throw toApiError(error);
@@ -93,6 +106,17 @@ function ensureClient(): AxiosInstance {
   });
 
   httpClient.interceptors.request.use(async (request) => {
+    const expectedIdentity = (request as RetriableRequestConfig)
+      .expectedSessionIdentity;
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.onLine === false &&
+      !["get", "head", "options"].includes(request.method ?? "get")
+    ) {
+      throw new ApiError("This operation requires an internet connection", {
+        code: "NETWORK_ERROR",
+      });
+    }
     const config = runtime.config;
 
     if (!config) {
@@ -102,12 +126,23 @@ function ensureClient(): AxiosInstance {
     }
 
     request.baseURL = config.baseURL;
+    if (typeof FormData !== "undefined" && request.data instanceof FormData) {
+      request.headers.delete("Content-Type");
+      request.timeout = Math.max(request.timeout ?? 0, 120_000);
+    }
     if (isPublicAuthRequest(request.url)) {
       request.headers.delete("Authorization");
       return request;
     }
 
     const token = await config.getAccessToken?.();
+
+    if (expectedIdentity && tokenStore.identity() !== expectedIdentity) {
+      throw new ApiError("Session changed before offline synchronization", {
+        code: "SESSION_CHANGED",
+        status: 401,
+      });
+    }
 
     if (token) {
       request.headers.Authorization = `Bearer ${token}`;
@@ -124,6 +159,18 @@ function ensureClient(): AxiosInstance {
         ? (error.config as RetriableRequestConfig | undefined)
         : undefined;
       const config = runtime.config;
+
+      if (
+        request?.expectedSessionIdentity &&
+        tokenStore.identity() !== request.expectedSessionIdentity
+      ) {
+        return Promise.reject(
+          new ApiError("Session changed before offline synchronization", {
+            code: "SESSION_CHANGED",
+            status: 401,
+          }),
+        );
+      }
 
       if (
         apiError.status !== 401 ||
@@ -220,3 +267,18 @@ export const http = {
     return response.data.data;
   },
 };
+
+/** Replay remains bound to its original account, including after an auth refresh. */
+export async function sessionRequest<T>(
+  identity: string,
+  method: "PUT" | "DELETE",
+  url: string,
+): Promise<T> {
+  const options: AxiosRequestConfig & { expectedSessionIdentity: string } = {
+    method,
+    url,
+    expectedSessionIdentity: identity,
+  };
+  const response = await getHttpClient().request<ApiSuccess<T>>(options);
+  return response.data.data;
+}

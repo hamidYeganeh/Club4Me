@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import { MAX_INLINE_IMAGE_URL_LENGTH } from "../../media/media.constants";
-
 import {
   DISCOVERY_SELECTION_MODES,
   DISCOVERY_SECTION_TYPES,
@@ -12,11 +10,9 @@ const objectId = z.string().regex(/^[a-f\d]{24}$/i, "Invalid object id");
 const imageUrl = z
   .string()
   .trim()
-  .max(MAX_INLINE_IMAGE_URL_LENGTH)
+  .max(2000)
   .refine(
-    (value) =>
-      (value.startsWith("data:image/") && value.includes(";base64,")) ||
-      z.url().safeParse(value).success,
+    (value) => /^https?:\/\//i.test(value) && z.url().safeParse(value).success,
     "Invalid image URL",
   );
 const filters = z

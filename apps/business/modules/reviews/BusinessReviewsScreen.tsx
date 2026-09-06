@@ -3,6 +3,7 @@
 import { Button, Chip, toast } from "@heroui/react";
 import { useBusinessClubs } from "@api/business";
 import { type ClubReview, useClubReviews, useRespondToClubReview } from "@api";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 
 import {
@@ -203,9 +204,21 @@ export function BusinessReviewsScreen() {
             rowHeaderColumnId="title"
             isLoading={reviews.isPending}
             emptyContent={
-              <p className="grid min-h-48 place-items-center p-8 text-center text-muted">
-                هنوز نظری ثبت نشده است.
-              </p>
+              <div className="flex min-h-72 flex-col items-center justify-center p-8 text-center">
+                <Image
+                  src="/reviews/empty.png"
+                  alt=""
+                  width={750}
+                  height={516}
+                  className="h-auto w-48 max-w-[70%] object-contain drop-shadow-xl"
+                />
+                <p className="mt-4 font-semibold text-foreground">
+                  هنوز نظری ثبت نشده است.
+                </p>
+                <p className="mt-2 text-sm text-muted">
+                  نظرهای ورزشکاران پس از ثبت، اینجا نمایش داده می‌شوند.
+                </p>
+              </div>
             }
           />
         </ListPagePanel>

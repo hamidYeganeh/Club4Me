@@ -3,6 +3,17 @@ import { tv } from "tailwind-variants";
 export const accountAuthRolesOptionsSectionStyles = tv({
   slots: {
     root: "mt-8 flex w-full max-w-sm flex-col gap-4 self-stretch sm:self-center",
+    formRoot:
+      "app-reveal flex w-full max-w-sm flex-col self-stretch pb-4 pt-1 sm:self-center",
+    hero: "flex flex-col items-center text-center",
+    heroImage:
+      "h-auto w-[min(15.5rem,72vw)] object-contain drop-shadow-xl",
+    heroTitle: "mt-1 text-balance text-3xl leading-tight sm:text-4xl",
+    heroDescription: "mt-2 max-w-[20rem] text-balance leading-6",
+    form: "mt-8 flex w-full flex-col gap-5 text-start",
+    field:
+      "min-h-14 rounded-[1.15rem] border border-border bg-surface shadow-sm transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-3 focus-within:ring-accent/15",
+    submit: "mt-2 w-full font-bold shadow-sm",
     item: "h-auto min-h-0 w-full justify-start gap-3.5 p-4 text-start shadow-none active:scale-[0.99]",
     icon: "flex size-11 shrink-0 items-center justify-center rounded-full",
     label: "flex-1",

@@ -10,7 +10,13 @@ import {
 import { http } from "../../http/client";
 import type { Media } from "../media";
 
+import type { CoachProfessionalProfile } from "./professional-profile";
+export * from "./professional-profile";
+
 export type CoachProfile = {
+  professionalProfile?: CoachProfessionalProfile;
+  minAcceptedAge?: number | null;
+  maxAcceptedAge?: number | null;
   id: string;
   userId: string;
   slug: string;
@@ -286,6 +292,8 @@ export type CoachSport = {
   coachId: string;
   sportId: string;
   specialtyIds: string[];
+  skillLevelId?: string | null;
+  customAttributes?: Record<string, unknown>;
   experienceYears: number;
   certificateMediaIds: string[];
   achievements: string[];
@@ -322,16 +330,9 @@ const client = {
     http.patch<CoachProfile>("/coach/profile", payload),
   submitProfile: () => http.post<CoachProfile>("/coach/profile/submit"),
   sports: () => http.get<{ items: CoachSport[] }>("/coach/sports"),
-  replaceSports: (sportIds: string[]) =>
+  replaceSports: (items: Array<Omit<CoachSport, "id" | "coachId">>) =>
     http.put<{ items: CoachSport[] }>("/coach/sports", {
-      items: sportIds.map((sportId) => ({
-        sportId,
-        specialtyIds: [],
-        experienceYears: 0,
-        certificateMediaIds: [],
-        achievements: [],
-        customAttributes: {},
-      })),
+      items,
     }),
   classes: () => http.get<{ items: CoachClass[] }>("/coach/classes"),
   createClass: (payload: CreateCoachClassPayload) =>

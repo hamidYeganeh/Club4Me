@@ -1,3 +1,4 @@
+import type { CoachProfessionalProfile } from "../coaching/professional-profile";
 export type Club = {
   id: string;
   name: string;
@@ -227,6 +228,11 @@ export type PublicCatalogClubTypesResponse = {
 };
 
 export type PublicCatalogCoach = DiscoveryCoachItem & {
+  bio?: string;
+  languages?: string[];
+  minAcceptedAge?: number | null;
+  maxAcceptedAge?: number | null;
+  professionalProfile?: CoachProfessionalProfile;
   imageUrl: string | null;
   contact: Record<string, unknown>;
   portfolio: Array<{ id: string; url: string }>;

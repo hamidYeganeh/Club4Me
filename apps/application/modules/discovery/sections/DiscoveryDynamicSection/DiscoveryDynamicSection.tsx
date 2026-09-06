@@ -19,6 +19,8 @@ import { DiscoveryCoachesRailSection } from "@modules/discovery/sections/Discove
 import { DiscoverySportsRailSection } from "@modules/discovery/sections/DiscoverySportsRailSection";
 import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 
+import { DiscoveryClubsCardsSection } from "../DiscoveryClubsCardsSection/DiscoveryClubsCardsSection";
+
 const sectionDestinations: Record<DiscoverySection["type"], string> = {
   banners: "/discovery/search",
   clubs: "/discovery/clubs",
@@ -99,6 +101,19 @@ export function DiscoveryDynamicSection({
       ...club,
       imageUrl: club.imageUrl ?? "/discovery/locations/city-modern.jpg",
     }));
+    if (section.layout === "cards") {
+      return (
+        <DiscoveryClubsCardsSection
+          id={section.id}
+          title={title}
+          subtitle={subtitle}
+          viewAllLabel={viewAllLabel}
+          viewAllUrl={viewAllUrl}
+          items={clubs}
+          isLoading={isLoading}
+        />
+      );
+    }
     return (
       <DiscoveryClubsRailSection
         isLoading={isLoading}

@@ -1,3 +1,7 @@
+import {
+  publicProfessionalProfile,
+  type CoachProfessionalProfile,
+} from "../dto/professional-profile";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
@@ -38,6 +42,9 @@ export class CoachesService {
     const coach = await this.getOrCreateDocument(userId);
     const mediaIds = [
       ...(input.galleryMediaIds ?? []),
+      ...(input.professionalProfile?.credentials ?? []).flatMap((item) =>
+        item.mediaId ? [item.mediaId] : [],
+      ),
       ...(input.trainingStyles ?? []).flatMap((item) =>
         item.imageMediaId ? [item.imageMediaId] : [],
       ),
@@ -88,6 +95,21 @@ export class CoachesService {
         "A pending profile cannot be edited",
       );
     }
+    const minAge =
+      input.minAcceptedAge === undefined
+        ? coach.minAcceptedAge
+        : input.minAcceptedAge;
+    const maxAge =
+      input.maxAcceptedAge === undefined
+        ? coach.maxAcceptedAge
+        : input.maxAcceptedAge;
+    if (minAge != null && maxAge != null && minAge > maxAge) {
+      throw new AppError(
+        400,
+        "INVALID_AGE_RANGE",
+        "Minimum age cannot be greater than maximum age",
+      );
+    }
     Object.assign(coach, payload);
     if (coach.reviewStatus === "rejected") coach.reviewStatus = "draft";
     await coach.save();
@@ -126,6 +148,23 @@ export class CoachesService {
       userId,
       items.flatMap((item) => item.certificateMediaIds),
     );
+    const existingSports = await this.coachSports
+      .find({ coachId: coach._id })
+      .exec();
+    const verificationStatus = (item: CoachSportInput) => {
+      const existing = existingSports.find(
+        (sport) => String(sport.sportId) === item.sportId,
+      );
+      const previousIds = (existing?.certificateMediaIds ?? [])
+        .map(String)
+        .sort();
+      const nextIds = [...item.certificateMediaIds].sort();
+      return existing && JSON.stringify(previousIds) === JSON.stringify(nextIds)
+        ? existing.verificationStatus
+        : item.certificateMediaIds.length
+          ? "pending"
+          : "unverified";
+    };
     if (items.length) {
       const sportIds = items.map((item) => objectId(item.sportId));
       await this.coachSports.bulkWrite(
@@ -142,9 +181,7 @@ export class CoachesService {
                 certificateMediaIds: uniqueObjectIds(item.certificateMediaIds),
                 achievements: uniqueText(item.achievements),
                 customAttributes: item.customAttributes,
-                verificationStatus: item.certificateMediaIds.length
-                  ? "pending"
-                  : "unverified",
+                verificationStatus: verificationStatus(item),
               },
               $setOnInsert: {
                 coachId: coach._id,
@@ -235,7 +272,27 @@ export class CoachesService {
       .sort({ updatedAt: -1 })
       .limit(500)
       .exec();
-    return { items: items.map(toPublicDocument) };
+    const media = await this.media.getReadyByIds(
+      items.flatMap((item) =>
+        (item.professionalProfile?.credentials ?? []).flatMap((credential) =>
+          credential.mediaId ? [credential.mediaId] : [],
+        ),
+      ),
+    );
+    const urls = new Map(media.map((item) => [item.id, item.url]));
+    return {
+      items: items.map((item) => ({
+        ...toPublicDocument(item),
+        credentialAttachments: (
+          item.professionalProfile?.credentials ?? []
+        ).flatMap((credential) => {
+          const url = credential.mediaId
+            ? urls.get(credential.mediaId)
+            : undefined;
+          return url ? [{ id: credential.mediaId, url }] : [];
+        }),
+      })),
+    };
   }
 
   async listPublicByIds(ids: string[]) {
@@ -248,7 +305,14 @@ export class CoachesService {
       })
       .sort({ displayName: 1 })
       .exec();
-    return { items: items.map(toPublicDocument) };
+    return {
+      items: items.map((item) => ({
+        ...toPublicDocument(item),
+        professionalProfile: publicProfessionalProfile(
+          item.toObject().professionalProfile,
+        ),
+      })),
+    };
   }
 
   async getPublicBySlug(slug: string): Promise<Record<string, unknown>> {
@@ -265,6 +329,9 @@ export class CoachesService {
     } = toPublicDocument(coach);
     return {
       ...profile,
+      professionalProfile: publicProfessionalProfile(
+        profile.professionalProfile as CoachProfessionalProfile | undefined,
+      ),
       sports: sports.map((sport) => {
         const {
           certificateMediaIds: _certificates,

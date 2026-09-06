@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAccountMe } from "@api/account";
-import { Avatar, Badge, Chip, Skeleton, Typography } from "@heroui/react";
+import { Avatar, Badge, Button, Chip, Skeleton, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { ThemeToggle } from "@theme/theme-toggle";
 import { useFormatter, useTranslations } from "next-intl";
@@ -15,8 +16,10 @@ import { profileHeroSectionStyles } from "./ProfileHeroSection.styles";
 import type { ProfileHeroSectionProps } from "./ProfileHeroSection.types";
 
 export function ProfileHeroSection({ role }: ProfileHeroSectionProps) {
+  const router = useRouter();
   const styles = profileHeroSectionStyles();
   const t = useTranslations("profile");
+  const commonT = useTranslations("common");
   const format = useFormatter();
   const me = useAccountMe();
 
@@ -42,6 +45,16 @@ export function ProfileHeroSection({ role }: ProfileHeroSectionProps) {
           className={styles.cover()}
         />
         <div aria-hidden className={styles.notch()} />
+        <Button
+          isIconOnly
+          aria-label={commonT("back")}
+          variant="secondary"
+          size="lg"
+          className={styles.backButton()}
+          onPress={() => router.back()}
+        >
+          <Icon name="chevron-right" size="lg" />
+        </Button>
       </div>
 
       <div className={styles.overlap()} dir="ltr">

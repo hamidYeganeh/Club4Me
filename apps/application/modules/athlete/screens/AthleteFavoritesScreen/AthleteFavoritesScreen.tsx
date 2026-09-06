@@ -37,7 +37,9 @@ export function AthleteFavoritesScreen({
   const items = allItems.filter(
     (item) => category === "all" || item.entityType === category,
   );
-  const failure = getQueryFailure(favorites.error, favorites.fetchStatus);
+  const failure = favorites.data
+    ? null
+    : getQueryFailure(favorites.error, favorites.fetchStatus);
   return (
     <main className="app-page gap-6">
       <SecondaryHeader
@@ -92,10 +94,7 @@ export function AthleteFavoritesScreen({
             <div className="min-w-0 flex-1">
               <FavoriteResult item={item} />
             </div>
-            <SaveButton
-              entityType={item.entityType}
-              entityId={item.entityId}
-            />
+            <SaveButton entityType={item.entityType} entityId={item.entityId} />
           </div>
         ))}
       </div>
