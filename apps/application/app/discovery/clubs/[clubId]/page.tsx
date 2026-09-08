@@ -23,7 +23,5 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ClubDiscoveryPage({ params }: PageProps) {
   const { clubId } = await params;
-  const club = await getDiscoveryEntity<{ name: string; address?: string; averageRating?: number; reviewsCount?: number }>(`/discovery/catalog/clubs/${encodeURIComponent(clubId)}`);
-  const jsonLd = club ? { "@context": "https://schema.org", "@type": "SportsActivityLocation", name: club.name, address: club.address, aggregateRating: club.reviewsCount ? { "@type": "AggregateRating", ratingValue: club.averageRating, reviewCount: club.reviewsCount } : undefined, url: new URL(`/discovery/clubs/${clubId}`, siteUrl).toString() } : null;
-  return <>{jsonLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} /> : null}<DiscoveryClubsDetailScreen clubId={clubId} /></>;
+  return <DiscoveryClubsDetailScreen clubId={clubId} />;
 }

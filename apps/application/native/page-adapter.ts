@@ -34,6 +34,13 @@ export function adaptNativePage(source: string, filename: string): string {
             (modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword,
           )
         ) {
+          const isAsync = node.modifiers.some(
+            (modifier) => modifier.kind === ts.SyntaxKind.AsyncKeyword,
+          );
+          // Client pages commonly contain async event handlers and effects.
+          // Only an async page function itself needs adapting for native route
+          // params, so do not inspect synchronous component bodies.
+          if (!isAsync) return node;
           const visitBody: ts.Visitor = (child) => {
             if (ts.isAwaitExpression(child)) {
               if (

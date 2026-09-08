@@ -56,3 +56,10 @@ test("new server-only work fails the native build instead of producing a broken 
     /server-only/,
   );
 });
+test("client event handlers may perform async work", () => {
+  const compiled = adaptNativePage(
+    '"use client"; export default function Page() { const submit = async () => await fetch("/api"); return <button onClick={submit} />; }',
+    "page.tsx",
+  );
+  assert.match(compiled, /await fetch/);
+});
