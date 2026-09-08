@@ -24,6 +24,13 @@ export class BusinessTrainingClass {
   @Prop({ trim: true, maxlength: 120, default: "" }) sport: string;
   @Prop({ trim: true, maxlength: 80, default: "" }) level: string;
   @Prop({
+    type: Types.ObjectId,
+    ref: "skill_levels",
+    default: null,
+    index: true,
+  })
+  skillLevelId: Types.ObjectId | null;
+  @Prop({
     type: String,
     enum: ["group", "private", "course", "single", "open"],
     required: true,
@@ -41,10 +48,21 @@ export class BusinessTrainingClass {
   packageSessionCount: number | null;
   @Prop({ type: Number, required: true, min: 1, max: 1000 }) capacity: number;
   @Prop({ type: Number, default: 0, min: 0 }) activeEnrollmentCount: number;
+  @Prop({ type: Number, default: 0, min: 0 }) pendingEnrollmentCount: number;
   @Prop({ type: Types.ObjectId, ref: "ClubCoachProfile", default: null })
   coachProfileId: Types.ObjectId | null;
   @Prop({ type: Types.ObjectId, ref: "ClubBranch", default: null })
   branchId: Types.ObjectId | null;
+  @Prop({ type: [Types.ObjectId], ref: "Media", default: [] }) galleryMediaIds: Types.ObjectId[];
+  @Prop({ type: Types.ObjectId, ref: "Media", default: null }) coverMediaId: Types.ObjectId | null;
+  @Prop({ type: [String], default: [] }) prerequisites: string[];
+  @Prop({ type: [Types.ObjectId], default: [] }) requiredEquipmentIds: Types.ObjectId[];
+  @Prop({ type: [Types.ObjectId], default: [] }) amenityIds: Types.ObjectId[];
+  @Prop({ type: Number, min: 0, max: 120, default: null }) minAge: number | null;
+  @Prop({ type: Number, min: 0, max: 120, default: null }) maxAge: number | null;
+  @Prop({ type: Date, default: null }) registrationStartAt: Date | null;
+  @Prop({ type: Date, default: null }) registrationEndAt: Date | null;
+  @Prop({ type: String, trim: true, maxlength: 1000, default: null }) scheduleError: string | null;
   @Prop({ type: Date, required: true }) startDate: Date;
   @Prop({ type: Date, required: true }) endDate: Date;
   @Prop({ type: [BusinessClassSchedule], required: true })
@@ -63,6 +81,8 @@ export class BusinessTrainingClass {
     default: "active",
   })
   status: "draft" | "active" | "paused" | "completed" | "cancelled";
+  @Prop({ type: Number, min: 0, max: 5, default: 0 }) averageRating: number;
+  @Prop({ type: Number, min: 0, default: 0 }) reviewsCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -136,6 +156,23 @@ export class BusinessClassEnrollment {
   })
   paymentStatus:
     "pending" | "paid" | "partial" | "waived" | "failed" | "refunded";
+  // Legacy balances are never inferred from an old "partial" flag.
+  @Prop({ type: String, enum: ["legacy", "ledger"], default: "legacy" })
+  billingMode: "legacy" | "ledger";
+  @Prop({ type: Number, default: 0, min: 0 }) openingPaidAmount: number;
+  @Prop({ type: Number, default: 0, min: 0 }) waivedAmount: number;
+  @Prop({ type: Number, default: 0 }) billingRevision: number;
+  @Prop({ type: [Object], default: [] }) billingChanges: Array<{
+    actorId: string;
+    at: Date;
+    action: string;
+    reason: string;
+    before: Record<string, unknown>;
+    after: Record<string, unknown>;
+  }>;
+  @Prop({ type: Date, default: null, index: true })
+  paymentExpiresAt: Date | null;
+  @Prop({ type: Boolean, default: false }) paymentSeatHeld: boolean;
   @Prop({ type: Number, min: 1, default: null }) totalSessions: number | null;
   @Prop({ type: Number, min: 0, default: null }) remainingSessions:
     number | null;
@@ -190,6 +227,14 @@ export class BusinessClassAttendance {
   @Prop({ type: String, enum: ["manual", "qr", "code"], default: "manual" })
   checkInMethod: "manual" | "qr" | "code";
   @Prop({ type: Date, default: null }) checkedInAt: Date | null;
+  @Prop({ type: [Object], default: [] }) changes: Array<{
+    actorId: string;
+    at: Date;
+    before: string;
+    after: string;
+    beforeCredits: number | null;
+    afterCredits: number | null;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -21,6 +21,7 @@ export type BusinessTrainingClass = Base & {
   faqs: Array<{ question: string; answer: string }>;
   sport: string;
   level: string;
+  skillLevelId: string | null;
   model: BusinessClassModel;
   pricingModel: BusinessClassPricingModel;
   price: number;
@@ -29,6 +30,17 @@ export type BusinessTrainingClass = Base & {
   capacity: number;
   coachProfileId: string | null;
   branchId: string | null;
+  coverMediaId: string | null;
+  galleryMediaIds: string[];
+  prerequisites: string[];
+  requiredEquipmentIds: string[];
+  amenityIds: string[];
+  minAge: number | null;
+  maxAge: number | null;
+  registrationStartAt: string | null;
+  registrationEndAt: string | null;
+  scheduleError?: string | null;
+  readiness?: { ready: boolean; missing: string[] };
   startDate: string;
   endDate: string;
   schedule: Array<{
@@ -49,11 +61,27 @@ export type BusinessClassSession = Base & {
   capacity: number;
   status: "scheduled" | "completed" | "cancelled";
 };
+export type BusinessClassSessionChange = {
+  startsAt: string;
+  endsAt: string;
+  affectedCount: number;
+  conflicts: Array<{
+    type: "class" | "reservation";
+    id: string;
+    title?: string;
+    startsAt: string;
+    endsAt: string;
+  }>;
+};
+export type BusinessCalendarClassSession = BusinessClassSession & {
+  classTitle: string;
+};
 export type BusinessClassEnrollment = Base & {
+  studentName?: string;
   classId: string;
   studentId: string;
   status: "pending" | "active" | "waitlisted" | "cancelled" | "completed";
-  agreedPrice: number;
+  agreedPrice: number | null;
   paymentStatus:
     "pending" | "paid" | "partial" | "waived" | "failed" | "refunded";
   totalSessions: number | null;
@@ -61,6 +89,14 @@ export type BusinessClassEnrollment = Base & {
   enrolledAt: string;
 };
 export type BusinessClassAttendance = Base & {
+  changes?: Array<{
+    actorId: string;
+    at: string;
+    before: string;
+    after: string;
+    beforeCredits: number | null;
+    afterCredits: number | null;
+  }>;
   sessionId: string;
   classId: string;
   studentId: string;
@@ -178,6 +214,20 @@ export function useBusinessClassSessions(clubId: string, classId: string) {
     enabled: Boolean(clubId && classId),
   });
 }
+export function useBusinessCalendarClassSessions(
+  clubId: string,
+  from: string,
+  to: string,
+) {
+  return useQuery({
+    queryKey: [...key(clubId), "calendar-sessions", from, to],
+    queryFn: () =>
+      http.get<{ items: BusinessCalendarClassSession[] }>(
+        `${root(clubId)}/calendar-sessions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      ),
+    enabled: Boolean(clubId && from && to),
+  });
+}
 export function useUpdateBusinessClassSession(clubId: string, classId: string) {
   const client = useQueryClient();
   return useMutation({
@@ -188,13 +238,33 @@ export function useUpdateBusinessClassSession(clubId: string, classId: string) {
       sessionId: string;
       payload: Partial<
         Pick<BusinessClassSession, "startsAt" | "endsAt" | "status">
-      >;
+      > & { scope?: "single" | "future" };
     }) =>
       http.patch<BusinessClassSession>(
         `${detail(clubId, classId)}/sessions/${sessionId}`,
         payload,
       ),
     onSuccess: () => invalidate(client, clubId),
+  });
+}
+export function usePreviewBusinessClassSessionChange(
+  clubId: string,
+  classId: string,
+) {
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      payload,
+    }: {
+      sessionId: string;
+      payload: Pick<BusinessClassSession, "startsAt" | "endsAt"> & {
+        scope: "single" | "future";
+      };
+    }) =>
+      http.post<BusinessClassSessionChange>(
+        `${detail(clubId, classId)}/sessions/${sessionId}/change-preview`,
+        payload,
+      ),
   });
 }
 export function useBusinessClassEnrollments(clubId: string, classId: string) {

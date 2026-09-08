@@ -7,20 +7,42 @@ export class CreatePaymentIntentDto {
         "reservation",
         "benefit_purchase",
         "business_class_enrollment",
+        "coach_booking",
+        "coach_class_enrollment",
+        "coach_package_purchase",
       ]),
       referenceId: z.string().length(24),
       idempotencyKey: z.string().trim().min(8).max(120),
       returnUrl: z.string().url().max(500),
       couponCode: z.string().trim().min(3).max(30).optional(),
       walletAmount: z.number().int().min(0).default(0),
+      expectedAmount: z.number().int().positive().optional(),
     })
     .strict();
 
   referenceType:
-    "reservation" | "benefit_purchase" | "business_class_enrollment";
+    | "reservation"
+    | "benefit_purchase"
+    | "business_class_enrollment"
+    | "coach_booking"
+    | "coach_class_enrollment"
+    | "coach_package_purchase";
   referenceId: string;
   idempotencyKey: string;
   returnUrl: string;
+  couponCode?: string;
+  walletAmount: number;
+  expectedAmount?: number;
+}
+
+export class QuotePaymentDto {
+  static schema = CreatePaymentIntentDto.schema.omit({
+    idempotencyKey: true,
+    returnUrl: true,
+    expectedAmount: true,
+  });
+  referenceType: CreatePaymentIntentDto["referenceType"];
+  referenceId: string;
   couponCode?: string;
   walletAmount: number;
 }

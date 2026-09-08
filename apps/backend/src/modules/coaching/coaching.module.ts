@@ -1,3 +1,9 @@
+import { CoachPurchasesService } from "./services/coach-purchases.service";
+import {
+  CoachPackagePurchase,
+  CoachPackagePurchaseSchema,
+} from "./schemas/coach-purchase.schema";
+import { CommerceModule } from "../commerce/commerce.module";
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 
@@ -23,6 +29,8 @@ import {
   CoachAvailabilityExceptionSchema,
   CoachAvailabilityRule,
   CoachAvailabilityRuleSchema,
+  CoachAvailabilityPlan,
+  CoachAvailabilityPlanSchema,
   CoachOffering,
   CoachOfferingSchema,
   CoachSchema,
@@ -55,6 +63,7 @@ import {
 import { Court, CourtSchema } from "../reservations/schemas/court.schema";
 
 const schemas = [
+  { name: CoachPackagePurchase.name, schema: CoachPackagePurchaseSchema },
   { name: Coach.name, schema: CoachSchema },
   { name: CoachSport.name, schema: CoachSportSchema },
   { name: CoachOffering.name, schema: CoachOfferingSchema },
@@ -65,6 +74,7 @@ const schemas = [
   { name: SessionBooking.name, schema: SessionBookingSchema },
   { name: SessionAttendance.name, schema: SessionAttendanceSchema },
   { name: CoachAvailabilityRule.name, schema: CoachAvailabilityRuleSchema },
+  { name: CoachAvailabilityPlan.name, schema: CoachAvailabilityPlanSchema },
   {
     name: CoachAvailabilityException.name,
     schema: CoachAvailabilityExceptionSchema,
@@ -75,6 +85,7 @@ const schemas = [
 
 @Module({
   imports: [
+    CommerceModule,
     MongooseModule.forFeature(schemas),
     AuthModule,
     ResourcesModule,
@@ -92,6 +103,7 @@ const schemas = [
     ClubClassesController,
   ],
   providers: [
+    CoachPurchasesService,
     CoachesService,
     OfferingsService,
     TrainingClassesService,

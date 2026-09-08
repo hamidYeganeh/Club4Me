@@ -97,6 +97,11 @@ export type PublicClub = {
   publishedAt: string | null;
   archivedAt: string | null;
   suspendedAt: string | null;
+  qualityStatus: "active" | "review_required" | "suspended";
+  supplyVerifiedAt: string | null;
+  supplyReviewDueAt: string | null;
+  supplyAssigneeId: string | null;
+  qualityReasons: string[];
   schemaVersion: number;
   createdAt: string;
   updatedAt: string;
@@ -226,6 +231,11 @@ export function toPublicClub(club: ClubDocument): PublicClub {
     publishedAt: club.publishedAt?.toISOString() ?? null,
     archivedAt: club.archivedAt?.toISOString() ?? null,
     suspendedAt: club.suspendedAt?.toISOString() ?? null,
+    qualityStatus: club.qualityStatus ?? "review_required",
+    supplyVerifiedAt: club.supplyVerifiedAt?.toISOString() ?? null,
+    supplyReviewDueAt: club.supplyReviewDueAt?.toISOString() ?? null,
+    supplyAssigneeId: club.supplyAssigneeId ? String(club.supplyAssigneeId) : null,
+    qualityReasons: club.qualityReasons ?? [],
     schemaVersion: club.schemaVersion ?? 1,
     createdAt: club.createdAt.toISOString(),
     updatedAt: club.updatedAt.toISOString(),

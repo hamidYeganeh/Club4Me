@@ -20,7 +20,7 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 
 const DRAWER_EASE = [0.32, 0.72, 0, 1] as const;
-const DRAWER_TRANSITION = { duration: 0.5, ease: DRAWER_EASE } as const;
+const DRAWER_TRANSITION = { duration: 0.24, ease: DRAWER_EASE } as const;
 const subscribeToMount = () => () => undefined;
 
 export interface BottomSheetProps {
@@ -66,21 +66,9 @@ export function BottomSheet({
   useEffect(() => {
     if (!open) return;
 
-    const body = document.body;
-    const scrollY = window.scrollY;
-    const previousStyles = {
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      right: body.style.right,
-      overflow: body.style.overflow,
-    };
-
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.left = "0";
-    body.style.right = "0";
-    body.style.overflow = "hidden";
+    const scrollRoot = document.querySelector<HTMLElement>(".app-scroll-root");
+    const previousOverflow = scrollRoot?.style.overflow;
+    scrollRoot?.style.setProperty("overflow", "hidden");
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -93,8 +81,7 @@ export function BottomSheet({
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      Object.assign(body.style, previousStyles);
-      window.scrollTo(0, scrollY);
+      if (scrollRoot) scrollRoot.style.overflow = previousOverflow ?? "";
     };
   }, [onOpenChange, open]);
 
@@ -131,8 +118,10 @@ export function BottomSheet({
   const snapValue = snapPoints[snap] ?? snapPoints[0] ?? 0.5;
   const heightStyle =
     snapValue === "auto"
-      ? { maxHeight: "92dvh" }
-      : { height: `${snapValue * 100}dvh` };
+      ? { maxHeight: "min(92dvh, calc(100dvh - var(--keyboard-inset, 0px)))" }
+      : {
+          height: `min(${snapValue * 100}dvh, calc(100dvh - var(--keyboard-inset, 0px)))`,
+        };
 
   if (!mounted) return null;
 
@@ -147,9 +136,9 @@ export function BottomSheet({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={DRAWER_TRANSITION}
+            transition={{ duration: 0.16, ease: "linear" }}
             onClick={() => onOpenChange(false)}
-            className="fixed inset-0 z-[1000] bg-black/45 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[1000] bg-black/50"
           />
           <motion.div
             key="bottom-sheet"
@@ -158,7 +147,7 @@ export function BottomSheet({
             dragControls={dragControls}
             dragListener={false}
             dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0.02, bottom: 0.4 }}
+            dragElastic={{ top: 0, bottom: 0.16 }}
             dragMomentum={false}
             onDragEnd={handleDragEnd}
             initial={reduceMotion ? { opacity: 0 } : { y: "100%" }}
@@ -166,12 +155,12 @@ export function BottomSheet({
             exit={reduceMotion ? { opacity: 0 } : { y: "100%" }}
             transition={
               reduceMotion
-                ? { duration: 0.18, ease: DRAWER_EASE }
+                ? { duration: 0.12, ease: DRAWER_EASE }
                 : DRAWER_TRANSITION
             }
             style={heightStyle}
             className={cn(
-              "fixed inset-x-0 bottom-0 z-[1001] mx-auto flex w-full max-w-xl flex-col rounded-t-[3rem] bg-surface text-surface-foreground will-change-transform",
+              "fixed inset-x-0 bottom-[var(--keyboard-inset,0px)] z-[1001] mx-auto flex w-full max-w-xl translate-z-0 flex-col contain-paint rounded-t-[2rem] bg-surface text-surface-foreground will-change-transform",
               className,
             )}
             role="dialog"
@@ -209,7 +198,7 @@ export function BottomSheet({
             </div>
             <div
               className={cn(
-                "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]",
+                "min-h-0 flex-1 scroll-pt-3 overflow-y-auto overscroll-contain px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]",
                 contentClassName,
               )}
             >

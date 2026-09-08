@@ -1,3 +1,4 @@
+import { fakeTransactionConnection } from "../../infrastructure/database/atomic-operation.test-helper";
 import { Types } from "mongoose";
 
 import { CommerceService } from "./commerce.service";
@@ -36,6 +37,7 @@ describe("CommerceService", () => {
     };
     const ledger = { insertMany: jest.fn() };
     const intents = {
+      db: fakeTransactionConnection,
       findOne: jest.fn().mockResolvedValue(intent),
       findOneAndUpdate: jest.fn().mockResolvedValue(paid),
       findById: jest.fn(),

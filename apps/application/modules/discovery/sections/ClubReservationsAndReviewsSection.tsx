@@ -25,7 +25,7 @@ export function ClubReservationsAndReviewsSection({
   );
 
   return (
-    <section className="mx-auto w-full max-w-4xl space-y-8 px-4 pb-8">
+    <section className="mx-auto w-full max-w-4xl space-y-8 px-4 pb-8 pt-5">
       <div>
         {!reviews.isPending && reviews.data ? (
           <ReviewSummary

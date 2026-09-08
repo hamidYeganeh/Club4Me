@@ -1,3 +1,4 @@
+import { DiscoveryHeroScrim } from "@modules/discovery/components/DiscoveryImageHero";
 import Image from "next/image";
 
 import { welcomeHeroSectionStyles } from "./WelcomeHeroSection.styles";
@@ -16,7 +17,7 @@ export function WelcomeHeroSection({ alt }: WelcomeHeroSectionProps) {
         sizes="100vw"
         className={styles.image()}
       />
-      <div aria-hidden className={styles.fade()} />
+      <DiscoveryHeroScrim />
     </section>
   );
 }

@@ -9,7 +9,12 @@ export type PaymentIntent = {
   provider: "mock";
   authority: string;
   referenceType:
-    "reservation" | "benefit_purchase" | "business_class_enrollment";
+    | "reservation"
+    | "benefit_purchase"
+    | "business_class_enrollment"
+    | "coach_booking"
+    | "coach_class_enrollment"
+    | "coach_package_purchase";
   referenceId: string;
   amount: number;
   grossAmount: number;
@@ -24,6 +29,7 @@ export type PaymentIntent = {
   checkoutUrl: string;
   returnUrl: string;
   paidAt: string | null;
+  expiresAt?: string | null;
   reconciledAt: string | null;
   createdAt: string;
 };
@@ -43,6 +49,7 @@ export type Payout = {
 };
 
 export type PayoutBalance = {
+  outstandingDebt?: number;
   providerType: "club" | "coach";
   providerId: string;
   ledgerBalance: number;
@@ -66,7 +73,28 @@ export type BenefitsWallet = {
   transactions: WalletTransaction[];
 };
 
+export type PaymentQuoteInput = {
+  referenceType: PaymentIntent["referenceType"];
+  referenceId: string;
+  couponCode?: string;
+  walletAmount?: number;
+};
+export type PaymentQuote = {
+  referenceType: PaymentIntent["referenceType"];
+  referenceId: string;
+  currency: "IRR";
+  grossAmount: number;
+  discountAmount: number;
+  walletAmount: number;
+  amount: number;
+  expiresAt: string | null;
+  intentId: string | null;
+  priceBreakdown: Record<string, number> | null;
+};
+
 export const commerceClient = {
+  quotePayment: (payload: PaymentQuoteInput) =>
+    http.post<PaymentQuote>("/payments/quote", payload),
   benefitsWallet: () => http.get<BenefitsWallet>("/benefits/wallet"),
   referralCode: () => http.get<{ code: string }>("/benefits/referral-code"),
   redeemReferral: (code: string) =>
@@ -83,12 +111,18 @@ export const commerceClient = {
     }>("/benefits/discounts/quote", payload),
   createIntent: (payload: {
     referenceType:
-      "reservation" | "benefit_purchase" | "business_class_enrollment";
+      | "reservation"
+      | "benefit_purchase"
+      | "business_class_enrollment"
+      | "coach_booking"
+      | "coach_class_enrollment"
+    | "coach_package_purchase";
     referenceId: string;
     idempotencyKey: string;
     returnUrl: string;
     couponCode?: string;
     walletAmount?: number;
+    expectedAmount?: number;
   }) => http.post<PaymentIntent>("/payments/intents", payload),
   decideMockPayment: (intentId: string, status: "paid" | "failed") =>
     http.post<PaymentIntent>(`/payments/intents/${intentId}/mock/decision`, {
@@ -196,6 +230,16 @@ export function useCreatePaymentIntent() {
   return useMutation({ mutationFn: commerceClient.createIntent });
 }
 
+export function usePaymentQuote(input: PaymentQuoteInput | undefined) {
+  return useQuery({
+    queryKey: ["payments", "quote", input],
+    queryFn: () => commerceClient.quotePayment(input!),
+    enabled: Boolean(input),
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useMockPaymentDecision() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -206,8 +250,12 @@ export function useMockPaymentDecision() {
       intentId: string;
       status: "paid" | "failed";
     }) => commerceClient.decideMockPayment(intentId, status),
-    onSuccess: async () =>
-      queryClient.invalidateQueries({ queryKey: ["reservations"] }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["reservations"] }),
+        queryClient.invalidateQueries({ queryKey: ["benefits"] }),
+      ]);
+    },
   });
 }
 

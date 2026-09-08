@@ -32,7 +32,7 @@ export function BusinessReviewsScreen() {
     hasResponse: "" as "" | "yes" | "no",
   });
 
-  const items = reviews.data?.items ?? [];
+  const items = useMemo(() => reviews.data?.items ?? [], [reviews.data?.items]);
   const filtered = useMemo(() => {
     const query = filters.query.trim().toLowerCase();
     return items.filter((review) => {
@@ -108,9 +108,7 @@ export function BusinessReviewsScreen() {
                 variant="secondary"
                 isPending={respond.isPending}
                 onPress={() => {
-                  const body = window
-                    .prompt("پاسخ باشگاه را بنویسید:")
-                    ?.trim();
+                  const body = window.prompt("پاسخ باشگاه را بنویسید:")?.trim();
                   if (!body) return;
                   void respond
                     .mutateAsync({ reviewId: review.id, body })
@@ -124,7 +122,7 @@ export function BusinessReviewsScreen() {
           },
         }),
       ]),
-    [respond.isPending],
+    [respond],
   );
 
   return (

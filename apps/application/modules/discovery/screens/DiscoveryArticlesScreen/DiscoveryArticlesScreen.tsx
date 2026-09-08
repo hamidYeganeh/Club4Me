@@ -1,6 +1,11 @@
 "use client";
+import { DiscoveryImageHero } from "../../components/DiscoveryImageHero";
 
-import { Button } from "@heroui/react";
+import { useDiscoveryList } from "../../hooks/use-discovery-list";
+import { DiscoverySearchField } from "../../components/DiscoverySearchField";
+import { DiscoveryPagination } from "../../components/DiscoveryPagination";
+import { DiscoveryQueryState } from "../../components/DiscoveryQueryState";
+import { DiscoveryEmptySection } from "../../components/DiscoveryEmptySection";
 import { useCatalogArticles } from "@api/discovery";
 import { ArticleCard } from "@ui/article-card";
 
@@ -8,43 +13,34 @@ import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { ArticleListSkeleton } from "@/components/loading-skeletons";
 
 export function DiscoveryArticlesScreen() {
-  const result = useCatalogArticles({ limit: 100 });
+  const { query, setQuery, q, page, setPage } = useDiscoveryList();
+  const result = useCatalogArticles({ q, page, limit: 20 });
   const articles = result.data?.items ?? [];
 
   return (
     <main className="app-page gap-7">
       <SecondaryHeader title="مجله جیم‌فورمی" showFilter={false} />
 
-      <section className="app-reveal pt-2" aria-labelledby="articles-heading">
-        <p className="mb-2 text-xs font-bold tracking-[0.18em] text-accent">
-          بهتر تمرین کن، بهتر زندگی کن
-        </p>
-        <h1
-          id="articles-heading"
-          className="max-w-sm text-3xl leading-[1.25] font-black tracking-tight"
-        >
-          دانش کاربردی برای مسیر ورزشی تو
-        </h1>
-        <p className="mt-3 max-w-md text-sm leading-7 text-muted">
-          از تمرین و تغذیه تا ریکاوری؛ مطالب کوتاه و معتبر برای تصمیم‌های بهتر.
-        </p>
-      </section>
+      <DiscoveryImageHero
+        imageUrl="/profile/cover.jpg"
+        title="دانش کاربردی برای مسیر ورزشی تو"
+        description="از تمرین و تغذیه تا ریکاوری؛ مطالب کوتاه و معتبر برای تصمیم‌های بهتر."
+        eyebrow="بهتر تمرین کن، بهتر زندگی کن"
+      />
 
-      {result.isPending ? (
-        <ArticleListSkeleton count={4} />
-      ) : null}
-      {result.isError ? (
-        <div className="py-12 text-center">
-          <p className="text-sm text-danger">دریافت مقاله‌ها ناموفق بود.</p>
-          <Button className="mt-4" onPress={() => void result.refetch()}>
-            تلاش دوباره
-          </Button>
-        </div>
-      ) : null}
-      {!result.isPending && !result.isError && articles.length === 0 ? (
-        <p className="py-16 text-center text-sm text-muted">
-          هنوز مقاله‌ای منتشر نشده است.
-        </p>
+      <DiscoverySearchField
+        value={query}
+        onChange={setQuery}
+        placeholder="جست‌وجو در مقاله‌ها"
+      />
+      {result.isLoading ? <ArticleListSkeleton count={4} /> : null}
+      <DiscoveryQueryState query={result} />
+      {result.isSuccess && articles.length === 0 ? (
+        <DiscoveryEmptySection
+          title="مقاله‌ای پیدا نشد"
+          subtitle="موضوع دیگری را جست‌وجو کن."
+          icon="book-open"
+        />
       ) : null}
 
       <section className="grid gap-3" aria-label="همه مقاله‌ها">
@@ -64,6 +60,13 @@ export function DiscoveryArticlesScreen() {
           />
         ))}
       </section>
+      <DiscoveryPagination
+        page={page}
+        total={result.data?.total ?? 0}
+        limit={20}
+        onChange={setPage}
+        pending={result.isFetching}
+      />
     </main>
   );
 }

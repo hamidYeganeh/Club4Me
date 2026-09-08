@@ -75,6 +75,11 @@ export async function enablePushNotifications() {
   return "enabled" as const;
 }
 
+export async function hasGrantedPushPermission() {
+  if (!isAndroid()) return false;
+  return (await PushNotifications.checkPermissions()).receive === "granted";
+}
+
 export async function disablePushNotifications() {
   if (!isAndroid()) return;
   await Preferences.set({ key: PUSH_ENABLED_KEY, value: "false" });

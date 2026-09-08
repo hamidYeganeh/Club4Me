@@ -26,7 +26,7 @@ const sectionDestinations: Record<DiscoverySection["type"], string> = {
   clubs: "/discovery/clubs",
   coaches: "/discovery/coaches",
   classes: "/discovery/classes",
-  sports: "/discovery/search",
+  sports: "/discovery/sports",
   articles: "/discovery/articles",
 };
 
@@ -51,7 +51,9 @@ export function DiscoveryDynamicSection({
   const title = section.appearance.showHeader ? section.title : "";
   const subtitle = section.appearance.showHeader ? section.subtitle : "";
   const viewAllUrl = section.appearance.showViewAll
-    ? section.viewAllUrl || sectionDestinations[section.type]
+    ? (section.type === "sports" && section.viewAllUrl === "/discovery/search"
+        ? "/discovery/sports"
+        : section.viewAllUrl) || sectionDestinations[section.type]
     : "";
   const viewAllLabel = section.appearance.showViewAll
     ? section.viewAllLabel || "مشاهده همه"

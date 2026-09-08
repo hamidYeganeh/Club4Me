@@ -32,6 +32,7 @@ describe("DiscoveryFeedService", () => {
       {} as never,
       {} as never,
       {} as never,
+      {} as never,
     );
 
     await expect(service.getFeed()).resolves.toEqual([
@@ -52,6 +53,7 @@ describe("DiscoveryFeedService", () => {
     };
     const service = new DiscoveryFeedService(
       sections as never,
+      {} as never,
       {} as never,
       {} as never,
       {} as never,
@@ -91,6 +93,7 @@ describe("DiscoveryFeedService", () => {
     };
     const service = new DiscoveryFeedService(
       sections as never,
+      {} as never,
       {} as never,
       {} as never,
       {} as never,
@@ -171,6 +174,7 @@ describe("DiscoveryFeedService", () => {
       {} as never,
       media as never,
       resources as never,
+      {} as never,
     );
 
     await expect(service.getFeed()).resolves.toEqual([

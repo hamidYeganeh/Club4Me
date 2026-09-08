@@ -10,6 +10,7 @@ export class CreateBenefitProductDto {
       price: z.number().int().positive(),
       sessionCount: z.number().int().min(1).max(1000).nullable().default(null),
       validityDays: z.number().int().min(1).max(730),
+      maxPauseDays: z.number().int().min(0).max(90).default(0),
       weeklyLimit: z.number().int().min(1).max(50).nullable().default(null),
       sessionTypes: z
         .array(z.enum(["court", "class", "coached_session"]))
@@ -36,6 +37,7 @@ export class CreateBenefitProductDto {
   price: number;
   sessionCount: number | null;
   validityDays: number;
+  maxPauseDays?: number;
   weeklyLimit: number | null;
   sessionTypes: Array<"court" | "class" | "coached_session">;
 }
@@ -46,4 +48,27 @@ export class UpdateBenefitProductDto {
 export class CreateBenefitPurchaseDto {
   static schema = z.object({ productId: objectId }).strict();
   productId: string;
+}
+
+export class BenefitPurchaseOptionsDto {
+  static schema = z
+    .object({
+      renewedFromId: z
+        .string()
+        .regex(/^[a-fA-F0-9]{24}$/)
+        .optional(),
+      startMode: z.enum(["immediate", "after_expiry"]).default("immediate"),
+    })
+    .strict()
+    .refine(
+      (v) => v.startMode !== "after_expiry" || Boolean(v.renewedFromId),
+      "عضویت قبلی لازم است.",
+    );
+  renewedFromId?: string;
+  startMode: "immediate" | "after_expiry";
+}
+
+export class PauseEntitlementDto {
+  static schema = z.object({ days: z.number().int().min(1).max(90) }).strict();
+  days: number;
 }

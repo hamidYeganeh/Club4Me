@@ -1,3 +1,4 @@
+import { fakeTransactionConnection } from "../../infrastructure/database/atomic-operation.test-helper";
 import { Types } from "mongoose";
 import { ReservationsService } from "./reservations.service";
 
@@ -14,6 +15,7 @@ describe("trial reservations", () => {
       capacity: 10,
       reservedCount: 0,
       basePrice: 500,
+      currency: "IRR",
       options: [],
       cancellationPolicy: { reservationCutoffMinutes: 0 },
       pricingUnit: "per_participant",
@@ -28,6 +30,7 @@ describe("trial reservations", () => {
         .mockReturnValue({ exec: async () => ({ modifiedCount: 1 }) }),
     };
     const reservations = {
+      db: fakeTransactionConnection,
       exists: jest.fn().mockResolvedValue(null),
       create: jest.fn().mockImplementation(async (payload) => ({
         ...payload,
@@ -37,6 +40,7 @@ describe("trial reservations", () => {
     };
     const entitlements = {
       reserveForReservation: jest.fn(),
+      assertEligibleForReservation: jest.fn(),
       finalizeReservation: jest.fn(),
     };
     const notifications = {
@@ -63,6 +67,45 @@ describe("trial reservations", () => {
     );
     return { service, sessions, reservations, entitlements, notifications };
   }
+  it.each([{ expectedTotalPrice: 100 }, { expectedCurrency: "USD" }])(
+    "rejects stale price confirmation before consuming inventory %j",
+    async (expected) => {
+      const { service, sessions } = setup();
+      await expect(
+        service.reserve(userId, {
+          sessionId: String(sessionId),
+          participantCount: 1,
+          ...expected,
+        }),
+      ).rejects.toMatchObject({ code: "RESERVATION_PRICE_CHANGED" });
+      expect(sessions.findOneAndUpdate).not.toHaveBeenCalled();
+    },
+  );
+  it("does not quote membership coverage when server eligibility rejects it", async () => {
+    const { service, entitlements, sessions } = setup();
+    entitlements.assertEligibleForReservation.mockRejectedValue({
+      code: "ENTITLEMENT_NOT_ELIGIBLE",
+    });
+    await expect(
+      service.quote(userId, {
+        sessionId: String(sessionId),
+        participantCount: 1,
+        entitlementId: new Types.ObjectId().toHexString(),
+      }),
+    ).rejects.toMatchObject({ code: "ENTITLEMENT_NOT_ELIGIBLE" });
+    expect(entitlements.reserveForReservation).not.toHaveBeenCalled();
+    expect(sessions.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+  it("quotes cannot promise unavailable group capacity", async () => {
+    const { service, sessions } = setup();
+    await expect(
+      service.quote(userId, {
+        sessionId: String(sessionId),
+        participantCount: 11,
+      }),
+    ).rejects.toMatchObject({ code: "SESSION_CAPACITY_UNAVAILABLE" });
+    expect(sessions.findOneAndUpdate).not.toHaveBeenCalled();
+  });
   it("books at zero price without payment or membership consumption", async () => {
     const { service, entitlements } = setup();
     const result = await service.reserve(userId, {
@@ -134,7 +177,7 @@ describe("trial reservations", () => {
     ).rejects.toMatchObject({ code: "TRIAL_ALREADY_USED" });
     expect(sessions.findOneAndUpdate).not.toHaveBeenCalled();
   });
-  it("releases capacity if a simultaneous trial loses the unique-index race", async () => {
+  it("rejects a duplicate trial without compensating inside an aborted transaction", async () => {
     const { service, reservations, sessions } = setup();
     reservations.create.mockRejectedValue({ code: 11000 });
     await expect(
@@ -144,11 +187,7 @@ describe("trial reservations", () => {
         isTrial: true,
       }),
     ).rejects.toMatchObject({ code: "TRIAL_ALREADY_USED" });
-    expect(sessions.updateOne).toHaveBeenCalledWith(
-      { _id: sessionId },
-      { $inc: { reservedCount: -1 } },
-      {},
-    );
+    expect(sessions.updateOne).not.toHaveBeenCalled();
   });
   it("does not release a confirmed trial seat if notification delivery fails", async () => {
     const { service, sessions, notifications } = setup();

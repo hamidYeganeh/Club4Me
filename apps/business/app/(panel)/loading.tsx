@@ -1,0 +1,1 @@
+export default function Loading(){return <div role="status" aria-label="در حال بارگذاری" className="space-y-4 p-4"><div className="h-48 rounded-3xl bg-surface-secondary motion-safe:animate-pulse"/><div className="grid gap-3 sm:grid-cols-2">{[1,2,3,4].map(i=><div key={i} className="h-28 rounded-3xl bg-surface motion-safe:animate-pulse"/>)}</div></div>;}

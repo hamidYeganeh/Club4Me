@@ -1,3 +1,7 @@
+import {
+  BusinessTrainingClass,
+  BusinessTrainingClassSchema,
+} from "../business-operations/schemas/training-class.schema";
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 
@@ -36,6 +40,7 @@ import {
       { name: CoachSport.name, schema: CoachSportSchema },
       { name: TrainingClass.name, schema: TrainingClassSchema },
       { name: Article.name, schema: ArticleSchema },
+      { name: BusinessTrainingClass.name, schema: BusinessTrainingClassSchema },
     ]),
   ],
   controllers: [DiscoveryFeedController, AdminDiscoveryController],

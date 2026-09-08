@@ -40,6 +40,43 @@ export class CoachesService {
 
   async updateProfile(userId: string, input: CoachProfileInput) {
     const coach = await this.getOrCreateDocument(userId);
+    if (input.geo) {
+      const geo = input.geo;
+      const [, province, city, district, regions] = await Promise.all([
+        geo.countryId
+          ? this.resources.requireActive("location", "country", geo.countryId)
+          : undefined,
+        geo.provinceId
+          ? this.resources.requireActive("location", "province", geo.provinceId)
+          : undefined,
+        geo.cityId
+          ? this.resources.requireActive("location", "city", geo.cityId)
+          : undefined,
+        geo.districtId
+          ? this.resources.requireActive("location", "district", geo.districtId)
+          : undefined,
+        Promise.all(
+          geo.cityRegionIds.map((id) =>
+            this.resources.requireActive("location", "city-region", id),
+          ),
+        ),
+      ]);
+      if (
+        (province &&
+          geo.countryId &&
+          String(province.countryId) !== geo.countryId) ||
+        (city &&
+          geo.provinceId &&
+          String(city.provinceId) !== geo.provinceId) ||
+        (district && String(district.cityId) !== geo.cityId) ||
+        regions.some((region) => String(region.cityId) !== geo.cityId)
+      )
+        throw new AppError(
+          400,
+          "COACH_LOCATION_HIERARCHY_INVALID",
+          "شهر، منطقه و محله باید به محدوده انتخاب‌شده تعلق داشته باشند.",
+        );
+    }
     const mediaIds = [
       ...(input.galleryMediaIds ?? []),
       ...(input.professionalProfile?.credentials ?? []).flatMap((item) =>
@@ -51,7 +88,7 @@ export class CoachesService {
       ...(input.avatarMediaId ? [input.avatarMediaId] : []),
       ...(input.coverMediaId ? [input.coverMediaId] : []),
     ];
-    await this.media.assertOwnedReady(userId, mediaIds);
+    await this.media.assertOwnedReady(userId, mediaIds, true);
     const payload: Record<string, unknown> = { ...input };
     for (const field of ["avatarMediaId", "coverMediaId"] as const) {
       if (input[field] !== undefined) {
@@ -110,6 +147,43 @@ export class CoachesService {
         "Minimum age cannot be greater than maximum age",
       );
     }
+    const credentials = (
+      input.professionalProfile?.credentials ??
+      coach.professionalProfile?.credentials ??
+      []
+    ).flatMap((item) => (item.mediaId ? [String(item.mediaId)] : []));
+    const publicImages = [
+      ...(input.galleryMediaIds ?? coach.galleryMediaIds ?? []),
+      input.avatarMediaId === undefined
+        ? coach.avatarMediaId
+        : input.avatarMediaId,
+      input.coverMediaId === undefined
+        ? coach.coverMediaId
+        : input.coverMediaId,
+      ...(input.trainingStyles ?? coach.trainingStyles ?? []).map(
+        (item) => item.imageMediaId,
+      ),
+    ]
+      .filter(Boolean)
+      .map(String);
+    if (credentials.some((id) => publicImages.includes(id)))
+      throw new AppError(
+        400,
+        "CREDENTIAL_MEDIA_IS_PRIVATE",
+        "تصویر مدرک نمی‌تواند هم‌زمان عکس عمومی پروفایل باشد.",
+      );
+    if (publicImages.length)
+      await this.media.assertOwnedReady(userId, publicImages);
+    if (credentials.length) await this.media.makePrivate(userId, credentials);
+    const removedCredentials = (
+      coach.professionalProfile?.credentials ?? []
+    ).flatMap((item) =>
+      item.mediaId && !credentials.includes(String(item.mediaId))
+        ? [String(item.mediaId)]
+        : [],
+    );
+    if (removedCredentials.length)
+      await this.media.retainCredentialPrivacy(userId, removedCredentials);
     Object.assign(coach, payload);
     if (coach.reviewStatus === "rejected") coach.reviewStatus = "draft";
     await coach.save();
@@ -272,7 +346,7 @@ export class CoachesService {
       .sort({ updatedAt: -1 })
       .limit(500)
       .exec();
-    const media = await this.media.getReadyByIds(
+    const media = await this.media.getReadyForReview(
       items.flatMap((item) =>
         (item.professionalProfile?.credentials ?? []).flatMap((credential) =>
           credential.mediaId ? [credential.mediaId] : [],

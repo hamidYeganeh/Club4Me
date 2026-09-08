@@ -9,6 +9,41 @@ export function AppMotion() {
   const isDiscovery = pathname.startsWith("/discovery");
 
   useEffect(() => {
+    // Discovery content arrives in independent queries and changes height while
+    // scrolling. Keep it visible instead of hiding it behind stale GSAP triggers.
+    if (isDiscovery) {
+      const scroller = document.querySelector<HTMLElement>(".app-scroll-root");
+      if (!scroller) return;
+      let frame = 0;
+      const update = () => {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          const distance = scroller.scrollHeight - scroller.clientHeight;
+          const progress = distance > 0 ? scroller.scrollTop / distance : 0;
+          if (progressRef.current) {
+            progressRef.current.style.transform = `scaleX(${Math.max(0, Math.min(1, progress))})`;
+          }
+        });
+      };
+      const resize = new ResizeObserver(update);
+      const observeContent = () => {
+        resize.disconnect();
+        resize.observe(scroller);
+        for (const child of scroller.children) resize.observe(child);
+        update();
+      };
+      const mutations = new MutationObserver(observeContent);
+      mutations.observe(scroller, { childList: true });
+      scroller.addEventListener("scroll", update, { passive: true });
+      observeContent();
+      return () => {
+        cancelAnimationFrame(frame);
+        scroller.removeEventListener("scroll", update);
+        mutations.disconnect();
+        resize.disconnect();
+      };
+    }
+
     let disposed = false;
     let animationContext: { revert: () => void } | undefined;
 
@@ -24,72 +59,28 @@ export function AppMotion() {
         return;
       }
 
-      void Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
-        ([{ default: gsap }, { ScrollTrigger }]) => {
+      void Promise.all([import("gsap"), import("gsap/ScrollTrigger")])
+        .then(([{ default: gsap }, { ScrollTrigger }]) => {
           if (disposed) return;
 
           gsap.registerPlugin(ScrollTrigger);
           animationContext = gsap.context(() => {
             const scroller = ".app-scroll-root";
 
-            if (isDiscovery && progressRef.current) {
-              gsap.fromTo(
-                progressRef.current,
-                { scaleX: 0 },
-                {
-                  scaleX: 1,
-                  ease: "none",
-                  scrollTrigger: {
-                    scroller,
-                    start: 0,
-                    end: "max",
-                    scrub: 0.2,
-                  },
-                },
-              );
-            }
-
-            const reveals = isDiscovery
-              ? gsap.utils.toArray<HTMLElement>(
-                  "main.app-page > section, main.app-page > .app-reveal, main.app-page > div > section, main.app-page .app-reveal",
-                )
-              : gsap.utils.toArray<HTMLElement>(".app-reveal");
+            const reveals = gsap.utils.toArray<HTMLElement>(".app-reveal");
 
             if (reveals.length > 0) {
-              if (isDiscovery) {
-                reveals.forEach((element) => {
-                  gsap.fromTo(
-                    element,
-                    { autoAlpha: 0, y: 18, filter: "blur(8px)" },
-                    {
-                      autoAlpha: 1,
-                      y: 0,
-                      filter: "blur(0px)",
-                      duration: 0.6,
-                      ease: "power3.out",
-                      scrollTrigger: {
-                        trigger: element,
-                        scroller,
-                        start: "top 88%",
-                        toggleActions: "play none none none",
-                        once: true,
-                      },
-                    },
-                  );
-                });
-              } else {
-                gsap.fromTo(
-                  reveals,
-                  { autoAlpha: 0, y: 20 },
-                  {
-                    autoAlpha: 1,
-                    y: 0,
-                    duration: 0.55,
-                    stagger: 0.07,
-                    ease: "power3.out",
-                  },
-                );
-              }
+              gsap.fromTo(
+                reveals,
+                { autoAlpha: 0, y: 20 },
+                {
+                  autoAlpha: 1,
+                  y: 0,
+                  duration: 0.55,
+                  stagger: 0.07,
+                  ease: "power3.out",
+                },
+              );
             }
 
             gsap.utils
@@ -137,8 +128,10 @@ export function AppMotion() {
 
             ScrollTrigger.refresh();
           });
-        },
-      );
+        })
+        .catch(() => {
+          // Motion is optional; a failed chunk must never block page content.
+        });
     }, 80);
 
     return () => {

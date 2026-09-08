@@ -26,7 +26,7 @@ export function DiscoveryClubsDetailStickyHeaderSection({
           aria-label={t("back")}
           variant="secondary"
           size="lg"
-          onPress={() => router.back()}
+          onPress={() => router.push("/discovery/clubs")}
         >
           <Icon name="chevron-right" size="lg" />
         </Button>

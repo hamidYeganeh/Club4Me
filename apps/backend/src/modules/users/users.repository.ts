@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Connection, Model, Types } from "mongoose";
 import { InjectConnection } from "@nestjs/mongoose";
+import { createHash, randomUUID } from "node:crypto";
 
 import { AppError } from "../../common/errors/app.exception";
 import { hashPassword, verifyPassword } from "../../common/utils/password.util";
@@ -126,11 +127,14 @@ export class UsersRepository {
     return toPublicUser(user);
   }
 
-  async deleteAccount(userId: string): Promise<void> {
+  async deleteAccount(userId: string): Promise<{ deletedAt: string; receiptId: string }> {
     if (!Types.ObjectId.isValid(userId)) {
       throw new AppError(404, "USER_NOT_FOUND", "User not found");
     }
     const id = new Types.ObjectId(userId);
+    const deletedAt = new Date();
+    const receiptId = randomUUID();
+    const anonymousKey = createHash("sha256").update(`deleted-user:${userId}`).digest("hex");
     const cleanup: Array<[string, Record<string, unknown>]> = [
       ["user_locations", { userId: id }],
       ["favorites", { userId: id }],
@@ -139,13 +143,34 @@ export class UsersRepository {
       ["notification_preferences", { userId: id }],
       ["role_requests", { userId: id }],
       ["club_reviews", { userId: id }],
+      ["service_reviews", { userId: id }],
       ["media", { ownerId: id }],
       ["club_memberships", { userId: id }],
+      ["data_consents", { userId: id }],
+      ["social_identities", { userId: id }],
+      ["product_telemetry", { actorId: id }],
+      ["training_assignments", { athleteId: id }],
+      ["training_sessions", { athleteId: id }],
     ];
     await Promise.all(
       cleanup.map(([collection, filter]) =>
         this.connection.collection(collection).deleteMany(filter),
       ),
+    );
+    for (const [collection, filter] of [
+      ["reservations", { userId: id }],
+      ["session_bookings", { athleteId: id }],
+      ["class_enrollments", { athleteId: id }],
+      ["support_tickets", { userId: id }],
+    ] as Array<[string, Record<string, unknown>]>) {
+      await this.connection.collection(collection).updateMany(filter, {
+        $set: { deletedUserKey: anonymousKey },
+        $unset: Object.fromEntries(Object.keys(filter).map((key) => [key, ""])),
+      });
+    }
+    await this.connection.collection("club_students").updateMany(
+      { userId: id },
+      { $set: { firstName: "کاربر", lastName: "حذف‌شده", deletedUserKey: anonymousKey }, $unset: { userId: "", phone: "", email: "", notes: "" } },
     );
     const result = await this.userModel.updateOne(
       { _id: id },
@@ -154,7 +179,7 @@ export class UsersRepository {
           phone: `deleted-${userId}@gym4me.invalid`,
           roles: [],
           status: "deleted",
-          deletedAt: new Date(),
+          deletedAt,
         },
         $unset: {
           firstName: 1,
@@ -171,6 +196,8 @@ export class UsersRepository {
     if (result.matchedCount === 0) {
       throw new AppError(404, "USER_NOT_FOUND", "User not found");
     }
+    await this.connection.collection("account_deletion_receipts").insertOne({ receiptId, anonymousKey, deletedAt, policyVersion: "2026-09-08", retainedCategories: ["financial", "reservation", "support"], status: "completed" });
+    return { deletedAt: deletedAt.toISOString(), receiptId };
   }
 
   async grantRole(userId: string, role: UserRole): Promise<PublicUser> {

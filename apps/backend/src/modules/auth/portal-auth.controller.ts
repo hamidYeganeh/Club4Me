@@ -1,3 +1,4 @@
+import { BusinessPortalGuard } from "./guards/business-portal.guard";
 import {
   Body,
   Controller,
@@ -101,20 +102,19 @@ export class AdminAuthController {
 }
 
 @Controller("api/v1/business")
-@Roles("owner")
 export class BusinessAuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post("auth/otp")
   @HttpCode(HttpStatus.CREATED)
   requestOtp(@Body() body: RequestOtpDto) {
-    return this.authService.requestLoginOtp(body.phone, "owner");
+    return this.authService.requestLoginOtp(body.phone, "business");
   }
 
   @Post("auth/otp/confirm")
   @HttpCode(HttpStatus.OK)
   confirmOtp(@Body() body: ConfirmOtpDto) {
-    return this.authService.confirmLoginOtp(body.phone, body.code, "owner");
+    return this.authService.confirmLoginOtp(body.phone, body.code, "business");
   }
 
   @Post("auth/login")
@@ -123,13 +123,13 @@ export class BusinessAuthController {
     return this.authService.loginWithPassword(
       body.phone,
       body.password,
-      "owner",
+      "business",
     );
   }
 
   @Post("auth/set-password")
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, BusinessPortalGuard)
   setPassword(
     @CurrentUser() user: AuthTokenPayload,
     @Body() body: SetPasswordDto,
@@ -144,7 +144,7 @@ export class BusinessAuthController {
   @Post("auth/forgot-password")
   @HttpCode(HttpStatus.OK)
   forgotPassword(@Body() body: ForgotPasswordDto) {
-    return this.authService.requestPasswordReset(body.phone, "owner");
+    return this.authService.requestPasswordReset(body.phone, "business");
   }
 
   @Post("auth/forgot-password/confirm")
@@ -154,25 +154,25 @@ export class BusinessAuthController {
       body.phone,
       body.code,
       body.password,
-      "owner",
+      "business",
     );
   }
 
   @Post("auth/refresh")
   @HttpCode(HttpStatus.OK)
   refresh(@Body() body: RefreshTokenDto) {
-    return this.authService.refreshAuth(body.refreshToken, "owner");
+    return this.authService.refreshAuth(body.refreshToken, "business");
   }
 
   @Post("auth/logout")
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, BusinessPortalGuard)
   logout(@CurrentUser() user: AuthTokenPayload) {
     return this.authService.logoutUser(user.sub);
   }
 
   @Get("me")
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, BusinessPortalGuard)
   me(@CurrentUser() user: AuthTokenPayload) {
     return this.authService.getMe(user.sub);
   }

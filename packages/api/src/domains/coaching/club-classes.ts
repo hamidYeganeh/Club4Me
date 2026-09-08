@@ -81,7 +81,6 @@ export type CoachClubClassEnrollment = {
   student: { name: string; phone: string } | null;
   status: AthleteClubClassEnrollment["status"];
   paymentStatus: AthleteClubClassEnrollment["paymentStatus"];
-  agreedPrice: number;
   remainingSessions: number | null;
 };
 
@@ -102,14 +101,29 @@ const publicKey = ["discovery", "business-classes"] as const;
 const athleteKey = ["athlete", "club-classes"] as const;
 const coachKey = ["coach", "club-classes"] as const;
 
-export function usePublicClubClasses(params?: { clubId?: string; q?: string }) {
+export function usePublicClubClasses(params?: {
+  clubId?: string;
+  q?: string;
+  page?: number;
+  limit?: number;
+  cityId?: string;
+  districtId?: string;
+  cityRegionId?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
+  sort?: "newest";
+}) {
   return useQuery({
     queryKey: [...publicKey, params ?? {}],
     queryFn: () =>
-      http.get<{ items: PublicClubClass[]; total: number }>(
-        "/discovery/business-classes",
-        params,
-      ),
+      http.get<{
+        items: PublicClubClass[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      }>("/discovery/business-classes", params),
   });
 }
 

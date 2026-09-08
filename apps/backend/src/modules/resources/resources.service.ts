@@ -113,6 +113,11 @@ export class ResourcesService {
         "aliases",
         "description",
       ].map((field) => ({ [field]: pattern }));
+      if (Types.ObjectId.isValid(search.trim())) {
+        (filter.$or as Record<string, unknown>[]).push({
+          _id: new Types.ObjectId(search.trim()),
+        });
+      }
     }
 
     const sortBy =

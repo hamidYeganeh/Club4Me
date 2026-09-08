@@ -106,7 +106,9 @@ export class PushNotificationsService {
   }
 
   async getPreferences(userId: string) {
-    const item = await this.preferences.findOne({ userId }).lean();
+    const item = await this.preferences
+      .findOne({ userId: new Types.ObjectId(userId) })
+      .lean();
     return item
       ? {
           bookingUpdates: item.bookingUpdates,
@@ -136,26 +138,32 @@ export class PushNotificationsService {
     };
   }
 
-  async sendToUsers(input: {
-    userIds: Array<string | Types.ObjectId>;
-    type: string;
-    title: string;
-    body: string;
-    href?: string;
-  }) {
-    if (!this.configured || input.userIds.length === 0) return;
+  async sendToUsers(
+    input: {
+      userIds: Array<string | Types.ObjectId>;
+      type: string;
+      title: string;
+      body: string;
+      href?: string;
+      deliveryId?: string;
+    },
+    strict = false,
+  ) {
+    if (!this.configured || input.userIds.length === 0)
+      return "skipped" as const;
     try {
       const userIds = input.userIds.map((id) => new Types.ObjectId(String(id)));
       const allowed = await this.allowedUserIds(
         userIds,
         categoryFor(input.type),
       );
-      if (allowed.length === 0) return;
+      if (allowed.length === 0) return "skipped" as const;
       const devices = await this.devices
         .find({ userId: { $in: allowed }, enabled: true })
         .select("token")
         .lean();
 
+      if (!devices.length) return "skipped" as const;
       for (let offset = 0; offset < devices.length; offset += 500) {
         const batch = devices.slice(offset, offset + 500);
         const response = await getMessaging().sendEachForMulticast({
@@ -163,12 +171,14 @@ export class PushNotificationsService {
           notification: { title: input.title, body: input.body },
           data: {
             type: input.type,
+            ...(input.deliveryId ? { notificationId: input.deliveryId } : {}),
             href: input.href ?? "/athlete/notifications",
           },
           android: {
             priority: "high",
             notification: {
               channelId: "gym4me_transactional",
+              ...(input.deliveryId ? { tag: input.deliveryId } : {}),
               sound: "default",
             },
           },
@@ -182,12 +192,15 @@ export class PushNotificationsService {
           await this.devices.deleteMany({ token: { $in: invalidTokens } });
         }
         if (response.failureCount > invalidTokens.length) {
+          if (strict) throw new Error("PUSH_PARTIAL_FAILURE");
           this.logger.error(
             `Push batch partially failed failures=${response.failureCount} tokens=${batch.length}`,
           );
         }
       }
+      return "accepted" as const;
     } catch (error) {
+      if (strict) throw error;
       this.logger.error(
         `Push delivery failed type=${input.type} error=${error instanceof Error ? error.message : "unknown"}`,
       );
@@ -227,8 +240,9 @@ function readServiceAccount(path: string) {
   };
 }
 
-function categoryFor(type: string): keyof typeof DEFAULT_PREFERENCES {
-  if (type === "booking_reminder") return "reminders";
+export function categoryFor(type: string): keyof typeof DEFAULT_PREFERENCES {
+  if (type === "booking_reminder" || type === "membership_expiry_reminder")
+    return "reminders";
   if (type === "class_published") return "discovery";
   if (type.startsWith("marketing_")) return "marketing";
   return "bookingUpdates";

@@ -64,7 +64,7 @@ export function BenefitsScreen() {
         showFilter={false}
         backHref={`/${role}/settings`}
       />
-      <Card className="rounded-3xl bg-linear-to-br from-accent/20 to-surface p-6 shadow-none">
+      <Card className="rounded-3xl bg-linear-to-t from-accent/20 to-surface p-6 shadow-none">
         <p className="text-sm text-muted">اعتبار قابل استفاده</p>
         <strong className="mt-2 block text-3xl">
           {(wallet.data?.availableAmount ?? 0).toLocaleString("fa-IR")} ریال

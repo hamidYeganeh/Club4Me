@@ -6,7 +6,7 @@ import { Button } from "@heroui/react";
 import { AccountAuthForgotPasswordConfirmForm } from "@modules/account/forms/AccountAuthForgotPasswordConfirmForm";
 import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
 import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
-import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
+import { AuthPageIntro } from "@/components/auth-page-intro";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
 
@@ -18,7 +18,7 @@ import {
   normalizeIranianPhone,
   toE164IranianPhone,
 } from "@/lib/phone";
-import { getPostAuthPath } from "@/lib/post-auth-path";
+import { completeAuthenticationPath } from "@/lib/auth-return-path";
 
 const ACCOUNT_AUTH_FORGOT_CONFIRM_FORM_ID = "account-auth-forgot-confirm-form";
 
@@ -57,17 +57,10 @@ export function AccountAuthForgotPasswordConfirmScreen() {
         overlay
         transparent
       />
-      <AccountAuthOtpHeroSection
-        alt={t("illustrationAlt")}
-        src="/auth/club-access-iran-v2.png"
-        width={1086}
-        height={1448}
-        size={isKeyboardOpen ? "compact" : "default"}
-      />
-      <AccountAuthOtpCopySection
+      <AuthPageIntro
         titleId="account-auth-forgot-confirm-title"
         title={tConfirm("title")}
-        cue={false}
+        keyboardOpen={isKeyboardOpen}
       />
       <div className="mt-1 mb-4 flex items-center justify-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5">
         <span
@@ -111,7 +104,7 @@ export function AccountAuthForgotPasswordConfirmScreen() {
         passwordMin={tConfirm("passwordMin")}
         passwordMismatch={tConfirm("passwordMismatch")}
         onSuccess={(user) => {
-          router.replace(getPostAuthPath(user));
+          router.replace(completeAuthenticationPath(user));
         }}
         sent={t("sent")}
       />

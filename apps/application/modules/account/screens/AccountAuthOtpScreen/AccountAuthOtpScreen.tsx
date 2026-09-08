@@ -4,9 +4,8 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AccountAuthOtpForm } from "@modules/account/forms/AccountAuthOtpForm";
 import { AccountAuthMethodActionsSection } from "@modules/account/sections/AccountAuthMethodActionsSection";
-import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
 import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
-import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
+import { AuthPageIntro } from "@/components/auth-page-intro";
 import { useTranslations } from "next-intl";
 
 import { AuthScreen } from "@/components/auth-screen";
@@ -40,14 +39,11 @@ export function AccountAuthOtpScreen() {
         overlay
         transparent
       />
-      <AccountAuthOtpHeroSection
-        alt={t("illustrationAlt")}
-        size={isKeyboardOpen ? "compact" : "default"}
-      />
-      <AccountAuthOtpCopySection
+      <AuthPageIntro
         title={t("title")}
         subtitle={t("subtitle")}
         titleId="account-auth-otp-title"
+        keyboardOpen={isKeyboardOpen}
       />
       <AccountAuthOtpForm
         formId={ACCOUNT_AUTH_OTP_FORM_ID}

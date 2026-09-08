@@ -3,7 +3,7 @@
 import { DiscoveryIranMapSkeleton } from "../../components/skeletons/DiscoveryIranMapSkeleton";
 import type { CSSProperties, KeyboardEvent } from "react";
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/app-link";
 import { Icon } from "@theme/icon";
 import { usePublicCatalogResource } from "@api/discovery";
 
@@ -102,6 +102,7 @@ export function DiscoveryIranMapSection() {
           <div className={styles.mapWrap()}>
             <svg
               viewBox={IRAN_MAP_VIEWBOX}
+              preserveAspectRatio="xMidYMid meet"
               role="group"
               aria-label="نقشه ایران با مرزبندی ۳۱ استان"
               className={styles.map()}

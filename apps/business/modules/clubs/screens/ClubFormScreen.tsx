@@ -1,4 +1,6 @@
 "use client";
+import { IranDateInput } from "@repo/ui/iran-date-input";
+import { tehranLocalValue } from "@repo/ui/iran-date";
 
 import {
   type KeyboardEvent,
@@ -1025,16 +1027,17 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                           </label>
                           <label className="text-sm">
                             تاریخ ثبت عکس
-                            <input
-                              type="date"
-                              max={new Date().toISOString().slice(0, 10)}
+                            <IranDateInput
+                              max={tehranLocalValue(
+                                new Date().toISOString(),
+                              ).slice(0, 10)}
                               className={inputClass}
                               value={item.takenOn ?? ""}
-                              onChange={(e) =>
+                              onValueChange={(dateValue) =>
                                 setGallery((current) =>
                                   current.map((v, i) =>
                                     i === index
-                                      ? { ...v, takenOn: e.target.value }
+                                      ? { ...v, takenOn: dateValue }
                                       : v,
                                   ),
                                 )
@@ -1433,7 +1436,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 {locationPoint ? (
                   <div
                     dir="ltr"
-                    className="md:col-span-2 grid min-w-0 grid-cols-2 gap-3 text-sm"
+                    className="md:col-span-2 grid min-w-0 grid-cols-1 gap-3 text-sm sm:grid-cols-2"
                   >
                     <div className="rounded-xl bg-surface-secondary px-3 py-2">
                       <span className="block text-xs text-muted">
@@ -1533,7 +1536,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                     className={inputClass}
                   />
                 </Field>
-                <Field label={t("taxPercent")}>
+                <Field label={`${t("taxPercent")} (در مبلغ اعلامی لحاظ شده)`}>
                   <NumberField
                     aria-label={t("taxPercent")}
                     minValue={0}

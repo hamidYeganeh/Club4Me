@@ -1,6 +1,5 @@
 "use client";
 
-import { Avatar, Badge, Button } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { cn } from "@theme/cn";
 import { usePathname } from "next/navigation";
@@ -19,9 +18,6 @@ export function PanelRailSection({
   items,
   addHref,
   addLabel,
-  avatarSrc,
-  avatarAlt,
-  badge,
 }: PanelRailSectionProps) {
   const pathname = usePathname();
   const styles = panelRailSectionStyles();
@@ -55,24 +51,7 @@ export function PanelRailSection({
           );
         })}
       </nav>
-      <div className={styles.avatarWrap()}>
-        <Badge.Anchor>
-          <Button
-            isIconOnly
-            variant="tertiary"
-            aria-label={avatarAlt}
-            className={styles.avatarBtn()}
-          >
-            <Avatar className="size-10 rounded-[0.85rem]">
-              <Avatar.Image alt={avatarAlt} src={avatarSrc} />
-              <Avatar.Fallback>{avatarAlt.slice(0, 1)}</Avatar.Fallback>
-            </Avatar>
-          </Button>
-          <Badge color="accent" size="sm">
-            {badge}
-          </Badge>
-        </Badge.Anchor>
-      </div>
+      <ButtonLink href="/settings" isIconOnly aria-label="تنظیمات حساب" variant="ghost"><Icon name="user" size="lg" /></ButtonLink>
     </aside>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useClubReviews, usePublicClub } from "@api";
+import { useClubReviews, usePublicClub, useServiceReviews } from "@api";
 import {
   useCatalogClass,
   useCatalogClub,
@@ -33,6 +33,10 @@ export function DiscoveryReviewsScreen({
   const classItem = useCatalogClass(type === "class" ? id : "");
   const clubId = type === "club" ? (catalogClub.data?.id ?? "") : "";
   const clubReviews = useClubReviews(clubId);
+  const serviceReviews = useServiceReviews(
+    type === "club" ? "coach" : type,
+    type === "club" ? "" : id,
+  );
   const club = usePublicClub(clubId);
   const entityName =
     type === "club"
@@ -40,7 +44,9 @@ export function DiscoveryReviewsScreen({
       : type === "coach"
         ? (coach.data?.displayName ?? "مربی")
         : (classItem.data?.title ?? "کلاس");
-  const reviews: ReviewCardItem[] = (clubReviews.data?.items ?? []).map(
+  const sourceReviews =
+    type === "club" ? clubReviews.data?.items : serviceReviews.data?.items;
+  const reviews: ReviewCardItem[] = (sourceReviews ?? []).map(
     (review) => ({
       id: review.id,
       author: "کاربر کلاب‌فورمی",
@@ -48,26 +54,30 @@ export function DiscoveryReviewsScreen({
       title: review.title,
       body: review.body,
       createdAt: review.createdAt,
-      verified: review.isVerifiedBooking === true,
-      criteria: Object.entries(review.ratings ?? {}).flatMap(([id, value]) =>
-        review.criterionLabels?.[id]
-          ? [{ name: review.criterionLabels[id]!, value }]
+      verified:
+        "isVerifiedAttendance" in review
+          ? review.isVerifiedAttendance === true
+          : review.isVerifiedBooking === true,
+      ownerResponse: review.ownerResponse,
+      mediaUrls: "mediaUrls" in review ? review.mediaUrls : undefined,
+      criteria:
+        "ratings" in review
+          ? Object.entries(review.ratings ?? {}).flatMap(([id, value]) =>
+              review.criterionLabels?.[id]
+                ? [{ name: review.criterionLabels[id]!, value }]
+                : [],
+            )
           : [],
-      ),
     }),
   );
   const average =
     type === "club"
       ? (clubReviews.data?.averageRating ?? 0)
-      : type === "coach"
-        ? (coach.data?.averageRating ?? 0)
-        : 0;
+      : (serviceReviews.data?.averageRating ?? 0);
   const reviewCount =
     type === "club"
       ? (clubReviews.data?.reviewsCount ?? 0)
-      : type === "coach"
-        ? (coach.data?.reviewsCount ?? 0)
-        : 0;
+      : (serviceReviews.data?.reviewsCount ?? 0);
   const distribution = [5, 4, 3, 2, 1].map(
     (rating) =>
       reviews.filter((review) => Math.round(review.rating) === rating).length,
@@ -80,8 +90,8 @@ export function DiscoveryReviewsScreen({
       ? catalogClub.isPending ||
         (Boolean(clubId) && (clubReviews.isPending || club.isPending))
       : type === "coach"
-        ? coach.isPending
-        : classItem.isPending;
+        ? coach.isPending || serviceReviews.isPending
+        : classItem.isPending || serviceReviews.isPending;
   if (isPagePending) return <ReviewsPageSkeleton />;
 
   return (
@@ -119,7 +129,7 @@ export function DiscoveryReviewsScreen({
             تجربه‌های واقعی اعضای کلاب‌فورمی
           </p>
         </div>
-        {clubReviews.isPending && Boolean(clubId) ? (
+        {(type === "club" ? clubReviews.isPending : serviceReviews.isPending) ? (
           <ReviewListSkeleton count={3} />
         ) : (
           <div className="space-y-3">

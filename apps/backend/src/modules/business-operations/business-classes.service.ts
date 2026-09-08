@@ -1,6 +1,11 @@
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { ClassBillingService } from "./class-billing.service";
+import { attendanceCredit, attendanceAudit } from "./attendance-credit";
+import type { ClubPermission } from "../clubs/club-permissions";
+import { Injectable, Optional } from "@nestjs/common";
+import { ModuleRef } from "@nestjs/core";
+import { Atomic } from "../../infrastructure/database/atomic-operation";
+import { InjectConnection, InjectModel } from "@nestjs/mongoose";
+import { Connection, Model, Types } from "mongoose";
 import { AppError } from "../../common/errors/app.exception";
 import { ClubsRepository } from "../clubs/clubs.repository";
 import type {
@@ -47,15 +52,38 @@ export class BusinessClassesService {
     private coaches: Model<ClubCoachProfileDocument>,
     @InjectModel(ClubBranch.name) private branches: Model<ClubBranchDocument>,
     private clubs: ClubsRepository,
+    private billing: ClassBillingService,
+    @Optional() private moduleRef?: ModuleRef,
+    @InjectConnection() private readonly connection?: Connection,
   ) {}
 
-  private async club(ownerId: string, clubId: string) {
-    await this.clubs.findForOwner(ownerId, clubId);
+  private async club(
+    ownerId: string,
+    clubId: string,
+    permission?: ClubPermission,
+  ) {
+    await this.clubs.findForOwner(ownerId, clubId, permission);
     return oid(clubId);
   }
 
+  private async enrollmentResponse(
+    userId: string,
+    clubId: string,
+    item: BusinessClassEnrollmentDocument,
+  ) {
+    const canReadAmounts = await this.clubs.hasPermission(
+      userId,
+      clubId,
+      "payments.read",
+    );
+    return {
+      ...enrollmentDto(item),
+      agreedPrice: canReadAmounts ? item.agreedPrice : null,
+    };
+  }
+
   async list(ownerId: string, clubId: string) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "classes.read");
     const items = await this.classes
       .find({ clubId: id })
       .sort({ startDate: -1, createdAt: -1 });
@@ -78,7 +106,7 @@ export class BusinessClassesService {
   }
 
   async get(ownerId: string, clubId: string, classId: string) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "classes.read");
     const item = await this.classDocument(id, classId);
     const [enrollmentCount, sessionCount] = await Promise.all([
       this.enrollments.countDocuments({ classId: item._id, status: "active" }),
@@ -88,10 +116,11 @@ export class BusinessClassesService {
   }
 
   async create(ownerId: string, clubId: string, input: CreateBusinessClassDto) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "classes.write");
     await this.assertRelations(id, input.coachProfileId, input.branchId);
     const item = await this.classes.create(toClassPersistence(id, input));
-    await this.syncFutureSessions(item);
+    try { await this.syncFutureSessions(item); }
+    catch (error) { item.status = "draft"; item.scheduleError = error instanceof Error ? error.message.slice(0, 1000) : "SESSION_GENERATION_FAILED"; await item.save(); }
     return {
       ...classDto(item),
       enrollmentCount: 0,
@@ -105,7 +134,7 @@ export class BusinessClassesService {
     classId: string,
     input: UpdateBusinessClassDto,
   ) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "classes.write");
     const item = await this.classDocument(id, classId);
     await this.assertRelations(id, input.coachProfileId, input.branchId);
     if (input.startDate && input.endDate && input.startDate > input.endDate)
@@ -122,7 +151,7 @@ export class BusinessClassesService {
         classId: item._id,
         status: "active",
       });
-      if (input.capacity < activeCount)
+      if (input.capacity < activeCount + (item.pendingEnrollmentCount ?? 0))
         throw new AppError(
           409,
           "CLASS_CAPACITY_BELOW_ENROLLMENT_COUNT",
@@ -135,24 +164,73 @@ export class BusinessClassesService {
         (key) => key in input,
       )
     )
-      await this.syncFutureSessions(item);
+      try { await this.syncFutureSessions(item); item.scheduleError = null; await item.save(); }
+      catch (error) { item.status = "draft"; item.scheduleError = error instanceof Error ? error.message.slice(0, 1000) : "SESSION_GENERATION_FAILED"; await item.save(); }
     return this.get(ownerId, clubId, classId);
   }
 
   async regenerate(ownerId: string, clubId: string, classId: string) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "classes.write");
     const item = await this.classDocument(id, classId);
     await this.syncFutureSessions(item);
     return this.listSessions(ownerId, clubId, classId);
   }
 
   async listSessions(ownerId: string, clubId: string, classId: string) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "classes.read");
     const item = await this.classDocument(id, classId);
     const items = await this.sessions
       .find({ classId: item._id })
       .sort({ startsAt: 1 });
     return { items: items.map(sessionDto) };
+  }
+
+  async listCalendarSessions(
+    ownerId: string,
+    clubId: string,
+    from?: string,
+    to?: string,
+  ) {
+    const id = await this.club(ownerId, clubId, "classes.read");
+    const startsAt: { $gte?: Date; $lt?: Date } = {};
+    if (from) {
+      const parsed = new Date(from);
+      if (Number.isNaN(parsed.getTime()))
+        throw invalid("CALENDAR_RANGE_INVALID");
+      startsAt.$gte = parsed;
+    }
+    if (to) {
+      const parsed = new Date(to);
+      if (Number.isNaN(parsed.getTime()))
+        throw invalid("CALENDAR_RANGE_INVALID");
+      startsAt.$lt = parsed;
+    }
+    if (
+      startsAt.$gte &&
+      startsAt.$lt &&
+      startsAt.$gte.getTime() >= startsAt.$lt.getTime()
+    )
+      throw invalid("CALENDAR_RANGE_INVALID");
+
+    const items = await this.sessions
+      .find({
+        clubId: id,
+        ...(Object.keys(startsAt).length ? { startsAt } : {}),
+      })
+      .sort({ startsAt: 1 })
+      .limit(2500);
+    const classes = await this.classes
+      .find({ _id: { $in: items.map((item) => item.classId) }, clubId: id })
+      .select({ title: 1 });
+    const titles = new Map(
+      classes.map((item) => [String(item._id), item.title]),
+    );
+    return {
+      items: items.map((item) => ({
+        ...sessionDto(item),
+        classTitle: titles.get(String(item.classId)) ?? "کلاس",
+      })),
+    };
   }
 
   async updateSession(
@@ -162,7 +240,7 @@ export class BusinessClassesService {
     sessionId: string,
     input: UpdateClassSessionDto,
   ) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "classes.write");
     await this.classDocument(id, classId);
     const item = await this.sessions.findOne({
       _id: oid(sessionId),
@@ -170,24 +248,88 @@ export class BusinessClassesService {
       clubId: id,
     });
     if (!item) throw notFound("CLASS_SESSION_NOT_FOUND");
-    if (input.startsAt) item.startsAt = new Date(input.startsAt);
-    if (input.endsAt) item.endsAt = new Date(input.endsAt);
+    const preview = await this.buildSessionChangePreview(id, item, input);
+    if (preview.conflicts.length)
+      throw new AppError(409, "CLASS_SESSION_CONFLICT", "زمان انتخاب‌شده با برنامه دیگری تداخل دارد", preview);
+    if ((input.scope ?? "single") === "future") {
+      const deltaStart = preview.startsAt.getTime() - item.startsAt.getTime();
+      const deltaEnd = preview.endsAt.getTime() - item.endsAt.getTime();
+      const future = await this.sessions.find({ classId: item.classId, startsAt: { $gte: item.startsAt }, status: "scheduled" }).sort({ startsAt: 1 });
+      for (const session of future) {
+        session.startsAt = new Date(session.startsAt.getTime() + deltaStart);
+        session.endsAt = new Date(session.endsAt.getTime() + deltaEnd);
+        if (input.status) session.status = input.status;
+        await session.save();
+      }
+      return { ...sessionDto((await this.sessions.findById(item._id))!), affectedCount: future.length };
+    }
+    item.startsAt = preview.startsAt;
+    item.endsAt = preview.endsAt;
     if (input.status) item.status = input.status;
-    if (item.startsAt >= item.endsAt)
-      throw invalid("CLASS_SESSION_TIME_INVALID");
     await item.save();
-    return sessionDto(item);
+    return { ...sessionDto(item), affectedCount: 1 };
+  }
+
+  async previewSessionChange(ownerId: string, clubId: string, classId: string, sessionId: string, input: UpdateClassSessionDto) {
+    const id = await this.club(ownerId, clubId, "classes.write");
+    await this.classDocument(id, classId);
+    const item = await this.sessions.findOne({ _id: oid(sessionId), classId: oid(classId), clubId: id });
+    if (!item) throw notFound("CLASS_SESSION_NOT_FOUND");
+    const preview = await this.buildSessionChangePreview(id, item, input);
+    const affectedCount = (input.scope ?? "single") === "future"
+      ? await this.sessions.countDocuments({ classId: item.classId, startsAt: { $gte: item.startsAt }, status: "scheduled" })
+      : 1;
+    return { startsAt: preview.startsAt.toISOString(), endsAt: preview.endsAt.toISOString(), affectedCount, conflicts: preview.conflicts };
+  }
+
+  private async buildSessionChangePreview(clubId: Types.ObjectId, item: BusinessClassSessionDocument, input: UpdateClassSessionDto) {
+    const startsAt = input.startsAt ? new Date(input.startsAt) : item.startsAt;
+    const endsAt = input.endsAt ? new Date(input.endsAt) : item.endsAt;
+    if (startsAt >= endsAt) throw invalid("CLASS_SESSION_TIME_INVALID");
+    const [classConflicts, reservableConflicts] = await Promise.all([
+      this.sessions.find({ _id: { $ne: item._id }, clubId, status: "scheduled", startsAt: { $lt: endsAt }, endsAt: { $gt: startsAt } }).select("classId startsAt endsAt").lean(),
+      this.connection!.collection("reservable_sessions").find({ clubId, status: "active", startsAt: { $lt: endsAt }, endsAt: { $gt: startsAt } }).project({ title: 1, startsAt: 1, endsAt: 1 }).limit(20).toArray(),
+    ]);
+    return {
+      startsAt,
+      endsAt,
+      conflicts: [
+        ...classConflicts.map((value) => ({ source: "class" as const, id: String(value._id), title: "جلسه کلاس", startsAt: value.startsAt.toISOString(), endsAt: value.endsAt.toISOString() })),
+        ...reservableConflicts.map((value) => ({ source: "reservable" as const, id: String(value._id), title: String(value.title ?? "سانس رزروپذیر"), startsAt: new Date(value.startsAt as Date).toISOString(), endsAt: new Date(value.endsAt as Date).toISOString() })),
+      ],
+    };
   }
 
   async listEnrollments(ownerId: string, clubId: string, classId: string) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "enrollments.read");
     await this.classDocument(id, classId);
     const items = await this.enrollments
       .find({ classId: oid(classId) })
       .sort({ enrolledAt: -1 });
-    return { items: items.map(enrollmentDto) };
+    const students = await this.students
+      .find({ _id: { $in: items.map((item) => item.studentId) }, clubId: id })
+      .select("firstName lastName");
+    const names = new Map(
+      students.map((student) => [
+        String(student._id),
+        `${student.firstName} ${student.lastName}`,
+      ]),
+    );
+    const canReadAmounts = await this.clubs.hasPermission(
+      ownerId,
+      clubId,
+      "payments.read",
+    );
+    return {
+      items: items.map((item) => ({
+        ...enrollmentDto(item),
+        agreedPrice: canReadAmounts ? item.agreedPrice : null,
+        studentName: names.get(String(item.studentId)) ?? "",
+      })),
+    };
   }
 
+  @Atomic("enrollments")
   async enroll(
     ownerId: string,
     clubId: string,
@@ -195,8 +337,19 @@ export class BusinessClassesService {
     userId: string,
     input: CreateClassEnrollmentDto,
   ) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "enrollments.write");
     const trainingClass = await this.classDocument(id, classId);
+    const contractSessions =
+      trainingClass.pricingModel === "package"
+        ? trainingClass.packageSessionCount
+        : null;
+    if (
+      input.agreedPrice !== trainingClass.price ||
+      input.paymentStatus !== "pending" ||
+      (input.totalSessions !== null && input.totalSessions !== contractSessions)
+    ) {
+      await this.clubs.findForOwner(ownerId, clubId, "payments.write");
+    }
     const studentId = oid(input.studentId);
     if (
       !(await this.students.exists({
@@ -210,12 +363,20 @@ export class BusinessClassesService {
       classId: trainingClass._id,
       studentId,
     });
-    if (current && ["active", "waitlisted"].includes(current.status))
+    if (current && ["pending", "active", "waitlisted"].includes(current.status))
       throw new AppError(
         409,
         "STUDENT_ALREADY_ENROLLED",
         "Student is already enrolled",
       );
+    if (
+      current &&
+      (current.billingMode === "ledger" ||
+        ["paid", "partial"].includes(current.paymentStatus))
+    )
+      throw invalid("PREVIOUS_ENROLLMENT_REQUIRES_FINANCIAL_REVIEW");
+    if (!Number.isSafeInteger(input.agreedPrice))
+      throw invalid("INVALID_PRICE");
     if (input.status === "active") await this.assertCapacity(trainingClass);
     const totalSessions =
       input.totalSessions ??
@@ -249,9 +410,11 @@ export class BusinessClassesService {
         { $inc: { activeEnrollmentCount: 1 } },
       );
     }
-    return enrollmentDto(item!);
+    await this.billing.initialize(item!, userId, input.paymentStatus);
+    return this.enrollmentResponse(ownerId, clubId, item!);
   }
 
+  @Atomic("enrollments")
   async updateEnrollment(
     ownerId: string,
     clubId: string,
@@ -259,17 +422,70 @@ export class BusinessClassesService {
     enrollmentId: string,
     input: UpdateClassEnrollmentDto,
   ) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "enrollments.write");
     const trainingClass = await this.classDocument(id, classId);
     const item = await this.enrollments.findOne({
       _id: oid(enrollmentId),
       classId: trainingClass._id,
     });
     if (!item) throw notFound("CLASS_ENROLLMENT_NOT_FOUND");
+    if (
+      (input.paymentStatus !== undefined &&
+        input.paymentStatus !== item.paymentStatus) ||
+      (input.agreedPrice !== undefined &&
+        input.agreedPrice !== item.agreedPrice) ||
+      input.remainingSessions !== undefined ||
+      (input.status === "cancelled" &&
+        ["paid", "partial", "waived"].includes(item.paymentStatus))
+    ) {
+      await this.clubs.findForOwner(ownerId, clubId, "payments.write");
+    }
+    if (
+      item.paymentExpiresAt &&
+      input.paymentStatus &&
+      input.paymentStatus !== item.paymentStatus
+    ) {
+      throw invalid("ONLINE_PAYMENT_MANAGED_BY_COMMERCE");
+    }
+    if (item.paymentSeatHeld && input.status === "active")
+      throw invalid("PAYMENT_REQUIRED");
+    if (
+      item.paymentExpiresAt &&
+      item.paymentStatus === "paid" &&
+      input.status === "cancelled"
+    ) {
+      const { CommerceService } = await import("../commerce/commerce.service");
+      await this.moduleRef!.get(CommerceService, {
+        strict: false,
+      }).refundBusinessClass(item._id, item.agreedPrice);
+      return this.enrollmentResponse(
+        ownerId,
+        clubId,
+        (await this.enrollments.findById(item._id))!,
+      );
+    }
+    if (item.paymentSeatHeld && input.status && input.status !== "pending") {
+      await this.classes.updateOne(
+        { _id: item.classId, pendingEnrollmentCount: { $gt: 0 } },
+        { $inc: { pendingEnrollmentCount: -1 } },
+      );
+      item.paymentSeatHeld = false;
+    }
     if (input.status === "active" && item.status !== "active")
       await this.assertCapacity(trainingClass);
     const wasActive = item.status === "active";
-    Object.assign(item, input);
+    await this.billing.changeTerms(
+      item,
+      ownerId,
+      input.agreedPrice,
+      input.paymentStatus,
+    );
+    const {
+      agreedPrice: _price,
+      paymentStatus: _paymentStatus,
+      ...operational
+    } = input;
+    Object.assign(item, operational);
     await item.save();
     const isActive = item.status === "active";
     if (wasActive !== isActive) {
@@ -278,9 +494,10 @@ export class BusinessClassesService {
         { $inc: { activeEnrollmentCount: isActive ? 1 : -1 } },
       );
     }
-    return enrollmentDto(item);
+    return this.enrollmentResponse(ownerId, clubId, item);
   }
 
+  @Atomic("enrollments")
   async transfer(
     ownerId: string,
     clubId: string,
@@ -289,7 +506,7 @@ export class BusinessClassesService {
     targetClassId: string,
     userId: string,
   ) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "enrollments.write");
     await this.classDocument(id, classId);
     const target = await this.classDocument(id, targetClassId);
     const source = await this.enrollments.findOne({
@@ -298,13 +515,26 @@ export class BusinessClassesService {
       status: { $in: ["active", "waitlisted"] },
     });
     if (!source) throw notFound("CLASS_ENROLLMENT_NOT_FOUND");
+    if (
+      source.paymentExpiresAt &&
+      ["paid", "partial", "waived"].includes(source.paymentStatus)
+    )
+      throw invalid("PAID_CLASS_TRANSFER_REQUIRES_REFUND");
+    if (
+      source.billingMode === "ledger" ||
+      ["paid", "partial", "waived"].includes(source.paymentStatus)
+    )
+      await this.clubs.findForOwner(ownerId, clubId, "payments.write");
     if (String(target._id) === String(source.classId))
       throw invalid("SAME_CLASS_TRANSFER");
     const activeCount = await this.enrollments.countDocuments({
       classId: target._id,
       status: "active",
     });
-    const status = activeCount < target.capacity ? "active" : "waitlisted";
+    const status =
+      activeCount + (target.pendingEnrollmentCount ?? 0) < target.capacity
+        ? "active"
+        : "waitlisted";
     const existing = await this.enrollments.findOne({
       classId: target._id,
       studentId: source.studentId,
@@ -315,6 +545,8 @@ export class BusinessClassesService {
         "STUDENT_ALREADY_IN_TARGET_CLASS",
         "Student is already in target class",
       );
+    if (existing?.billingMode === "ledger")
+      throw invalid("PREVIOUS_ENROLLMENT_REQUIRES_FINANCIAL_REVIEW");
     const totalSessions =
       target.pricingModel === "package" ? target.packageSessionCount : null;
     const payload = {
@@ -338,6 +570,7 @@ export class BusinessClassesService {
           { new: true },
         )
       : await this.enrollments.create(payload);
+    await this.billing.transferAccount(source, moved!, userId);
     const sourceWasActive = source.status === "active";
     source.status = "cancelled";
     await source.save();
@@ -353,7 +586,7 @@ export class BusinessClassesService {
         { $inc: { activeEnrollmentCount: 1 } },
       );
     }
-    return enrollmentDto(moved!);
+    return this.enrollmentResponse(ownerId, clubId, moved!);
   }
 
   async listAttendance(
@@ -362,12 +595,13 @@ export class BusinessClassesService {
     classId: string,
     sessionId: string,
   ) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "attendance.read");
     await this.assertSession(id, classId, sessionId);
     const items = await this.attendance.find({ sessionId: oid(sessionId) });
     return { items: items.map(attendanceDto) };
   }
 
+  @Atomic("enrollments")
   async recordAttendance(
     ownerId: string,
     clubId: string,
@@ -376,7 +610,7 @@ export class BusinessClassesService {
     userId: string,
     input: RecordClassAttendanceDto,
   ) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "attendance.write");
     const session = await this.assertSession(id, classId, sessionId);
     const activeEnrollments = await this.enrollments.find({
       classId: oid(classId),
@@ -394,9 +628,23 @@ export class BusinessClassesService {
         sessionId: session._id,
         studentId: oid(record.studentId),
       });
+      const enrollment = enrollmentMap.get(record.studentId)!;
+      const remaining = attendanceCredit(
+        enrollment.remainingSessions,
+        enrollment.totalSessions,
+        previous?.status,
+        record.status,
+      );
       const saved = await this.attendance.findOneAndUpdate(
         { sessionId: session._id, studentId: oid(record.studentId) },
         {
+          ...attendanceAudit(
+            userId,
+            previous?.status,
+            record.status,
+            enrollment.remainingSessions,
+            remaining,
+          ),
           $set: {
             clubId: id,
             classId: oid(classId),
@@ -409,18 +657,8 @@ export class BusinessClassesService {
         },
         { upsert: true, new: true },
       );
-      const enrollment = enrollmentMap.get(record.studentId)!;
-      if (enrollment.remainingSessions !== null) {
-        if (record.status === "present" && previous?.status !== "present")
-          enrollment.remainingSessions = Math.max(
-            0,
-            enrollment.remainingSessions - 1,
-          );
-        if (record.status !== "present" && previous?.status === "present")
-          enrollment.remainingSessions = Math.min(
-            enrollment.totalSessions ?? Infinity,
-            enrollment.remainingSessions + 1,
-          );
+      if (remaining !== enrollment.remainingSessions) {
+        enrollment.remainingSessions = remaining;
         await enrollment.save();
       }
       results.push(saved);
@@ -464,7 +702,7 @@ export class BusinessClassesService {
       classId: item._id,
       status: "active",
     });
-    if (count >= item.capacity)
+    if (count + (item.pendingEnrollmentCount ?? 0) >= item.capacity)
       throw new AppError(409, "CLASS_CAPACITY_FULL", "Class capacity is full");
   }
   private async syncFutureSessions(item: BusinessTrainingClassDocument) {
@@ -551,6 +789,12 @@ function toClassPersistence(
     clubId,
     coachProfileId: input.coachProfileId ? oid(input.coachProfileId) : null,
     branchId: input.branchId ? oid(input.branchId) : null,
+    coverMediaId: input.coverMediaId ? oid(input.coverMediaId) : null,
+    galleryMediaIds: (input.galleryMediaIds ?? []).map(oid),
+    requiredEquipmentIds: (input.requiredEquipmentIds ?? []).map(oid),
+    amenityIds: (input.amenityIds ?? []).map(oid),
+    registrationStartAt: input.registrationStartAt ? new Date(input.registrationStartAt) : null,
+    registrationEndAt: input.registrationEndAt ? new Date(input.registrationEndAt) : null,
     startDate: new Date(`${input.startDate}T00:00:00.000Z`),
     endDate: new Date(`${input.endDate}T00:00:00.000Z`),
   };
@@ -570,6 +814,12 @@ function toClassUpdate(input: UpdateBusinessClassDto) {
     ...(input.branchId !== undefined
       ? { branchId: input.branchId ? oid(input.branchId) : null }
       : {}),
+    ...(input.coverMediaId !== undefined ? { coverMediaId: input.coverMediaId ? oid(input.coverMediaId) : null } : {}),
+    ...(input.galleryMediaIds ? { galleryMediaIds: input.galleryMediaIds.map(oid) } : {}),
+    ...(input.requiredEquipmentIds ? { requiredEquipmentIds: input.requiredEquipmentIds.map(oid) } : {}),
+    ...(input.amenityIds ? { amenityIds: input.amenityIds.map(oid) } : {}),
+    ...(input.registrationStartAt !== undefined ? { registrationStartAt: input.registrationStartAt ? new Date(input.registrationStartAt) : null } : {}),
+    ...(input.registrationEndAt !== undefined ? { registrationEndAt: input.registrationEndAt ? new Date(input.registrationEndAt) : null } : {}),
     ...(input.startDate
       ? { startDate: new Date(`${input.startDate}T00:00:00.000Z`) }
       : {}),
@@ -609,6 +859,7 @@ function classDto(item: BusinessTrainingClassDocument) {
     faqs: item.faqs ?? [],
     sport: item.sport,
     level: item.level,
+    skillLevelId: item.skillLevelId ? String(item.skillLevelId) : null,
     model: item.classModel,
     pricingModel: item.pricingModel,
     price: item.price,
@@ -617,6 +868,17 @@ function classDto(item: BusinessTrainingClassDocument) {
     capacity: item.capacity,
     coachProfileId: item.coachProfileId ? String(item.coachProfileId) : null,
     branchId: item.branchId ? String(item.branchId) : null,
+    coverMediaId: item.coverMediaId ? String(item.coverMediaId) : null,
+    galleryMediaIds: (item.galleryMediaIds ?? []).map(String),
+    prerequisites: item.prerequisites ?? [],
+    requiredEquipmentIds: (item.requiredEquipmentIds ?? []).map(String),
+    amenityIds: (item.amenityIds ?? []).map(String),
+    minAge: item.minAge ?? null,
+    maxAge: item.maxAge ?? null,
+    registrationStartAt: item.registrationStartAt?.toISOString() ?? null,
+    registrationEndAt: item.registrationEndAt?.toISOString() ?? null,
+    scheduleError: item.scheduleError ?? null,
+    readiness: { ready: classReadinessIssues(item).length === 0, missing: classReadinessIssues(item) },
     startDate: item.startDate.toISOString().slice(0, 10),
     endDate: item.endDate.toISOString().slice(0, 10),
     schedule: item.schedule,
@@ -624,6 +886,18 @@ function classDto(item: BusinessTrainingClassDocument) {
     enrollmentMode: item.enrollmentMode,
     status: item.status,
   };
+}
+function classReadinessIssues(value: { title?: string; description?: string; skillLevelId?: unknown; minAge?: number | null; maxAge?: number | null; branchId?: unknown; coverMediaId?: unknown; galleryMediaIds?: unknown[]; schedule?: unknown[] }) {
+  return [
+    !value.title?.trim() && "title",
+    !value.description?.trim() && "description",
+    !value.skillLevelId && "skillLevelId",
+    value.minAge == null && "minAge",
+    value.maxAge == null && "maxAge",
+    !value.branchId && "branchId",
+    !value.coverMediaId && !(value.galleryMediaIds?.length) && "media",
+    !value.schedule?.length && "schedule",
+  ].filter((item): item is string => Boolean(item));
 }
 function sessionDto(item: BusinessClassSessionDocument) {
   return {
@@ -655,6 +929,7 @@ function attendanceDto(item: BusinessClassAttendanceDocument) {
     classId: String(item.classId),
     studentId: String(item.studentId),
     status: item.status,
+    changes: item.changes ?? [],
     notes: item.notes,
     recordedBy: String(item.recordedBy),
   };

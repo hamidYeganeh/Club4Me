@@ -123,6 +123,7 @@ export class Coach {
 export type CoachDocument = HydratedDocument<Coach>;
 export const CoachSchema = SchemaFactory.createForClass(Coach);
 CoachSchema.index({ reviewStatus: 1, visibility: 1, "geo.cityId": 1 });
+CoachSchema.index({ "professionalProfile.credentials.mediaId": 1 });
 
 @Schema({ collection: "coach_sports", timestamps: true })
 export class CoachSport {
@@ -221,6 +222,8 @@ export class SessionVenue {
 
 @Schema({ collection: "classes", timestamps: true })
 export class TrainingClass {
+  @Prop({ type: [String], default: [], select: false })
+  releasedPaymentIds: string[];
   @Prop({ type: Types.ObjectId, ref: Coach.name, required: true })
   ownerCoachId: Types.ObjectId;
   @Prop({
@@ -290,6 +293,8 @@ TrainingClassSchema.index({ clubId: 1, clubApprovalStatus: 1, updatedAt: -1 });
 
 @Schema({ collection: "class_sessions", timestamps: true })
 export class TrainingSession {
+  @Prop({ type: [String], default: [], select: false })
+  releasedPaymentIds: string[];
   @Prop({ type: Types.ObjectId, ref: TrainingClass.name })
   classId?: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: CoachOffering.name })
@@ -360,6 +365,10 @@ ScheduleRuleSchema.index({ classId: 1, isActive: 1 });
 
 @Schema({ collection: "class_enrollments", timestamps: true })
 export class ClassEnrollment {
+  @Prop({ type: Date, default: null, index: true })
+  paymentExpiresAt: Date | null;
+  @Prop({ type: Types.ObjectId, select: false })
+  paymentFailureIntentId?: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: TrainingClass.name, required: true })
   classId: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: Coach.name, required: true })
@@ -389,6 +398,12 @@ ClassEnrollmentSchema.index({ coachId: 1, status: 1, updatedAt: -1 });
 
 @Schema({ collection: "session_bookings", timestamps: true })
 export class SessionBooking {
+  @Prop({ type: SchemaTypes.ObjectId, default: null })
+  packagePurchaseId: Types.ObjectId | null;
+  @Prop({ type: Date, default: null, index: true })
+  paymentExpiresAt: Date | null;
+  @Prop({ type: Types.ObjectId, select: false })
+  paymentFailureIntentId?: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: TrainingSession.name, required: true })
   sessionId: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: CoachOffering.name })
@@ -411,6 +426,14 @@ export class SessionBooking {
   @Prop({ type: Date }) cancelledAt?: Date;
   @Prop({ type: String, trim: true, maxlength: 1000 })
   cancellationReason?: string;
+  @Prop({ type: String, trim: true, maxlength: 120, default: null })
+  rescheduleKey: string | null;
+  @Prop({ type: [SchemaTypes.Mixed], default: [] })
+  rescheduleHistory: Array<{
+    fromSessionId: Types.ObjectId;
+    toSessionId: Types.ObjectId;
+    changedAt: Date;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -468,6 +491,24 @@ export const CoachAvailabilityRuleSchema = SchemaFactory.createForClass(
   CoachAvailabilityRule,
 );
 CoachAvailabilityRuleSchema.index({ coachId: 1, dayOfWeek: 1, isActive: 1 });
+
+// One coach's full plan is a single document so concurrent replacements never
+// delete one another's rows. Legacy rows remain readable until the first edit.
+@Schema({ collection: "coach_availability_plans", timestamps: true })
+export class CoachAvailabilityPlan {
+  @Prop({ type: Types.ObjectId, ref: Coach.name, required: true })
+  _id: Types.ObjectId;
+  @Prop({
+    type: [CoachAvailabilityRuleSchema.clone().set("excludeIndexes", true)],
+    default: [],
+  })
+  rules: Types.DocumentArray<CoachAvailabilityRule>;
+}
+export type CoachAvailabilityPlanDocument =
+  HydratedDocument<CoachAvailabilityPlan>;
+export const CoachAvailabilityPlanSchema = SchemaFactory.createForClass(
+  CoachAvailabilityPlan,
+);
 
 @Schema({ collection: "coach_availability_exceptions", timestamps: true })
 export class CoachAvailabilityException {

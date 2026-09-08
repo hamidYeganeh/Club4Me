@@ -1,4 +1,12 @@
 "use client";
+import { DiscoveryImageHero } from "../../components/DiscoveryImageHero";
+
+import { useDiscoveryList } from "../../hooks/use-discovery-list";
+import { DiscoveryPagination } from "../../components/DiscoveryPagination";
+import { DiscoveryEmptyPage } from "../../components/DiscoveryEmptyPage";
+import { DiscoveryQueryPage } from "../../components/DiscoveryQueryPage";
+import { getQueryFailure } from "@/lib/request-failure";
+import { DiscoveryQueryState } from "../../components/DiscoveryQueryState";
 
 import { useEffect, useState } from "react";
 import { Button, Skeleton, Typography } from "@heroui/react";
@@ -43,6 +51,7 @@ const clubSortOptions: ReadonlyArray<SortOption<ClubSort>> = [
 
 export function DiscoveryClubsScreen({
   title,
+  intro,
   description,
   layout = "rails",
   browse,
@@ -50,7 +59,7 @@ export function DiscoveryClubsScreen({
 }: DiscoveryClubsScreenProps) {
   const t = useTranslations("discovery.clubs");
   const styles = discoveryClubsScreenStyles();
-  const [query, setQuery] = useState("");
+  const { query, setQuery, q, page, setPage } = useDiscoveryList();
   const [sortOpen, setSortOpen] = useState(false);
   const { active } = useActiveLocation();
   const coords = getActiveCoordinates(active);
@@ -67,7 +76,7 @@ export function DiscoveryClubsScreen({
   const regions = usePublicCatalogResource(
     "location",
     "city-region",
-    undefined,
+    initialFilters?.cityId ? { parentId: initialFilters.cityId } : undefined,
     !showRails,
   );
   const sports = usePublicCatalogResource(
@@ -90,7 +99,7 @@ export function DiscoveryClubsScreen({
     ? { ...filters, clubTypeId: selectedClubType.id }
     : filters;
   const clubs = useCatalogClubs(
-    effectiveFilters,
+    { ...effectiveFilters, q, page, limit: 20 },
     !showRails && !isResolvingClubType,
   );
   const selectedTypeName = selectedClubType?.name;
@@ -118,9 +127,12 @@ export function DiscoveryClubsScreen({
     });
   }, [browse?.nearby, coords]);
 
-  const clearFilters = () =>
+  const clearFilters = () => {
     setFilters(initialFilters ?? browseToFilters(browse, coords));
+    setPage(1);
+  };
   const nearby = () => {
+    setPage(1);
     if (coords) {
       setFilters({
         latitude: coords.latitude,
@@ -140,6 +152,7 @@ export function DiscoveryClubsScreen({
   const selectedSort: ClubSort = filters.sort ?? "suggested";
 
   const applySort = (nextSort: ClubSort) => {
+    setPage(1);
     setFilters((current) => {
       if (nextSort === "suggested") {
         const nextFilters = { ...current };
@@ -149,6 +162,19 @@ export function DiscoveryClubsScreen({
       return { ...current, sort: nextSort };
     });
   };
+
+  if (
+    isResolvingClubType &&
+    getQueryFailure(clubTypes.error, clubTypes.fetchStatus)
+  )
+    return <DiscoveryQueryPage title="باشگاه‌ها" query={clubTypes} />;
+  if (isResolvingClubType && clubTypes.isSuccess)
+    return (
+      <DiscoveryEmptyPage
+        headerTitle="باشگاه‌ها"
+        title="این نوع باشگاه پیدا نشد"
+      />
+    );
 
   return (
     <main className={styles.root()}>
@@ -166,14 +192,24 @@ export function DiscoveryClubsScreen({
           </ButtonLink>
         }
       />
-      {description ? (
-        <p className="app-reveal px-5 text-sm text-muted">{description}</p>
+      {intro}
+      {!intro ? (
+        <DiscoveryImageHero
+          imageUrl="/profile/cover.jpg"
+          title={title ?? selectedTypeName ?? "جای تمرین بعدی‌ات را پیدا کن"}
+          eyebrow="کشف باشگاه‌ها"
+          description={
+            description ||
+            "باشگاه‌ها، امکانات و سانس‌ها را مقایسه کن و جای مناسب خودت را پیدا کن."
+          }
+        />
       ) : null}
+
       <DiscoverySearchField
         value={query}
         onChange={setQuery}
         placeholder={t("searchPlaceholder")}
-        href="/discovery/search?kind=club"
+        href={showRails ? "/discovery/search?kind=club" : undefined}
       />
       {showRails ? (
         <DiscoveryClubsCatalogSections showHero />
@@ -206,25 +242,39 @@ export function DiscoveryClubsScreen({
                   filters.cityRegionId === filter.id ? "primary" : "secondary"
                 }
                 className="shrink-0"
-                onPress={() => setFilters({ cityRegionId: filter.id })}
+                onPress={() => {
+                  setFilters((current) => ({
+                    ...current,
+                    cityRegionId: filter.id,
+                  }));
+                  setPage(1);
+                }}
               >
                 {filter.name}
               </Button>
             ))}
-            {sportFilters.slice(0, 6).map((filter) => (
-              <Button
-                key={filter.id}
-                size="sm"
-                variant={
-                  filters.sportId === filter.id ? "primary" : "secondary"
-                }
-                className="shrink-0"
-                onPress={() => setFilters({ sportId: filter.id })}
-              >
-                {filter.name}
-              </Button>
-            ))}
+            {!browse?.sportId &&
+              sportFilters.slice(0, 6).map((filter) => (
+                <Button
+                  key={filter.id}
+                  size="sm"
+                  variant={
+                    filters.sportId === filter.id ? "primary" : "secondary"
+                  }
+                  className="shrink-0"
+                  onPress={() => {
+                    setFilters((current) => ({
+                      ...current,
+                      sportId: filter.id,
+                    }));
+                    setPage(1);
+                  }}
+                >
+                  {filter.name}
+                </Button>
+              ))}
           </div>
+          <DiscoveryQueryState query={clubTypes} />
           <div className={styles.resultsBar()}>
             {clubs.isPending ? (
               <Skeleton
@@ -246,12 +296,19 @@ export function DiscoveryClubsScreen({
               className="h-10 min-h-10 gap-2 px-2 font-bold text-muted"
               onPress={() => setSortOpen(true)}
             >
-              مرتب‌سازی: {clubSortOptions.find((option) => option.value === selectedSort)?.label}
+              مرتب‌سازی:{" "}
+              {
+                clubSortOptions.find((option) => option.value === selectedSort)
+                  ?.label
+              }
               <Icon name="sort-descending" size={18} className="text-accent" />
             </Button>
           </div>
+          <DiscoveryQueryState query={clubs} />
           <div className={styles.list()}>
-            {clubs.isPending ? <DiscoveryResultCardSkeleton count={4} /> : null}
+            {clubs.isLoading || (isResolvingClubType && clubTypes.isLoading) ? (
+              <DiscoveryResultCardSkeleton count={4} />
+            ) : null}
             {!clubs.isPending && !clubs.isError && visible.length === 0 ? (
               <DiscoveryEmptySection
                 title="باشگاهی پیدا نشد"
@@ -274,6 +331,15 @@ export function DiscoveryClubsScreen({
         </>
       )}
 
+      {!showRails ? (
+        <DiscoveryPagination
+          page={page}
+          total={clubs.data?.total ?? 0}
+          limit={20}
+          onChange={setPage}
+          pending={clubs.isFetching}
+        />
+      ) : null}
       <SortBottomSheet
         open={sortOpen}
         onOpenChange={setSortOpen}

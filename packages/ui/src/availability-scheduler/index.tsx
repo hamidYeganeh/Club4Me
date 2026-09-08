@@ -2,7 +2,14 @@
 // beui.dev/components/blocks/availability-scheduler
 
 import { LayoutGroup, useReducedMotion } from "motion/react";
-import { useCallback, useId, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { cn } from "./lib/utils";
 import { DayRow } from "./day-row";
@@ -57,7 +64,9 @@ export function AvailabilityScheduler({
   );
   const week = controlled ? value : internal;
   const weekRef = useRef(week);
-  weekRef.current = week;
+  useEffect(() => {
+    weekRef.current = week;
+  }, [week]);
 
   const commit = useCallback(
     (next: WeekAvailability) => {
@@ -74,7 +83,9 @@ export function AvailabilityScheduler({
         ...weekRef.current,
         [day]: {
           enabled: next.enabled,
-          ranges: next.ranges.slice(0, maxRanges).map((range) => ({ ...range })),
+          ranges: next.ranges
+            .slice(0, maxRanges)
+            .map((range) => ({ ...range })),
         },
       });
     },

@@ -45,9 +45,11 @@ describe("AuthService portal access", () => {
   };
 
   let authService: AuthService;
+  const clubAccess = { hasPortalAccess: jest.fn() };
 
   beforeEach(() => {
     jest.clearAllMocks();
+    clubAccess.hasPortalAccess.mockResolvedValue(false);
     tokenService.signTokenPair.mockReturnValue({
       accessToken: "access",
       refreshToken: "refresh",
@@ -66,7 +68,34 @@ describe("AuthService portal access", () => {
       sessions as never,
       config as never,
       smsProvider as never,
+      clubAccess as never,
     );
+  });
+
+  it("authenticates accepted staff without adding owner to their roles", async () => {
+    const staff = user(["athlete"]);
+    clubAccess.hasPortalAccess.mockResolvedValue(true);
+    usersService.authenticate.mockResolvedValue(staff);
+    const result = await authService.loginWithPassword(
+      staff.phone,
+      "password1",
+      "business",
+    );
+    expect(result.user.roles).toEqual(["athlete"]);
+    expect(clubAccess.hasPortalAccess).toHaveBeenCalledWith(staff.id, [
+      "athlete",
+    ]);
+  });
+  it("checks accepted staff before sending a business OTP", async () => {
+    const staff = user(["coach"]);
+    usersService.requireByPhone.mockResolvedValue(staff);
+    await expect(
+      authService.requestLoginOtp(staff.phone, "business"),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(smsProvider.sendOtp).not.toHaveBeenCalled();
+    clubAccess.hasPortalAccess.mockResolvedValue(true);
+    await authService.requestLoginOtp(staff.phone, "business");
+    expect(smsProvider.sendOtp).toHaveBeenCalled();
   });
 
   it("does not create a user when requesting an admin OTP", async () => {

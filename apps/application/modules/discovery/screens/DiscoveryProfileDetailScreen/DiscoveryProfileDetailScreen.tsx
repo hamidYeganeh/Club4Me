@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { DiscoveryHeroScrim } from "../../components/DiscoveryImageHero";
 import { Button, Card, toast, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import {
@@ -24,6 +25,10 @@ import {
   useReserveSession,
 } from "@api";
 
+import { ClassDetailLayout } from "../../components/ClassDetailLayout";
+import { DiscoveryQueryPage } from "../../components/DiscoveryQueryPage";
+import { DiscoveryQueryState } from "../../components/DiscoveryQueryState";
+import { getQueryFailure } from "@/lib/request-failure";
 import { ButtonLink } from "@/components/button-link";
 import { FallbackImage } from "@/components/FallbackImage";
 import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
@@ -50,6 +55,7 @@ import {
 } from "@/components/loading-skeletons";
 
 type PendingMockPayment = {
+  expiresAt?: string | null;
   source: "club" | "coach";
   id: string;
   title: string;
@@ -85,7 +91,9 @@ function CoachDetails({ id }: { id: string }) {
   const [completedBooking, setCompletedBooking] = useState<CoachBooking | null>(
     null,
   );
-  if (query.isLoading || (coach && sessions.isPending)) return <Loading />;
+  if (getQueryFailure(query.error, query.fetchStatus) && !coach)
+    return <DiscoveryQueryPage title="مربی" query={query} />;
+  if (query.isLoading) return <Loading />;
   if (!coach) return <Missing retry={() => query.refetch()} />;
   const phone = firstString(coach.contact, ["phone", "mobile", "telephone"]);
   const availableSessions = sessions.data?.items ?? [];
@@ -102,6 +110,7 @@ function CoachDetails({ id }: { id: string }) {
             source: "club",
             id: result.id,
             title: result.sessionTitle,
+            expiresAt: result.paymentExpiresAt,
             amount: result.totalPrice,
           });
           return;
@@ -114,6 +123,7 @@ function CoachDetails({ id }: { id: string }) {
             source: "coach",
             id: result.id,
             title: result.sessionTitle,
+            expiresAt: result.paymentExpiresAt,
             amount: result.priceSnapshot.amount,
           });
           return;
@@ -132,20 +142,23 @@ function CoachDetails({ id }: { id: string }) {
   const finishPayment = async (result: "approve" | "reject") => {
     if (!pendingPayment) return;
     try {
+      let paid = false;
       if (pendingPayment.source === "club") {
-        await resolveClubPayment.mutateAsync({
+        const payment = await resolveClubPayment.mutateAsync({
           reservationId: pendingPayment.id,
           result,
         });
+        paid = payment.status === "paid";
       } else {
         const booking = await resolveCoachPayment.mutateAsync({
           bookingId: pendingPayment.id,
           result,
         });
-        if (result === "approve") setCompletedBooking(booking);
+        paid = booking.paymentStatus === "paid";
+        if (paid) setCompletedBooking(booking);
       }
       setPendingPayment(null);
-      if (result === "approve") {
+      if (paid) {
         if (pendingPayment.source === "club") setReservationResult("success");
       } else {
         setReservationResult("failed");
@@ -225,7 +238,7 @@ function CoachDetails({ id }: { id: string }) {
           kind: "coach",
           title: coach.displayName,
           subtitle:
-            reviewSession.offeringTitle ||
+            (reviewSession.pricingType && reviewSession.pricingType !== "per_session" ? "مصرف اعتبار بسته این خدمت؛ بدون پرداخت مجدد" : reviewSession.offeringTitle) ||
             coach.shortBio ||
             "مربی تأییدشده کلاب‌فورمی",
           imageUrl: coach.imageUrl,
@@ -252,7 +265,7 @@ function CoachDetails({ id }: { id: string }) {
   return (
     <DetailLayout
       title={coach.displayName}
-      subtitle={coach.shortBio}
+      subtitle={coach.experienceSummary || "مربی ورزشی"}
       meta={`${coach.averageRating.toLocaleString("fa-IR")} ★ · ${coach.experienceYears.toLocaleString("fa-IR")} سال تجربه`}
       description={coach.shortBio || "اطلاعات این مربی به‌زودی تکمیل می‌شود."}
       imageUrl={coach.imageUrl}
@@ -269,11 +282,13 @@ function CoachDetails({ id }: { id: string }) {
         return label ? [label] : [];
       })}
       actionLabel={
-        availableSessions.length > 0
-          ? "انتخاب سانس"
-          : phone
-            ? "تماس با مربی"
-            : "فعلاً سانس آزادی نیست"
+        sessions.isLoading
+          ? "در حال دریافت سانس‌ها"
+          : availableSessions.length > 0
+            ? "انتخاب سانس"
+            : phone
+              ? "تماس با مربی"
+              : "فعلاً سانس آزادی نیست"
       }
       actionHref={
         availableSessions.length > 0
@@ -285,6 +300,23 @@ function CoachDetails({ id }: { id: string }) {
       galleryHref={`/discovery/coaches/${id}/gallery`}
     >
       <CoachProfessionalSections coach={coach} section="introduction" />
+      {coach.serviceArea?.length ? (
+        <Card className="app-card app-stack-card p-5 shadow-none">
+          <Card.Title>محدوده ارائه خدمت</Card.Title>
+          <p className="mt-3 text-sm leading-7">
+            {coach.serviceArea.map((area) => area.name).join("، ")}
+          </p>
+          {(coach.serviceModes.includes("home") ||
+            coach.serviceModes.includes("outdoor")) &&
+          (coach.travelRadiusKm ?? 0) > 0 ? (
+            <p className="mt-2 text-sm text-muted">
+              شعاع رفت‌وآمد اعلام‌شده مربی:{" "}
+              {coach.travelRadiusKm!.toLocaleString("fa-IR")} کیلومتر. محل نهایی
+              در اطلاعات هر سانس مشخص می‌شود.
+            </p>
+          ) : null}
+        </Card>
+      ) : null}
       <DetailGallerySection
         title="نمونه‌کارها"
         images={coach.portfolio.map((image) => image.url)}
@@ -294,7 +326,7 @@ function CoachDetails({ id }: { id: string }) {
       {coach.specialties.length ? (
         <Card className="app-card app-stack-card p-5 shadow-none">
           <Card.Title>تخصص‌ها</Card.Title>
-          <div className="mt-3 divide-y divide-white/8">
+          <div className="mt-3 divide-y divide-border">
             {coach.specialties.map((specialty, index) => (
               <div
                 key={`${specialty.title}-${index}`}
@@ -343,12 +375,14 @@ function CoachDetails({ id }: { id: string }) {
           مشاهده و ثبت نظر
         </ButtonLink>
       </section>
+      <ButtonLink href={`/athlete/packages/${encodeURIComponent(coach.slug)}`} variant="secondary" className="w-full">بسته‌ها و خدمات ماهانه مربی</ButtonLink>
       <Card
         id="coach-sessions"
         className="app-card app-stack-card scroll-mt-6 p-5 shadow-none"
       >
         <Card.Title>سانس‌های قابل رزرو</Card.Title>
-        {sessions.isPending ? (
+        <DiscoveryQueryState query={sessions} />
+        {sessions.isLoading ? (
           <div className="mt-4">
             <CompactCardListSkeleton count={3} />
           </div>
@@ -357,7 +391,7 @@ function CoachDetails({ id }: { id: string }) {
             {availableSessions.map((session) => (
               <div
                 key={session.id}
-                className="rounded-2xl border border-white/8 bg-surface-secondary p-4"
+                className="rounded-2xl border border-border bg-surface-secondary p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -381,8 +415,7 @@ function CoachDetails({ id }: { id: string }) {
                   </div>
                   <div className="text-end">
                     <p className="text-sm font-bold text-accent">
-                      {(session.price?.amount ?? 0).toLocaleString("fa-IR")}{" "}
-                      ریال
+                      {session.pricingType && session.pricingType !== "per_session" ? "نیازمند اعتبار این خدمت" : `${(session.price?.amount ?? 0).toLocaleString("fa-IR")} ریال`}
                     </p>
                     <Button
                       size="sm"
@@ -398,16 +431,24 @@ function CoachDetails({ id }: { id: string }) {
               </div>
             ))}
           </div>
-        ) : (
+        ) : sessions.isSuccess ? (
           <p className="mt-4 text-sm text-muted">
             فعلاً سانس آزادی ثبت نشده است.
           </p>
-        )}
+        ) : null}
       </Card>
       {pendingPayment ? (
         <MockPaymentGateway
+          reference={{
+            referenceType:
+              pendingPayment.source === "club"
+                ? "reservation"
+                : "coach_booking",
+            referenceId: pendingPayment.id,
+          }}
           title={pendingPayment.title}
           amount={pendingPayment.amount}
+          expiresAt={pendingPayment.expiresAt}
           isPending={
             resolveClubPayment.isPending || resolveCoachPayment.isPending
           }
@@ -425,7 +466,9 @@ function ClassDetails({ id }: { id: string }) {
   const cancelEnrollment = useCancelClassEnrollment();
   const resolvePayment = useResolveMockClassPayment();
   const [showPayment, setShowPayment] = useState(false);
-  if (query.isLoading || enrollments.isPending) return <Loading />;
+  if (getQueryFailure(query.error, query.fetchStatus) && !query.data)
+    return <DiscoveryQueryPage title="کلاس" query={query} />;
+  if (query.isLoading) return <Loading />;
   const item = query.data;
   if (!item) return <Missing retry={() => query.refetch()} />;
   const remaining = Math.max(0, item.capacity - item.enrollmentCount);
@@ -469,7 +512,7 @@ function ClassDetails({ id }: { id: string }) {
         result,
       });
       setShowPayment(false);
-      if (result === "reject") {
+      if (resolved.paymentStatus !== "paid") {
         toast.danger("پرداخت ناموفق بود و ظرفیت کلاس آزاد شد");
       } else if (resolved.status === "active") {
         toast.success("پرداخت موفق بود و ثبت‌نام قطعی شد");
@@ -491,66 +534,49 @@ function ClassDetails({ id }: { id: string }) {
   };
   const enrollmentActive =
     enrollment && ["active", "pending"].includes(enrollment.status);
-  const actionLabel = enrollment
-    ? enrollment.paymentStatus === "pending"
-      ? "ادامه پرداخت"
-      : enrollment.status === "active"
+  const canStartEnrollment =
+    registrationOpen &&
+    (!enrollment ||
+      ["cancelled", "rejected"].includes(enrollment.status) ||
+      ["failed", "refunded"].includes(enrollment.paymentStatus));
+  const needsPayment =
+    enrollment?.paymentStatus === "pending" &&
+    ["pending", "active"].includes(enrollment.status);
+  const actionLabel = needsPayment
+    ? "ادامه پرداخت"
+    : canStartEnrollment
+      ? enrollment
+        ? "ثبت‌نام دوباره"
+        : item.price.amount > 0
+          ? "ثبت‌نام در کلاس"
+          : "ثبت‌نام رایگان"
+      : enrollment?.status === "active"
         ? "ثبت‌نام شده"
-        : enrollment.status === "pending"
+        : enrollment?.status === "pending"
           ? "در انتظار تأیید مربی"
-          : "ثبت‌نام بسته"
-    : !registrationOpen
-      ? remaining === 0
-        ? "ظرفیت تکمیل است"
-        : "ثبت‌نام بسته است"
-      : item.price.amount > 0
-        ? `ثبت‌نام، ${item.price.amount.toLocaleString("fa-IR")} ریال`
-        : "ثبت‌نام رایگان";
+          : remaining === 0
+            ? "ظرفیت تکمیل است"
+            : "ثبت‌نام بسته است";
   return (
-    <DetailLayout
-      title={item.title}
-      subtitle={item.description}
-      meta={`${remaining.toLocaleString("fa-IR")} ظرفیت باقی‌مانده`}
-      description={item.description || "توضیحات این کلاس به‌زودی تکمیل می‌شود."}
-      imageUrl={item.imageUrl}
-      badge={item.status === "published" ? "ثبت‌نام باز" : "در حال برگزاری"}
-      facts={[
-        new Date(item.courseStartAt).toLocaleDateString("fa-IR"),
-        item.deliveryMode === "online" ? "آنلاین" : "حضوری",
-        `${item.enrollmentCount.toLocaleString("fa-IR")} شرکت‌کننده`,
-      ]}
+    <ClassDetailLayout
+      item={item}
+      remaining={remaining}
+      registrationOpen={registrationOpen}
       actionLabel={actionLabel}
       onAction={
-        enrollment?.paymentStatus === "pending" || !enrollment
+        needsPayment || canStartEnrollment
           ? () => void enrollInClass()
           : undefined
       }
       actionDisabled={
-        Boolean(enrollment && enrollment.paymentStatus !== "pending") ||
-        (!enrollment && !registrationOpen)
+        enrollments.isPending ||
+        Boolean(getQueryFailure(enrollments.error, enrollments.fetchStatus)) ||
+        !(needsPayment || canStartEnrollment)
       }
       actionPending={enroll.isPending || enrollments.isPending}
       galleryHref={`/discovery/classes/${id}/gallery`}
     >
-      <DetailGallerySection
-        images={item.imageUrl ? [item.imageUrl] : []}
-        viewAllHref={`/discovery/classes/${id}/gallery`}
-      />
-      <DetailFaqSection items={item.faqs} />
-      <section className="space-y-3">
-        <ReviewSummary type="class" average={0} count={0} />
-        <ReviewEmptyState
-          title="هنوز نظری برای این کلاس ثبت نشده"
-          description="اولین نفری باشید که تجربه شرکت در این کلاس را با دیگران به اشتراک می‌گذارد."
-        />
-        <ButtonLink
-          href={`/discovery/classes/${id}/reviews`}
-          variant="secondary"
-          className="w-full"
-        >
-          مشاهده و ثبت نظر
-        </ButtonLink>
-      </section>
+      <DiscoveryQueryState query={enrollments} />
       <Card className="app-card app-stack-card p-5 shadow-none">
         <Card.Title>جزئیات ثبت‌نام</Card.Title>
         <div className="mt-4 grid gap-3 text-sm text-muted">
@@ -563,14 +589,19 @@ function ClassDetails({ id }: { id: string }) {
             </strong>
           </div>
           {item.venue?.address ? (
-            <ButtonLink
-              href={mapHref(item) ?? "#"}
-              variant="secondary"
-              size="sm"
-              className="w-full"
-            >
-              مشاهده محل برگزاری
-            </ButtonLink>
+            <div className="space-y-3">
+              <p className="text-sm leading-7 text-foreground">
+                {item.venue.address}
+              </p>
+              <ButtonLink
+                href={mapHref(item) ?? "#"}
+                variant="secondary"
+                size="sm"
+                className="w-full"
+              >
+                مشاهده محل برگزاری
+              </ButtonLink>
+            </div>
           ) : null}
           {item.prerequisites.length ? (
             <div className="rounded-2xl bg-surface-secondary p-4">
@@ -589,15 +620,35 @@ function ClassDetails({ id }: { id: string }) {
           ) : null}
         </div>
       </Card>
+      <DetailFaqSection items={item.faqs} />
+      <section className="space-y-3">
+        <ReviewSummary type="class" average={0} count={0} />
+        <ReviewEmptyState
+          title="هنوز نظری برای این کلاس ثبت نشده"
+          description="اولین نفری باشید که تجربه شرکت در این کلاس را با دیگران به اشتراک می‌گذارد."
+        />
+        <ButtonLink
+          href={`/discovery/classes/${id}/reviews`}
+          variant="secondary"
+          className="w-full"
+        >
+          مشاهده و ثبت نظر
+        </ButtonLink>
+      </section>
       {showPayment && enrollment?.paymentStatus === "pending" ? (
         <MockPaymentGateway
           title={item.title}
+          reference={{
+            referenceType: "coach_class_enrollment",
+            referenceId: enrollment.id,
+          }}
           amount={enrollment.priceSnapshot.amount}
+          expiresAt={enrollment.paymentExpiresAt}
           isPending={resolvePayment.isPending}
           onResult={(result) => void finishPayment(result)}
         />
       ) : null}
-    </DetailLayout>
+    </ClassDetailLayout>
   );
 }
 
@@ -683,11 +734,11 @@ function DetailLayout({
   }, [galleryHref, galleryRouter]);
 
   return (
-    <main className="min-h-dvh w-full max-w-full overflow-x-hidden bg-transparent pb-[calc(7rem+env(safe-area-inset-bottom))]">
-      <DiscoveryPageHeader title="" overlay />
+    <main className="coach-detail min-h-dvh w-full max-w-full overflow-x-hidden bg-transparent pb-[calc(7rem+env(safe-area-inset-bottom))]">
+      <DiscoveryPageHeader title={badge} />
       <div
         ref={mediaRef}
-        className="app-scroll-media relative aspect-4/5 max-h-[62dvh] overflow-hidden bg-background"
+        className="relative mx-4 mt-4 flex min-h-96 flex-col justify-end overflow-hidden rounded-[2rem] bg-surface-secondary"
       >
         {galleryHref ? (
           <div
@@ -715,53 +766,70 @@ function DetailLayout({
             priority
             unoptimized
             sizes="(max-width: 576px) 100vw, 576px"
-            className="object-cover saturate-75"
+            className="object-cover object-top"
           />
-          <div className="absolute inset-0 bg-linear-to-t from-background via-transparent to-black/20" />
+          <DiscoveryHeroScrim />
         </div>
-      </div>
-      <section className="relative -mt-16 flex flex-col gap-6 rounded-t-[2.25rem] border-t border-white/7 bg-background/94 px-5 pt-8 backdrop-blur-xl">
-        <div className="app-reveal">
+        <div className="relative z-20 px-5 pt-40 pb-6">
           <span className="mb-3 inline-flex rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">
             {badge}
           </span>
-          <Typography type="h2" weight="bold">
+          <Typography
+            type="h1"
+            weight="bold"
+            className="text-3xl leading-10 text-white"
+          >
             {title}
           </Typography>
-          <Typography type="body-sm" color="muted" className="mt-2">
+          <Typography type="body-sm" className="mt-2 text-white/90">
             {subtitle}
           </Typography>
-          <Typography type="body-sm" weight="bold" className="mt-3 text-accent">
+          <Typography
+            type="body-sm"
+            weight="bold"
+            className="mt-4 inline-flex rounded-2xl bg-accent px-3 py-2 text-accent-foreground"
+          >
             {meta}
           </Typography>
         </div>
+      </div>
+      <section className="relative flex flex-col gap-8 px-4 pt-5">
         <Card className="app-card app-stack-card p-5 shadow-none">
           <Card.Title>درباره</Card.Title>
           <Card.Description className="mt-3 leading-7 text-muted">
             {description}
           </Card.Description>
         </Card>
-        <div className="grid grid-cols-3 gap-3">
-          {facts.map((label, index) => (
-            <div
-              key={label}
-              className="app-surface app-stack-card flex flex-col items-center gap-2 rounded-[1.3rem] p-4 text-center text-xs"
-            >
-              <Icon
-                name={
-                  (["calendar-1", "map-pin-1", "star-full"] as const)[index] ??
-                  "star-full"
-                }
-                size={20}
-                className="text-accent"
-              />
-              {label}
-            </div>
-          ))}
-        </div>
+        {facts.length ? (
+          <div className="grid grid-cols-2 gap-3">
+            {facts.map((label, index) => (
+              <div
+                key={`${label}-${index}`}
+                className="flex items-center gap-3 rounded-3xl bg-surface p-4 text-sm font-semibold"
+              >
+                <Icon
+                  name={
+                    (["calendar-1", "map-pin-1", "star-full"] as const)[
+                      index
+                    ] ?? "star-full"
+                  }
+                  size={20}
+                  className="shrink-0 text-foreground"
+                />
+                {label}
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {galleryHref ? (
+          <ButtonLink href={galleryHref} variant="secondary" className="w-full">
+            <Icon name="image-1" size={20} />
+            مشاهده گالری
+          </ButtonLink>
+        ) : null}
         {children}
       </section>
-      <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-xl bg-linear-to-t from-background via-background to-transparent px-5 pt-8 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-xl rounded-t-[2rem] border-t border-border bg-background px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {onAction ? (
           <Button
             variant="primary"

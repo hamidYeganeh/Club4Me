@@ -25,6 +25,7 @@ export function DiscoveryHomeScreen() {
       ) as DiscoverySectionLayout[] | null;
       if (
         Array.isArray(cached) &&
+        cached.length > 0 &&
         cached.every(
           (item) =>
             item &&
@@ -51,7 +52,7 @@ export function DiscoveryHomeScreen() {
     }
   }, []);
   useEffect(() => {
-    if (!feed.data) return;
+    if (!feed.data?.length) return;
     try {
       localStorage.setItem(
         "discovery-section-layouts-v1",

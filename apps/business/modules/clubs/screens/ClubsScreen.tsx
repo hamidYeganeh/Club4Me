@@ -30,7 +30,7 @@ export function ClubsScreen() {
   const [draftFilters, setDraftFilters] = useState<ClubFilters>(emptyFilters);
   const [filters, setFilters] = useState<ClubFilters>(emptyFilters);
 
-  const items = clubs.data?.items ?? [];
+  const items = useMemo(() => clubs.data?.items ?? [], [clubs.data?.items]);
   const filtered = useMemo(() => {
     const query = filters.query.trim().toLowerCase();
     return items.filter((club) => {

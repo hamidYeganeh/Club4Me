@@ -6,7 +6,7 @@ import { Button } from "@heroui/react";
 import { AccountAuthOtpConfirmForm } from "@modules/account/forms/AccountAuthOtpConfirmForm";
 import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
 import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
-import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
+import { AuthPageIntro } from "@/components/auth-page-intro";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
 
@@ -18,7 +18,7 @@ import {
   normalizeIranianPhone,
   toE164IranianPhone,
 } from "@/lib/phone";
-import { getPostAuthPath } from "@/lib/post-auth-path";
+import { completeAuthenticationPath } from "@/lib/auth-return-path";
 
 const ACCOUNT_AUTH_OTP_CONFIRM_FORM_ID = "account-auth-otp-confirm-form";
 
@@ -57,14 +57,10 @@ export function AccountAuthOtpConfirmScreen() {
         overlay
         transparent
       />
-      <AccountAuthOtpHeroSection
-        alt={t("illustrationAlt")}
-        size={isKeyboardOpen ? "compact" : "default"}
-      />
-      <AccountAuthOtpCopySection
+      <AuthPageIntro
         titleId="account-auth-otp-confirm-title"
         title={tConfirm("title")}
-        cue={false}
+        keyboardOpen={isKeyboardOpen}
       />
       <div className="mt-1 mb-4 flex items-center justify-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5">
         <span
@@ -100,7 +96,7 @@ export function AccountAuthOtpConfirmScreen() {
         codeInvalid={tConfirm("codeInvalid")}
         sent={t("sent")}
         onSuccess={(user) => {
-          router.replace(getPostAuthPath(user));
+          router.replace(completeAuthenticationPath(user));
         }}
       />
     </AuthScreen>

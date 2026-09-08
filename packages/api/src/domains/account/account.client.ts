@@ -27,6 +27,8 @@ import type {
   SetPasswordPayload,
   SetPasswordResponse,
   UpdateAccountMePayload,
+  AccountPrivacyResponse,
+  PrivacyPurpose,
 } from "./account.dto";
 
 export const accountClient = {
@@ -71,6 +73,10 @@ export const accountClient = {
     http.delete<{ success: true }>(accountEndpoints.deleteAccount, {
       confirmation: "DELETE",
     }),
+
+  privacy: () => http.get<AccountPrivacyResponse>(accountEndpoints.privacy),
+  updateConsent: (payload: { purpose: PrivacyPurpose; granted: boolean; version: string }) =>
+    http.put(accountEndpoints.privacyConsent, payload),
 
   requestRole: (role: RequestableRole, payload: RequestRolePayload) =>
     http.post<RequestRoleResponse>(accountEndpoints.role(role), payload),

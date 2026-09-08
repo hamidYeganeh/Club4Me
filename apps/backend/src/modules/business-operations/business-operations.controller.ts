@@ -1,3 +1,11 @@
+import { ClassBillingService } from "./class-billing.service";
+import {
+  RefundManualReceiptDto,
+  AllocateReceiptDto,
+  VoidReceiptDto,
+  ReconcileClassBillingDto,
+} from "./business-operations.dto";
+import { BusinessPortalGuard } from "../auth/guards/business-portal.guard";
 import {
   Body,
   Controller,
@@ -16,6 +24,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import type { AuthTokenPayload } from "../auth/services/token.service";
 import {
+  ReceptionQueryDto,
   CreateBranchDto,
   CreateCoachDto,
   CreatePaymentDto,
@@ -31,13 +40,21 @@ import { BusinessOperationsService } from "./business-operations.service";
 import { OperationsExportService } from "./operations-export.service";
 
 @Controller("api/v1/business/clubs/:clubId/operations")
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles("owner")
+@UseGuards(JwtAuthGuard, BusinessPortalGuard)
 export class BusinessOperationsController {
   constructor(
     private readonly service: BusinessOperationsService,
     private readonly exports: OperationsExportService,
+    private readonly billing: ClassBillingService,
   ) {}
+
+  @Get("reception") reception(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Query() query: ReceptionQueryDto,
+  ) {
+    return this.service.reception(user.sub, clubId, query.phone);
+  }
 
   @Get("students") listStudents(
     @CurrentUser() user: AuthTokenPayload,
@@ -95,6 +112,52 @@ export class BusinessOperationsController {
     @Body() body: CreatePaymentDto,
   ) {
     return this.service.createPayment(user.sub, clubId, user.sub, body);
+  }
+
+  @Get("students/:studentId/accounts") accounts(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("studentId") studentId: string,
+  ) {
+    return this.billing.accounts(user.sub, clubId, studentId);
+  }
+  @Patch("payments/:paymentId/allocate") allocateReceipt(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("paymentId") paymentId: string,
+    @Body() body: AllocateReceiptDto,
+  ) {
+    return this.billing.allocate(
+      user.sub,
+      clubId,
+      paymentId,
+      body.enrollmentId,
+      body.reason,
+    );
+  }
+  @Patch("payments/:paymentId/void") voidReceipt(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("paymentId") paymentId: string,
+    @Body() body: VoidReceiptDto,
+  ) {
+    return this.billing.voidReceipt(user.sub, clubId, paymentId, body.reason);
+  }
+  @Post("payments/:paymentId/refunds") refundReceipt(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("paymentId") paymentId: string,
+    @Body() body: RefundManualReceiptDto,
+  ) {
+    return this.billing.refundReceipt(user.sub, clubId, paymentId, body);
+  }
+  @Patch("accounts/:enrollmentId/reconcile") reconcileAccount(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("enrollmentId") enrollmentId: string,
+    @Body() body: ReconcileClassBillingDto,
+  ) {
+    return this.billing.reconcile(user.sub, clubId, enrollmentId, body);
   }
 
   @Get("attendance") listAttendance(

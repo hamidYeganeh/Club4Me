@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Button, Card, Chip, toast, Typography } from "@heroui/react";
+import { Button, Card, Chip, toast } from "@heroui/react";
 import {
   useAthleteClubClasses,
   useAthleteClassCheckIn,
@@ -13,6 +13,10 @@ import {
   usePublicClubClass,
   type PaymentIntent,
 } from "@api";
+import { DiscoveryImageHero } from "../../components/DiscoveryImageHero";
+import { DiscoveryQueryPage } from "../../components/DiscoveryQueryPage";
+import { DiscoveryQueryState } from "../../components/DiscoveryQueryState";
+import { getQueryFailure } from "@/lib/request-failure";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGateway";
 import { QrScannerButton } from "@/components/qr-scanner-button";
@@ -43,7 +47,7 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
     if (match?.[1]) setCheckInSessionId(match[1]);
     setCheckInCredential(value);
   }, []);
-  const [paymentIntent, setPaymentIntent] = useState<PaymentIntent | null>(
+  const [paymentEnrollmentId, setPaymentEnrollmentId] = useState<string | null>(
     null,
   );
   const item = query.data;
@@ -51,7 +55,9 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
     (entry) => entry.classId === classId,
   );
 
-  if (query.isPending || enrollments.isPending) return <DetailPageSkeleton />;
+  if (getQueryFailure(query.error, query.fetchStatus) && !item)
+    return <DiscoveryQueryPage title="کلاس" query={query} />;
+  if (query.isPending) return <DetailPageSkeleton />;
   if (!item)
     return (
       <main className="app-page">
@@ -79,33 +85,33 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
     }
   };
   const startPayment = async (enrollmentId: string) => {
-    try {
-      const intent = await createPayment.mutateAsync({
-        referenceType: "business_class_enrollment",
-        referenceId: enrollmentId,
-        idempotencyKey: `class-${enrollmentId}-${crypto.randomUUID()}`,
-        returnUrl: window.location.href,
-        walletAmount: 0,
-      });
-      setPaymentIntent(intent);
-    } catch {
-      toast.danger("ایجاد پرداخت انجام نشد؛ دوباره تلاش کنید");
-    }
+    setPaymentEnrollmentId(enrollmentId);
   };
-  const resolve = async (result: "approve" | "reject") => {
-    if (!paymentIntent) return;
+  const resolve = async (
+    result: "approve" | "reject",
+    accepted?: PaymentIntent,
+  ) => {
+    if (!paymentEnrollmentId) return;
     try {
-      await payment.mutateAsync({
+      const paymentIntent =
+        accepted ??
+        (await createPayment.mutateAsync({
+          referenceType: "business_class_enrollment",
+          referenceId: paymentEnrollmentId,
+          idempotencyKey: `class-${paymentEnrollmentId}-${crypto.randomUUID()}`,
+          returnUrl: window.location.href,
+        }));
+      const resolved = await payment.mutateAsync({
         intentId: paymentIntent.id,
         status: result === "approve" ? "paid" : "failed",
       });
-      setPaymentIntent(null);
+      setPaymentEnrollmentId(null);
       await enrollments.refetch();
       const message =
-        result === "approve"
+        resolved.status === "paid"
           ? "پرداخت موفق و وضعیت ثبت‌نام به‌روزرسانی شد"
           : "پرداخت ناموفق بود و ثبت‌نام لغو شد";
-      if (result === "approve") toast.success(message);
+      if (resolved.status === "paid") toast.success(message);
       else toast.danger(message);
     } catch {
       toast.danger("ثبت نتیجه پرداخت انجام نشد");
@@ -133,6 +139,8 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
   const active =
     current && ["pending", "active", "waitlisted"].includes(current.status);
   const canEnroll =
+    enrollments.isSuccess &&
+    !getQueryFailure(enrollments.error, enrollments.fetchStatus) &&
     item.status === "active" &&
     (!current ||
       current.status === "cancelled" ||
@@ -140,8 +148,17 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
 
   return (
     <main className="app-page gap-5">
-      <SecondaryHeader title="جزئیات کلاس" />
-      <section className="app-reveal rounded-[2rem] border border-white/8 bg-linear-to-br from-accent/18 via-surface to-surface p-6">
+      <SecondaryHeader title="جزئیات کلاس" showFilter={false} />
+      <DiscoveryQueryState query={enrollments} />
+      <DiscoveryImageHero
+        imageUrl="/profile/cover.jpg"
+        title={item.title}
+        eyebrow={item.sport || "کلاس ورزشی"}
+        description={
+          item.description || "توضیحات این کلاس توسط باشگاه تکمیل می‌شود."
+        }
+      />
+      <section className="app-card rounded-3xl p-5">
         <div className="flex flex-wrap gap-2">
           <Chip size="sm" color="accent" variant="soft">
             {modelLabel[item.model]}
@@ -155,12 +172,6 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
             </Chip>
           ) : null}
         </div>
-        <Typography type="h2" weight="bold" className="mt-5">
-          {item.title}
-        </Typography>
-        <p className="mt-3 leading-7 text-muted">
-          {item.description || "توضیحات این کلاس توسط باشگاه تکمیل می‌شود."}
-        </p>
         <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs">
           <Fact
             label="ظرفیت باقی‌مانده"
@@ -199,7 +210,7 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
             پذیرفته می‌شود.
           </p>
           <select
-            className="mt-4 h-11 w-full rounded-xl border border-white/10 bg-surface-secondary px-3 text-sm"
+            className="mt-4 h-11 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm"
             value={checkInSessionId || item.sessions[0]?.id}
             onChange={(event) => setCheckInSessionId(event.target.value)}
           >
@@ -219,7 +230,7 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
             onChange={(event) =>
               setCheckInCredential(event.target.value.trim())
             }
-            className="mt-3 h-12 w-full rounded-xl border border-white/10 bg-surface-secondary px-4 text-center text-xl tracking-[.25em] outline-none focus:border-accent"
+            className="mt-3 h-12 w-full rounded-xl border border-border bg-surface-secondary px-4 text-center text-xl tracking-[.25em] outline-none focus:border-accent"
             placeholder="کد ۵ رقمی"
           />
           <QrScannerButton onScan={acceptQr} />
@@ -338,12 +349,16 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
           </Button>
         ) : null}
       </Card>
-      {paymentIntent ? (
+      {paymentEnrollmentId ? (
         <MockPaymentGateway
           title={item.title}
-          amount={paymentIntent.amount}
+          reference={{
+            referenceType: "business_class_enrollment",
+            referenceId: paymentEnrollmentId,
+          }}
+          amount={current?.agreedPrice ?? item.price}
           isPending={payment.isPending}
-          onResult={(result) => void resolve(result)}
+          onResult={(result, intent) => void resolve(result, intent)}
         />
       ) : null}
     </main>

@@ -1,7 +1,7 @@
 "use client";
 
 import { ClassCardSkeleton } from "../../components/skeletons/ClassCardSkeleton";
-import Link from "next/link";
+import Link from "@/components/app-link";
 import { ScrollShadow, Typography } from "@heroui/react";
 import { useTranslations } from "next-intl";
 import { useCatalogClasses, type PublicCatalogClass } from "@api/discovery";

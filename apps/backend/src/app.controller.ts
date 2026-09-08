@@ -1,4 +1,4 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get, ServiceUnavailableException } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
 import type { Connection } from "mongoose";
 
@@ -39,8 +39,25 @@ export class AppController {
   }
 
   @Get("health/ready")
-  readiness() {
-    return this.health();
+  async readiness() {
+    try {
+      const health = await this.health();
+      const topology = await this.connection.db?.command({ hello: 1 });
+      const transactional = Boolean(
+        topology?.setName || topology?.msg === "isdbgrid",
+      );
+      if (
+        health.mongo !== "connected" ||
+        health.redis !== "connected" ||
+        !transactional
+      )
+        throw new ServiceUnavailableException(
+          "Database, Redis or transaction support is unavailable",
+        );
+      return { ...health, transactions: "ready" };
+    } catch {
+      throw new ServiceUnavailableException("Service is not ready");
+    }
   }
 
   @Get("api")

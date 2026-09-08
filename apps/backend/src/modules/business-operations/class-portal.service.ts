@@ -1,4 +1,10 @@
+import { attendanceCredit, attendanceAudit } from "./attendance-credit";
+import { businessClassCatalogQuery } from "../discovery/business-class-catalog-query";
+import { assertMockPaymentsEnabled } from "../commerce/mock-payment-policy";
 import { Injectable, Optional } from "@nestjs/common";
+import { ModuleRef } from "@nestjs/core";
+import { Atomic } from "../../infrastructure/database/atomic-operation";
+import { paymentDeadline } from "../commerce/payment-deadline";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 import {
@@ -70,7 +76,13 @@ export class BusinessClassPortalService {
     private config: AppConfigService,
     private notifications: NotificationsService,
     @Optional() private userLocations?: UserLocationsService,
+    @Optional() private moduleRef?: ModuleRef,
   ) {}
+
+  private async commerce() {
+    const { CommerceService } = await import("../commerce/commerce.service");
+    return this.moduleRef!.get(CommerceService, { strict: false });
+  }
 
   async createClubCalendarFeed(userId: string, clubId: string) {
     await this.clubs.findForOwner(userId, clubId);
@@ -206,7 +218,7 @@ export class BusinessClassPortalService {
     sessionId: string,
     expiresInMinutes: number,
   ) {
-    await this.clubs.findForOwner(userId, clubId);
+    await this.clubs.findForOwner(userId, clubId, "attendance.write");
     const session = await this.sessions.findOne({
       _id: oid(sessionId),
       classId: oid(classId),
@@ -245,6 +257,40 @@ export class BusinessClassPortalService {
       throw invalid("CHECKIN_CREDENTIAL_INVALID");
     }
 
+    return this.recordVerifiedCheckIn(
+      userId,
+      classId,
+      sessionId,
+      token,
+      isCode,
+    );
+  }
+
+  @Atomic("enrollments")
+  private async recordVerifiedCheckIn(
+    userId: string,
+    classId: string,
+    sessionId: string,
+    token: BusinessClassCheckInCredentialDocument,
+    isCode: boolean,
+  ) {
+    if (
+      !(await this.checkInCredentials.exists({
+        _id: token._id,
+        codeHash: token.codeHash,
+        qrHash: token.qrHash,
+        expiresAt: { $gt: new Date() },
+      }))
+    )
+      throw invalid("CHECKIN_CREDENTIAL_EXPIRED");
+    const session = await this.sessions.findOne({
+      _id: oid(sessionId),
+      classId: oid(classId),
+      clubId: token.clubId,
+      status: { $ne: "cancelled" },
+    });
+    if (!session || token.expiresAt <= new Date())
+      throw invalid("CHECKIN_CREDENTIAL_EXPIRED");
     const studentIds = await this.linkedStudentIds(userId);
     const enrollment = await this.enrollments.findOne({
       classId: oid(classId),
@@ -256,10 +302,23 @@ export class BusinessClassPortalService {
       sessionId: oid(sessionId),
       studentId: enrollment.studentId,
     });
+    const remaining = attendanceCredit(
+      enrollment.remainingSessions,
+      enrollment.totalSessions,
+      previous?.status,
+      "present",
+    );
     const checkedInAt = new Date();
     const record = await this.attendance.findOneAndUpdate(
       { sessionId: oid(sessionId), studentId: enrollment.studentId },
       {
+        ...attendanceAudit(
+          userId,
+          previous?.status,
+          "present",
+          enrollment.remainingSessions,
+          remaining,
+        ),
         $set: {
           classId: oid(classId),
           clubId: token.clubId,
@@ -272,14 +331,8 @@ export class BusinessClassPortalService {
       },
       { upsert: true, new: true },
     );
-    if (
-      previous?.status !== "present" &&
-      enrollment.remainingSessions !== null
-    ) {
-      enrollment.remainingSessions = Math.max(
-        0,
-        enrollment.remainingSessions - 1,
-      );
+    if (remaining !== enrollment.remainingSessions) {
+      enrollment.remainingSessions = remaining;
       await enrollment.save();
     }
     return {
@@ -327,30 +380,20 @@ export class BusinessClassPortalService {
   }
 
   async listPublic(query: Record<string, string | undefined>) {
-    const filter: Record<string, unknown> = {
-      status: "active",
-      visibility: "public",
-      endDate: { $gte: new Date(new Date().toISOString().slice(0, 10)) },
-    };
-    if (query.clubId && Types.ObjectId.isValid(query.clubId))
-      filter.clubId = oid(query.clubId);
-    if (query.q?.trim()) {
-      const pattern = new RegExp(escapeRegex(query.q.trim()), "i");
-      filter.$or = [
-        { title: pattern },
-        { description: pattern },
-        { sport: pattern },
-        { level: pattern },
-      ];
-    }
-    const documents = await this.classes
-      .find(filter)
-      .sort({ startDate: 1 })
-      .limit(200);
+    const { page, limit, skip, clubFilter, filter, sort } =
+      businessClassCatalogQuery(query);
+    const clubIds = await this.classes.db
+      .collection("clubs")
+      .distinct("_id", clubFilter);
+    filter.clubId = { $in: clubIds };
+    const [documents, total] = await Promise.all([
+      this.classes.find(filter).sort(sort).skip(skip).limit(limit),
+      this.classes.countDocuments(filter),
+    ]);
     const items = (
       await Promise.all(documents.map((item) => this.publicDto(item)))
     ).filter(Boolean);
-    return { items, total: items.length };
+    return { items, page, limit, total, totalPages: Math.ceil(total / limit) };
   }
 
   async getPublic(classId: string) {
@@ -358,6 +401,7 @@ export class BusinessClassPortalService {
       _id: oid(classId),
       status: { $in: ["active", "completed"] },
       visibility: "public",
+      endDate: { $gt: new Date() },
     });
     if (!item) throw notFound("BUSINESS_CLASS_NOT_FOUND");
     const result = await this.publicDto(item);
@@ -460,6 +504,7 @@ export class BusinessClassPortalService {
     };
   }
 
+  @Atomic("enrollments")
   async enrollAthlete(userId: string, classId: string) {
     const trainingClass = await this.publicClassDocument(classId);
     const student = await this.ensureStudent(userId, trainingClass.clubId);
@@ -473,7 +518,29 @@ export class BusinessClassPortalService {
     ) {
       return athleteEnrollmentDto(current, trainingClass);
     }
+    if (current?.billingMode === "ledger")
+      throw invalid("PREVIOUS_ENROLLMENT_REQUIRES_FINANCIAL_REVIEW");
     const free = trainingClass.price === 0;
+    if (!free) {
+      const held = await this.classes.findOneAndUpdate(
+        {
+          _id: trainingClass._id,
+          $expr: {
+            $lt: [
+              {
+                $add: [
+                  { $ifNull: ["$activeEnrollmentCount", 0] },
+                  { $ifNull: ["$pendingEnrollmentCount", 0] },
+                ],
+              },
+              "$capacity",
+            ],
+          },
+        },
+        { $inc: { pendingEnrollmentCount: 1 } },
+      );
+      if (!held) throw invalid("CLASS_CAPACITY_FULL");
+    }
     const status = free
       ? await this.activationStatus(trainingClass)
       : "pending";
@@ -488,6 +555,8 @@ export class BusinessClassPortalService {
       status,
       agreedPrice: trainingClass.price,
       paymentStatus: free ? "waived" : "pending",
+      paymentExpiresAt: free ? null : paymentDeadline(trainingClass.endDate),
+      paymentSeatHeld: !free,
       totalSessions,
       remainingSessions: totalSessions,
       enrolledAt: new Date(),
@@ -510,8 +579,27 @@ export class BusinessClassPortalService {
     enrollmentId: string,
     result: "approve" | "reject",
   ) {
-    await this.athleteEnrollment(userId, enrollmentId);
-    return this.finalizeEnrollmentPayment(enrollmentId, result === "approve");
+    assertMockPaymentsEnabled();
+    const item = await this.athleteEnrollment(userId, enrollmentId);
+    if (item.paymentStatus === "pending") {
+      const commerce = await this.commerce();
+      const intent = await commerce.createIntent(userId, {
+        referenceType: "business_class_enrollment",
+        referenceId: enrollmentId,
+        idempotencyKey: `business-class-${enrollmentId}-${item.enrolledAt.getTime()}`,
+        walletAmount: 0,
+        returnUrl: "https://app.gym4me.ir/athlete/classes",
+      });
+      await commerce.simulate(
+        userId,
+        intent.id,
+        result === "approve" ? "paid" : "failed",
+      );
+    }
+    const updated = await this.athleteEnrollment(userId, enrollmentId);
+    const trainingClass = await this.classes.findById(updated.classId);
+    if (!trainingClass) throw notFound("BUSINESS_CLASS_NOT_FOUND");
+    return athleteEnrollmentDto(updated, trainingClass);
   }
 
   async payableEnrollment(userId: string, enrollmentId: string) {
@@ -521,7 +609,10 @@ export class BusinessClassPortalService {
     if (
       item.agreedPrice <= 0 ||
       item.status !== "pending" ||
-      item.paymentStatus !== "pending"
+      item.paymentStatus !== "pending" ||
+      (item.paymentExpiresAt && item.paymentExpiresAt <= new Date()) ||
+      trainingClass.status !== "active" ||
+      trainingClass.endDate <= new Date()
     ) {
       throw new AppError(
         409,
@@ -536,18 +627,29 @@ export class BusinessClassPortalService {
       coachId: trainingClass.coachProfileId,
       sport: trainingClass.sport,
       amount: item.agreedPrice,
+      currency: trainingClass.currency,
       title: trainingClass.title,
+      generationStartedAt: item.enrolledAt,
+      expiresAt: item.paymentExpiresAt ?? trainingClass.endDate,
     };
   }
 
+  @Atomic("enrollments")
   async finalizeEnrollmentPayment(
     enrollmentId: string | Types.ObjectId,
     paid: boolean,
+    intentCreatedAt?: Date,
   ) {
     const item = await this.enrollments.findById(enrollmentId);
     if (!item) throw notFound("CLASS_ENROLLMENT_NOT_FOUND");
     const trainingClass = await this.classes.findById(item.classId);
     if (!trainingClass) throw notFound("BUSINESS_CLASS_NOT_FOUND");
+    if (intentCreatedAt && intentCreatedAt < item.enrolledAt) {
+      if (paid) throw invalid("REFERENCE_GENERATION_CHANGED");
+      return athleteEnrollmentDto(item, trainingClass);
+    }
+    if (paid && item.status === "cancelled")
+      throw invalid("CLASS_ENROLLMENT_PAYMENT_STATUS_CHANGED");
     if (paid && item.paymentStatus === "paid") {
       return athleteEnrollmentDto(item, trainingClass);
     }
@@ -557,6 +659,7 @@ export class BusinessClassPortalService {
     if (item.paymentStatus !== "pending") {
       throw invalid("CLASS_ENROLLMENT_PAYMENT_STATUS_CHANGED");
     }
+    await this.releasePaymentSeat(item);
     if (paid) {
       item.paymentStatus = "paid";
       item.status = await this.activationStatus(trainingClass);
@@ -568,11 +671,17 @@ export class BusinessClassPortalService {
     return athleteEnrollmentDto(item, trainingClass);
   }
 
-  async refundEnrollmentPayment(enrollmentId: string | Types.ObjectId) {
+  @Atomic("enrollments")
+  async refundEnrollmentPayment(
+    enrollmentId: string | Types.ObjectId,
+    intentCreatedAt?: Date,
+  ) {
     const item = await this.enrollments.findById(enrollmentId);
     if (!item) throw notFound("CLASS_ENROLLMENT_NOT_FOUND");
     const trainingClass = await this.classes.findById(item.classId);
     if (!trainingClass) throw notFound("BUSINESS_CLASS_NOT_FOUND");
+    if (intentCreatedAt && item.enrolledAt > intentCreatedAt)
+      return athleteEnrollmentDto(item, trainingClass);
     if (item.paymentStatus === "refunded") {
       return athleteEnrollmentDto(item, trainingClass);
     }
@@ -590,13 +699,21 @@ export class BusinessClassPortalService {
     return athleteEnrollmentDto(item, trainingClass);
   }
 
+  @Atomic("enrollments")
   async cancelEnrollment(userId: string, enrollmentId: string) {
     const item = await this.athleteEnrollment(userId, enrollmentId);
     const trainingClass = await this.classes.findById(item.classId);
     if (!trainingClass) throw notFound("BUSINESS_CLASS_NOT_FOUND");
+    if (item.paymentStatus === "paid") {
+      await (
+        await this.commerce()
+      ).refundBusinessClass(item._id, item.agreedPrice);
+      const refunded = await this.athleteEnrollment(userId, enrollmentId);
+      return athleteEnrollmentDto(refunded, trainingClass);
+    }
     const releasedSeat = item.status === "active";
     item.status = "cancelled";
-    if (item.paymentStatus === "paid") item.paymentStatus = "refunded";
+    await this.releasePaymentSeat(item);
     await item.save();
     if (releasedSeat) {
       await this.classes.updateOne(
@@ -608,6 +725,7 @@ export class BusinessClassPortalService {
     return athleteEnrollmentDto(item, trainingClass);
   }
 
+  @Atomic("enrollments")
   async claimWaitlist(userId: string, enrollmentId: string) {
     const item = await this.athleteEnrollment(userId, enrollmentId);
     if (
@@ -677,13 +795,11 @@ export class BusinessClassPortalService {
     sessionId: string,
   ) {
     await this.coachSession(userId, classId, sessionId);
-    const [records, enrollments] = await Promise.all([
-      this.attendance.find({ sessionId: oid(sessionId) }),
-      this.enrollments.find({
-        classId: oid(classId),
-        status: { $in: ["active", "completed"] },
-      }),
-    ]);
+    const records = await this.attendance.find({ sessionId: oid(sessionId) });
+    const enrollments = await this.enrollments.find({
+      classId: oid(classId),
+      status: { $in: ["active", "completed"] },
+    });
     const students = await this.students.find({
       _id: { $in: enrollments.map((item) => item.studentId) },
     });
@@ -697,6 +813,7 @@ export class BusinessClassPortalService {
     };
   }
 
+  @Atomic("enrollments")
   async recordCoachAttendance(
     userId: string,
     classId: string,
@@ -719,9 +836,23 @@ export class BusinessClassPortalService {
         sessionId: session._id,
         studentId: oid(record.studentId),
       });
+      const enrollment = enrollmentMap.get(record.studentId)!;
+      const remaining = attendanceCredit(
+        enrollment.remainingSessions,
+        enrollment.totalSessions,
+        previous?.status,
+        record.status,
+      );
       await this.attendance.findOneAndUpdate(
         { sessionId: session._id, studentId: oid(record.studentId) },
         {
+          ...attendanceAudit(
+            userId,
+            previous?.status,
+            record.status,
+            enrollment.remainingSessions,
+            remaining,
+          ),
           $set: {
             clubId: session.clubId,
             classId: session.classId,
@@ -734,18 +865,8 @@ export class BusinessClassPortalService {
         },
         { upsert: true, new: true },
       );
-      const enrollment = enrollmentMap.get(record.studentId)!;
-      if (enrollment.remainingSessions !== null) {
-        if (record.status === "present" && previous?.status !== "present")
-          enrollment.remainingSessions = Math.max(
-            0,
-            enrollment.remainingSessions - 1,
-          );
-        if (record.status !== "present" && previous?.status === "present")
-          enrollment.remainingSessions = Math.min(
-            enrollment.totalSessions ?? Infinity,
-            enrollment.remainingSessions + 1,
-          );
+      if (remaining !== enrollment.remainingSessions) {
+        enrollment.remainingSessions = remaining;
         await enrollment.save();
       }
     }
@@ -773,6 +894,7 @@ export class BusinessClassPortalService {
       _id: oid(classId),
       status: "active",
       visibility: "public",
+      endDate: { $gt: new Date() },
     });
     if (!item) throw notFound("BUSINESS_CLASS_NOT_FOUND");
     await this.clubs.findPublic(String(item.clubId));
@@ -783,9 +905,11 @@ export class BusinessClassPortalService {
     let club;
     try {
       club = await this.clubs.findPublic(String(item.clubId));
-    } catch {
-      return null;
+    } catch (error) {
+      if (error instanceof AppError && error.status === 404) return null;
+      throw error;
     }
+    if (club.operationalStatus === "permanently_closed") return null;
     const [coach, branch, enrollmentCount, sessions] = await Promise.all([
       item.coachProfileId ? this.coaches.findById(item.coachProfileId) : null,
       item.branchId ? this.branches.findById(item.branchId) : null,
@@ -802,30 +926,29 @@ export class BusinessClassPortalService {
     // Only published coach profiles and reviewed credentials become public.
     const publicCoach =
       coach?.userId && coach.status === "active"
-        ? await this.coaches.db
-            .collection("coaches")
-            .findOne(
-              {
-                userId: coach.userId,
-                reviewStatus: "approved",
-                visibility: "public",
-              },
-              { projection: { _id: 1, slug: 1 } },
-            )
+        ? await this.coaches.db.collection("coaches").findOne(
+            {
+              userId: coach.userId,
+              reviewStatus: "approved",
+              visibility: "public",
+            },
+            { projection: { _id: 1, slug: 1 } },
+          )
         : null;
     const verifiedCredentialsCount = publicCoach
-      ? await this.coaches.db
-          .collection("coach_sports")
-          .countDocuments({
-            coachId: publicCoach._id,
-            verificationStatus: "verified",
-            "certificateMediaIds.0": { $exists: true },
-          })
+      ? await this.coaches.db.collection("coach_sports").countDocuments({
+          coachId: publicCoach._id,
+          verificationStatus: "verified",
+          "certificateMediaIds.0": { $exists: true },
+        })
       : 0;
     return {
       ...classBaseDto(item),
       enrollmentCount,
-      remainingCapacity: Math.max(0, item.capacity - enrollmentCount),
+      remainingCapacity: Math.max(
+        0,
+        item.capacity - enrollmentCount - (item.pendingEnrollmentCount ?? 0),
+      ),
       club: {
         id: club.id,
         name: club.name,
@@ -963,12 +1086,61 @@ export class BusinessClassPortalService {
       {
         _id: classId,
         $expr: {
-          $lt: [{ $ifNull: ["$activeEnrollmentCount", 0] }, "$capacity"],
+          $lt: [
+            {
+              $add: [
+                { $ifNull: ["$activeEnrollmentCount", 0] },
+                { $ifNull: ["$pendingEnrollmentCount", 0] },
+              ],
+            },
+            "$capacity",
+          ],
         },
       },
       { $inc: { activeEnrollmentCount: 1 } },
       { new: true },
     );
+  }
+
+  private async releasePaymentSeat(item: BusinessClassEnrollmentDocument) {
+    if (!item.paymentSeatHeld) return;
+    await this.classes.updateOne(
+      { _id: item.classId, pendingEnrollmentCount: { $gt: 0 } },
+      { $inc: { pendingEnrollmentCount: -1 } },
+    );
+    item.paymentSeatHeld = false;
+  }
+
+  async expirePaymentHolds(now: Date) {
+    const holds = await this.enrollments
+      .find({
+        status: "pending",
+        paymentStatus: "pending",
+        paymentExpiresAt: { $lte: now, $ne: null },
+      })
+      .limit(100);
+    const errors: string[] = [];
+    let expired = 0;
+    for (const item of holds) {
+      try {
+        await this.expirePaymentHold(item._id, now);
+        expired++;
+      } catch {
+        errors.push(String(item._id));
+      }
+    }
+    return { expired, errors };
+  }
+
+  @Atomic("enrollments")
+  private async expirePaymentHold(id: Types.ObjectId, now: Date) {
+    const item = await this.enrollments.findOne({
+      _id: id,
+      status: "pending",
+      paymentStatus: "pending",
+      paymentExpiresAt: { $lte: now, $ne: null },
+    });
+    if (item) await this.finalizeEnrollmentPayment(id, false);
   }
 
   private async offerWaitlist(item: BusinessTrainingClassDocument) {
@@ -1108,6 +1280,7 @@ function athleteEnrollmentDto(
     endDate: trainingClass.endDate.toISOString(),
     status: item.status,
     paymentStatus: item.paymentStatus,
+    paymentExpiresAt: item.paymentExpiresAt?.toISOString() ?? null,
     agreedPrice: item.agreedPrice,
     remainingSessions: item.remainingSessions,
     enrolledAt: item.enrolledAt.toISOString(),
@@ -1128,7 +1301,7 @@ function coachEnrollmentDto(
       : null,
     status: item.status,
     paymentStatus: item.paymentStatus,
-    agreedPrice: item.agreedPrice,
+    paymentExpiresAt: item.paymentExpiresAt?.toISOString() ?? null,
     remainingSessions: item.remainingSessions,
   };
 }
@@ -1143,6 +1316,7 @@ function attendanceDto(
       phone: student.phone,
     },
     status: item?.status ?? "unrecorded",
+    changes: item?.changes ?? [],
     notes: item?.notes ?? "",
   };
 }

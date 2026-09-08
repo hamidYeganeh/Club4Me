@@ -1,5 +1,8 @@
 "use client";
 
+import { IranDateInput } from "@repo/ui/iran-date-input";
+import { tehranLocalDate } from "@repo/ui/iran-date";
+
 import { FormEvent, useState } from "react";
 import { Button, Card, Spinner, toast } from "@heroui/react";
 import {
@@ -13,10 +16,12 @@ import {
   useReservableClubClasses,
   useClubCoaches,
   useClubCourts,
-  useCreateCourt,
+  type ClubCourt,
   useCreateSession,
 } from "@api/business";
 import { useTranslations } from "next-intl";
+
+import { CourtEditor } from "../components/CourtEditor";
 
 import { PanelNumberField } from "@/components/form/PanelNumberField";
 
@@ -47,17 +52,14 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
   const reservations = useClubReservations(clubId);
   const coaches = useClubCoaches(clubId);
   const classes = useReservableClubClasses(clubId);
-  const courtTypes = useBusinessCatalog("sports", "court-type");
   const equipmentCatalog = useBusinessCatalog("facilities", "equipment");
   const amenitiesCatalog = useBusinessCatalog("facilities", "amenity");
-  const createCourt = useCreateCourt(clubId);
   const createSession = useCreateSession(clubId);
   const completeSession = useCompleteSession(clubId);
   const cancelSession = useCancelBusinessSession(clubId);
   const markNoShow = useMarkClubReservationNoShow(clubId);
-  const [courtName, setCourtName] = useState("");
-  const [courtTypeId, setCourtTypeId] = useState("");
-  const [courtCapacity, setCourtCapacity] = useState(1);
+  const [editingCourt, setEditingCourt] = useState<ClubCourt>();
+  const [editorVersion, setEditorVersion] = useState(0);
   const [title, setTitle] = useState("");
   const [courtId, setCourtId] = useState("");
   const [coachId, setCoachId] = useState("");
@@ -66,33 +68,24 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
   const [endsAt, setEndsAt] = useState("");
   const [capacity, setCapacity] = useState(1);
   const [basePrice, setBasePrice] = useState(0);
+  const [pricingUnit, setPricingUnit] = useState<
+    "per_participant" | "per_session" | "per_court"
+  >("per_participant");
+  const [policyId, setPolicyId] = useState("");
   const [options, setOptions] = useState<OptionDraft[]>([]);
-
-  const addCourt = async (event: FormEvent) => {
-    event.preventDefault();
-    try {
-      await createCourt.mutateAsync({
-        name: courtName,
-        courtTypeId: courtTypeId || undefined,
-        capacity: courtCapacity,
-      });
-      setCourtName("");
-      toast.success(t("courtCreated"));
-    } catch {
-      toast.danger(t("error"));
-    }
-  };
 
   const addSession = async (event: FormEvent) => {
     event.preventDefault();
-    const policy = club.data?.cancellationRules[0];
+    const policy = club.data?.cancellationRules.find(
+      (item) => item.id === policyId && item.isActive !== false,
+    );
     if (!policy) {
       toast.danger(t("policyRequired"));
       return;
     }
 
-    const start = new Date(startsAt);
-    const end = new Date(endsAt);
+    const start = tehranLocalDate(startsAt);
+    const end = tehranLocalDate(endsAt);
     if (
       !startsAt ||
       !endsAt ||
@@ -114,6 +107,8 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
         endsAt: end.toISOString(),
         capacity,
         basePrice,
+        currency: "IRR",
+        pricingUnit,
         options: options
           .filter((item) => item.resourceId)
           .map((item) => ({
@@ -153,55 +148,39 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
             variant="transparent"
             className="app-card shadow-none active:scale-100 p-5"
           >
-            <h2 className="font-semibold">{t("newCourt")}</h2>
-            <form onSubmit={addCourt} className="mt-4 space-y-3">
-              <label className="block space-y-2">
-                <span className="text-sm">{t("courtName")}</span>
-                <input
-                  required
-                  value={courtName}
-                  onChange={(e) => setCourtName(e.target.value)}
-                  className={input}
-                />
-              </label>
-              <select
-                value={courtTypeId}
-                onChange={(e) => setCourtTypeId(e.target.value)}
-                className={input}
-              >
-                <option value="">{t("courtType")}</option>
-                {(courtTypes.data?.items ?? []).map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-              <label className="block space-y-2">
-                <PanelNumberField
-                  label={t("capacity")}
-                  minValue={1}
-                  value={courtCapacity}
-                  onChange={setCourtCapacity}
-                />
-              </label>
-              <Button
-                type="submit"
-                variant="primary"
-                isPending={createCourt.isPending}
-              >
-                {t("createCourt")}
-              </Button>
-            </form>
+            <CourtEditor
+              key={editingCourt?.id ?? `new-${editorVersion}`}
+              clubId={clubId}
+              initial={editingCourt}
+              onCancel={() => setEditingCourt(undefined)}
+              onSaved={() => {
+                setEditingCourt(undefined);
+                setEditorVersion((value) => value + 1);
+              }}
+            />
             <div className="mt-5 divide-y divide-border">
               {(courts.data?.items ?? []).map((item) => (
                 <div
                   key={item.id}
                   className="flex justify-between py-3 text-sm"
                 >
-                  <span>{item.name}</span>
-                  <span className="text-muted">
-                    {t("capacityValue", { count: item.capacity })}
-                  </span>
+                  <div>
+                    <span>{item.name}</span>
+                    <p className="mt-1 text-xs text-muted">
+                      {t("capacityValue", { count: item.capacity })} ·{" "}
+                      {item.status === "active" && item.isReservable
+                        ? "رزرو فعال"
+                        : "فروش متوقف"}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onPress={() => setEditingCourt(item)}
+                    aria-label={`ویرایش زمین ${item.name}`}
+                  >
+                    ویرایش
+                  </Button>
                 </div>
               ))}
             </div>
@@ -258,28 +237,60 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
               <div className="grid grid-cols-2 gap-2">
                 <label className="space-y-2 text-sm">
                   <span>{t("startsAt")}</span>
-                  <input
+                  <IranDateInput
                     required
                     dir="ltr"
-                    type="datetime-local"
+                    withTime
                     value={startsAt}
-                    onChange={(e) => setStartsAt(e.target.value)}
+                    onValueChange={(dateValue) => setStartsAt(dateValue)}
                     className={input}
                   />
                 </label>
                 <label className="space-y-2 text-sm">
                   <span>{t("endsAt")}</span>
-                  <input
+                  <IranDateInput
                     required
                     dir="ltr"
-                    type="datetime-local"
+                    withTime
                     min={startsAt || undefined}
                     value={endsAt}
-                    onChange={(e) => setEndsAt(e.target.value)}
+                    onValueChange={(dateValue) => setEndsAt(dateValue)}
                     className={input}
                   />
                 </label>
               </div>
+              <label className="block space-y-2 text-sm">
+                <span>واحد قیمت‌گذاری</span>
+                <select
+                  className={input}
+                  value={pricingUnit}
+                  onChange={(event) =>
+                    setPricingUnit(event.target.value as typeof pricingUnit)
+                  }
+                >
+                  <option value="per_participant">به‌ازای هر نفر</option>
+                  <option value="per_session">کل سانس</option>
+                  <option value="per_court">کل زمین</option>
+                </select>
+              </label>
+              <label className="block space-y-2 text-sm">
+                <span>قانون لغو این سانس</span>
+                <select
+                  required
+                  className={input}
+                  value={policyId}
+                  onChange={(event) => setPolicyId(event.target.value)}
+                >
+                  <option value="">قانون را انتخاب کنید</option>
+                  {club.data?.cancellationRules
+                    .filter((item) => item.isActive !== false)
+                    .map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.title}
+                      </option>
+                    ))}
+                </select>
+              </label>
               <div className="rounded-xl border border-border p-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium">{t("addons")}</span>
@@ -432,6 +443,7 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
                 </div>
                 <p className="mt-2 text-sm text-muted">
                   {new Intl.DateTimeFormat("fa-IR", {
+                    timeZone: "Asia/Tehran",
                     dateStyle: "medium",
                     timeStyle: "short",
                   }).format(new Date(item.startsAt))}
@@ -494,6 +506,7 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
                 </div>
                 <p className="mt-2 text-sm text-muted">
                   {new Intl.DateTimeFormat("fa-IR", {
+                    timeZone: "Asia/Tehran",
                     dateStyle: "medium",
                     timeStyle: "short",
                   }).format(new Date(item.sessionStartsAt))}

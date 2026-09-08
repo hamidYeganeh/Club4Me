@@ -1,3 +1,5 @@
+import { ClubAccessService } from "./club-access.service";
+import type { ClubPermission } from "./club-permissions";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
@@ -12,7 +14,16 @@ import { Club, type ClubDocument } from "./schemas/club.schema";
 export class ClubsRepository {
   constructor(
     @InjectModel(Club.name) private readonly model: Model<ClubDocument>,
+    private readonly access: ClubAccessService,
   ) {}
+
+  async hasPermission(
+    userId: string,
+    clubId: string,
+    permission: ClubPermission,
+  ) {
+    return (await this.access.permissions(userId, clubId)).includes(permission);
+  }
 
   async listForOwner(ownerId: string): Promise<PublicClub[]> {
     const items = await this.model
@@ -20,6 +31,20 @@ export class ClubsRepository {
       .sort({ updatedAt: -1 })
       .exec();
     return items.map(toPublicClub);
+  }
+
+  async listAccessible(userId: string) {
+    const ids = await this.access.accessibleClubIds(userId);
+    const items = await this.model
+      .find({ $or: [{ ownerId: toObjectId(userId) }, { _id: { $in: ids } }] })
+      .sort({ updatedAt: -1 });
+    return Promise.all(
+      items.map(async (item) => ({
+        ...toPublicClub(item),
+        permissions: await this.access.permissions(userId, String(item._id)),
+        isOwner: String(item.ownerId) === userId,
+      })),
+    );
   }
 
   async listForAdmin(): Promise<PublicClub[]> {
@@ -41,13 +66,22 @@ export class ClubsRepository {
         _id: clubId,
         reviewStatus: "approved",
         visibility: "public",
+        qualityStatus: { $ne: "suspended" },
       })
       .exec();
     if (!club) throw clubNotFound();
     return toPublicClub(club);
   }
 
-  async findForOwner(ownerId: string, clubId: string): Promise<PublicClub> {
+  async findForOwner(
+    ownerId: string,
+    clubId: string,
+    permission?: ClubPermission,
+  ): Promise<PublicClub> {
+    if (permission) {
+      await this.access.assert(ownerId, clubId, permission);
+      return this.findById(clubId);
+    }
     const club = await this.findDocumentForOwner(ownerId, clubId);
     if (!club) throw clubNotFound();
     return toPublicClub(club);

@@ -1,4 +1,8 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import {
+  afterCommit,
+  inAtomicOperation,
+} from "../../infrastructure/database/atomic-operation";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 
@@ -10,14 +14,9 @@ import {
   Notification,
   type NotificationDocument,
 } from "./schemas/notification.schema";
-import {
-  SMS_PROVIDER,
-  type SmsLookupTokens,
-  type SmsProvider,
-} from "../auth/providers/sms-provider.interface";
-import { UsersRepository } from "../users/users.repository";
 import { AppConfigService } from "../../config/app-config.service";
-import { PushNotificationsService } from "./push-notifications.service";
+import type { SmsLookupTokens } from "../auth/providers/sms-provider.interface";
+import { NotificationOutboxService } from "./notification-outbox.service";
 
 @Injectable()
 export class NotificationsService {
@@ -28,10 +27,8 @@ export class NotificationsService {
     private readonly notifications: Model<NotificationDocument>,
     @InjectModel(Favorite.name)
     private readonly favorites: Model<FavoriteDocument>,
-    @Inject(SMS_PROVIDER) private readonly sms: SmsProvider,
-    private readonly users: UsersRepository,
     private readonly config: AppConfigService,
-    private readonly push: PushNotificationsService,
+    private readonly outbox: NotificationOutboxService,
   ) {}
 
   async list(userId: string) {
@@ -85,15 +82,10 @@ export class NotificationsService {
         body: `کلاس «${input.title}» اکنون قابل مشاهده است.`,
         href: `/discovery/classes/${input.classId.toHexString()}`,
         readAt: null,
+        pushDelivery: {},
       })),
     );
-    await this.push.sendToUsers({
-      userIds: followers,
-      type: "class_published",
-      title: "کلاس جدید منتشر شد",
-      body: `کلاس «${input.title}» اکنون قابل مشاهده است.`,
-      href: `/discovery/classes/${input.classId.toHexString()}`,
-    });
+    await afterCommit(() => this.outbox.runSafely());
   }
 
   notifyBookingConfirmed(input: {
@@ -110,6 +102,22 @@ export class NotificationsService {
       href: input.href ?? "/athlete/reservations",
       template: this.config.env.KAVENEGAR_BOOKING_CONFIRMED_TEMPLATE,
       tokens: { token: shortId(input.bookingId) },
+    });
+  }
+
+  notifyMembershipExpiring(input: {
+    userId: Types.ObjectId;
+    entitlementId: Types.ObjectId;
+    title: string;
+    endsAt: Date;
+  }) {
+    return this.notifyUser({
+      userId: input.userId,
+      type: "membership_expiry_reminder",
+      title: "اعتبار عضویت رو به پایان است",
+      body: `اعتبار «${input.title}» در ${formatTehran(input.endsAt)} پایان می‌یابد.`,
+      href: `/athlete/memberships/${input.entitlementId}`,
+      tokens: { token: shortId(input.entitlementId) },
     });
   }
 
@@ -130,6 +138,7 @@ export class NotificationsService {
   }
 
   notifyPaymentFailed(input: {
+    href?: string;
     userId: string | Types.ObjectId;
     paymentId: string | Types.ObjectId;
     title: string;
@@ -139,7 +148,7 @@ export class NotificationsService {
       type: "payment_failed",
       title: "پرداخت ناموفق بود",
       body: `پرداخت «${input.title}» ناموفق بود و ظرفیت آزاد شد.`,
-      href: "/athlete/reservations",
+      href: input.href ?? "/athlete/reservations",
       template: this.config.env.KAVENEGAR_PAYMENT_FAILED_TEMPLATE,
       tokens: { token: shortId(input.paymentId) },
     });
@@ -313,37 +322,23 @@ export class NotificationsService {
   }) {
     const userId = new Types.ObjectId(String(input.userId));
     try {
-      await this.notifications.create({
+      const notification = await this.notifications.create({
         userId,
         type: input.type,
         title: input.title,
         body: input.body,
         href: input.href,
         readAt: null,
+        pushDelivery: {},
+        smsDelivery: {},
+        smsTemplate: input.template ?? null,
+        smsTokens: input.tokens,
       });
-      await this.push.sendToUsers({
-        userIds: [userId],
-        type: input.type,
-        title: input.title,
-        body: input.body,
-        href: input.href,
-      });
+      await afterCommit(() => this.outbox.runSafely(notification._id));
     } catch (error) {
-      this.logger.error(
-        `In-app notification failed type=${input.type} userId=${String(userId)} error=${error instanceof Error ? error.message : "unknown"}`,
-      );
-    }
-    try {
-      const user = await this.users.findById(String(userId));
-      if (input.template) {
-        await this.sms.sendTemplate(user.phone, input.template, input.tokens);
-      } else if (this.sms.sendMessage) {
-        await this.sms.sendMessage(user.phone, `${input.title}\n${input.body}`);
-      }
-    } catch (error) {
-      this.logger.error(
-        `Transactional SMS failed type=${input.type} userId=${String(userId)} error=${error instanceof Error ? error.message : "unknown"}`,
-      );
+      if (inAtomicOperation()) throw error;
+      this.logger.error(`Notification persistence failed type=${input.type}`);
+      throw error;
     }
   }
 }

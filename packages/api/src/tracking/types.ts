@@ -35,6 +35,9 @@ export interface SearchPerformedEvent {
   result_type: "all" | "club" | "coach" | "class";
   has_location_filter: boolean;
   result_count: number;
+  acquisition_channel?: string;
+  sport_id?: string;
+  service_type?: "club" | "coach" | "class" | "court";
 }
 
 export interface DiscoveryClubViewedEvent {
@@ -58,7 +61,7 @@ export interface FavoriteAddedEvent {
 }
 
 export interface ReviewSubmittedEvent {
-  review_target_type: "club" | "coach";
+  review_target_type: "club" | "coach" | "class";
   review_target_id: string;
   rating: number;
 }

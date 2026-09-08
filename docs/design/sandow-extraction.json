@@ -1,0 +1,465 @@
+{
+  "source": {
+    "fileKey": "VbhFFT3ziySCy7I3P06TVm",
+    "pageId": "37:445",
+    "extractedAt": "2026-09-06",
+    "fileLabel": "v1.6",
+    "canvasHeader": "v1.7",
+    "method": "Figma get_metadata and get_design_context",
+    "limitations": [
+      "Plugin API read rejected by read-only mode.",
+      "Tool plan limit prevented additional component detail extraction.",
+      "No complete application screens in the two exposed pages."
+    ]
+  },
+  "sections": [
+    {
+      "nodeId": "37:767",
+      "name": "Typography"
+    },
+    {
+      "nodeId": "205:17108",
+      "name": "Inputs 1"
+    },
+    {
+      "nodeId": "205:21018",
+      "name": "Chat System"
+    },
+    {
+      "nodeId": "205:18672",
+      "name": "Misc & Helper"
+    },
+    {
+      "nodeId": "205:19545",
+      "name": "Cards & Lists 1"
+    },
+    {
+      "nodeId": "205:21301",
+      "name": "Cards & Lists 2"
+    },
+    {
+      "nodeId": "762:135964",
+      "name": "Alerts & Notifications"
+    },
+    {
+      "nodeId": "762:136649",
+      "name": "Dropdowns"
+    },
+    {
+      "nodeId": "762:137172",
+      "name": "Loaders"
+    },
+    {
+      "nodeId": "760:132567",
+      "name": "Inputs 2"
+    },
+    {
+      "nodeId": "205:15864",
+      "name": "Color Palette"
+    },
+    {
+      "nodeId": "205:18013",
+      "name": "Navigations"
+    },
+    {
+      "nodeId": "205:18344",
+      "name": "Profile Pics & Avatars"
+    },
+    {
+      "nodeId": "763:39112",
+      "name": "Progress & Indicators 2"
+    },
+    {
+      "nodeId": "1118:11982",
+      "name": "File Upload"
+    },
+    {
+      "nodeId": "1121:13030",
+      "name": "Accordion"
+    },
+    {
+      "nodeId": "770:48453",
+      "name": "Tooltips"
+    },
+    {
+      "nodeId": "205:20764",
+      "name": "Tabs"
+    },
+    {
+      "nodeId": "205:20515",
+      "name": "Progress & Indicators 1"
+    },
+    {
+      "nodeId": "765:40129",
+      "name": "Tags & Chips"
+    },
+    {
+      "nodeId": "766:44542",
+      "name": "Checkboxes & Radios"
+    },
+    {
+      "nodeId": "767:44795",
+      "name": "Effects"
+    },
+    {
+      "nodeId": "769:45615",
+      "name": "Tables"
+    },
+    {
+      "nodeId": "252:32469",
+      "name": "Grids & Spacing"
+    },
+    {
+      "nodeId": "760:132459",
+      "name": "Buttons 1"
+    },
+    {
+      "nodeId": "205:17666",
+      "name": "Buttons 2"
+    },
+    {
+      "nodeId": "230:35766",
+      "name": "Logo"
+    },
+    {
+      "nodeId": "1018:160462",
+      "name": "Badges & Achievements"
+    },
+    {
+      "nodeId": "1004:164235",
+      "name": "Pagination"
+    },
+    {
+      "nodeId": "1104:41937",
+      "name": "Breadcrumb"
+    }
+  ],
+  "colors": [
+    {
+      "name": "Sandow Gray/90",
+      "value": "#24262B"
+    },
+    {
+      "name": "Sandow Gray/White",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "Pulse Orange/50",
+      "value": "#F97316"
+    },
+    {
+      "name": "Sandow Gray/30",
+      "value": "#BABBBE"
+    },
+    {
+      "name": "Sandow Gray/80",
+      "value": "#393C43"
+    },
+    {
+      "name": "Sandow Gray/20",
+      "value": "#D7D8D9"
+    },
+    {
+      "name": "Sandow Gray/40",
+      "value": "#9EA0A5"
+    },
+    {
+      "name": "Sandow Gray/100",
+      "value": "#111214"
+    },
+    {
+      "name": "Sandow Gray/70",
+      "value": "#50535B"
+    },
+    {
+      "name": "Sandow Gray/60",
+      "value": "#676C75"
+    },
+    {
+      "name": "Sandow Gray/50",
+      "value": "#81858D"
+    },
+    {
+      "name": "Sandow Gray/10",
+      "value": "#F3F3F4"
+    },
+    {
+      "name": "Pulse Orange/100",
+      "value": "#431407"
+    },
+    {
+      "name": "Pulse Orange/90",
+      "value": "#7C2D12"
+    },
+    {
+      "name": "Pulse Orange/80",
+      "value": "#9A3412"
+    },
+    {
+      "name": "Pulse Orange/70",
+      "value": "#C2410C"
+    },
+    {
+      "name": "Pulse Orange/60",
+      "value": "#EA580C"
+    },
+    {
+      "name": "Pulse Orange/40",
+      "value": "#FB923C"
+    },
+    {
+      "name": "Pulse Orange/30",
+      "value": "#FDBA74"
+    },
+    {
+      "name": "Pulse Orange/20",
+      "value": "#FED7AA"
+    },
+    {
+      "name": "Pulse Orange/10",
+      "value": "#FFEDD5"
+    },
+    {
+      "name": "Calorie Yellow/100",
+      "value": "#422006"
+    },
+    {
+      "name": "Calorie Yellow/90",
+      "value": "#713F12"
+    },
+    {
+      "name": "Calorie Yellow/80",
+      "value": "#854D0E"
+    },
+    {
+      "name": "Calorie Yellow/70",
+      "value": "#A16207"
+    },
+    {
+      "name": "Calorie Yellow/60",
+      "value": "#CA8A04"
+    },
+    {
+      "name": "Calorie Yellow/50",
+      "value": "#EAB308"
+    },
+    {
+      "name": "Calorie Yellow/40",
+      "value": "#FACC15"
+    },
+    {
+      "name": "Calorie Yellow/30",
+      "value": "#FDE047"
+    },
+    {
+      "name": "Calorie Yellow/20",
+      "value": "#FEF08A"
+    },
+    {
+      "name": "Calorie Yellow/10",
+      "value": "#FEF9C3"
+    },
+    {
+      "name": "Tabata Blue/100",
+      "value": "#172554"
+    },
+    {
+      "name": "Tabata Blue/90",
+      "value": "#1E3A8A"
+    },
+    {
+      "name": "Tabata Blue/80",
+      "value": "#1E40AF"
+    },
+    {
+      "name": "Tabata Blue/70",
+      "value": "#1D4ED8"
+    },
+    {
+      "name": "Tabata Blue/60",
+      "value": "#2563EB"
+    },
+    {
+      "name": "Tabata Blue/50",
+      "value": "#3B82F6"
+    },
+    {
+      "name": "Tabata Blue/40",
+      "value": "#60A5FA"
+    },
+    {
+      "name": "Tabata Blue/30",
+      "value": "#93C5FD"
+    },
+    {
+      "name": "Tabata Blue/20",
+      "value": "#BFDBFE"
+    },
+    {
+      "name": "Tabata Blue/10",
+      "value": "#DBEAFE"
+    },
+    {
+      "name": "Endurance Red/100",
+      "value": "#450A0A"
+    },
+    {
+      "name": "Endurance Red/90",
+      "value": "#7F1D1D"
+    },
+    {
+      "name": "Endurance Red/80",
+      "value": "#991B1B"
+    },
+    {
+      "name": "Endurance Red/70",
+      "value": "#B91C1C"
+    },
+    {
+      "name": "Endurance Red/60",
+      "value": "#DC2626"
+    },
+    {
+      "name": "Endurance Red/50",
+      "value": "#EF4444"
+    },
+    {
+      "name": "Endurance Red/40",
+      "value": "#F87171"
+    },
+    {
+      "name": "Endurance Red/30",
+      "value": "#FCA5A5"
+    },
+    {
+      "name": "Endurance Red/20",
+      "value": "#FECACA"
+    },
+    {
+      "name": "Endurance Red/10",
+      "value": "#FEE2E2"
+    },
+    {
+      "name": "Spinach Green/100",
+      "value": "#1A2E05"
+    },
+    {
+      "name": "Spinach Green/90",
+      "value": "#365314"
+    },
+    {
+      "name": "Spinach Green/80",
+      "value": "#3F6212"
+    },
+    {
+      "name": "Spinach Green/70",
+      "value": "#4D7C0F"
+    },
+    {
+      "name": "Spinach Green/60",
+      "value": "#65A30D"
+    },
+    {
+      "name": "Spinach Green/50",
+      "value": "#84CC16"
+    },
+    {
+      "name": "Spinach Green/40",
+      "value": "#A3E635"
+    },
+    {
+      "name": "Spinach Green/30",
+      "value": "#BEF264"
+    },
+    {
+      "name": "Spinach Green/20",
+      "value": "#D9F99D"
+    },
+    {
+      "name": "Spinach Green/10",
+      "value": "#ECFCCB"
+    },
+    {
+      "name": "Agility Purple/100",
+      "value": "#3B0764"
+    },
+    {
+      "name": "Agility Purple/90",
+      "value": "#581C87"
+    },
+    {
+      "name": "Agility Purple/80",
+      "value": "#6B21A8"
+    },
+    {
+      "name": "Agility Purple/70",
+      "value": "#7E22CE"
+    },
+    {
+      "name": "Agility Purple/60",
+      "value": "#9333EA"
+    },
+    {
+      "name": "Agility Purple/50",
+      "value": "#A855F7"
+    },
+    {
+      "name": "Agility Purple/40",
+      "value": "#C084FC"
+    },
+    {
+      "name": "Agility Purple/30",
+      "value": "#D8B4FE"
+    },
+    {
+      "name": "Agility Purple/20",
+      "value": "#E9D5FF"
+    },
+    {
+      "name": "Agility Purple/10",
+      "value": "#F3E8FF"
+    }
+  ],
+  "styleReferences": [
+    {
+      "nodeId": "205:15864",
+      "styles": "These styles are contained in the design: Sandow Gray/90: #24262B, Sandow Gray/White: #FFFFFF, Heading xl/Bold: Font(family: \"Work Sans\", style: Bold, size: 60, weight: 700, lineHeight: 68, letterSpacing: -1.7999999523162842), Pulse Orange/50: #F97316, Text lg/Bold: Font(family: \"Work Sans\", style: Bold, size: 18, weight: 700, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/30: #BABBBE, Sandow Gray/80: #393C43, Sandow Gray/20: #D7D8D9, Text lg/Medium: Font(family: \"Work Sans\", style: Medium, size: 18, weight: 500, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/40: #9EA0A5, Sandow Gray/100: #111214, Heading md/Bold: Font(family: \"Work Sans\", style: Bold, size: 36, weight: 700, lineHeight: 44, letterSpacing: -1.2000000476837158), Sandow Gray/70: #50535B, Sandow Gray/60: #676C75, Sandow Gray/50: #81858D, Sandow Gray/10: #F3F3F4, Pulse Orange/100: #431407, Pulse Orange/90: #7C2D12, Pulse Orange/80: #9A3412, Pulse Orange/70: #C2410C, Pulse Orange/60: #EA580C, Pulse Orange/40: #FB923C, Pulse Orange/30: #FDBA74, Pulse Orange/20: #FED7AA, Pulse Orange/10: #FFEDD5, Calorie Yellow/100: #422006, Calorie Yellow/90: #713F12, Calorie Yellow/80: #854D0E, Calorie Yellow/70: #A16207, Calorie Yellow/60: #CA8A04, Calorie Yellow/50: #EAB308, Calorie Yellow/40: #FACC15, Calorie Yellow/30: #FDE047, Calorie Yellow/20: #FEF08A, Calorie Yellow/10: #FEF9C3, Tabata Blue/100: #172554, Tabata Blue/90: #1E3A8A, Tabata Blue/80: #1E40AF, Tabata Blue/70: #1D4ED8, Tabata Blue/60: #2563EB, Tabata Blue/50: #3B82F6, Tabata Blue/40: #60A5FA, Tabata Blue/30: #93C5FD, Tabata Blue/20: #BFDBFE, Tabata Blue/10: #DBEAFE, Endurance Red/100: #450A0A, Endurance Red/90: #7F1D1D, Endurance Red/80: #991B1B, Endurance Red/70: #B91C1C, Endurance Red/60: #DC2626, Endurance Red/50: #EF4444, Endurance Red/40: #F87171, Endurance Red/30: #FCA5A5, Endurance Red/20: #FECACA, Endurance Red/10: #FEE2E2, Spinach Green/100: #1A2E05, Spinach Green/90: #365314, Spinach Green/80: #3F6212, Spinach Green/70: #4D7C0F, Spinach Green/60: #65A30D, Spinach Green/50: #84CC16, Spinach Green/40: #A3E635, Spinach Green/30: #BEF264, Spinach Green/20: #D9F99D, Spinach Green/10: #ECFCCB, Agility Purple/100: #3B0764, Agility Purple/90: #581C87, Agility Purple/80: #6B21A8, Agility Purple/70: #7E22CE, Agility Purple/60: #9333EA, Agility Purple/50: #A855F7, Agility Purple/40: #C084FC, Agility Purple/30: #D8B4FE, Agility Purple/20: #E9D5FF, Agility Purple/10: #F3E8FF."
+    },
+    {
+      "nodeId": "37:767",
+      "styles": "These styles are contained in the design: Sandow Gray/90: #24262B, Sandow Gray/White: #FFFFFF, Heading xl/Bold: Font(family: \"Work Sans\", style: Bold, size: 60, weight: 700, lineHeight: 68, letterSpacing: -1.7999999523162842), Pulse Orange/50: #F97316, Text lg/Bold: Font(family: \"Work Sans\", style: Bold, size: 18, weight: 700, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/30: #BABBBE, Sandow Gray/80: #393C43, Sandow Gray/20: #D7D8D9, Text lg/Medium: Font(family: \"Work Sans\", style: Medium, size: 18, weight: 500, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/40: #9EA0A5, Sandow Gray/100: #111214, Text lg/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 18, weight: 600, lineHeight: 24, letterSpacing: -0.6000000238418579), Heading 2xl/Bold: Font(family: \"Work Sans\", style: Bold, size: 72, weight: 700, lineHeight: 80, letterSpacing: -2), Label/lg: Font(family: \"Work Sans\", style: Bold, size: 16, weight: 700, lineHeight: 100, letterSpacing: 10), Pulse Orange/10: #FFEDD5, Sandow Gray/60: #676C75, Paragraph/xl: Font(family: \"Work Sans\", style: Regular, size: 20, weight: 400, lineHeight: 1.5, letterSpacing: -0.699999988079071), Heading lg/Medium: Font(family: \"Work Sans\", style: Medium, size: 48, weight: 500, lineHeight: 56, letterSpacing: -1.5), Display lg/ExtraBold: Font(family: \"Work Sans\", style: ExtraBold, size: 180, weight: 800, lineHeight: 1, letterSpacing: -3), Display lg/Bold: Font(family: \"Work Sans\", style: Bold, size: 180, weight: 700, lineHeight: 1, letterSpacing: -3), Display md/ExtraBold: Font(family: \"Work Sans\", style: ExtraBold, size: 128, weight: 800, lineHeight: 1, letterSpacing: -2.5), Display md/Bold: Font(family: \"Work Sans\", style: Bold, size: 128, weight: 700, lineHeight: 1, letterSpacing: -2.5), Display sm/ExtraBold: Font(family: \"Work Sans\", style: ExtraBold, size: 96, weight: 800, lineHeight: 1, letterSpacing: -2), Display sm/Bold: Font(family: \"Work Sans\", style: Bold, size: 96, weight: 700, lineHeight: 1, letterSpacing: -2), Heading 2xl/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 72, weight: 600, lineHeight: 80, letterSpacing: -2), Heading 2xl/Medium: Font(family: \"Work Sans\", style: Medium, size: 72, weight: 500, lineHeight: 80, letterSpacing: -2), Heading xl/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 60, weight: 600, lineHeight: 68, letterSpacing: -1.7999999523162842), Heading xl/Medium: Font(family: \"Work Sans\", style: Medium, size: 60, weight: 500, lineHeight: 68, letterSpacing: -1.7999999523162842), Heading lg/Bold: Font(family: \"Work Sans\", style: Bold, size: 48, weight: 700, lineHeight: 56, letterSpacing: -1.5), Heading lg/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 48, weight: 600, lineHeight: 56, letterSpacing: -1.5), Heading md/Bold: Font(family: \"Work Sans\", style: Bold, size: 36, weight: 700, lineHeight: 44, letterSpacing: -1.2000000476837158), Heading md/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 36, weight: 600, lineHeight: 44, letterSpacing: -1.2000000476837158), Heading md/Medium: Font(family: \"Work Sans\", style: Medium, size: 36, weight: 500, lineHeight: 44, letterSpacing: -1.2000000476837158), Heading sm/Bold: Font(family: \"Work Sans\", style: Bold, size: 30, weight: 700, lineHeight: 38, letterSpacing: -1), Heading sm/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 30, weight: 600, lineHeight: 38, letterSpacing: -1), Heading sm/Medium: Font(family: \"Work Sans\", style: Medium, size: 30, weight: 500, lineHeight: 38, letterSpacing: -1), Heading xs/Bold: Font(family: \"Work Sans\", style: Bold, size: 24, weight: 700, lineHeight: 32, letterSpacing: -0.800000011920929), Heading xs/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 24, weight: 600, lineHeight: 32, letterSpacing: -0.800000011920929), Heading xs/Medium: Font(family: \"Work Sans\", style: Medium, size: 24, weight: 500, lineHeight: 32, letterSpacing: -0.800000011920929), Text 2xl/Bold: Font(family: \"Work Sans\", style: Bold, size: 24, weight: 700, lineHeight: 32, letterSpacing: -0.800000011920929), Text 2xl/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 24, weight: 600, lineHeight: 32, letterSpacing: -0.800000011920929), Text 2xl/Medium: Font(family: \"Work Sans\", style: Medium, size: 24, weight: 500, lineHeight: 32, letterSpacing: -0.800000011920929), Text xl/Bold: Font(family: \"Work Sans\", style: Bold, size: 20, weight: 700, lineHeight: 28, letterSpacing: -0.699999988079071), Text xl/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 20, weight: 600, lineHeight: 28, letterSpacing: -0.699999988079071), Text xl/Medium: Font(family: \"Work Sans\", style: Medium, size: 20, weight: 500, lineHeight: 28, letterSpacing: -0.699999988079071), Text md/Bold: Font(family: \"Work Sans\", style: Bold, size: 16, weight: 700, lineHeight: 22, letterSpacing: -0.6000000238418579), Text md/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 16, weight: 600, lineHeight: 22, letterSpacing: -0.6000000238418579), Text md/Medium: Font(family: \"Work Sans\", style: Medium, size: 16, weight: 500, lineHeight: 22, letterSpacing: -0.6000000238418579), Text sm/Bold: Font(family: \"Work Sans\", style: Bold, size: 14, weight: 700, lineHeight: 20, letterSpacing: -0.5), Text sm/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 14, weight: 600, lineHeight: 20, letterSpacing: -0.5), Text sm/Medium: Font(family: \"Work Sans\", style: Medium, size: 14, weight: 500, lineHeight: 20, letterSpacing: -0.5), Text xs/Bold: Font(family: \"Work Sans\", style: Bold, size: 12, weight: 700, lineHeight: 16, letterSpacing: -0.4000000059604645), Text xs/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 12, weight: 600, lineHeight: 16, letterSpacing: -0.4000000059604645), Text xs/Medium: Font(family: \"Work Sans\", style: Medium, size: 12, weight: 500, lineHeight: 16, letterSpacing: -0.4000000059604645), Text 2xs/Bold: Font(family: \"Work Sans\", style: Bold, size: 10, weight: 700, lineHeight: 14, letterSpacing: -0.4000000059604645), Text 2xs/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 10, weight: 600, lineHeight: 14, letterSpacing: -0.4000000059604645), Text 2xs/Medium: Font(family: \"Work Sans\", style: Medium, size: 10, weight: 500, lineHeight: 14, letterSpacing: -0.4000000059604645), Paragraph/2xl: Font(family: \"Work Sans\", style: Regular, size: 24, weight: 400, lineHeight: 1.5, letterSpacing: -0.800000011920929), Paragraph/lg: Font(family: \"Work Sans\", style: Regular, size: 18, weight: 400, lineHeight: 1.5, letterSpacing: -0.6000000238418579), Paragraph/md: Font(family: \"Work Sans\", style: Regular, size: 16, weight: 400, lineHeight: 1.5, letterSpacing: -0.6000000238418579), Paragraph/sm: Font(family: \"Work Sans\", style: Regular, size: 14, weight: 400, lineHeight: 1.5, letterSpacing: -0.5), Paragraph/xs: Font(family: \"Work Sans\", style: Regular, size: 12, weight: 400, lineHeight: 1.5, letterSpacing: -0.4000000059604645), Label/2xl: Font(family: \"Work Sans\", style: Bold, size: 20, weight: 700, lineHeight: 100, letterSpacing: 10), Label/xl: Font(family: \"Work Sans\", style: Bold, size: 18, weight: 700, lineHeight: 100, letterSpacing: 10), Label/md: Font(family: \"Work Sans\", style: Bold, size: 14, weight: 700, lineHeight: 100, letterSpacing: 10), Label/sm: Font(family: \"Work Sans\", style: Bold, size: 12, weight: 700, lineHeight: 100, letterSpacing: 10), Label/xs: Font(family: \"Work Sans\", style: Bold, size: 10, weight: 700, lineHeight: 100, letterSpacing: 10)."
+    },
+    {
+      "nodeId": "767:44795",
+      "styles": "These styles are contained in the design: Sandow Gray/90: #24262B, Sandow Gray/White: #FFFFFF, Heading xl/Bold: Font(family: \"Work Sans\", style: Bold, size: 60, weight: 700, lineHeight: 68, letterSpacing: -1.7999999523162842), Pulse Orange/50: #F97316, Text lg/Bold: Font(family: \"Work Sans\", style: Bold, size: 18, weight: 700, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/30: #BABBBE, Sandow Gray/80: #393C43, Sandow Gray/20: #D7D8D9, Text lg/Medium: Font(family: \"Work Sans\", style: Medium, size: 18, weight: 500, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/40: #9EA0A5, Sandow Gray/100: #111214, Text lg/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 18, weight: 600, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/10: #F3F3F4, Shadow/xs: Effect(type: DROP_SHADOW, color: #1112140D, offset: (0, 4), radius: 8, spread: 0), Text xl/Medium: Font(family: \"Work Sans\", style: Medium, size: 20, weight: 500, lineHeight: 28, letterSpacing: -0.699999988079071), Shadow/sm: Effect(type: DROP_SHADOW, color: #1112140D, offset: (0, 6), radius: 12, spread: 0), Shadow/md: Effect(type: DROP_SHADOW, color: #1112140D, offset: (0, 8), radius: 16, spread: 0), Shadow/lg: Effect(type: DROP_SHADOW, color: #1112140D, offset: (0, 16), radius: 32, spread: 0), Shadow/xl: Effect(type: DROP_SHADOW, color: #1112141A, offset: (0, 24), radius: 48, spread: 0), Shadow/2xl: Effect(type: DROP_SHADOW, color: #11121426, offset: (0, 32), radius: 64, spread: 0), Text 2xl/Bold: Font(family: \"Work Sans\", style: Bold, size: 24, weight: 700, lineHeight: 32, letterSpacing: -0.800000011920929), Transparent/White 64%: #FFFFFF, Blur/light-sm: Effect(type: BACKGROUND_BLUR, radius: 8), Blur/light-md: Effect(type: BACKGROUND_BLUR, radius: 16), Blur/light-lg: Effect(type: BACKGROUND_BLUR, radius: 32), Transparent/Gray100 64%: #111214, Blur/dark-sm: Effect(type: BACKGROUND_BLUR, radius: 8), Blur/dark-md: Effect(type: BACKGROUND_BLUR, radius: 8), Blur/dark-lg: Effect(type: BACKGROUND_BLUR, radius: 8), Focus/ring-black: Effect(type: DROP_SHADOW, color: #11121440, offset: (0, 0), radius: 0, spread: 4), Endurance Red/50: #EF4444, Focus/ring-red: Effect(type: DROP_SHADOW, color: #EF444440, offset: (0, 0), radius: 0, spread: 4), Spinach Green/50: #84CC16, Focus/ring-green: Effect(type: DROP_SHADOW, color: #84CC1640, offset: (0, 0), radius: 0, spread: 4), Focus/ring-orange: Effect(type: DROP_SHADOW, color: #F9731640, offset: (0, 0), radius: 0, spread: 4), Tabata Blue/60: #2563EB, Focus/ring-blue: Effect(type: DROP_SHADOW, color: #2563EB40, offset: (0, 0), radius: 0, spread: 4), Agility Purple/50: #A855F7, Focus/ring-purple: Effect(type: DROP_SHADOW, color: #A855F740, offset: (0, 0), radius: 0, spread: 4), Focus/ring-white: Effect(type: DROP_SHADOW, color: #FFFFFF40, offset: (0, 0), radius: 0, spread: 4), Sandow Gray/50: #81858D, Focus/ring-gray: Effect(type: DROP_SHADOW, color: #81858D40, offset: (0, 0), radius: 0, spread: 4)."
+    },
+    {
+      "nodeId": "252:32469",
+      "styles": "These styles are contained in the design: Sandow Gray/90: #24262B, Sandow Gray/White: #FFFFFF, Heading xl/Bold: Font(family: \"Work Sans\", style: Bold, size: 60, weight: 700, lineHeight: 68, letterSpacing: -1.7999999523162842), Pulse Orange/50: #F97316, Text lg/Bold: Font(family: \"Work Sans\", style: Bold, size: 18, weight: 700, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/30: #BABBBE, Sandow Gray/80: #393C43, Sandow Gray/20: #D7D8D9, Text lg/Medium: Font(family: \"Work Sans\", style: Medium, size: 18, weight: 500, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/40: #9EA0A5, Sandow Gray/100: #111214, Text lg/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 18, weight: 600, lineHeight: 24, letterSpacing: -0.6000000238418579), Heading lg/Bold: Font(family: \"Work Sans\", style: Bold, size: 48, weight: 700, lineHeight: 56, letterSpacing: -1.5), Sandow Gray/10: #F3F3F4, Sandow Gray/60: #676C75, Label/xs: Font(family: \"Work Sans\", style: Bold, size: 10, weight: 700, lineHeight: 100, letterSpacing: 10), Paragraph/lg: Font(family: \"Work Sans\", style: Regular, size: 18, weight: 400, lineHeight: 1.5, letterSpacing: -0.6000000238418579), Text md/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 16, weight: 600, lineHeight: 22, letterSpacing: -0.6000000238418579), Text md/Medium: Font(family: \"Work Sans\", style: Medium, size: 16, weight: 500, lineHeight: 22, letterSpacing: -0.6000000238418579), Text xs/Medium: Font(family: \"Work Sans\", style: Medium, size: 12, weight: 500, lineHeight: 16, letterSpacing: -0.4000000059604645), Pulse Orange/10: #FFEDD5."
+    },
+    {
+      "nodeId": "760:132459",
+      "styles": "These styles are contained in the design: Sandow Gray/90: #24262B, Sandow Gray/White: #FFFFFF, Heading xl/Bold: Font(family: \"Work Sans\", style: Bold, size: 60, weight: 700, lineHeight: 68, letterSpacing: -1.7999999523162842), Pulse Orange/50: #F97316, Text lg/Bold: Font(family: \"Work Sans\", style: Bold, size: 18, weight: 700, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/30: #BABBBE, Sandow Gray/80: #393C43, Sandow Gray/20: #D7D8D9, Text lg/Medium: Font(family: \"Work Sans\", style: Medium, size: 18, weight: 500, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/40: #9EA0A5, Sandow Gray/100: #111214, Text lg/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 18, weight: 600, lineHeight: 24, letterSpacing: -0.6000000238418579), Text md/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 16, weight: 600, lineHeight: 22, letterSpacing: -0.6000000238418579), Text sm/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 14, weight: 600, lineHeight: 20, letterSpacing: -0.5), Text xs/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 12, weight: 600, lineHeight: 16, letterSpacing: -0.4000000059604645), Pulse Orange/10: #FFEDD5, Endurance Red/50: #EF4444, Sandow Gray/10: #F3F3F4, Pulse Orange/30: #FDBA74, Pulse Orange/20: #FED7AA, Endurance Red/30: #FCA5A5, Endurance Red/10: #FEE2E2."
+    },
+    {
+      "nodeId": "205:18013",
+      "styles": "These styles are contained in the design: Sandow Gray/90: #24262B, Sandow Gray/White: #FFFFFF, Heading xl/Bold: Font(family: \"Work Sans\", style: Bold, size: 60, weight: 700, lineHeight: 68, letterSpacing: -1.7999999523162842), Pulse Orange/50: #F97316, Text lg/Bold: Font(family: \"Work Sans\", style: Bold, size: 18, weight: 700, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/30: #BABBBE, Sandow Gray/80: #393C43, Sandow Gray/20: #D7D8D9, Text lg/Medium: Font(family: \"Work Sans\", style: Medium, size: 18, weight: 500, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/40: #9EA0A5, Sandow Gray/100: #111214, Text lg/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 18, weight: 600, lineHeight: 24, letterSpacing: -0.6000000238418579), Sandow Gray/60: #676C75, Sandow Gray/10: #F3F3F4, Wireframe/Color Palette/Gray 1: #333333, Text xl/Bold: Font(family: \"Work Sans\", style: Bold, size: 20, weight: 700, lineHeight: 28, letterSpacing: -0.699999988079071), Tabata Blue/60: #2563EB, Text sm/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 14, weight: 600, lineHeight: 20, letterSpacing: -0.5), Tabata Blue/10: #DBEAFE, Sandow Gray/70: #50535B, Text md/Medium: Font(family: \"Work Sans\", style: Medium, size: 16, weight: 500, lineHeight: 22, letterSpacing: -0.6000000238418579), Text md/Bold: Font(family: \"Work Sans\", style: Bold, size: 16, weight: 700, lineHeight: 22, letterSpacing: -0.6000000238418579), Text xs/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 12, weight: 600, lineHeight: 16, letterSpacing: -0.4000000059604645), Text sm/Medium: Font(family: \"Work Sans\", style: Medium, size: 14, weight: 500, lineHeight: 20, letterSpacing: -0.5)."
+    },
+    {
+      "nodeId": "67:16691",
+      "styles": "These styles are contained in the design: Sandow Gray/White: #FFFFFF, Text sm/Medium: Font(family: \"Work Sans\", style: Medium, size: 14, weight: 500, lineHeight: 20, letterSpacing: -0.5), Pulse Orange/30: #FDBA74, Pulse Orange/20: #FED7AA, Pulse Orange/10: #FFEDD5, Heading sm/Bold: Font(family: \"Work Sans\", style: Bold, size: 30, weight: 700, lineHeight: 38, letterSpacing: -1), Text lg/Medium: Font(family: \"Work Sans\", style: Medium, size: 18, weight: 500, lineHeight: 24, letterSpacing: -0.6000000238418579), Pulse Orange/50: #F97316, Tabata Blue/40: #60A5FA, Tabata Blue/60: #2563EB, Sandow Gray/50: #81858D, Sandow Gray/40: #9EA0A5, Sandow Gray/30: #BABBBE, Sandow Gray/60: #676C75, Spinach Green/40: #A3E635, Spinach Green/20: #D9F99D, Label/xs: Font(family: \"Work Sans\", style: Bold, size: 10, weight: 700, lineHeight: 100, letterSpacing: 10), Spinach Green/50: #84CC16."
+    },
+    {
+      "nodeId": "181:21870",
+      "styles": "These styles are contained in the design: Gradient/Gray10/▲: , Sandow Gray/White: #FFFFFF, Text sm/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 14, weight: 600, lineHeight: 20, letterSpacing: -0.5), Transparent/Gray 100 32%: #111214, Sandow Gray/100: #111214, Text lg/Bold: Font(family: \"Work Sans\", style: Bold, size: 18, weight: 700, lineHeight: 24, letterSpacing: -0.6000000238418579), Pulse Orange/50: #F97316, Sandow Gray/80: #393C43, Text md/Medium: Font(family: \"Work Sans\", style: Medium, size: 16, weight: 500, lineHeight: 22, letterSpacing: -0.6000000238418579), Sandow Gray/30: #BABBBE, Tabata Blue/60: #2563EB, Sandow Gray/10: #F3F3F4, Gradient/Gray90/▲: , Transparent/White 32%: #FFFFFF, Sandow Gray/20: #D7D8D9, Sandow Gray/70: #50535B, Sandow Gray/90: #24262B."
+    },
+    {
+      "nodeId": "85:30499",
+      "styles": "These styles are contained in the design: Sandow Gray/100: #111214, Sandow Gray/White: #FFFFFF, Text md/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 16, weight: 600, lineHeight: 22, letterSpacing: -0.6000000238418579), Sandow Gray/60: #676C75, Sandow Gray/10: #F3F3F4, Pulse Orange/50: #F97316, Text sm/Medium: Font(family: \"Work Sans\", style: Medium, size: 14, weight: 500, lineHeight: 20, letterSpacing: -0.5), Paragraph/sm: Font(family: \"Work Sans\", style: Regular, size: 14, weight: 400, lineHeight: 1.5, letterSpacing: -0.5), Sandow Gray/20: #D7D8D9, Sandow Gray/80: #393C43, Sandow Gray/40: #9EA0A5, Sandow Gray/90: #24262B."
+    },
+    {
+      "nodeId": "204:54613",
+      "styles": "These styles are contained in the design: Sandow Gray/White: #FFFFFF, Sandow Gray/60: #676C75, Sandow Gray/80: #393C43, Text md/Bold: Font(family: \"Work Sans\", style: Bold, size: 16, weight: 700, lineHeight: 22, letterSpacing: -0.6000000238418579), Text sm/Medium: Font(family: \"Work Sans\", style: Medium, size: 14, weight: 500, lineHeight: 20, letterSpacing: -0.5), Pulse Orange/50: #F97316, Sandow Gray/10: #F3F3F4, Sandow Gray/20: #D7D8D9, Tabata Blue/60: #2563EB, Spinach Green/40: #A3E635, Sandow Gray/100: #111214, Agility Purple/60: #9333EA, Text sm/Bold: Font(family: \"Work Sans\", style: Bold, size: 14, weight: 700, lineHeight: 20, letterSpacing: -0.5), Endurance Red/50: #EF4444, Text sm/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 14, weight: 600, lineHeight: 20, letterSpacing: -0.5), Text xs/SemiBold: Font(family: \"Work Sans\", style: SemiBold, size: 12, weight: 600, lineHeight: 16, letterSpacing: -0.4000000059604645), Sandow Gray/40: #9EA0A5."
+    }
+  ]
+}

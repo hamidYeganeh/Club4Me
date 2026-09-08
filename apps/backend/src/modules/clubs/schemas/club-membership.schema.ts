@@ -24,6 +24,13 @@ export class ClubMembership {
   @Prop({ type: Types.ObjectId, ref: "User", required: true })
   invitedBy: Types.ObjectId;
   @Prop({ type: Date }) acceptedAt?: Date;
+  @Prop({ type: [Object], default: [] }) changes: Array<{
+    action: "invite" | "accept" | "reject" | "revoke";
+    actorId: string;
+    at: Date;
+    role?: string;
+    permissions?: string[];
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }

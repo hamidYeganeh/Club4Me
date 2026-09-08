@@ -1,6 +1,11 @@
+import { ClassBillingService } from "./class-billing.service";
+import {
+  ClubManualPayment,
+  ClubManualPaymentSchema,
+} from "./schemas/payment.schema";
 import { getModelToken, MongooseModule } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { Model, Types } from "mongoose";
 import { ClubsRepository } from "../clubs/clubs.repository";
 import { UsersRepository } from "../users/users.repository";
@@ -39,7 +44,7 @@ import {
 } from "./schemas/training-class.schema";
 
 describe("BusinessClassesService integration", () => {
-  let mongo: MongoMemoryServer;
+  let mongo: MongoMemoryReplSet;
   let moduleRef: TestingModule;
   let service: BusinessClassesService;
   let portal: BusinessClassPortalService;
@@ -50,11 +55,14 @@ describe("BusinessClassesService integration", () => {
   const clubId = new Types.ObjectId().toHexString();
 
   beforeAll(async () => {
-    mongo = await MongoMemoryServer.create();
+    mongo = await MongoMemoryReplSet.create({
+      replSet: { count: 1, args: ["--oplogSize", "16"] },
+    });
     moduleRef = await Test.createTestingModule({
       imports: [
         MongooseModule.forRoot(mongo.getUri()),
         MongooseModule.forFeature([
+          { name: ClubManualPayment.name, schema: ClubManualPaymentSchema },
           {
             name: BusinessTrainingClass.name,
             schema: BusinessTrainingClassSchema,
@@ -86,6 +94,7 @@ describe("BusinessClassesService integration", () => {
         ]),
       ],
       providers: [
+        ClassBillingService,
         BusinessClassesService,
         BusinessClassPortalService,
         UsersRepository,
@@ -103,6 +112,7 @@ describe("BusinessClassesService integration", () => {
           provide: ClubsRepository,
           useValue: {
             findForOwner: jest.fn().mockResolvedValue({ id: clubId }),
+            hasPermission: jest.fn().mockResolvedValue(true),
             findPublic: jest.fn().mockResolvedValue({
               id: clubId,
               name: "باشگاه تست",
@@ -129,6 +139,75 @@ describe("BusinessClassesService integration", () => {
     );
   });
 
+  beforeEach(async () => {
+    await students.db.collection("clubs").insertOne({
+      _id: new Types.ObjectId(clubId),
+      name: "باشگاه تست",
+      reviewStatus: "approved",
+      visibility: "public",
+      operationalStatus: "active",
+      geo: { cityId: new Types.ObjectId("66d400000000000000000051") },
+    });
+  });
+
+  it("paginates beyond 200 results and filters club visibility and city before counting", async () => {
+    const hiddenClub = new Types.ObjectId();
+    await students.db.collection("clubs").insertOne({
+      _id: hiddenClub,
+      reviewStatus: "draft",
+      visibility: "public",
+    });
+    const classes = moduleRef.get<Model<BusinessTrainingClass>>(
+      getModelToken(BusinessTrainingClass.name),
+    );
+    const make = (index: number, owner = new Types.ObjectId(clubId)) => ({
+      clubId: owner,
+      title: `کلاس يوگا ${index}`,
+      description: "",
+      sport: "یوگا",
+      level: "مقدماتی",
+      classModel: "group",
+      pricingModel: "course",
+      price: 100000,
+      currency: "IRR",
+      capacity: 10,
+      startDate: new Date("2030-01-01"),
+      endDate: new Date("2030-02-01"),
+      status: "active",
+      visibility: "public",
+    });
+    await classes.insertMany([
+      ...Array.from({ length: 205 }, (_, index) => make(index)),
+      ...Array.from({ length: 10 }, (_, index) => make(index, hiddenClub)),
+    ]);
+    const result = await portal.listPublic({
+      page: "21",
+      limit: "10",
+      q: "یوگا",
+      cityId: "66d400000000000000000051",
+    });
+    expect(result).toMatchObject({
+      page: 21,
+      limit: 10,
+      total: 205,
+      totalPages: 21,
+    });
+    expect(result.items).toHaveLength(5);
+    expect(
+      (await portal.listPublic({ cityId: String(new Types.ObjectId()) })).total,
+    ).toBe(0);
+    await expect(portal.listPublic({ page: "0" })).rejects.toMatchObject({
+      status: 400,
+    });
+    const repository = moduleRef.get(ClubsRepository);
+    jest
+      .spyOn(repository, "findPublic")
+      .mockRejectedValueOnce(new Error("catalog unavailable"));
+    await expect(portal.listPublic({ limit: "1" })).rejects.toThrow(
+      "catalog unavailable",
+    );
+  });
+
   afterEach(async () => {
     await Promise.all(
       Object.values(students.db.collections).map((collection) =>
@@ -139,6 +218,195 @@ describe("BusinessClassesService integration", () => {
   afterAll(async () => {
     await moduleRef.close();
     await mongo.stop();
+  });
+
+  it("shares the last class credit across owner, coach and QR attendance and keeps corrections auditable", async () => {
+    const athlete = await users.create({
+      phone: "+989121119901",
+      roles: ["athlete"],
+      status: "active",
+    });
+    const teacher = await users.create({
+      phone: "+989121119902",
+      roles: ["coach"],
+      status: "active",
+    });
+    const coach = await coaches.create({
+      clubId: new Types.ObjectId(clubId),
+      userId: teacher._id,
+      firstName: "مربی",
+      lastName: "آزمایشی",
+      phone: teacher.phone,
+      status: "active",
+    });
+    const student = await students.create({
+      clubId: new Types.ObjectId(clubId),
+      userId: athlete._id,
+      firstName: "شاگرد",
+      lastName: "آزمایشی",
+      phone: athlete.phone,
+      status: "active",
+    });
+    const training = await students.db
+      .model(BusinessTrainingClass.name)
+      .create({
+        clubId: new Types.ObjectId(clubId),
+        coachProfileId: coach._id,
+        title: "سهمیه مشترک",
+        classModel: "group",
+        pricingModel: "package",
+        price: 1000,
+        packageSessionCount: 1,
+        capacity: 10,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 86400000),
+        schedule: [],
+      });
+    const membership = await students.db
+      .model(BusinessClassEnrollment.name)
+      .create({
+        classId: training._id,
+        clubId: new Types.ObjectId(clubId),
+        studentId: student._id,
+        status: "active",
+        agreedPrice: 1000,
+        paymentStatus: "paid",
+        totalSessions: 1,
+        remainingSessions: 1,
+        enrolledAt: new Date(),
+        createdBy: new Types.ObjectId(ownerId),
+      });
+    const sessions = [];
+    for (const offset of [0, 1])
+      sessions.push(
+        await students.db.model(BusinessClassSession.name).create({
+          classId: training._id,
+          clubId: new Types.ObjectId(clubId),
+          startsAt: new Date(Date.now() + offset * 3600000),
+          endsAt: new Date(Date.now() + (offset + 1) * 3600000),
+          capacity: 10,
+        }),
+      );
+    expect(
+      await students.db
+        .model(BusinessClassSession.name)
+        .countDocuments({ classId: training._id }),
+    ).toBe(2);
+    const input = {
+      items: [
+        {
+          studentId: String(student._id),
+          status: "present" as const,
+          notes: "",
+        },
+      ],
+    };
+    const results = await Promise.allSettled([
+      service.recordAttendance(
+        ownerId,
+        clubId,
+        String(training._id),
+        String(sessions[0]!._id),
+        ownerId,
+        input,
+      ),
+      portal.recordCoachAttendance(
+        String(teacher._id),
+        String(training._id),
+        String(sessions[1]!._id),
+        input,
+      ),
+    ]);
+    expect(
+      results.filter((result) => result.status === "fulfilled"),
+    ).toHaveLength(1);
+    expect(
+      (await students.db
+        .model(BusinessClassEnrollment.name)
+        .findById(membership._id))!.remainingSessions,
+    ).toBe(0);
+    const record = (await students.db
+      .model(BusinessClassAttendance.name)
+      .findOne({ classId: training._id }))!;
+    expect(record.changes).toHaveLength(1);
+    const unused = sessions.find(
+      (session) => String(session._id) !== String(record.sessionId),
+    )!;
+    const persistedUnused = await students.db
+      .model(BusinessClassSession.name)
+      .findById(unused._id);
+    expect(persistedUnused?.toObject()).toMatchObject({
+      clubId: new Types.ObjectId(clubId),
+      classId: training._id,
+    });
+    const credential = await portal.generateOwnerCheckInCredential(
+      ownerId,
+      clubId,
+      String(training._id),
+      String(unused._id),
+      15,
+    );
+    await expect(
+      portal.checkInAthlete(
+        String(athlete._id),
+        String(training._id),
+        String(unused._id),
+        credential.code === "00000" ? "11111" : "00000",
+      ),
+    ).rejects.toMatchObject({ code: "CHECKIN_CREDENTIAL_INVALID" });
+    expect(
+      (await students.db
+        .model(BusinessClassCheckInCredential.name)
+        .findOne({ sessionId: unused._id }))!.attempts,
+    ).toBe(1);
+    await expect(
+      portal.checkInAthlete(
+        String(athlete._id),
+        String(training._id),
+        String(unused._id),
+        credential.code,
+      ),
+    ).rejects.toMatchObject({ code: "CLASS_CREDIT_EXHAUSTED" });
+    expect(
+      await students.db
+        .model(BusinessClassAttendance.name)
+        .countDocuments({ classId: training._id }),
+    ).toBe(1);
+    await service.recordAttendance(
+      ownerId,
+      clubId,
+      String(training._id),
+      String(record.sessionId),
+      ownerId,
+      { items: [{ ...input.items[0]!, status: "absent" }] },
+    );
+    expect(
+      (await students.db
+        .model(BusinessClassAttendance.name)
+        .findById(record._id))!.changes,
+    ).toHaveLength(2);
+    await portal.checkInAthlete(
+      String(athlete._id),
+      String(training._id),
+      String(unused._id),
+      credential.code,
+    );
+    await portal.checkInAthlete(
+      String(athlete._id),
+      String(training._id),
+      String(unused._id),
+      credential.code,
+    );
+    expect(
+      (await students.db
+        .model(BusinessClassEnrollment.name)
+        .findById(membership._id))!.remainingSessions,
+    ).toBe(0);
+    expect(
+      (await students.db
+        .model(BusinessClassAttendance.name)
+        .findOne({ sessionId: unused._id }))!.changes,
+    ).toHaveLength(1);
   });
 
   it("creates sessions, enrolls a club student, tracks package usage and transfers enrollment", async () => {
@@ -302,11 +570,7 @@ describe("BusinessClassesService integration", () => {
       trainingClass.id,
     );
     expect(pending.paymentStatus).toBe("pending");
-    const paid = await portal.resolvePayment(
-      String(athleteId),
-      pending.id,
-      "approve",
-    );
+    const paid = await portal.finalizeEnrollmentPayment(pending.id, true);
     expect(paid.status).toBe("active");
     expect(paid.paymentStatus).toBe("paid");
     expect((await portal.listForAthlete(String(athleteId))).items).toHaveLength(
@@ -315,6 +579,13 @@ describe("BusinessClassesService integration", () => {
     expect((await portal.listForCoach(String(coachUserId))).items).toHaveLength(
       1,
     );
+    const roster = await portal.listCoachEnrollments(
+      String(coachUserId),
+      trainingClass.id,
+    );
+    expect(roster.items).toHaveLength(1);
+    expect(roster.items[0]).not.toHaveProperty("agreedPrice");
+    expect(roster.items[0]?.paymentStatus).toBe("paid");
     const detail = await portal.getForCoach(
       String(coachUserId),
       trainingClass.id,

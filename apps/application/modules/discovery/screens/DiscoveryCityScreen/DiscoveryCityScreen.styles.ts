@@ -18,7 +18,7 @@ export const discoveryCityScreenStyles = tv({
     heroTitle: "text-[2rem] leading-[1.25] text-white",
     heroDescription: "max-w-sm text-sm leading-7 text-white/70",
     sheet:
-      "relative z-20 -mt-7 min-h-[60dvh] rounded-t-[2.25rem] border-t border-white/7 bg-background/94 px-5 pt-7 backdrop-blur-xl",
+      "relative mt-6 space-y-5 px-4",
     sheetHeader: "mb-5 flex items-center justify-between gap-3",
     list: "flex flex-col gap-3",
     card: "app-card app-stack-card group relative flex min-h-27 flex-row items-center gap-4 overflow-hidden p-3 shadow-none active:scale-[0.985]",

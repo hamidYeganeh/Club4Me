@@ -8,6 +8,7 @@ import { splashScreenStyles } from "./splash-screen.styles";
 
 const SPLASH_VISIBLE_MS = 1600;
 const SPLASH_FADE_MS = 500;
+const SPLASH_SESSION_KEY = "gym4me.splash.shown";
 
 export function SplashScreen() {
   const t = useTranslations("common");
@@ -15,6 +16,15 @@ export function SplashScreen() {
   const [exited, setExited] = useState(false);
 
   useEffect(() => {
+    if (window.sessionStorage.getItem(SPLASH_SESSION_KEY) === "1") {
+      const remove = window.setTimeout(() => {
+        setVisible(false);
+        setExited(true);
+      }, 0);
+      return () => window.clearTimeout(remove);
+    }
+    window.sessionStorage.setItem(SPLASH_SESSION_KEY, "1");
+
     const hide = window.setTimeout(() => {
       setVisible(false);
     }, SPLASH_VISIBLE_MS);

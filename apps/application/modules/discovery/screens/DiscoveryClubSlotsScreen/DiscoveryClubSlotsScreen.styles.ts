@@ -8,7 +8,7 @@ export const discoveryClubSlotsScreenStyles = tv({
     cover:
       "absolute inset-0 h-full w-full bg-cover bg-center bg-fixed will-change-transform",
     coverFallback:
-      "absolute inset-0 grid place-items-center bg-linear-[145deg] from-surface-secondary to-background text-accent/70",
+      "absolute inset-0 grid place-items-center bg-linear-to-t from-surface-secondary to-background text-accent/70",
     overlay: "pointer-events-none absolute inset-0 z-[1]",
     grain:
       "pointer-events-none absolute inset-0 z-[2] opacity-[0.14] mix-blend-overlay [background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22 opacity=%220.55%22/%3E%3C/svg%3E')]",

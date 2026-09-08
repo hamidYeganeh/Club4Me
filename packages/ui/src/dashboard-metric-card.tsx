@@ -14,6 +14,7 @@ type DashboardMetricCardProps = {
   icon: ReactNode;
   visual: ReactNode;
   className?: string;
+  tone?: "energy" | "activity" | "neutral" | "progress";
 };
 
 export function DashboardMetricCard({
@@ -23,16 +24,24 @@ export function DashboardMetricCard({
   icon,
   visual,
   className,
+  tone,
 }: DashboardMetricCardProps) {
   return (
     <article
       className={cn(
-        "grid h-[194px] w-[154px] shrink-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-2 overflow-hidden rounded-[32px] p-4",
+        "grid min-h-[194px] w-[154px] shrink-0 grid-rows-[auto_80px_auto] gap-3 overflow-hidden rounded-[var(--app-radius-feature,32px)] p-4",
+        tone &&
+          {
+            energy: "app-metric-energy",
+            activity: "app-metric-activity",
+            neutral: "app-metric-neutral",
+            progress: "app-metric-progress",
+          }[tone],
         className,
       )}
     >
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <h3 className="truncate text-sm font-medium opacity-95">{title}</h3>
+        <h3 className="text-sm leading-5 font-medium">{title}</h3>
         <span className="grid size-7 shrink-0 place-items-center">{icon}</span>
       </div>
       <div className="min-h-0" aria-hidden="true">
@@ -40,9 +49,7 @@ export function DashboardMetricCard({
       </div>
       <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap font-semibold leading-none tabular-nums">
         <p className="truncate text-[1.75rem] tracking-[-0.04em]">{value}</p>
-        {unit ? (
-          <span className="text-sm font-medium opacity-90">{unit}</span>
-        ) : null}
+        {unit ? <span className="text-sm font-medium">{unit}</span> : null}
       </div>
     </article>
   );
@@ -129,12 +136,17 @@ export function MetricHeatmapVisual({
   const activeCells = Math.min(cells, Math.max(0, Math.round(value)));
 
   return (
-    <div className="grid h-full grid-cols-5 content-center gap-1.5">
+    <div
+      className="grid h-full grid-cols-5 gap-1.5"
+      style={{
+        gridTemplateRows: `repeat(${Math.max(1, Math.ceil(cells / 5))}, minmax(0, 1fr))`,
+      }}
+    >
       {Array.from({ length: cells }, (_, index) => (
         <span
           key={index}
           className={cn(
-            "aspect-square rounded-[7px]",
+            "min-h-0 rounded-[4px]",
             index < activeCells ? "bg-current" : "bg-current/25",
           )}
         />

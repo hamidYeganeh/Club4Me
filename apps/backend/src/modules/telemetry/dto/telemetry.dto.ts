@@ -6,6 +6,7 @@ const context = {
   occurredAt: z.string().datetime(),
   platform: z.enum(["android", "web"]),
   appVersion: z.string().trim().min(1).max(40),
+  anonymousId: z.string().uuid().optional(),
 };
 
 const trackSchemas = [
@@ -34,6 +35,9 @@ const trackSchemas = [
         result_type: z.enum(["all", "club", "coach", "class"]),
         has_location_filter: z.boolean(),
         result_count: z.number().int().nonnegative(),
+        acquisition_channel: z.string().trim().min(1).max(80).optional(),
+        sport_id: objectId.optional(),
+        service_type: z.enum(["club", "coach", "class", "court"]).optional(),
       })
       .strict(),
   }),
@@ -70,7 +74,7 @@ const trackSchemas = [
     event: z.literal("review.submitted"),
     properties: z
       .object({
-        review_target_type: z.enum(["club", "coach"]),
+        review_target_type: z.enum(["club", "coach", "class"]),
         review_target_id: objectId,
         rating: z.number().int().min(1).max(5),
       })
@@ -142,6 +146,7 @@ export class TrackTelemetryDto {
   occurredAt: string;
   platform: "android" | "web";
   appVersion: string;
+  anonymousId?: string;
   event: string;
   properties: Record<string, unknown>;
 }
@@ -162,6 +167,7 @@ export class IdentifyTelemetryDto {
   occurredAt: string;
   platform: "android" | "web";
   appVersion: string;
+  anonymousId?: string;
   traits: Record<string, unknown>;
 }
 
@@ -200,6 +206,7 @@ export class GroupTelemetryDto {
   occurredAt: string;
   platform: "android" | "web";
   appVersion: string;
+  anonymousId?: string;
   groupType: "club" | "session";
   groupId: string;
   traits: Record<string, unknown>;

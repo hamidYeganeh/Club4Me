@@ -1,0 +1,1 @@
+Monoton-Regular.ttf and Monoton-OFL.txt are vendored from the [official Google Fonts repository](https://github.com/google/fonts/tree/main/ofl/monoton), retrieved 2026-09-07. Font distributed unmodified; see Monoton-OFL.txt for the license. Keeping the file local removes build-time Google Fonts downloads and supplies the native offline bundle.

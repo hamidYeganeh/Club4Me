@@ -1,4 +1,7 @@
 "use client";
+import { StudentAccounts } from "@/components/student-accounts";
+import { IranDateInput } from "@repo/ui/iran-date-input";
+import { tehranLocalValue } from "@repo/ui/iran-date";
 
 import {
   useBusinessClubs,
@@ -34,7 +37,7 @@ import {
   DataTable,
   ListPagePanel,
 } from "@/components/data-table";
-import { Button, Card, Chip, Spinner, toast } from "@heroui/react";
+import { Button, Card, Chip, toast } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { EntityDetailsModal } from "@ui/entity-details-modal";
 import { FormEvent, ReactNode, useCallback, useMemo, useState } from "react";
@@ -45,12 +48,13 @@ const inputClass =
 const textareaClass = `${inputClass} h-24 py-3`;
 const iranPhonePattern = "(?:\\+98|0)?9\\d{9}";
 const ibanPattern = "IR\\d{24}";
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => tehranLocalValue(new Date().toISOString()).slice(0, 10);
 const formatDate = (value: string | null) =>
   value
-    ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium" }).format(
-        new Date(value),
-      )
+    ? new Intl.DateTimeFormat("fa-IR", {
+        timeZone: "Asia/Tehran",
+        dateStyle: "medium",
+      }).format(new Date(value))
     : "ثبت نشده";
 const formatMoney = (value: number) =>
   new Intl.NumberFormat("fa-IR").format(value);
@@ -128,14 +132,6 @@ function Empty({ title, hint }: { title: string; hint: string }) {
   );
 }
 
-function Loading() {
-  return (
-    <div className="flex justify-center py-20">
-      <Spinner />
-    </div>
-  );
-}
-
 function QueryError({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="grid min-h-56 place-items-center rounded-2xl border border-danger/20 bg-danger/5 p-8 text-center">
@@ -208,7 +204,10 @@ export function StudentsScreen() {
     status: "" as "" | "active" | "inactive",
   });
 
-  const items = students.data?.items ?? [];
+  const items = useMemo(
+    () => students.data?.items ?? [],
+    [students.data?.items],
+  );
   const filtered = useMemo(() => {
     const query = filters.query.trim().toLowerCase();
     return items.filter((student) => {
@@ -266,9 +265,7 @@ export function StudentsScreen() {
         }),
         studentColumnHelper.accessor("status", {
           header: "وضعیت",
-          cell: (info) => (
-            <StatusChip active={info.getValue() === "active"} />
-          ),
+          cell: (info) => <StatusChip active={info.getValue() === "active"} />,
         }),
         studentColumnHelper.display({
           id: "actions",
@@ -294,9 +291,7 @@ export function StudentsScreen() {
                         id: student.id,
                         payload: {
                           status:
-                            student.status === "active"
-                              ? "inactive"
-                              : "active",
+                            student.status === "active" ? "inactive" : "active",
                         },
                       })
                       .then(() => toast.success("وضعیت شاگرد تغییر کرد"))
@@ -405,9 +400,9 @@ export function StudentsScreen() {
               />
             </Field>
             <Field label="پایان عضویت">
-              <input
+              <IranDateInput
                 name="membershipEndsAt"
-                type="date"
+
                 className={inputClass}
               />
             </Field>
@@ -566,7 +561,7 @@ export function CoachesScreen() {
     status: "" as "" | "active" | "inactive",
   });
 
-  const items = coaches.data?.items ?? [];
+  const items = useMemo(() => coaches.data?.items ?? [], [coaches.data?.items]);
   const filtered = useMemo(() => {
     const query = filters.query.trim().toLowerCase();
     return items.filter((coach) => {
@@ -631,9 +626,7 @@ export function CoachesScreen() {
         }),
         coachColumnHelper.accessor("status", {
           header: "وضعیت",
-          cell: (info) => (
-            <StatusChip active={info.getValue() === "active"} />
-          ),
+          cell: (info) => <StatusChip active={info.getValue() === "active"} />,
         }),
         coachColumnHelper.display({
           id: "actions",
@@ -939,7 +932,10 @@ export function PaymentsScreen() {
       ),
     [students.data?.items],
   );
-  const paymentItems = payments.data?.items ?? [];
+  const paymentItems = useMemo(
+    () => payments.data?.items ?? [],
+    [payments.data?.items],
+  );
   const filteredPayments = useMemo(() => {
     const query = filters.query.trim().toLowerCase();
     return paymentItems.filter((payment) => {
@@ -985,6 +981,18 @@ export function PaymentsScreen() {
             </span>
           ),
         }),
+        paymentColumnHelper.display({
+          id: "receiptStatus",
+          header: "وضعیت رسید",
+          cell: (info) =>
+            info.row.original.voidedAt
+              ? "باطل‌شده"
+              : (info.row.original.refundedAmount ?? 0) > 0
+                ? `برگشتی: ${formatMoney(info.row.original.refundedAmount ?? 0)} ریال`
+                : info.row.original.enrollmentId
+                  ? "متصل به ثبت‌نام"
+                  : "تخصیص‌نیافته",
+        }),
         paymentColumnHelper.accessor("paidAt", {
           header: "تاریخ",
           cell: (info) => formatDate(info.getValue()),
@@ -1008,7 +1016,8 @@ export function PaymentsScreen() {
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const data = new FormData(form);
     try {
       await create.mutateAsync({
         studentId: String(data.get("studentId")),
@@ -1021,7 +1030,7 @@ export function PaymentsScreen() {
           "cash" | "card" | "transfer" | "other",
         notes: String(data.get("notes")),
       });
-      event.currentTarget.reset();
+      form.reset();
       setOpen(false);
       toast.success("پرداخت ثبت شد");
     } catch {
@@ -1030,7 +1039,8 @@ export function PaymentsScreen() {
   };
   const submitPayout = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const data = new FormData(form);
     try {
       await requestPayout.mutateAsync({
         providerType: "club",
@@ -1038,7 +1048,7 @@ export function PaymentsScreen() {
         amount: Number(data.get("amount")),
         iban: String(data.get("iban")).replaceAll(" ", "").trim().toUpperCase(),
       });
-      event.currentTarget.reset();
+      form.reset();
       setPayoutOpen(false);
       toast.success("درخواست تسویه ثبت شد");
     } catch {
@@ -1067,9 +1077,13 @@ export function PaymentsScreen() {
         </div>
       }
     >
+      <StudentAccounts key={clubId} clubId={clubId} />
       <section className="mt-5 grid gap-4 lg:grid-cols-[1fr_2fr]">
         <Card className="app-card shadow-none active:scale-100 p-5">
           <p className="text-sm text-muted">موجودی قابل برداشت</p>
+          <p className="mt-1 text-xs text-warning">
+            پرداخت و تسویه آزمایشی است؛ انتقال بانکی انجام نمی‌شود.
+          </p>
           <p className="mt-2 text-2xl font-bold tabular-nums">
             {formatMoney(payoutBalance.data?.availableAmount ?? 0)} ریال
           </p>
@@ -1077,6 +1091,13 @@ export function PaymentsScreen() {
             در انتظار تسویه:{" "}
             {formatMoney(payoutBalance.data?.reservedAmount ?? 0)} ریال
           </p>
+          {(payoutBalance.data?.outstandingDebt ?? 0) > 0 ? (
+            <p className="mt-2 text-sm text-danger">
+              بدهی بازپرداخت:{" "}
+              {formatMoney(payoutBalance.data?.outstandingDebt ?? 0)} ریال؛ از
+              درآمد بعدی کسر می‌شود.
+            </p>
+          ) : null}
           <Button
             className="mt-4"
             variant="primary"
@@ -1228,11 +1249,11 @@ export function PaymentsScreen() {
               />
             </Field>
             <Field label="تاریخ پرداخت">
-              <input
+              <IranDateInput
                 required
                 defaultValue={today()}
                 name="paidAt"
-                type="date"
+
                 className={inputClass}
               />
             </Field>
@@ -1308,7 +1329,8 @@ export function PaymentsScreen() {
                   onChange={(event) =>
                     setDraftFilters((current) => ({
                       ...current,
-                      type: event.target.value as "" | ClubManualPayment["type"],
+                      type: event.target.value as
+                        "" | ClubManualPayment["type"],
                     }))
                   }
                 >
@@ -1479,7 +1501,8 @@ export function AttendanceScreen() {
       .filter((student) => student.status === "active")
       .filter((student) => {
         if (!query) return true;
-        const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
+        const fullName =
+          `${student.firstName} ${student.lastName}`.toLowerCase();
         return (
           fullName.includes(query) ||
           student.sport.toLowerCase().includes(query) ||
@@ -1591,9 +1614,7 @@ export function AttendanceScreen() {
                 ) : null}
                 <Button
                   size="sm"
-                  variant={
-                    current?.status === "present" ? "primary" : "ghost"
-                  }
+                  variant={current?.status === "present" ? "primary" : "ghost"}
                   isDisabled={
                     upsert.isPending || sessionTitle.trim().length < 2
                   }
@@ -1646,11 +1667,10 @@ export function AttendanceScreen() {
       <Card className="mt-5 app-card shadow-none active:scale-100 p-4">
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="تاریخ">
-            <input
-              type="date"
+            <IranDateInput
               required
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onValueChange={(dateValue) => setDate(dateValue)}
               className={inputClass}
             />
           </Field>
@@ -1774,7 +1794,10 @@ export function BranchesScreen() {
     status: "" as "" | "active" | "inactive",
   });
 
-  const items = branches.data?.items ?? [];
+  const items = useMemo(
+    () => branches.data?.items ?? [],
+    [branches.data?.items],
+  );
   const filtered = useMemo(() => {
     const query = filters.query.trim().toLowerCase();
     return items.filter((branch) => {
@@ -1819,9 +1842,7 @@ export function BranchesScreen() {
         }),
         branchColumnHelper.accessor("status", {
           header: "وضعیت",
-          cell: (info) => (
-            <StatusChip active={info.getValue() === "active"} />
-          ),
+          cell: (info) => <StatusChip active={info.getValue() === "active"} />,
         }),
         branchColumnHelper.display({
           id: "actions",

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { PublicCatalogParams } from "@api/discovery";
 
 export type DiscoveryClubsBrowse = {
@@ -9,6 +10,7 @@ export type DiscoveryClubsBrowse = {
 };
 
 export type DiscoveryClubsScreenProps = {
+  intro?: ReactNode;
   title?: string;
   description?: string;
   layout?: "rails" | "list";

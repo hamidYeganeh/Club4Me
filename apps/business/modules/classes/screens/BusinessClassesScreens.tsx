@@ -1,4 +1,6 @@
 "use client";
+import { AttendanceHistory } from "@/components/attendance-history";
+import { IranDateInput } from "@repo/ui/iran-date-input";
 
 import {
   useBusinessClass,
@@ -15,6 +17,7 @@ import {
   useRevokeBusinessCalendarFeed,
   useEnrollStudentInBusinessClass,
   useRecordBusinessClassAttendance,
+  usePreviewBusinessClassSessionChange,
   useRegenerateBusinessClassSessions,
   useGenerateBusinessClassCheckIn,
   useTransferBusinessClassEnrollment,
@@ -28,7 +31,7 @@ import {
   type BusinessTrainingClass,
 } from "@api/business";
 import { Button, Card, Chip, Spinner, toast } from "@heroui/react";
-import { getApiConfig } from "@api";
+import { getApiConfig, usePublicCatalogResource } from "@api";
 import { Icon } from "@theme/icon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -51,12 +54,9 @@ import QRCode from "qrcode";
 
 const input =
   "h-11 w-full rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm text-foreground outline-none transition focus:border-accent";
-const dateText = (value: string) =>
-  new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium" }).format(
-    new Date(value),
-  );
 const dateTime = (value: string) =>
   new Intl.DateTimeFormat("fa-IR", {
+    timeZone: "Asia/Tehran",
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -103,8 +103,7 @@ const scheduleHint = (item: BusinessTrainingClass) => {
   const first = item.schedule[0];
   if (!first) return "بدون برنامه";
   const day = weekdays.find((entry) => entry.value === first.dayOfWeek)?.label;
-  const extra =
-    item.schedule.length > 1 ? ` +${item.schedule.length - 1}` : "";
+  const extra = item.schedule.length > 1 ? ` +${item.schedule.length - 1}` : "";
   return `${day ?? "—"} ${first.startTime}${extra}`;
 };
 
@@ -173,7 +172,7 @@ export function BusinessClassesScreen() {
     model: "" as "" | BusinessClassModel,
   });
 
-  const items = classes.data?.items ?? [];
+  const items = useMemo(() => classes.data?.items ?? [], [classes.data?.items]);
   const filtered = useMemo(() => {
     const query = filters.query.trim().toLowerCase();
     return items.filter((item) => {
@@ -259,9 +258,7 @@ export function BusinessClassesScreen() {
           cell: (info) => (
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="ghost">
-                <Link
-                  href={`/clubs/${clubId}/classes/${info.row.original.id}`}
-                >
+                <Link href={`/clubs/${clubId}/classes/${info.row.original.id}`}>
                   جزئیات
                 </Link>
               </Button>
@@ -422,6 +419,9 @@ function ClassForm({
   const clubId = fixedClubId || clubChoice || clubs.data?.items[0]?.id || "";
   const coaches = useClubCoachProfiles(clubId);
   const branches = useClubBranches(clubId);
+  const levels = usePublicCatalogResource("sports", "skill-level", {
+    limit: 100,
+  });
   const create = useCreateBusinessClass(clubId);
   const update = useUpdateBusinessClass(clubId, initial?.id ?? "");
   const [model, setModel] = useState<BusinessClassModel>(
@@ -443,7 +443,13 @@ function ClassForm({
       description: String(data.get("description")),
       faqs: parseFaqRows(String(data.get("faqs") ?? "")),
       sport: String(data.get("sport")),
-      level: String(data.get("level")),
+      skillLevelId: String(data.get("skillLevelId")) || null,
+      level:
+        levels.data?.items.find(
+          (item) => item.id === String(data.get("skillLevelId")),
+        )?.name ??
+        initial?.level ??
+        "",
       model,
       pricingModel,
       price: Number(data.get("price")),
@@ -455,6 +461,21 @@ function ClassForm({
       capacity: Number(data.get("capacity")),
       coachProfileId: String(data.get("coachProfileId")) || null,
       branchId: String(data.get("branchId")) || null,
+      coverMediaId: String(data.get("coverMediaId")) || null,
+      galleryMediaIds: parseIdList(String(data.get("galleryMediaIds") ?? "")),
+      prerequisites: parseLineList(String(data.get("prerequisites") ?? "")),
+      requiredEquipmentIds: parseIdList(
+        String(data.get("requiredEquipmentIds") ?? ""),
+      ),
+      amenityIds: parseIdList(String(data.get("amenityIds") ?? "")),
+      minAge: data.get("minAge") === "" ? null : Number(data.get("minAge")),
+      maxAge: data.get("maxAge") === "" ? null : Number(data.get("maxAge")),
+      registrationStartAt: localDateTime(
+        String(data.get("registrationStartAt") ?? ""),
+      ),
+      registrationEndAt: localDateTime(
+        String(data.get("registrationEndAt") ?? ""),
+      ),
       startDate: String(data.get("startDate")),
       endDate: String(data.get("endDate")),
       schedule: model === "single" ? schedule.slice(0, 1) : schedule,
@@ -472,7 +493,9 @@ function ClassForm({
       );
       router.push(`/clubs/${clubId}/classes/${result.id}`);
     } catch {
-      toast.danger("ذخیره کلاس انجام نشد؛ تاریخ، ظرفیت و برنامه را بررسی کنید");
+      toast.danger(
+        "ذخیره یا انتشار کلاس انجام نشد؛ موارد الزامی، رسانه و برنامه را بررسی کنید",
+      );
     }
   };
   const setScheduleField = (
@@ -542,12 +565,26 @@ function ClassForm({
             />
           </Field>
           <Field label="سطح">
-            <input
-              name="level"
-              defaultValue={initial?.level}
-              placeholder="مقدماتی، پیشرفته و ..."
+            <select
+              name="skillLevelId"
+              defaultValue={initial?.skillLevelId ?? ""}
               className={input}
-            />
+            >
+              <option value="">تعیین نشده</option>
+              {initial?.skillLevelId &&
+              !levels.data?.items.some(
+                (item) => item.id === initial.skillLevelId,
+              ) ? (
+                <option value={initial.skillLevelId}>
+                  {initial.level || "سطح ثبت‌شده"}
+                </option>
+              ) : null}
+              {levels.data?.items.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="مدل کلاس">
             <select
@@ -575,7 +612,7 @@ function ClassForm({
           <Field label="وضعیت">
             <select
               name="status"
-              defaultValue={initial?.status ?? "active"}
+              defaultValue={initial?.status ?? "draft"}
               className={input}
             >
               {Object.entries(statusLabels).map(([value, label]) => (
@@ -642,6 +679,70 @@ function ClassForm({
               />
             </Field>
           </div>
+          <Field label="حداقل سن">
+            <PanelNumberField
+              name="minAge"
+              minValue={0}
+              maxValue={120}
+              defaultValue={initial?.minAge ?? undefined}
+              aria-label="حداقل سن"
+            />
+          </Field>
+          <Field label="حداکثر سن">
+            <PanelNumberField
+              name="maxAge"
+              minValue={0}
+              maxValue={120}
+              defaultValue={initial?.maxAge ?? undefined}
+              aria-label="حداکثر سن"
+            />
+          </Field>
+          <Field label="شناسه کاور">
+            <input
+              name="coverMediaId"
+              dir="ltr"
+              defaultValue={initial?.coverMediaId ?? ""}
+              className={input}
+              placeholder="Media ID"
+            />
+          </Field>
+          <div className="md:col-span-2 lg:col-span-3">
+            <Field label="شناسه تصاویر گالری (هر خط یک شناسه)">
+              <textarea
+                name="galleryMediaIds"
+                dir="ltr"
+                defaultValue={initial?.galleryMediaIds.join("\n")}
+                className={`${input} min-h-24 py-3`}
+              />
+            </Field>
+          </div>
+          <div className="md:col-span-2 lg:col-span-3">
+            <Field label="پیش‌نیازها (هر خط یک مورد)">
+              <textarea
+                name="prerequisites"
+                defaultValue={initial?.prerequisites.join("\n")}
+                className={`${input} min-h-24 py-3`}
+              />
+            </Field>
+          </div>
+          <div className="md:col-span-2">
+            <Field label="شناسه تجهیزات لازم">
+              <textarea
+                name="requiredEquipmentIds"
+                dir="ltr"
+                defaultValue={initial?.requiredEquipmentIds.join("\n")}
+                className={`${input} min-h-20 py-3`}
+              />
+            </Field>
+          </div>
+          <Field label="شناسه امکانات">
+            <textarea
+              name="amenityIds"
+              dir="ltr"
+              defaultValue={initial?.amenityIds.join("\n")}
+              className={`${input} min-h-20 py-3`}
+            />
+          </Field>
           <div className="md:col-span-2 lg:col-span-3">
             <Field label="سوالات متداول">
               <textarea
@@ -692,20 +793,36 @@ function ClassForm({
             </Field>
           )}
           <Field label="شروع دوره">
-            <input
+            <IranDateInput
               required
               name="startDate"
-              type="date"
+
               defaultValue={initial?.startDate}
               className={input}
             />
           </Field>
           <Field label="پایان دوره">
-            <input
+            <IranDateInput
               required
               name="endDate"
-              type="date"
+
               defaultValue={initial?.endDate}
+              className={input}
+            />
+          </Field>
+          <Field label="شروع ثبت‌نام">
+            <input
+              type="datetime-local"
+              name="registrationStartAt"
+              defaultValue={toLocalInput(initial?.registrationStartAt)}
+              className={input}
+            />
+          </Field>
+          <Field label="پایان ثبت‌نام">
+            <input
+              type="datetime-local"
+              name="registrationEndAt"
+              defaultValue={toLocalInput(initial?.registrationEndAt)}
               className={input}
             />
           </Field>
@@ -817,6 +934,25 @@ function ClassForm({
   );
 }
 
+function parseLineList(value: string) {
+  return value
+    .split(/\n|،|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+function parseIdList(value: string) {
+  return parseLineList(value);
+}
+function localDateTime(value: string) {
+  return value ? new Date(value).toISOString() : null;
+}
+function toLocalInput(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
 export function BusinessClassFormScreen({
   clubId,
   classId,
@@ -862,11 +998,18 @@ export function BusinessClassDetailScreen({
   const updateEnrollment = useUpdateBusinessClassEnrollment(clubId, classId);
   const transfer = useTransferBusinessClassEnrollment(clubId, classId);
   const updateSession = useUpdateBusinessClassSession(clubId, classId);
+  const previewSession = usePreviewBusinessClassSessionChange(clubId, classId);
   const regenerate = useRegenerateBusinessClassSessions(clubId, classId);
   const calendarFeed = useCreateBusinessCalendarFeed(clubId);
   const revokeCalendarFeed = useRevokeBusinessCalendarFeed(clubId);
   const [showEnroll, setShowEnroll] = useState(false);
   const [chosenSession, setChosenSession] = useState("");
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [sessionChange, setSessionChange] = useState({
+    startsAt: "",
+    endsAt: "",
+    scope: "single" as "single" | "future",
+  });
   const sessionId =
     chosenSession ||
     sessions.data?.items.find((session) => session.status === "scheduled")
@@ -1028,6 +1171,28 @@ export function BusinessClassDetailScreen({
           <p className="mt-2 font-semibold">{branch?.name ?? "تعیین نشده"}</p>
         </Card>
       </section>
+      {item.data.readiness && !item.data.readiness.ready ? (
+        <Card className="mt-4 rounded-2xl border border-warning/35 bg-warning/8 p-4 shadow-none">
+          <strong>موارد پیشنهادی پیش از عرضه عمومی</strong>
+          <p className="mt-2 text-sm text-muted">
+            {item.data.readiness.missing
+              .map(
+                (key) =>
+                  ({
+                    title: "عنوان",
+                    description: "توضیحات",
+                    skillLevelId: "سطح",
+                    minAge: "حداقل سن",
+                    maxAge: "حداکثر سن",
+                    branchId: "شعبه",
+                    media: "تصویر",
+                    schedule: "برنامه",
+                  })[key] ?? key,
+              )
+              .join("، ")}
+          </p>
+        </Card>
+      ) : null}
       {showEnroll && (
         <Card className="app-card mt-4 border-accent/40 p-5 shadow-none active:scale-100">
           <form
@@ -1073,7 +1238,6 @@ export function BusinessClassDetailScreen({
               <select name="paymentStatus" className={input}>
                 <option value="pending">پرداخت‌نشده</option>
                 <option value="paid">پرداخت‌شده</option>
-                <option value="partial">بخشی پرداخت شده</option>
                 <option value="waived">رایگان</option>
               </select>
             </Field>
@@ -1160,27 +1324,12 @@ export function BusinessClassDetailScreen({
                           <option value="completed">تمام‌شده</option>
                           <option value="cancelled">لغوشده</option>
                         </select>
-                        <select
-                          aria-label="وضعیت پرداخت"
-                          value={enrollment.paymentStatus}
-                          onChange={(e) =>
-                            updateEnrollment.mutate({
-                              enrollmentId: enrollment.id,
-                              payload: {
-                                paymentStatus: e.target
-                                  .value as typeof enrollment.paymentStatus,
-                              },
-                            })
-                          }
-                          className="h-9 rounded-lg border border-border bg-surface px-2 text-xs"
+                        <a
+                          className="rounded-lg border border-border px-3 py-2 text-xs"
+                          href={`/payments?studentId=${enrollment.studentId}`}
                         >
-                          <option value="pending">پرداخت‌نشده</option>
-                          <option value="paid">پرداخت‌شده</option>
-                          <option value="partial">ناقص</option>
-                          <option value="waived">رایگان</option>
-                          <option value="failed">ناموفق</option>
-                          <option value="refunded">بازپرداخت‌شده</option>
-                        </select>
+                          حساب شهریه و رسیدها
+                        </a>
                         <select
                           aria-label="انتقال شاگرد"
                           defaultValue=""
@@ -1277,6 +1426,32 @@ export function BusinessClassDetailScreen({
               </Button>
               <Button
                 size="sm"
+                variant="secondary"
+                onPress={() => {
+                  const selected = sessions.data?.items.find(
+                    (session) => session.id === sessionId,
+                  );
+                  if (!selected) return;
+                  const localValue = (value: string) => {
+                    const date = new Date(value);
+                    const offset = date.getTimezoneOffset() * 60_000;
+                    return new Date(date.getTime() - offset)
+                      .toISOString()
+                      .slice(0, 16);
+                  };
+                  setSessionChange({
+                    startsAt: localValue(selected.startsAt),
+                    endsAt: localValue(selected.endsAt),
+                    scope: "single",
+                  });
+                  previewSession.reset();
+                  setShowReschedule((value) => !value);
+                }}
+              >
+                جابه‌جایی زمان
+              </Button>
+              <Button
+                size="sm"
                 variant="ghost"
                 onPress={() =>
                   updateSession.mutate({
@@ -1301,6 +1476,104 @@ export function BusinessClassDetailScreen({
               </Button>
             </div>
           )}
+          {showReschedule && sessionId ? (
+            <Card className="mt-3 rounded-2xl border border-border p-4 shadow-none">
+              <form
+                className="grid gap-3 sm:grid-cols-2"
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  const payload = {
+                    startsAt: new Date(sessionChange.startsAt).toISOString(),
+                    endsAt: new Date(sessionChange.endsAt).toISOString(),
+                    scope: sessionChange.scope,
+                  };
+                  try {
+                    const result = await previewSession.mutateAsync({
+                      sessionId,
+                      payload,
+                    });
+                    if (result.conflicts.length) return;
+                    await updateSession.mutateAsync({ sessionId, payload });
+                    toast.success(
+                      `${result.affectedCount.toLocaleString("fa-IR")} جلسه جابه‌جا شد`,
+                    );
+                    setShowReschedule(false);
+                  } catch {
+                    toast.danger("جابه‌جایی جلسه انجام نشد");
+                  }
+                }}
+              >
+                <Field label="شروع جدید">
+                  <input
+                    className={input}
+                    type="datetime-local"
+                    required
+                    value={sessionChange.startsAt}
+                    onChange={(event) =>
+                      setSessionChange((value) => ({
+                        ...value,
+                        startsAt: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+                <Field label="پایان جدید">
+                  <input
+                    className={input}
+                    type="datetime-local"
+                    required
+                    value={sessionChange.endsAt}
+                    onChange={(event) =>
+                      setSessionChange((value) => ({
+                        ...value,
+                        endsAt: event.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+                <Field label="دامنه تغییر">
+                  <select
+                    className={input}
+                    value={sessionChange.scope}
+                    onChange={(event) =>
+                      setSessionChange((value) => ({
+                        ...value,
+                        scope: event.target.value as "single" | "future",
+                      }))
+                    }
+                  >
+                    <option value="single">فقط همین جلسه</option>
+                    <option value="future">این جلسه و همه جلسات بعدی</option>
+                  </select>
+                </Field>
+                <div className="flex items-end gap-2">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    isPending={
+                      previewSession.isPending || updateSession.isPending
+                    }
+                  >
+                    بررسی و ثبت
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onPress={() => setShowReschedule(false)}
+                  >
+                    انصراف
+                  </Button>
+                </div>
+              </form>
+              {previewSession.data?.conflicts.length ? (
+                <div className="mt-3 rounded-xl bg-danger/10 p-3 text-sm text-danger">
+                  این زمان با{" "}
+                  {previewSession.data.conflicts.length.toLocaleString("fa-IR")}{" "}
+                  برنامه دیگر تداخل دارد و ثبت نشد.
+                </div>
+              ) : null}
+            </Card>
+          ) : null}
           {credential ? (
             <CheckInCredentialCard credential={credential} />
           ) : null}
@@ -1344,6 +1617,13 @@ export function BusinessClassDetailScreen({
                         موجه
                       </Button>
                     </div>
+                    <AttendanceHistory
+                      changes={
+                        attendance.data?.items.find(
+                          (row) => row.studentId === enrollment.studentId,
+                        )?.changes
+                      }
+                    />
                   </div>
                 );
               })

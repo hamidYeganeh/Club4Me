@@ -1,14 +1,18 @@
 "use client";
+import { FormSectionNavigation, FormSectionHeading } from "@/components/form-section-navigation";
 
 import { CroppedImageUpload } from "@/components/cropped-image-upload";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Button, Card, Skeleton, toast, Typography } from "@heroui/react";
 import {
   emptyCoachProfessionalProfile,
   type CoachProfessionalProfile,
+  type CoachProfile,
+  useMedia,
   useCoachProfile,
   useCoachSports,
   useCreateMedia,
+  useCreatePrivateMedia,
   useReplaceCoachSports,
   useUpdateCoachProfile,
 } from "@api";
@@ -28,6 +32,54 @@ export function CoachProfileFormScreen() {
   const coachSports = useCoachSports();
   const replaceSports = useReplaceCoachSports();
   const createMedia = useCreateMedia();
+  const createPrivateMedia = useCreatePrivateMedia();
+  const ownedMedia = useMedia(profile.data?.galleryMediaIds);
+  const profileHydrated = useRef("");
+  const sportsHydrated = useRef(false);
+  const [profileReady, setProfileReady] = useState(false);
+  const [sportsReady, setSportsReady] = useState(false);
+  const [geo, setGeo] = useState<CoachProfile["geo"]>(null);
+  const [geoDirty, setGeoDirty] = useState(false);
+  const [travelRadiusKm, setTravelRadiusKm] = useState(0);
+  const [geoSearch, setGeoSearch] = useState({
+    country: "",
+    province: "",
+    city: "",
+    district: "",
+    region: "",
+  });
+  const countries = usePublicCatalogResource("location", "country", {
+    limit: 100,
+    q: geoSearch.country,
+  });
+  const provinces = usePublicCatalogResource(
+    "location",
+    "province",
+    { parentId: geo?.countryId, limit: 100, q: geoSearch.province },
+    Boolean(geo?.countryId),
+  );
+  const cities = usePublicCatalogResource(
+    "location",
+    "city",
+    { parentId: geo?.provinceId, limit: 100, q: geoSearch.city },
+    Boolean(geo?.provinceId),
+  );
+  const districts = usePublicCatalogResource(
+    "location",
+    "district",
+    { parentId: geo?.cityId, limit: 100, q: geoSearch.district },
+    Boolean(geo?.cityId),
+  );
+  const regions = usePublicCatalogResource(
+    "location",
+    "city-region",
+    { parentId: geo?.cityId, limit: 100, q: geoSearch.region },
+    Boolean(geo?.cityId),
+  );
+  const changeGeo = (value: CoachProfile["geo"]) => {
+    setGeo(value);
+    setGeoDirty(true);
+  };
   const sportsCatalog = usePublicCatalogResource("sports", "sport");
   const [professionalProfile, setProfessionalProfile] =
     useState<CoachProfessionalProfile>(emptyCoachProfessionalProfile);
@@ -52,76 +104,100 @@ export function CoachProfileFormScreen() {
   >([]);
 
   useEffect(() => {
-    if (!profile.data) return;
-    // The server profile provides the initial values of this edit form.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDisplayName(profile.data.displayName);
-    setProfessionalProfile({
-      ...emptyCoachProfessionalProfile(),
-      ...profile.data.professionalProfile,
+    const data = profile.data;
+    if (
+      !data ||
+      !profile.isFetchedAfterMount ||
+      profile.isFetching ||
+      profile.isError ||
+      profileHydrated.current === data.id
+    )
+      return;
+    const frame = requestAnimationFrame(() => {
+      profileHydrated.current = data.id;
+      setProfileReady(true);
+      setGeo(data.geo ?? null);
+      setTravelRadiusKm(data.travelRadiusKm ?? 0);
+      setPortfolioMedia(data.galleryMediaIds.map((id) => ({ id, url: "" })));
+      setDisplayName(data.displayName);
+      setProfessionalProfile({
+        ...emptyCoachProfessionalProfile(),
+        ...data.professionalProfile,
+      });
+      setMinAge(data.minAcceptedAge == null ? "" : String(data.minAcceptedAge));
+      setMaxAge(data.maxAcceptedAge == null ? "" : String(data.maxAcceptedAge));
+      setShortBio(data.shortBio);
+      setBio(data.bio);
+      setExperienceYears(data.experienceYears);
+      setLanguages(data.languages.join("، "));
+      setServiceModes(data.serviceModes);
+      setSpecialties(
+        data.specialties
+          .map((item) => `${item.title} | ${item.description}`)
+          .join("\n"),
+      );
+      setTrainingStyles(
+        (data.trainingStyles ?? [])
+          .map((item) =>
+            [
+              item.title,
+              item.description,
+              item.imageMediaId ? `media:${item.imageMediaId}` : "",
+            ]
+              .filter(Boolean)
+              .join(" | "),
+          )
+          .join("\n"),
+      );
+      setExperienceSummary(data.experienceSummary ?? "");
+      setExperience(
+        data.experience
+          .map((item) =>
+            [
+              item.title,
+              item.organization ?? "",
+              item.period ?? "",
+              item.description ?? "",
+            ].join(" | "),
+          )
+          .join("\n"),
+      );
+      setFaqs(
+        data.faqs.map((item) => `${item.question} | ${item.answer}`).join("\n"),
+      );
+      const currentPhone = data.contact.phone;
+      setPhone(typeof currentPhone === "string" ? currentPhone : "");
     });
-    setMinAge(
-      profile.data.minAcceptedAge == null
-        ? ""
-        : String(profile.data.minAcceptedAge),
-    );
-    setMaxAge(
-      profile.data.maxAcceptedAge == null
-        ? ""
-        : String(profile.data.maxAcceptedAge),
-    );
-    setShortBio(profile.data.shortBio);
-    setBio(profile.data.bio);
-    setExperienceYears(profile.data.experienceYears);
-    setLanguages(profile.data.languages.join("، "));
-    setServiceModes(profile.data.serviceModes);
-    setSpecialties(
-      profile.data.specialties
-        .map((item) => `${item.title} | ${item.description}`)
-        .join("\n"),
-    );
-    setTrainingStyles(
-      (profile.data.trainingStyles ?? [])
-        .map((item) =>
-          [
-            item.title,
-            item.description,
-            item.imageMediaId ? `media:${item.imageMediaId}` : "",
-          ]
-            .filter(Boolean)
-            .join(" | "),
-        )
-        .join("\n"),
-    );
-    setExperienceSummary(profile.data.experienceSummary ?? "");
-    setExperience(
-      profile.data.experience
-        .map((item) =>
-          [
-            item.title,
-            item.organization ?? "",
-            item.period ?? "",
-            item.description ?? "",
-          ].join(" | "),
-        )
-        .join("\n"),
-    );
-    setFaqs(
-      profile.data.faqs
-        .map((item) => `${item.question} | ${item.answer}`)
-        .join("\n"),
-    );
-    const currentPhone = profile.data.contact.phone;
-    setPhone(typeof currentPhone === "string" ? currentPhone : "");
-  }, [profile.data]);
+    return () => cancelAnimationFrame(frame);
+  }, [
+    profile.data,
+    profile.isFetchedAfterMount,
+    profile.isFetching,
+    profile.isError,
+  ]);
 
   useEffect(() => {
-    if (coachSports.data) {
-      // The saved sports provide the initial selection of this edit form.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSportIds(coachSports.data.items.map((item) => item.sportId));
-    }
-  }, [coachSports.data]);
+    const data = coachSports.data;
+    if (
+      !data ||
+      !coachSports.isFetchedAfterMount ||
+      coachSports.isFetching ||
+      coachSports.isError ||
+      sportsHydrated.current
+    )
+      return;
+    const frame = requestAnimationFrame(() => {
+      sportsHydrated.current = true;
+      setSportsReady(true);
+      setSportIds(data.items.map((item) => item.sportId));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [
+    coachSports.data,
+    coachSports.isFetchedAfterMount,
+    coachSports.isFetching,
+    coachSports.isError,
+  ]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -162,6 +238,8 @@ export function CoachProfileFormScreen() {
           (id) => !coachSports.data.items.some((item) => item.sportId === id),
         );
       await update.mutateAsync({
+        ...(geoDirty ? { geo: geo ?? null } : {}),
+        travelRadiusKm,
         displayName,
         shortBio,
         bio,
@@ -205,14 +283,9 @@ export function CoachProfileFormScreen() {
           question,
           answer,
         })),
-        galleryMediaIds: [
-          ...new Set([
-            ...profile.data.galleryMediaIds,
-            ...portfolioMedia.map((item) => item.id),
-          ]),
-        ],
+        galleryMediaIds: portfolioMedia.map((item) => item.id),
       });
-      setPortfolioMedia([]);
+      setGeoDirty(false);
       if (sportsChanged) {
         try {
           await replaceSports.mutateAsync(
@@ -246,9 +319,16 @@ export function CoachProfileFormScreen() {
     }
   };
 
-  if (profile.isLoading || coachSports.isPending)
+  if (
+    (!profileReady && !profile.isError) ||
+    (!sportsReady && !coachSports.isError)
+  )
     return <FormPageSkeleton fields={7} />;
-  if (profile.isError || coachSports.isError || !profile.data)
+  if (
+    (profile.isError && !profileReady) ||
+    (coachSports.isError && !sportsReady) ||
+    !profile.data
+  )
     return (
       <main className="space-y-4 p-5">
         <p role="alert">دریافت اطلاعات پروفایل ناموفق بود.</p>
@@ -263,12 +343,13 @@ export function CoachProfileFormScreen() {
       </main>
     );
   return (
-    <main className="min-h-dvh px-5 pb-[calc(7rem+env(safe-area-inset-bottom))]">
+    <main className="app-page gap-5">
       <DiscoveryPageHeader
         title="پروفایل حرفه‌ای"
         description="اطلاعاتی که ورزشکاران در صفحه مربی می‌بینند."
       />
-      <Card className="rounded-3xl bg-surface p-5 shadow-none">
+      <FormSectionNavigation sections={[{"id": "profile-basics", "title": "اطلاعات پایه"}, {"id": "profile-about", "title": "معرفی مربی"}, {"id": "profile-expertise", "title": "تخصص و مدارک"}]} />
+      <Card className="app-card coach-editor p-5 shadow-none">
         <form onSubmit={submit}>
           <fieldset
             className="min-w-0 space-y-4"
@@ -284,7 +365,8 @@ export function CoachProfileFormScreen() {
                 ویرایش کنید.
               </p>
             ) : null}
-            <Field label="نام نمایشی">
+            <FormSectionHeading id="profile-basics" title="اطلاعات پایه" description="نام و محدوده‌ای که در آن خدمت ارائه می‌کنید." />
+          <Field label="نام نمایشی">
               <input
                 required
                 minLength={2}
@@ -293,7 +375,159 @@ export function CoachProfileFormScreen() {
                 className={input}
               />
             </Field>
-            <Field label="معرفی کوتاه">
+            <fieldset className="space-y-4 rounded-2xl border border-border p-4">
+              <legend className="px-2 text-sm font-bold">
+                محدوده ارائه خدمت
+              </legend>
+              <GeoSelect
+                search={geoSearch.country}
+                onSearch={(value) =>
+                  setGeoSearch((current) => ({ ...current, country: value }))
+                }
+                label="کشور"
+                value={geo?.countryId}
+                items={countries.data?.items}
+                onChange={(id) =>
+                  changeGeo(id ? { countryId: id, cityRegionIds: [] } : null)
+                }
+              />
+              {geo?.countryId ? (
+                <GeoSelect
+                  search={geoSearch.province}
+                  onSearch={(value) =>
+                    setGeoSearch((current) => ({ ...current, province: value }))
+                  }
+                  label="استان"
+                  value={geo.provinceId}
+                  items={provinces.data?.items}
+                  onChange={(id) =>
+                    changeGeo({
+                      countryId: geo.countryId,
+                      provinceId: id || undefined,
+                      cityRegionIds: [],
+                    })
+                  }
+                />
+              ) : null}
+              {geo?.provinceId ? (
+                <GeoSelect
+                  search={geoSearch.city}
+                  onSearch={(value) =>
+                    setGeoSearch((current) => ({ ...current, city: value }))
+                  }
+                  label="شهر"
+                  value={geo.cityId}
+                  items={cities.data?.items}
+                  onChange={(id) =>
+                    changeGeo({
+                      countryId: geo.countryId,
+                      provinceId: geo.provinceId,
+                      cityId: id || undefined,
+                      cityRegionIds: [],
+                    })
+                  }
+                />
+              ) : null}
+              {geo?.cityId ? (
+                <>
+                  <GeoSelect
+                    search={geoSearch.district}
+                    onSearch={(value) =>
+                      setGeoSearch((current) => ({
+                        ...current,
+                        district: value,
+                      }))
+                    }
+                    label="منطقه شهری"
+                    value={geo.districtId}
+                    items={districts.data?.items}
+                    onChange={(id) =>
+                      changeGeo({ ...geo, districtId: id || undefined })
+                    }
+                  />
+                  <fieldset>
+                    <legend className="mb-2 text-sm">محله‌های تحت پوشش</legend>
+                    <input
+                      className={input}
+                      aria-label="جستجوی محله"
+                      placeholder="جستجوی محله"
+                      value={geoSearch.region}
+                      onChange={(event) =>
+                        setGeoSearch((current) => ({
+                          ...current,
+                          region: event.target.value,
+                        }))
+                      }
+                    />
+                    <div className="grid max-h-64 gap-2 overflow-y-auto">
+                      {[
+                        ...new Set([
+                          ...(geo.cityRegionIds ?? []),
+                          ...(regions.data?.items.map((item) => item.id) ?? []),
+                        ]),
+                      ].map((id) => (
+                        <label
+                          key={id}
+                          className="flex min-h-11 items-center gap-2 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={geo.cityRegionIds.includes(id)}
+                            onChange={(event) =>
+                              changeGeo({
+                                ...geo,
+                                cityRegionIds: event.target.checked
+                                  ? [...geo.cityRegionIds, id]
+                                  : geo.cityRegionIds.filter(
+                                      (value) => value !== id,
+                                    ),
+                              })
+                            }
+                          />
+                          {regions.data?.items.find((item) => item.id === id)
+                            ?.name ?? "محله ثبت‌شده"}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                </>
+              ) : null}
+              {[countries, provinces, cities, districts, regions].some(
+                (query) => query.isError,
+              ) ? (
+                <Button
+                  size="sm"
+                  onPress={() => {
+                    for (const query of [
+                      countries,
+                      provinces,
+                      cities,
+                      districts,
+                      regions,
+                    ])
+                      if (query.isError) void query.refetch();
+                  }}
+                >
+                  دریافت دوباره محدوده‌ها
+                </Button>
+              ) : null}
+              <Field label="شعاع رفت‌وآمد (کیلومتر)">
+                <input
+                  type="number"
+                  min={0}
+                  max={1000}
+                  step={1}
+                  required
+                  className={input}
+                  value={travelRadiusKm}
+                  onChange={(event) =>
+                    setTravelRadiusKm(Number(event.target.value))
+                  }
+                />
+              </Field>
+            </fieldset>
+            <FormSectionHeading id="profile-about" title="آشنایی با شما" description="تجربه و روش کارتان را برای ورزشکار توضیح دهید." />
+          <Field label="معرفی کوتاه">
               <input
                 required
                 value={shortBio}
@@ -309,7 +543,7 @@ export function CoachProfileFormScreen() {
                 className={`${input} min-h-36 py-3`}
               />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="سال تجربه">
                 <input
                   type="number"
@@ -339,7 +573,8 @@ export function CoachProfileFormScreen() {
                 placeholder="فارسی، انگلیسی"
               />
             </Field>
-            <Field label="رشته‌های ورزشی">
+            <FormSectionHeading id="profile-expertise" title="تخصص و مدارک" description="رشته‌ها و مستندات حرفه‌ای خود را تکمیل کنید." />
+          <Field label="رشته‌های ورزشی">
               <div className="flex flex-wrap gap-2">
                 {sportsCatalog.isPending || coachSports.isPending
                   ? Array.from({ length: 5 }, (_, index) => (
@@ -445,28 +680,34 @@ export function CoachProfileFormScreen() {
             <div className="space-y-3">
               <p className="text-sm font-bold">افزودن تصاویر نمونه‌کار</p>
               <CroppedImageUpload
-                disabled={createMedia.isPending}
+                disabled={createMedia.isPending || portfolioMedia.length >= 30}
                 onFile={async (file) => {
                   const media = await createMedia.mutateAsync(file);
-                  setPortfolioMedia((items) => [
-                    ...items,
-                    { id: media.id, url: media.url },
-                  ]);
+                  setPortfolioMedia((items) =>
+                    items.some((item) => item.id === media.id)
+                      ? items
+                      : [...items, { id: media.id, url: media.url }],
+                  );
                 }}
               />
               <div className="flex flex-wrap gap-2">
-                {portfolioMedia.map((media) => (
+                {portfolioMedia.map((media, index) => (
                   <div key={media.id} className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={media.url}
-                      alt="تصویر نمونه‌کار"
+                      src={
+                        media.url ||
+                        ownedMedia.data?.items.find(
+                          (item) => item.id === media.id,
+                        )?.url
+                      }
+                      alt={`تصویر نمونه‌کار ${index + 1}`}
                       className="size-24 rounded-xl object-cover"
                     />
                     <button
                       type="button"
                       className="absolute top-1 right-1 rounded bg-background px-2"
-                      aria-label="حذف تصویر"
+                      aria-label={`حذف تصویر ${index + 1}`}
                       onClick={() =>
                         setPortfolioMedia((items) =>
                           items.filter((item) => item.id !== media.id),
@@ -475,6 +716,44 @@ export function CoachProfileFormScreen() {
                     >
                       ×
                     </button>
+                    <div className="mt-1 flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        aria-label={`جلو بردن تصویر ${index + 1}`}
+                        isDisabled={index === 0}
+                        onPress={() =>
+                          setPortfolioMedia((items) => {
+                            const next = [...items];
+                            [next[index - 1], next[index]] = [
+                              next[index]!,
+                              next[index - 1]!,
+                            ];
+                            return next;
+                          })
+                        }
+                      >
+                        ↑
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        aria-label={`عقب بردن تصویر ${index + 1}`}
+                        isDisabled={index === portfolioMedia.length - 1}
+                        onPress={() =>
+                          setPortfolioMedia((items) => {
+                            const next = [...items];
+                            [next[index], next[index + 1]] = [
+                              next[index + 1]!,
+                              next[index]!,
+                            ];
+                            return next;
+                          })
+                        }
+                      >
+                        ↓
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -500,8 +779,8 @@ export function CoachProfileFormScreen() {
               maxAge={maxAge}
               onMinAge={setMinAge}
               onMaxAge={setMaxAge}
-              uploading={createMedia.isPending}
-              upload={async (file) => (await createMedia.mutateAsync(file)).id}
+              uploading={createPrivateMedia.isPending}
+              upload={async (file) => (await createPrivateMedia.mutateAsync(file)).id}
             />
             <Field label="سوالات متداول">
               <textarea
@@ -562,5 +841,50 @@ function Field({
       </Typography>
       {children}
     </label>
+  );
+}
+
+function GeoSelect({
+  label,
+  value,
+  items,
+  onChange,
+  search,
+  onSearch,
+}: {
+  search: string;
+  onSearch: (value: string) => void;
+  label: string;
+  value?: string;
+  items?: Array<{ id: string; name: string }>;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <input
+        className={input}
+        aria-label={`جستجوی ${label}`}
+        placeholder={`جستجوی ${label}`}
+        value={search}
+        onChange={(event) => onSearch(event.target.value)}
+      />
+      <Field label={label}>
+        <select
+          value={value ?? ""}
+          className={input}
+          onChange={(event) => onChange(event.target.value)}
+        >
+          <option value="">انتخاب {label}</option>
+          {value && !items?.some((item) => item.id === value) ? (
+            <option value={value}>{label} ثبت‌شده</option>
+          ) : null}
+          {items?.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+    </div>
   );
 }

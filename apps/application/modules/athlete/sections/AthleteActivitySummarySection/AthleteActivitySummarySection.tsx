@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/app-link";
+import { SectionHeading } from "@ui/section-heading";
 import { useAthleteClubClasses, useSavedItems, useMyReservations } from "@api";
 import { Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
@@ -108,26 +109,19 @@ export function AthleteActivitySummarySection() {
       className="app-reveal flex flex-col gap-3"
       aria-labelledby="athlete-activity-summary-title"
     >
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <Typography
-            id="athlete-activity-summary-title"
-            type="h4"
-            weight="bold"
+      <SectionHeading
+        id="athlete-activity-summary-title"
+        title="نمای کلی من"
+        description="خلاصه‌ای از فعالیت‌های ورزشی تو"
+        action={
+          <Link
+            href="/athlete/profile"
+            className="inline-flex min-h-11 items-center text-sm font-semibold text-accent"
           >
-            نمای کلی من
-          </Typography>
-          <p className="mt-1 text-xs text-muted">
-            خلاصه‌ای از فعالیت‌های ورزشی تو
-          </p>
-        </div>
-        <Link
-          href="/athlete/profile"
-          className="shrink-0 text-xs font-bold text-accent"
-        >
-          پروفایل
-        </Link>
-      </div>
+            پروفایل
+          </Link>
+        }
+      />
 
       <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <Link
@@ -144,7 +138,7 @@ export function AthleteActivitySummarySection() {
             unit="رزرو"
             icon={<Icon name="ticket" size={20} />}
             visual={<MetricBarVisual data={reservationStatusData} />}
-            className="bg-warning text-warning-foreground"
+            tone="energy"
           />
         </Link>
         <Link
@@ -161,7 +155,7 @@ export function AthleteActivitySummarySection() {
             unit="فعال"
             icon={<Icon name="weight" size={20} />}
             visual={<MetricLineVisual data={classStatusData} />}
-            className="bg-accent text-accent-foreground"
+            tone="activity"
           />
         </Link>
         <Link
@@ -178,7 +172,7 @@ export function AthleteActivitySummarySection() {
             unit="مورد"
             icon={<Icon name="bookmark" size={20} />}
             visual={<MetricHeatmapVisual value={favoriteItems.length} />}
-            className="bg-surface-tertiary text-foreground"
+            tone="neutral"
           />
         </Link>
         <Link
@@ -195,7 +189,7 @@ export function AthleteActivitySummarySection() {
             unit="٪"
             icon={<Icon name="check-circle" size={20} />}
             visual={<MetricRingVisual value={completionRate} />}
-            className="bg-success text-success-foreground"
+            tone="progress"
           />
         </Link>
       </div>

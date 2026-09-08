@@ -1,85 +1,116 @@
 "use client";
+import { DiscoveryImageHero } from "../../components/DiscoveryImageHero";
+import { useSearchParams } from "next/navigation";
+import { ButtonLink } from "@/components/button-link";
 
-import { useState } from "react";
+import { useDiscoveryList } from "../../hooks/use-discovery-list";
+import { ClassBrowseCard } from "../../components/ClassBrowseCard";
+import { DiscoveryPagination } from "../../components/DiscoveryPagination";
+import { DiscoveryQueryState } from "../../components/DiscoveryQueryState";
+import { DiscoveryEmptySection } from "../../components/DiscoveryEmptySection";
+
 import { Button, Skeleton, Typography } from "@heroui/react";
-import { useCatalogClasses } from "@api/discovery";
-import { usePublicClubClasses } from "@api";
-import { DiscoveryResultCard } from "@modules/discovery/components/DiscoveryResultCard";
+import { useCatalogSearch } from "@api/discovery";
 import { DiscoverySearchField } from "@modules/discovery/components/DiscoverySearchField";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { DiscoveryResultCardSkeleton } from "@/components/loading-skeletons";
 
 export function DiscoveryClassesScreen() {
-  const [query, setQuery] = useState("");
-  const result = useCatalogClasses();
-  const clubResult = usePublicClubClasses(query ? { q: query } : undefined);
-  const classes = result.data?.items ?? [];
+  const params = useSearchParams();
+  const clubId = params.get("clubId") || undefined;
+  return <ClassesResults key={clubId ?? "all"} clubId={clubId} />;
+}
+
+function ClassesResults({ clubId }: { clubId?: string }) {
+  const { query, setQuery, q, page, setPage } = useDiscoveryList();
+  const result = useCatalogSearch({
+    kind: "class",
+    q,
+    page,
+    limit: 20,
+    clubId,
+  });
+  const classes = result.data?.classes ?? [];
   return (
     <main className="app-page gap-6">
-      <SecondaryHeader title="کلاس‌ها" />
+      <SecondaryHeader title="کلاس‌ها" showFilter={false} />
+      <DiscoveryImageHero
+        imageUrl="/profile/cover.jpg"
+        title="وقت یک تمرین تازه است."
+        description="کلاس دلخواهت را پیدا کن؛ ظرفیت، شهریه و زمان شروع را کنار هم ببین."
+        eyebrow="کلاس‌ها و دوره‌های ورزشی"
+      />
       <DiscoverySearchField
         value={query}
         onChange={setQuery}
         placeholder="نام کلاس، ورزش یا مربی"
-        href="/discovery/search?kind=class"
       />
-      {result.isLoading || clubResult.isLoading ? (
+      {clubId ? (
+        <ButtonLink href="/discovery/classes" variant="secondary" size="sm">
+          نمایش کلاس‌های همه باشگاه‌ها
+        </ButtonLink>
+      ) : null}
+      {result.isLoading ? (
         <Skeleton
           className="h-4 w-28 rounded-lg"
           aria-label="در حال بارگذاری تعداد کلاس‌ها"
         />
       ) : (
         <Typography type="body-sm" color="muted" className="app-reveal">
-          {(
-            (result.data?.total ?? 0) + (clubResult.data?.total ?? 0)
-          ).toLocaleString("fa-IR")}{" "}
-          کلاس فعال
+          {(result.data?.total ?? 0).toLocaleString("fa-IR")} کلاس فعال
         </Typography>
       )}
-      <div className="flex flex-col gap-3">
-        {(clubResult.data?.items ?? []).map((item) => (
-          <DiscoveryResultCard
+      <DiscoveryQueryState query={result} />
+      <div className="flex flex-col gap-5">
+        {(result.data?.businessClasses ?? []).map((item) => (
+          <ClassBrowseCard
             key={`club-${item.id}`}
             title={item.title}
-            subtitle={
-              item.description ||
-              `${item.club.name} · ${item.coach?.name ?? "مربی در حال تعیین"}`
-            }
-            meta={`${item.remainingCapacity.toLocaleString("fa-IR")} جای خالی`}
-            imageUrl={null}
+            description={item.description || "کلاس باشگاه"}
+            remaining={Math.max(0, item.capacity - item.enrollmentCount)}
+            price={item.price.amount}
+            currency={item.price.currency}
+            startAt={item.startDate}
             href={`/discovery/business-class?classId=${item.id}`}
             badge="کلاس باشگاه"
           />
         ))}
         {classes.map((item) => (
-          <DiscoveryResultCard
+          <ClassBrowseCard
             key={item.id}
             title={item.title}
-            subtitle={
+            description={
               item.description ||
               (item.deliveryMode === "online" ? "آنلاین" : "حضوری")
             }
-            meta={`${item.enrollmentCount.toLocaleString("fa-IR")} از ${item.capacity.toLocaleString("fa-IR")} نفر`}
+            remaining={item.capacity - item.enrollmentCount}
+            price={item.price.amount}
+            currency={item.price.currency}
+            startAt={item.courseStartAt}
             imageUrl={item.imageUrl}
             href={`/discovery/classes/${item.slug}`}
-            badge="کلاس"
+            badge={item.deliveryMode === "online" ? "آنلاین" : "حضوری"}
           />
         ))}
       </div>
-      {result.isLoading || clubResult.isLoading ? (
-        <DiscoveryResultCardSkeleton count={4} />
-      ) : null}
-      {result.isError && clubResult.isError ? (
-        <Button onPress={() => result.refetch()}>تلاش دوباره</Button>
-      ) : null}
+      {result.isLoading ? <DiscoveryResultCardSkeleton count={4} /> : null}
+      <DiscoveryPagination
+        page={page}
+        total={result.data?.totalPages ?? 0}
+        limit={1}
+        onChange={setPage}
+        pending={result.isFetching}
+      />
       {!result.isLoading &&
-      !clubResult.isLoading &&
       !result.isError &&
-      !clubResult.isError &&
       classes.length === 0 &&
-      !clubResult.data?.items.length ? (
+      !result.data?.businessClasses?.length ? (
         <div className="py-16 text-center text-sm text-muted">
-          <p>کلاس فعالی پیدا نشد.</p>
+          <DiscoveryEmptySection
+            title="کلاسی پیدا نشد"
+            subtitle="عبارت دیگری را جست‌وجو کن یا جست‌وجو را پاک کن."
+            icon="academic-cap"
+          />
           {query ? (
             <Button
               className="mt-4"

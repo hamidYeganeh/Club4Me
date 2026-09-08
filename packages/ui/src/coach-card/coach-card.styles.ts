@@ -2,7 +2,7 @@ import { tv } from "tailwind-variants";
 
 export const coachCardStyles = tv({
   slots: {
-    root: "relative isolate shrink-0 gap-0 overflow-hidden rounded-[24px] border-none bg-surface p-0 shadow-none",
+    root: "relative isolate shrink-0 gap-0 overflow-hidden rounded-[var(--app-radius-feature,24px)] border-none bg-surface p-0 shadow-none",
     image: "pointer-events-none absolute inset-0 size-full object-cover select-none",
     blur: "pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[58%]",
     blurLayer: "absolute inset-0",

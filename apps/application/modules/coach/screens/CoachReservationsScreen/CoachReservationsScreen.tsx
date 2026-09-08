@@ -1,5 +1,14 @@
 "use client";
 
+import { IranDateInput } from "@repo/ui/iran-date-input";
+import {
+  tehranLocalDate,
+  tehranLocalValue,
+  parseIranDateInput,
+  iranDateInputValue,
+} from "@repo/ui/iran-date";
+
+import Link from "@/components/app-link";
 import { type FormEvent, useMemo, useState } from "react";
 import { Button, Card, Chip, toast, Typography } from "@heroui/react";
 import {
@@ -10,15 +19,14 @@ import {
   useCoachClasses,
   useCoachOfferings,
   useCoachSessionAttendance,
-  useCreateCoachOffering,
   useCreateCoachSession,
-  usePublicCatalogResource,
   useRecordCoachSessionAttendance,
   useRescheduleCoachSession,
   useUpdateClassEnrollmentStatus,
   useUpdateCoachBookingStatus,
   useUpdateCoachOfferingStatus,
   type AttendanceStatus,
+  type CoachSession,
 } from "@api";
 
 import { AthleteScreenHeaderSection } from "@modules/athlete/sections/AthleteScreenHeaderSection";
@@ -59,31 +67,24 @@ const attendanceStatusLabels: Record<AttendanceStatus, string> = {
 };
 
 export function CoachReservationsScreen() {
-  const sports = usePublicCatalogResource("sports", "sport");
+  const [workspaceView, setWorkspaceView] = useState("bookings");
   const offerings = useCoachOfferings();
   const calendar = useCoachCalendar();
   const coachClasses = useCoachClasses();
   const bookings = useCoachBookings();
-  const createOffering = useCreateCoachOffering();
   const publishOffering = useUpdateCoachOfferingStatus();
   const createSession = useCreateCoachSession();
   const cancelSession = useCancelCoachSession();
   const rescheduleSession = useRescheduleCoachSession();
   const updateBooking = useUpdateCoachBookingStatus();
 
-  const [serviceTitle, setServiceTitle] = useState("");
-  const [sportId, setSportId] = useState("");
-  const [mode, setMode] = useState<"club" | "online" | "home" | "outdoor">(
-    "club",
-  );
-  const [duration, setDuration] = useState(60);
-  const [serviceCapacity, setServiceCapacity] = useState(1);
-  const [price, setPrice] = useState(0);
   const [offeringId, setOfferingId] = useState("");
   const [sessionTitle, setSessionTitle] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [address, setAddress] = useState("");
   const [onlineUrl, setOnlineUrl] = useState("");
+  const [sessionMode, setSessionMode] =
+    useState<CoachSession["deliveryMode"]>("club");
   const [selectedClassId, setSelectedClassId] = useState("");
   const [attendanceSessionId, setAttendanceSessionId] = useState("");
   const [attendanceDraft, setAttendanceDraft] = useState<
@@ -106,7 +107,8 @@ export function CoachReservationsScreen() {
   const publishedOfferings = useMemo(
     () =>
       (offerings.data?.items ?? []).filter(
-        (item) => item.status === "published",
+        (item) =>
+          item.status === "published",
       ),
     [offerings.data?.items],
   );
@@ -114,31 +116,16 @@ export function CoachReservationsScreen() {
     (item) => item.id === offeringId,
   );
 
-  const addOffering = async (event: FormEvent) => {
-    event.preventDefault();
-    try {
-      await createOffering.mutateAsync({
-        sportId,
-        title: serviceTitle,
-        type: serviceCapacity === 1 ? "private" : "semi_private",
-        deliveryModes: [mode],
-        durationMinutes: duration,
-        capacity: serviceCapacity,
-        price: { amount: price, currency: "IRR" },
-      });
-      setServiceTitle("");
-      toast.success("خدمت مربی ساخته شد؛ حالا آن را منتشر کنید");
-    } catch {
-      toast.danger(
-        "ساخت خدمت انجام نشد؛ اطلاعات و وضعیت پروفایل را بررسی کنید",
-      );
-    }
-  };
+  const selectedDeliveryMode = selectedOffering?.deliveryModes.includes(
+    sessionMode,
+  )
+    ? sessionMode
+    : (selectedOffering?.deliveryModes[0] ?? "club");
 
   const addSession = async (event: FormEvent) => {
     event.preventDefault();
     if (!selectedOffering) return;
-    const start = new Date(startsAt);
+    const start = tehranLocalDate(startsAt);
     const end = new Date(
       start.getTime() + selectedOffering.durationMinutes * 60_000,
     );
@@ -149,9 +136,9 @@ export function CoachReservationsScreen() {
         title: sessionTitle || selectedOffering.title,
         startAt: start.toISOString(),
         endAt: end.toISOString(),
-        deliveryMode: selectedOffering.deliveryModes[0] ?? "club",
+        deliveryMode: selectedDeliveryMode,
         venue:
-          selectedOffering.deliveryModes[0] === "online" && onlineUrl
+          selectedDeliveryMode === "online" && onlineUrl
             ? { onlineUrl }
             : address
               ? { address }
@@ -172,80 +159,46 @@ export function CoachReservationsScreen() {
     offerings.isPending ||
     calendar.isPending ||
     bookings.isPending ||
-    coachClasses.isPending ||
-    sports.isPending
+    coachClasses.isPending
   ) {
     return <DashboardPageSkeleton />;
   }
 
   return (
-    <main className="app-page gap-6">
+    <main className="app-page coach-workspace gap-6">
       <AthleteScreenHeaderSection title="رزروهای مربی" />
+      <nav aria-label="بخش‌های مدیریت رزرو" className="workspace-navigation">
+        {[
+          { id: "bookings", title: "رزروها" },
+          { id: "sessions", title: "جلسات" },
+          { id: "enrollments", title: "ثبت‌نام‌ها" },
+          { id: "attendance", title: "حضور‌وغیاب" },
+          { id: "services", title: "خدمات" },
+        ].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            aria-pressed={workspaceView === item.id}
+            onClick={() => setWorkspaceView(item.id)}
+          >
+            {item.title}
+          </button>
+        ))}
+      </nav>
 
-      <Card className="rounded-3xl bg-surface p-5 shadow-none">
+      <Card
+        hidden={workspaceView !== "services"}
+        className="app-card p-5 shadow-none"
+      >
         <Typography type="h5" weight="bold">
           تعریف خدمت قابل رزرو
         </Typography>
-        <form className="mt-4 grid gap-3" onSubmit={addOffering}>
-          <input
-            required
-            minLength={2}
-            className={inputClass}
-            value={serviceTitle}
-            onChange={(event) => setServiceTitle(event.target.value)}
-            placeholder="مثلاً جلسه خصوصی بدنسازی"
-          />
-          <select
-            required
-            className={inputClass}
-            value={sportId}
-            onChange={(event) => setSportId(event.target.value)}
-          >
-            <option value="">انتخاب رشته ورزشی</option>
-            {(sports.data?.items ?? []).map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-          <select
-            className={inputClass}
-            value={mode}
-            onChange={(event) => setMode(event.target.value as typeof mode)}
-          >
-            <option value="club">در باشگاه</option>
-            <option value="online">آنلاین</option>
-            <option value="home">در محل ورزشکار</option>
-            <option value="outdoor">فضای باز</option>
-          </select>
-          <div className="grid grid-cols-3 gap-2">
-            <NumberInput
-              label="مدت (دقیقه)"
-              value={duration}
-              min={15}
-              onChange={setDuration}
-            />
-            <NumberInput
-              label="ظرفیت"
-              value={serviceCapacity}
-              min={1}
-              onChange={setServiceCapacity}
-            />
-            <NumberInput
-              label="قیمت (ریال)"
-              value={price}
-              min={0}
-              onChange={setPrice}
-            />
-          </div>
-          <Button
-            type="submit"
-            variant="primary"
-            isPending={createOffering.isPending}
-          >
-            ساخت خدمت
-          </Button>
-        </form>
+        <Link
+          href="/coach/services/new"
+          className="mt-4 inline-flex min-h-12 items-center justify-center rounded-xl bg-accent px-4 font-bold text-accent-foreground"
+        >
+          تعریف خدمت جدید
+        </Link>
         <div className="mt-5 flex flex-col gap-2">
           {(offerings.data?.items ?? []).map((item) => (
             <div
@@ -259,35 +212,51 @@ export function CoachReservationsScreen() {
                   {item.durationMinutes.toLocaleString("fa-IR")} دقیقه
                 </p>
               </div>
-              {item.status === "draft" ? (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  isPending={publishOffering.isPending}
-                  onPress={() =>
-                    void publishOffering
-                      .mutateAsync({ offeringId: item.id, status: "published" })
-                      .then(() => toast.success("خدمت منتشر شد"))
-                      .catch(() =>
-                        toast.danger(
-                          "برای انتشار، پروفایل مربی باید تأیید شده باشد",
-                        ),
-                      )
-                  }
-                >
-                  انتشار
-                </Button>
-              ) : (
-                <Chip size="sm" color="success">
-                  منتشرشده
-                </Chip>
-              )}
+              <div className="flex items-center gap-2">
+                {item.status !== "archived" ? (
+                  <Link
+                    href={`/coach/services/${item.id}/edit`}
+                    className="inline-flex min-h-11 items-center px-3 text-sm text-accent"
+                  >
+                    ویرایش
+                  </Link>
+                ) : null}
+                {item.status === "draft" ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    isPending={publishOffering.isPending}
+                    onPress={() =>
+                      void publishOffering
+                        .mutateAsync({
+                          offeringId: item.id,
+                          status: "published",
+                        })
+                        .then(() => toast.success("خدمت منتشر شد"))
+                        .catch(() =>
+                          toast.danger(
+                            "برای انتشار، پروفایل مربی باید تأیید شده باشد",
+                          ),
+                        )
+                    }
+                  >
+                    انتشار
+                  </Button>
+                ) : (
+                  <Chip size="sm" color="success">
+                    {item.status === "archived" ? "بایگانی‌شده" : "منتشرشده"}
+                  </Chip>
+                )}
+              </div>
             </div>
           ))}
         </div>
       </Card>
 
-      <Card className="rounded-3xl bg-surface p-5 shadow-none">
+      <Card
+        hidden={workspaceView !== "sessions"}
+        className="app-card p-5 shadow-none"
+      >
         <Typography type="h5" weight="bold">
           ساخت سانس آزاد
         </Typography>
@@ -295,6 +264,7 @@ export function CoachReservationsScreen() {
           <select
             required
             className={inputClass}
+            aria-label="خدمت مربوط به سانس"
             value={offeringId}
             onChange={(event) => setOfferingId(event.target.value)}
           >
@@ -305,20 +275,49 @@ export function CoachReservationsScreen() {
               </option>
             ))}
           </select>
+          {selectedOffering ? (
+            <label className="grid gap-2 text-sm">
+              شیوه برگزاری سانس
+              <select
+                className={inputClass}
+                value={selectedDeliveryMode}
+                onChange={(event) =>
+                  setSessionMode(
+                    event.target.value as CoachSession["deliveryMode"],
+                  )
+                }
+              >
+                {selectedOffering.deliveryModes.map((mode) => (
+                  <option key={mode} value={mode}>
+                    {
+                      {
+                        club: "باشگاه",
+                        online: "آنلاین",
+                        home: "محل ورزشکار",
+                        outdoor: "فضای باز",
+                      }[mode]
+                    }
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <input
             className={inputClass}
+            aria-label="عنوان سانس (اختیاری)"
             value={sessionTitle}
             onChange={(event) => setSessionTitle(event.target.value)}
             placeholder="عنوان سانس (اختیاری)"
           />
-          <input
+          <IranDateInput
             required
-            type="datetime-local"
+            withTime
             className={inputClass}
+            aria-label="تاریخ و ساعت شروع سانس"
             value={startsAt}
-            onChange={(event) => setStartsAt(event.target.value)}
+            onValueChange={(dateValue) => setStartsAt(dateValue)}
           />
-          {selectedOffering?.deliveryModes[0] === "online" ? (
+          {selectedDeliveryMode === "online" ? (
             <input
               required
               type="url"
@@ -330,8 +329,8 @@ export function CoachReservationsScreen() {
           ) : (
             <input
               required={
-                selectedOffering?.deliveryModes[0] === "club" ||
-                selectedOffering?.deliveryModes[0] === "outdoor"
+                selectedDeliveryMode === "club" ||
+                selectedDeliveryMode === "outdoor"
               }
               className={inputClass}
               value={address}
@@ -359,8 +358,10 @@ export function CoachReservationsScreen() {
                 <div>
                   <p className="text-sm font-bold">{item.title}</p>
                   <p className="mt-1 text-xs text-muted">
-                    {new Date(item.startAt).toLocaleString("fa-IR")} ·{" "}
-                    {item.bookedCount.toLocaleString("fa-IR")} از{" "}
+                    {new Date(item.startAt).toLocaleString("fa-IR", {
+                      timeZone: "Asia/Tehran",
+                    })}{" "}
+                    · {item.bookedCount.toLocaleString("fa-IR")} از{" "}
                     {item.capacity.toLocaleString("fa-IR")}
                   </p>
                 </div>
@@ -373,21 +374,35 @@ export function CoachReservationsScreen() {
                       isPending={rescheduleSession.isPending}
                       onPress={() => {
                         const value = window.prompt(
-                          "زمان جدید را با قالب 2026-09-10T18:30 وارد کنید:",
+                          "تاریخ شمسی و ساعت تهران، مثل ۱۴۰۵/۰۶/۲۱ ۱۸:۳۰:",
+                          iranDateInputValue(
+                            tehranLocalValue(item.startAt),
+                            true,
+                          ),
                         );
                         if (!value) return;
-                        const start = new Date(value);
-                        const duration = new Date(item.endAt).getTime() - new Date(item.startAt).getTime();
+                        const start = tehranLocalDate(
+                          parseIranDateInput(value, true) ?? "",
+                        );
+                        const duration =
+                          new Date(item.endAt).getTime() -
+                          new Date(item.startAt).getTime();
                         if (Number.isNaN(start.getTime())) {
                           toast.danger("زمان واردشده معتبر نیست");
                           return;
                         }
-                        void rescheduleSession.mutateAsync({
-                          sessionId: item.id,
-                          startAt: start.toISOString(),
-                          endAt: new Date(start.getTime() + duration).toISOString(),
-                        }).then(() => toast.success("زمان سانس تغییر کرد"))
-                          .catch(() => toast.danger("تغییر زمان سانس انجام نشد"));
+                        void rescheduleSession
+                          .mutateAsync({
+                            sessionId: item.id,
+                            startAt: start.toISOString(),
+                            endAt: new Date(
+                              start.getTime() + duration,
+                            ).toISOString(),
+                          })
+                          .then(() => toast.success("زمان سانس تغییر کرد"))
+                          .catch(() =>
+                            toast.danger("تغییر زمان سانس انجام نشد"),
+                          );
                       }}
                     >
                       تغییر زمان
@@ -421,7 +436,10 @@ export function CoachReservationsScreen() {
         </div>
       </Card>
 
-      <Card className="rounded-3xl bg-surface p-5 shadow-none">
+      <Card
+        hidden={workspaceView !== "enrollments"}
+        className="app-card p-5 shadow-none"
+      >
         <Typography type="h5" weight="bold">
           شاگردان کلاس
         </Typography>
@@ -558,7 +576,10 @@ export function CoachReservationsScreen() {
         )}
       </Card>
 
-      <Card className="rounded-3xl bg-surface p-5 shadow-none">
+      <Card
+        hidden={workspaceView !== "attendance"}
+        className="app-card p-5 shadow-none"
+      >
         <Typography type="h5" weight="bold">
           حضور و غیاب
         </Typography>
@@ -576,7 +597,10 @@ export function CoachReservationsScreen() {
             <option value="">یک جلسه را انتخاب کنید</option>
             {(calendar.data?.items ?? []).map((item) => (
               <option key={item.id} value={item.id}>
-                {item.title}، {new Date(item.startAt).toLocaleString("fa-IR")}
+                {item.title}،{" "}
+                {new Date(item.startAt).toLocaleString("fa-IR", {
+                  timeZone: "Asia/Tehran",
+                })}
               </option>
             ))}
           </select>
@@ -703,7 +727,7 @@ export function CoachReservationsScreen() {
         )}
       </Card>
 
-      <section>
+      <section hidden={workspaceView !== "bookings"}>
         <Typography type="h5" weight="bold">
           درخواست‌ها و رزروها
         </Typography>
@@ -717,8 +741,10 @@ export function CoachReservationsScreen() {
                 <div>
                   <p className="font-bold">{item.sessionTitle}</p>
                   <p className="mt-1 text-xs text-muted">
-                    {new Date(item.sessionStartsAt).toLocaleString("fa-IR")} ·{" "}
-                    {item.priceSnapshot.amount.toLocaleString("fa-IR")} ریال
+                    {new Date(item.sessionStartsAt).toLocaleString("fa-IR", {
+                      timeZone: "Asia/Tehran",
+                    })}{" "}
+                    · {item.priceSnapshot.amount.toLocaleString("fa-IR")} ریال
                   </p>
                   <p className="mt-1 text-xs text-muted">
                     پرداخت: {paymentStatusLabels[item.paymentStatus]}
@@ -779,31 +805,5 @@ export function CoachReservationsScreen() {
         </div>
       </section>
     </main>
-  );
-}
-
-function NumberInput({
-  label,
-  value,
-  min,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <label className="grid gap-1 text-xs text-muted">
-      {label}
-      <input
-        required
-        type="number"
-        min={min}
-        className={inputClass}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
-    </label>
   );
 }

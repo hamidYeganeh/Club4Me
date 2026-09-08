@@ -413,12 +413,14 @@ async function seed(): Promise<void> {
       trainingStyles: [
         {
           title: "تمرین قدرتی دقیق",
-          description: "تمرکز بر تمرین‌های کاربردی، اصلاح فرم و افزایش تدریجی فشار",
+          description:
+            "تمرکز بر تمرین‌های کاربردی، اصلاح فرم و افزایش تدریجی فشار",
           imageMediaId: ids.coachMedia,
         },
         {
           title: "آمادگی جسمانی منظم",
-          description: "برنامه ساختاریافته، انضباط تمرینی و پیگیری مداوم پیشرفت",
+          description:
+            "برنامه ساختاریافته، انضباط تمرینی و پیگیری مداوم پیشرفت",
           imageMediaId: ids.coachMedia,
         },
       ],

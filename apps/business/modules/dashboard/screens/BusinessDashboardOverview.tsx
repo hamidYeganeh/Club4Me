@@ -1,6 +1,6 @@
 "use client";
 
-import { useBusinessClubs, useBusinessDashboardSummary } from "@api/business";
+import { useBusinessClubActivation, useBusinessClubs, useBusinessDashboardSummary } from "@api/business";
 import { Button, Card, Spinner } from "@heroui/react";
 import { Icon, type IconName } from "@theme/icon";
 import { Grid, Line, LineChart, RingChart, XAxis } from "@ui/charts";
@@ -94,6 +94,7 @@ export function BusinessDashboardOverview() {
   const [selectedClubId, setClubId] = useState("");
   const clubId = selectedClubId || clubs.data?.items[0]?.id || "";
   const summary = useBusinessDashboardSummary(clubId);
+  const activation = useBusinessClubActivation(clubId);
   const stats = summary.data?.stats;
 
   const revenue = useMemo(
@@ -204,6 +205,13 @@ export function BusinessDashboardOverview() {
           </label>
         </header>
 
+        {activation.data && !activation.data.ready ? (
+          <Card className="mt-5 rounded-[1.5rem] border border-warning/35 bg-warning/8 p-5 shadow-none">
+            <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">راه‌اندازی عرضه: {number(activation.data.completed)} از {number(activation.data.total)}</h2><p className="mt-1 text-sm text-muted">برای دیده‌شدن و اولین رزرو، موارد باقی‌مانده را کامل کنید.</p></div><Link href={activation.data.publicPreviewUrl} className="text-sm font-medium text-accent">پیش‌نمایش عمومی</Link></div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{activation.data.items.map((item) => <div key={item.id} className={`rounded-xl px-3 py-2 text-sm ${item.complete ? "bg-success/10 text-success" : "bg-surface-secondary text-foreground"}`}>{item.complete ? "✓" : "○"} {item.label}</div>)}</div>
+          </Card>
+        ) : null}
+
         {summary.isPending ? (
           <div className="flex justify-center py-24">
             <Spinner />
@@ -229,7 +237,7 @@ export function BusinessDashboardOverview() {
                 className="shrink-0 rounded-[32px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               >
                 <DashboardMetricCard
-                  title="درآمد ماه"
+                  title="خالص دریافت حضوری ماه"
                   value={money(stats?.monthlyRevenue ?? 0, true)}
                   unit="ریال"
                   icon={<Icon name="wallet" size={20} />}

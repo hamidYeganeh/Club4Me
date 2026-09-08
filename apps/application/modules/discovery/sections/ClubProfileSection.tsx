@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { PublicClubDetails } from "@api";
-import Link from "next/link";
+import Link from "@/components/app-link";
 
 const days = [
   "یکشنبه",
@@ -33,6 +33,7 @@ const badges = {
 
 export function ClubProfileSection({ club }: { club: PublicClubDetails }) {
   const [day, setDay] = useState(6);
+  const [now] = useState(() => Date.now());
   const profile = club.profile ?? {};
   const visit = profile.firstVisit;
   const label = (id?: string, legacy?: string) =>
@@ -64,6 +65,79 @@ export function ClubProfileSection({ club }: { club: PublicClubDetails }) {
             </span>
           ) : null,
         )}
+      </div>
+      <div className="space-y-4 rounded-2xl border border-border p-4">
+        <h2 className="text-xl font-bold">شرایط مراجعه و ساعت کاری</h2>
+        {club.audience?.length ? (
+          <p className="text-sm">
+            مناسب برای:{" "}
+            {club.audience
+              .map(
+                (value) =>
+                  ({
+                    men: "آقایان",
+                    women: "بانوان",
+                    mixed: "مختلط",
+                    children: "کودکان",
+                    family: "خانواده",
+                  })[value],
+              )
+              .join("، ")}
+          </p>
+        ) : null}
+        {club.minAge != null || club.maxAge != null ? (
+          <p className="text-sm">
+            سن مجاز:{" "}
+            {club.minAge != null
+              ? `از ${club.minAge.toLocaleString("fa-IR")}`
+              : "بدون حداقل"}{" "}
+            {club.maxAge != null
+              ? `تا ${club.maxAge.toLocaleString("fa-IR")} سال`
+              : "بدون حداکثر"}
+          </p>
+        ) : null}
+        {club.weeklyHours.length ? (
+          <dl className="divide-y divide-border text-sm">
+            {[6, 0, 1, 2, 3, 4, 5].map((dow) => {
+              const hours = club.weeklyHours.find(
+                (item) => item.dayOfWeek === dow,
+              );
+              return (
+                <div key={dow} className="flex justify-between gap-4 py-3">
+                  <dt>{days[dow]}</dt>
+                  <dd>
+                    {!hours
+                      ? "ثبت نشده"
+                      : hours.isClosed
+                        ? "تعطیل"
+                        : hours.periods
+                            .map(
+                              (period) =>
+                                `${period.opensAt} تا ${period.closesAt}`,
+                            )
+                            .join("، ") || "ثبت نشده"}
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+        ) : (
+          <p className="text-sm text-muted">
+            ساعت کاری ثبت نشده است؛ پیش از مراجعه هماهنگ کنید.
+          </p>
+        )}
+        {(club.closures ?? [])
+          .filter((item) => new Date(item.endsAt).getTime() >= now)
+          .map((item) => (
+            <p
+              key={item.startsAt}
+              className="rounded-xl bg-warning/10 p-3 text-sm"
+            >
+              تعطیلی: {new Date(item.startsAt).toLocaleDateString("fa-IR")} تا{" "}
+              {new Date(item.endsAt).toLocaleDateString("fa-IR")} ·{" "}
+              {item.reason}
+            </p>
+          ))}
       </div>
       {profile.spaces?.length ? (
         <div className="space-y-3">

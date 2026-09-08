@@ -1,3 +1,4 @@
+import { BusinessPortalGuard } from "../auth/guards/business-portal.guard";
 import {
   Body,
   Controller,
@@ -16,15 +17,18 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import type { AuthTokenPayload } from "../auth/services/token.service";
 import {
+  UpdateReservationCheckInDto,
   CreateCourtDto,
+  UpdateCourtDto,
   CreateReservationDto,
+  RescheduleQuoteDto,
+  RescheduleReservationDto,
   CreateSessionDto,
 } from "./dto/reservation.dto";
 import { ReservationsService } from "./reservations.service";
 
 @Controller("api/v1/business/clubs/:clubId")
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles("owner")
+@UseGuards(JwtAuthGuard, BusinessPortalGuard)
 export class BusinessReservationsController {
   constructor(private readonly service: ReservationsService) {}
   @Get("courts") listCourts(
@@ -39,6 +43,14 @@ export class BusinessReservationsController {
     @Body() body: CreateCourtDto,
   ) {
     return this.service.createCourt(user.sub, clubId, body);
+  }
+  @Patch("courts/:courtId") updateCourt(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("courtId") courtId: string,
+    @Body() body: UpdateCourtDto,
+  ) {
+    return this.service.updateCourt(user.sub, clubId, courtId, body);
   }
   @Get("sessions") listSessions(
     @CurrentUser() user: AuthTokenPayload,
@@ -73,6 +85,14 @@ export class BusinessReservationsController {
   ) {
     return this.service.cancelSessionByOwner(user.sub, clubId, sessionId);
   }
+  @Patch("reservations/:reservationId/check-in") checkIn(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("reservationId") id: string,
+    @Body() body: UpdateReservationCheckInDto,
+  ) {
+    return this.service.checkIn(user.sub, clubId, id, body);
+  }
   @Patch("reservations/:reservationId/no-show") markNoShow(
     @CurrentUser() user: AuthTokenPayload,
     @Param("clubId") clubId: string,
@@ -94,8 +114,28 @@ export class PublicSessionsController {
 @UseGuards(JwtAuthGuard)
 export class ReservationsController {
   constructor(private readonly service: ReservationsService) {}
+  @Post(":reservationId/reschedule/quote") quoteReschedule(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("reservationId") id: string,
+    @Body() body: RescheduleQuoteDto,
+  ) {
+    return this.service.quoteReschedule(user.sub, id, body);
+  }
+  @Post(":reservationId/reschedule") reschedule(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("reservationId") id: string,
+    @Body() body: RescheduleReservationDto,
+  ) {
+    return this.service.reschedule(user.sub, id, body);
+  }
   @Get() list(@CurrentUser() user: AuthTokenPayload) {
     return this.service.listMine(user.sub);
+  }
+  @Post("quote") quote(
+    @CurrentUser() user: AuthTokenPayload,
+    @Body() body: CreateReservationDto,
+  ) {
+    return this.service.quote(user.sub, body);
   }
   @Post() @HttpCode(HttpStatus.CREATED) reserve(
     @CurrentUser() user: AuthTokenPayload,

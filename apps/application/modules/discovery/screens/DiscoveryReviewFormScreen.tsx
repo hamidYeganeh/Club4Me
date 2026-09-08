@@ -1,8 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { toast } from "@heroui/react";
-import { useClubReviews, useCreateClubReview, usePublicClub } from "@api";
+import { Button, Card, toast } from "@heroui/react";
+import {
+  useClubReviews,
+  useCreateClubReview,
+  useCreateServiceReview,
+  usePublicClub,
+  useServiceReviews,
+} from "@api";
 import {
   useCatalogClass,
   useCatalogClub,
@@ -29,6 +35,14 @@ export function DiscoveryReviewFormScreen({
   const club = usePublicClub(clubId);
   const clubReviews = useClubReviews(clubId);
   const createReview = useCreateClubReview(clubId);
+  const serviceReviews = useServiceReviews(
+    type === "club" ? "coach" : type,
+    type === "club" ? "" : id,
+  );
+  const createServiceReview = useCreateServiceReview(
+    type === "club" ? "coach" : type,
+    type === "club" ? "" : id,
+  );
   const entityName =
     type === "club"
       ? (club.data?.name ?? catalogClub.data?.name ?? "باشگاه")
@@ -52,28 +66,51 @@ export function DiscoveryReviewFormScreen({
         backHref={reviewsPath}
       />
       <section className="px-4 pt-5">
-        <ReviewForm
-          entityName={entityName}
-          criteria={type === "club" ? clubReviews.data?.criteria : []}
-          isPending={createReview.isPending}
-          onSubmit={async ({ rating, body, ratings }) => {
-            if (type !== "club") {
-              toast.success(
-                "نظر شما دریافت شد؛ ثبت نظر این بخش به‌زودی فعال می‌شود",
-              );
-              router.replace(reviewsPath);
-              return;
-            }
-            try {
-              await createReview.mutateAsync({ rating, body, ratings });
-              await clubReviews.refetch();
-              toast.success("نظر شما با موفقیت ثبت شد");
-              router.replace(reviewsPath);
-            } catch {
-              toast.danger("ثبت نظر انجام نشد؛ دوباره تلاش کنید");
-            }
-          }}
-        />
+        {type === "club" ? (
+          <ReviewForm
+            entityName={entityName}
+            criteria={type === "club" ? clubReviews.data?.criteria : []}
+            isPending={createReview.isPending}
+            onSubmit={async ({ rating, body, ratings }) => {
+              try {
+                await createReview.mutateAsync({ rating, body, ratings });
+                await clubReviews.refetch();
+                toast.success("نظر شما با موفقیت ثبت شد");
+                router.replace(reviewsPath);
+              } catch {
+                toast.danger("ثبت نظر انجام نشد؛ دوباره تلاش کنید");
+              }
+            }}
+          />
+        ) : serviceReviews.isError ? (
+          <Card className="rounded-3xl p-5">
+            <Card.Title>دریافت وضعیت نظر انجام نشد</Card.Title>
+            <Button className="mt-4" onPress={() => serviceReviews.refetch()}>
+              تلاش دوباره
+            </Button>
+          </Card>
+        ) : (
+          <ReviewForm
+            entityName={entityName}
+            isPending={createServiceReview.isPending}
+            onSubmit={async ({ rating, body, mediaIds }) => {
+              try {
+                await createServiceReview.mutateAsync({
+                  rating,
+                  body,
+                  mediaIds,
+                });
+                await serviceReviews.refetch();
+                toast.success("نظر شما با موفقیت ثبت شد");
+                router.replace(reviewsPath);
+              } catch {
+                toast.danger(
+                  "ثبت نظر انجام نشد؛ برای ثبت نظر باید حضور تأییدشده داشته باشید",
+                );
+              }
+            }}
+          />
+        )}
       </section>
     </main>
   );

@@ -17,6 +17,12 @@ export type ProductAnalytics = {
     users: number;
     retention: number[];
   }>;
+  breakdowns: {
+    acquisitionChannel: Array<{ key: string; count: number }>;
+    sport: Array<{ key: string; count: number }>;
+    serviceType: Array<{ key: string; count: number }>;
+  };
+  definitions: Record<string, string>;
 };
 
 export function useProductAnalytics(days = 30) {

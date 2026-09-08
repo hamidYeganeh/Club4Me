@@ -1,7 +1,10 @@
 "use client";
+import { useState } from "react";
+import { RescheduleReservationForm } from "../../components/RescheduleReservationForm";
+import { RescheduleCoachBookingForm } from "../../components/RescheduleCoachBookingForm";
 
-import Link from "next/link";
-import { Button, Skeleton } from "@heroui/react";
+import Link from "@/components/app-link";
+import { Skeleton } from "@heroui/react";
 import {
   useMyClassEnrollments,
   useMyCoachBookings,
@@ -28,7 +31,9 @@ type ReservationDetail = {
   startsAt: string;
   endsAt: string;
   participantCount: number;
-  status: "reserved" | "cancelled" | "completed" | "no_show";
+  checkedInParticipants?: number;
+  status:
+    "pending" | "rejected" | "reserved" | "cancelled" | "completed" | "no_show";
   paymentStatus: "not_required" | "pending" | "paid" | "refunded" | "failed";
   amount: number;
   currency: string;
@@ -38,6 +43,8 @@ type ReservationDetail = {
   refundAmount?: number | null;
   cancellationPolicy?: string | null;
   changeTimeHref?: string;
+  clubId?: string;
+  sessionId?: string;
 };
 
 export function ReservationDetailsScreen({
@@ -116,16 +123,19 @@ export function ReservationDetailsScreen({
 }
 
 function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
+  const [rescheduling, setRescheduling] = useState(false);
   const status = STATUS_PRESENTATION[detail.status];
   const payment = PAYMENT_LABELS[detail.paymentStatus];
   const sourceLabel = SOURCE_LABELS[detail.source];
   const date = new Intl.DateTimeFormat("fa-IR", {
+    timeZone: "Asia/Tehran",
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   }).format(new Date(detail.startsAt));
   const bookedAt = new Intl.DateTimeFormat("fa-IR", {
+    timeZone: "Asia/Tehran",
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -168,8 +178,14 @@ function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
             icon="clock"
           />
           <DetailRow
-            label="مدت"
-            value={`${durationMinutes(detail.startsAt, detail.endsAt).toLocaleString("fa-IR")} دقیقه`}
+            label={detail.source === "class" ? "پایان دوره" : "مدت جلسه"}
+            value={
+              detail.source === "class"
+                ? new Date(detail.endsAt).toLocaleDateString("fa-IR", {
+                    timeZone: "Asia/Tehran",
+                  })
+                : `${durationMinutes(detail.startsAt, detail.endsAt).toLocaleString("fa-IR")} دقیقه`
+            }
             icon="stopwatch"
           />
           <DetailRow
@@ -177,6 +193,13 @@ function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
             value={`${detail.participantCount.toLocaleString("fa-IR")} نفر`}
             icon="users-two"
           />
+          {detail.source === "club" && (
+            <DetailRow
+              label="ورود ثبت‌شده"
+              value={`${(detail.checkedInParticipants ?? 0).toLocaleString("fa-IR")} نفر`}
+              icon="users-two"
+            />
+          )}
           {detail.location ? (
             <DetailRow
               label="محل برگزاری"
@@ -206,6 +229,13 @@ function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
         </div>
       </DetailSection>
 
+      <Link
+        href={`/athlete/support/new?referenceType=${detail.source === "coach" ? "coach_booking" : detail.source === "class" ? "class_enrollment" : "reservation"}&referenceId=${detail.id}`}
+        className="flex min-h-12 items-center justify-center rounded-2xl border border-border px-4 font-bold text-accent"
+      >
+        پیگیری این رزرو از پشتیبانی
+      </Link>
+
       <DetailSection title="اطلاعات رزرو" icon="info">
         <div className="grid gap-4">
           <DetailRow label="تاریخ ثبت" value={bookedAt} icon="calendar-1" />
@@ -225,7 +255,32 @@ function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
         </div>
       </DetailSection>
 
-      {detail.status === "reserved" ? (
+      {rescheduling && (
+        <button
+          type="button"
+          className="min-h-12 rounded-xl border border-border px-4"
+          onClick={() => setRescheduling(false)}
+        >
+          انصراف از تغییر زمان
+        </button>
+      )}
+      {rescheduling && detail.clubId && (
+        <RescheduleReservationForm
+          id={detail.id}
+          clubId={detail.clubId}
+          sessionId={detail.sessionId}
+          onDone={() => setRescheduling(false)}
+        />
+      )}
+      {rescheduling && detail.source === "coach" && (
+        <RescheduleCoachBookingForm
+          bookingId={detail.id}
+          onDone={() => setRescheduling(false)}
+        />
+      )}
+      {detail.status === "reserved" &&
+      !(detail.checkedInParticipants ?? 0) &&
+      !rescheduling ? (
         <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-xl border-t border-border bg-background/95 px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-xl">
           <div className="grid grid-cols-2 gap-3">
             <Link
@@ -235,13 +290,25 @@ function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
               مدیریت رزرو
               <Icon name="calendar-1" size={19} />
             </Link>
-            <Link
-              href={detail.changeTimeHref ?? "/discovery"}
-              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-accent px-4 font-bold text-accent-foreground active:scale-[0.98]"
-            >
-              تغییر زمان
-              <Icon name="calendar-plus" size={19} />
-            </Link>
+            {["club", "coach"].includes(detail.source) &&
+            ["paid", "not_required"].includes(detail.paymentStatus) ? (
+              <button
+                type="button"
+                className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-accent px-4 font-bold text-accent-foreground"
+                onClick={() => setRescheduling((v) => !v)}
+              >
+                {rescheduling ? "بستن تغییر زمان" : "تغییر زمان"}
+                <Icon name="calendar-plus" size={19} />
+              </button>
+            ) : (
+              <Link
+                href={detail.changeTimeHref ?? "/discovery"}
+                className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-accent px-4 font-bold text-accent-foreground active:scale-[0.98]"
+              >
+                تغییر زمان
+                <Icon name="calendar-plus" size={19} />
+              </Link>
+            )}
           </div>
         </div>
       ) : null}
@@ -393,15 +460,18 @@ function getReservationDetail({
     startsAt: item.sessionStartsAt,
     endsAt: item.sessionEndsAt,
     participantCount: item.participantCount,
+    checkedInParticipants: item.checkedInParticipants ?? 0,
     status: item.status,
     paymentStatus: item.paymentStatus,
     amount: item.totalPrice,
-    currency: "IRR",
+    currency: item.currency ?? "IRR",
     bookedAt: item.createdAt,
     refundPercent: item.refundPercent,
     refundAmount: item.refundAmount,
     cancellationPolicy: item.cancellationPolicy.title,
     changeTimeHref: `/discovery/clubs/${item.clubId}/slots`,
+    clubId: item.clubId,
+    sessionId: item.sessionId,
   };
 }
 
@@ -425,7 +495,8 @@ function normalizeCoachStatus(
     | "completed"
     | "no_show",
 ): ReservationDetail["status"] {
-  if (status === "pending" || status === "confirmed") return "reserved";
+  if (status === "pending") return "pending";
+  if (status === "confirmed") return "reserved";
   if (status === "completed" || status === "no_show") return status;
   return "cancelled";
 }
@@ -433,7 +504,8 @@ function normalizeCoachStatus(
 function normalizeClassStatus(
   status: "pending" | "active" | "rejected" | "cancelled" | "completed",
 ): ReservationDetail["status"] {
-  if (status === "pending" || status === "active") return "reserved";
+  if (status === "pending" || status === "rejected") return status;
+  if (status === "active") return "reserved";
   if (status === "completed") return "completed";
   return "cancelled";
 }
@@ -459,6 +531,8 @@ const STATUS_PRESENTATION: Record<
   ReservationDetail["status"],
   { label: string }
 > = {
+  pending: { label: "در انتظار تأیید" },
+  rejected: { label: "ردشده" },
   reserved: { label: "فعال" },
   cancelled: { label: "لغوشده" },
   completed: { label: "انجام‌شده" },

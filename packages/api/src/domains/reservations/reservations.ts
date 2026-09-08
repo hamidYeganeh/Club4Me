@@ -2,11 +2,73 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { http } from "../../http/client";
+
+export type RescheduleQuote = {
+  sessionId: string;
+  sessionTitle: string;
+  startsAt: string;
+  endsAt: string;
+  newAmount: number;
+  grossRefund: number;
+  refundAmount: number;
+  gatewayRefund: number;
+  walletRefund: number;
+  difference: number;
+  refundPercent: number;
+  currency: string;
+  restoresEntitlement: boolean;
+};
+export type RescheduleSelection = {
+  sessionId: string;
+  options: Array<{ optionId: string; quantity: number }>;
+};
+export function useRescheduleQuote(
+  id: string,
+  selection?: RescheduleSelection,
+) {
+  return useQuery({
+    queryKey: ["reschedule-quote", id, selection],
+    queryFn: () =>
+      http.post<RescheduleQuote>(
+        `/reservations/${id}/reschedule/quote`,
+        selection!,
+      ),
+    enabled: Boolean(selection),
+    staleTime: 0,
+  });
+}
+export function useRescheduleReservation() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...body
+    }: RescheduleSelection & {
+      id: string;
+      expectedTotalPrice: number;
+      expectedRefundAmount: number;
+      expectedRefundPercent: number;
+      idempotencyKey: string;
+      mockResult: "paid" | "failed";
+    }) => http.post<SessionReservation>(`/reservations/${id}/reschedule`, body),
+    onSuccess: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["reservations"] }),
+        client.invalidateQueries({ queryKey: ["public"] }),
+        client.invalidateQueries({ queryKey: ["discovery"] }),
+        client.invalidateQueries({ queryKey: ["benefits"] }),
+        client.invalidateQueries({ queryKey: ["payments"] }),
+      ]);
+    },
+  });
+}
 import type {
+  ReservationQuote,
   ClubCourt,
   ClubCoachSummary,
   ClubClassSummary,
   CreateCourtPayload,
+  UpdateCourtPayload,
   CreateReservationPayload,
   CreateSessionPayload,
   ReservableSession,
@@ -24,6 +86,11 @@ export const reservationsClient = {
     http.get<{ items: ClubCourt[] }>(`/business/clubs/${clubId}/courts`),
   createCourt: (clubId: string, payload: CreateCourtPayload) =>
     http.post<ClubCourt>(`/business/clubs/${clubId}/courts`, payload),
+  updateCourt: (clubId: string, courtId: string, payload: UpdateCourtPayload) =>
+    http.patch<ClubCourt>(
+      `/business/clubs/${clubId}/courts/${courtId}`,
+      payload,
+    ),
   listBusinessSessions: (clubId: string) =>
     http.get<{ items: ReservableSession[] }>(
       `/business/clubs/${clubId}/sessions`,
@@ -85,6 +152,24 @@ export function useCreateCourt(clubId: string) {
       qc.invalidateQueries({
         queryKey: ["business", "clubs", clubId, "courts"],
       }),
+  });
+}
+export function useUpdateCourt(clubId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      courtId,
+      ...payload
+    }: UpdateCourtPayload & { courtId: string }) =>
+      reservationsClient.updateCourt(clubId, courtId, payload),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({
+          queryKey: ["business", "clubs", clubId, "courts"],
+        }),
+        qc.invalidateQueries({ queryKey: ["public", "clubs", clubId] }),
+      ]);
+    },
   });
 }
 export function useBusinessSessions(clubId: string) {
@@ -203,6 +288,7 @@ export function useReserveSession() {
         participant_count: reservation.participantCount,
       });
       await qc.invalidateQueries({ queryKey: ["reservations"] });
+      await qc.invalidateQueries({ queryKey: ["benefits", "entitlements"] });
       await qc.invalidateQueries({ queryKey: ["discovery", "clubs"] });
       await qc.invalidateQueries({ queryKey: ["public", "coaches"] });
     },
@@ -220,6 +306,7 @@ export function useCancelReservation() {
         cancelled_by: "athlete",
       });
       await qc.invalidateQueries({ queryKey: ["reservations"] });
+      await qc.invalidateQueries({ queryKey: ["benefits", "entitlements"] });
       await qc.invalidateQueries({ queryKey: ["discovery", "clubs"] });
       await qc.invalidateQueries({ queryKey: ["public", "coaches"] });
     },
@@ -247,15 +334,26 @@ export function useResolveMockClubPayment() {
           returnUrl,
         })
         .then((intent) =>
-          http.post(`/payments/intents/${intent.id}/mock/decision`, {
-            status: result === "approve" ? "paid" : "failed",
-          }),
+          http.post<{ status: "paid" | "failed" | "pending" }>(
+            `/payments/intents/${intent.id}/mock/decision`,
+            {
+              status: result === "approve" ? "paid" : "failed",
+            },
+          ),
         );
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["reservations"] });
+      await qc.invalidateQueries({ queryKey: ["benefits", "entitlements"] });
       await qc.invalidateQueries({ queryKey: ["discovery", "clubs"] });
       await qc.invalidateQueries({ queryKey: ["public", "coaches"] });
     },
+  });
+}
+
+export function useQuoteReservation() {
+  return useMutation({
+    mutationFn: (payload: CreateReservationPayload) =>
+      http.post<ReservationQuote>("/reservations/quote", payload),
   });
 }

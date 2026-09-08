@@ -5,11 +5,5 @@ import type { AthleteScreenHeaderSectionProps } from "./AthleteScreenHeaderSecti
 export function AthleteScreenHeaderSection({
   title,
 }: AthleteScreenHeaderSectionProps) {
-  return (
-    <SecondaryHeader
-      title={title}
-      showBack={false}
-      showFilter={false}
-    />
-  );
+  return <SecondaryHeader title={title} showBack={false} showFilter={false} />;
 }

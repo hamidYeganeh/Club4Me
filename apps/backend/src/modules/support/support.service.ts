@@ -1,3 +1,4 @@
+import { SupportReferencesService } from "./support-references.service";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
@@ -15,10 +16,19 @@ export class SupportService {
     private readonly tickets: Model<SupportTicketDocument>,
     private readonly notifications: NotificationsService,
     private readonly config: AppConfigService,
+    private readonly references: SupportReferencesService,
   ) {}
 
   async create(userId: string, input: CreateTicketDto) {
+    if (input.referenceType && input.referenceId)
+      await this.references.requireOwned(
+        userId,
+        input.referenceType,
+        input.referenceId,
+      );
     const item = await this.tickets.create({
+      referenceType: input.referenceType ?? null,
+      referenceId: input.referenceId ? oid(input.referenceId) : null,
       requesterId: oid(userId),
       subject: input.subject,
       category: input.category,
@@ -61,6 +71,19 @@ export class SupportService {
     );
     if (!item) throw new AppError(404, "TICKET_NOT_FOUND", "Ticket not found");
     return ticketDto(item);
+  }
+
+  async context(ticketId: string) {
+    const ticket = await this.tickets.findById(oid(ticketId));
+    if (!ticket)
+      throw new AppError(404, "TICKET_NOT_FOUND", "Ticket not found");
+    if (!ticket.referenceType || !ticket.referenceId)
+      return { order: null, payments: [] };
+    return this.references.context(
+      String(ticket.requesterId),
+      ticket.referenceType,
+      String(ticket.referenceId),
+    );
   }
 
   async listAdmin(status?: string) {
@@ -144,6 +167,8 @@ function ticketDto(item: SupportTicketDocument, includeInternal = false) {
   return {
     id: String(item._id),
     requesterId: String(item.requesterId),
+    referenceType: item.referenceType ?? null,
+    referenceId: item.referenceId ? String(item.referenceId) : null,
     subject: item.subject,
     category: item.category,
     preferredContact: item.preferredContact,

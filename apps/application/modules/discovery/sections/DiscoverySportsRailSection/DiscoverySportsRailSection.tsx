@@ -3,7 +3,7 @@
 import type { DiscoverySportItem } from "@api/discovery";
 import { ScrollShadow } from "@heroui/react";
 import { SportCardSkeleton } from "../../components/skeletons/SportCardSkeleton";
-import Link from "next/link";
+import Link from "@/components/app-link";
 import { SportCard } from "@ui/sport-card";
 
 import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
@@ -25,7 +25,7 @@ export function DiscoverySportsRailSection({
   subtitle,
   items,
   seeAllLabel = "مشاهده همه",
-  seeAllHref = "/discovery/search",
+  seeAllHref = "/discovery/sports",
 }: {
   isLoading?: boolean;
   skeletonCount?: number;

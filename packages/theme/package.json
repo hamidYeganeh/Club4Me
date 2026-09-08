@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
+    "./sandow.css": "./src/sandow.css",
     "./heroui.css": "./src/heroui.css",
     "./globals.css": "./src/globals.css",
     "./app-surface.css": "./src/app-surface.css",

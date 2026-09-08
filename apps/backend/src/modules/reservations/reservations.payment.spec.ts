@@ -1,3 +1,4 @@
+import { fakeTransactionConnection } from "../../infrastructure/database/atomic-operation.test-helper";
 import { Types } from "mongoose";
 
 import { ReservationsService } from "./reservations.service";
@@ -41,14 +42,23 @@ describe("ReservationsService mock payment", () => {
   }
 
   function setup() {
-    const sessions = { updateOne: jest.fn() };
+    let current = reservation("pending");
     const reservations = {
-      findOne: jest.fn(),
+      db: fakeTransactionConnection,
+      findOne: jest.fn(() => ({ exec: jest.fn(async () => current) })),
       findOneAndUpdate: jest.fn(),
+    };
+    const commerce = {
+      createIntent: jest.fn().mockResolvedValue({ id: "intent" }),
+      simulate: jest.fn(
+        async (_user: string, _intent: string, status: "paid" | "failed") => {
+          current = reservation(status);
+        },
+      ),
     };
     const service = new ReservationsService(
       {} as never,
-      sessions as never,
+      {} as never,
       reservations as never,
       {} as never,
       {} as never,
@@ -56,77 +66,44 @@ describe("ReservationsService mock payment", () => {
       {} as never,
       {} as never,
       {} as never,
-      {
-        notifyBookingConfirmed: jest.fn(),
-        notifyPaymentFailed: jest.fn(),
-      } as never,
-      { refundReservation: jest.fn() } as never,
-      { finalizeReservation: jest.fn() } as never,
+      {} as never,
+      commerce as never,
+      {} as never,
     );
-    return { service, sessions, reservations };
+    return { service, reservations, commerce };
   }
-
-  it("approves a pending payment and keeps the reservation active", async () => {
-    const { service, reservations } = setup();
+  it("uses shared commerce to capture payment so refunds have a ledger-backed intent", async () => {
+    const { service, commerce, reservations } = setup();
+    await expect(
+      service.approveMockPayment(userId, reservationId),
+    ).resolves.toMatchObject({ paymentStatus: "paid", status: "reserved" });
+    expect(commerce.createIntent).toHaveBeenCalledWith(
+      userId,
+      expect.objectContaining({
+        referenceType: "reservation",
+        referenceId: reservationId,
+      }),
+    );
+    expect(commerce.simulate).toHaveBeenCalledWith(userId, "intent", "paid");
+    expect(reservations.findOneAndUpdate).not.toHaveBeenCalled();
+    await service.approveMockPayment(userId, reservationId);
+    expect(commerce.simulate).toHaveBeenCalledTimes(1);
+  });
+  it("delegates failed payments and capacity release to the same commerce workflow", async () => {
+    const { service, commerce } = setup();
+    await expect(
+      service.rejectMockPayment(userId, reservationId),
+    ).resolves.toMatchObject({ paymentStatus: "failed", status: "cancelled" });
+    expect(commerce.simulate).toHaveBeenCalledWith(userId, "intent", "failed");
+  });
+  it("checks ownership before creating or deciding any payment", async () => {
+    const { service, commerce, reservations } = setup();
     reservations.findOne.mockReturnValue({
-      exec: jest.fn().mockResolvedValue(reservation("pending")),
+      exec: jest.fn().mockResolvedValue(null),
     });
-    reservations.findOneAndUpdate.mockReturnValue({
-      exec: jest.fn().mockResolvedValue(reservation("paid")),
-    });
-
-    const result = await service.approveMockPayment(userId, reservationId);
-
-    expect(result).toMatchObject({
-      status: "reserved",
-      paymentStatus: "paid",
-    });
-  });
-
-  it("rejects payment and releases participant and option capacity", async () => {
-    const { service, sessions, reservations } = setup();
-    reservations.findOneAndUpdate.mockReturnValue({
-      exec: jest.fn().mockResolvedValue(reservation("failed")),
-    });
-    sessions.updateOne.mockReturnValue({
-      exec: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
-    });
-
-    const result = await service.rejectMockPayment(userId, reservationId);
-
-    expect(result).toMatchObject({
-      status: "cancelled",
-      paymentStatus: "failed",
-      refundAmount: 0,
-    });
-    expect(sessions.updateOne).toHaveBeenCalledWith(
-      { _id: sessionId },
-      {
-        $inc: expect.objectContaining({
-          reservedCount: -2,
-          "options.$[option0].reservedQuantity": -1,
-        }),
-      },
-      expect.objectContaining({ arrayFilters: expect.any(Array) }),
-    );
-  });
-
-  it("releases a reservation without sending empty option filters", async () => {
-    const { service, sessions, reservations } = setup();
-    const rejected = { ...reservation("failed"), selectedOptions: [] };
-    reservations.findOneAndUpdate.mockReturnValue({
-      exec: jest.fn().mockResolvedValue(rejected),
-    });
-    sessions.updateOne.mockReturnValue({
-      exec: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
-    });
-
-    await service.rejectMockPayment(userId, reservationId);
-
-    expect(sessions.updateOne).toHaveBeenCalledWith(
-      { _id: sessionId },
-      { $inc: { reservedCount: -2 } },
-      {},
-    );
+    await expect(
+      service.approveMockPayment(userId, reservationId),
+    ).rejects.toThrow();
+    expect(commerce.createIntent).not.toHaveBeenCalled();
   });
 });

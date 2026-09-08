@@ -3,9 +3,8 @@
 import { useRouter } from "next/navigation";
 import { AccountAuthForgotPasswordForm } from "@modules/account/forms/AccountAuthForgotPasswordForm";
 import { AccountAuthForgotPasswordSupportSection } from "@modules/account/sections/AccountAuthForgotPasswordSupportSection";
-import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
 import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
-import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
+import { AuthPageIntro } from "@/components/auth-page-intro";
 import { useTranslations } from "next-intl";
 
 import { AuthScreen } from "@/components/auth-screen";
@@ -27,17 +26,11 @@ export function AccountAuthForgotPasswordScreen() {
         overlay
         transparent
       />
-      <AccountAuthOtpHeroSection
-        alt={t("illustrationAlt")}
-        src="/auth/club-access-iran-v2.png"
-        width={1086}
-        height={1448}
-        size={isKeyboardOpen ? "compact" : "default"}
-      />
-      <AccountAuthOtpCopySection
+      <AuthPageIntro
         titleId="account-auth-forgot-title"
         title={t("title")}
         subtitle={t("subtitle")}
+        keyboardOpen={isKeyboardOpen}
       />
       <AccountAuthForgotPasswordForm
         formId={ACCOUNT_AUTH_FORGOT_FORM_ID}

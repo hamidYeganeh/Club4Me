@@ -1,6 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
+import { createHmac } from "node:crypto";
+import { AppError } from "../../common/errors/app.exception";
 
 import { AppConfigService } from "../../config/app-config.service";
 import type { AuthTokenPayload } from "../auth/services/token.service";
@@ -50,10 +52,19 @@ export class TelemetryService {
     });
   }
 
+  trackAnonymous(body: TrackTelemetryDto) {
+    if (!body.anonymousId)
+      throw new AppError(400, "ANONYMOUS_ID_REQUIRED", "Anonymous identity is required");
+    if (!["search.performed", "discovery.club_viewed", "checkout.started"].includes(body.event))
+      throw new AppError(403, "ANONYMOUS_EVENT_NOT_ALLOWED", "This event requires authentication");
+    const group = deriveGroup(body.event, body.properties);
+    return this.persist(null, body, { kind: "track", event: body.event, properties: body.properties, ...group });
+  }
+
   async productAnalytics(daysInput?: string) {
     const days = Math.min(180, Math.max(7, Number(daysInput) || 30));
     const since = new Date(Date.now() - days * 86_400_000);
-    const events = await this.telemetry
+    const [events, identityLinks] = await Promise.all([this.telemetry
       .find({
         kind: "track",
         occurredAt: { $gte: since },
@@ -67,20 +78,23 @@ export class TelemetryService {
           ],
         },
       })
-      .select("actorId event occurredAt")
+      .select("+anonymousHash actorId event occurredAt properties")
       .sort({ occurredAt: 1 })
-      .lean();
+      .lean(), this.telemetry.find({ actorId: { $ne: null }, anonymousHash: { $ne: null } }).select("+anonymousHash actorId").lean()]);
     const stages = [
       ["discovery", "کشف", ["search.performed", "discovery.club_viewed"]],
       ["checkout", "شروع رزرو", ["checkout.started"]],
       ["reservation", "ثبت رزرو", ["reservation.created"]],
       ["payment", "پرداخت موفق", ["payment.succeeded"]],
     ] as const;
+    const aliases = new Map<string, string>();
+    for (const event of identityLinks) if (event.actorId && event.anonymousHash) aliases.set(event.anonymousHash, String(event.actorId));
+    const identity = (event: typeof events[number]) => event.actorId ? String(event.actorId) : event.anonymousHash ? aliases.get(event.anonymousHash) ?? `anon:${event.anonymousHash}` : `event:${event._id}`;
     const funnel = stages.map(([key, label, names]) => {
       const actors = new Set(
         events
           .filter((event) => names.includes(event.event as never))
-          .map((event) => String(event.actorId)),
+          .map(identity),
       );
       return { key, label, users: actors.size };
     });
@@ -90,7 +104,7 @@ export class TelemetryService {
     );
     const activityByActor = new Map<string, Set<string>>();
     for (const event of reservations) {
-      const actorId = String(event.actorId);
+      const actorId = identity(event);
       const weeks = activityByActor.get(actorId) ?? new Set<string>();
       weeks.add(weekStart(event.occurredAt).toISOString());
       activityByActor.set(actorId, weeks);
@@ -112,6 +126,11 @@ export class TelemetryService {
       }
       cohorts.set(first, buckets);
     }
+    const breakdown = (property: string) => [...events.reduce((map, event) => {
+      const value = event.properties?.[property];
+      if (typeof value === "string" && value) map.set(value, (map.get(value) ?? 0) + 1);
+      return map;
+    }, new Map<string, number>())].sort((a, b) => b[1] - a[1]).slice(0, 20).map(([key, count]) => ({ key, count }));
     return {
       days,
       funnel: funnel.map((stage) => ({
@@ -132,20 +151,31 @@ export class TelemetryService {
               : 0,
           ),
         })),
+      breakdowns: {
+        acquisitionChannel: breakdown("acquisition_channel"),
+        sport: breakdown("sport_id"),
+        serviceType: breakdown("service_type"),
+      },
+      definitions: {
+        discovery: "کاربر یا نصب یکتایی که جست‌وجو یا صفحه باشگاه را دیده است",
+        conversion: "نسبت هویت‌های یکتای هر مرحله به مرحله کشف در بازه انتخابی",
+        retention: "بازگشت همان هویت برای رزرو در هفته‌های بعد؛ رویداد تکراری با eventId حذف می‌شود",
+      },
     };
   }
 
   private async persist(
-    actor: AuthTokenPayload,
+    actor: AuthTokenPayload | null,
     body: {
       eventId: string;
       occurredAt: string;
       platform: "android" | "web";
       appVersion: string;
+      anonymousId?: string;
     },
     payload: Partial<ProductTelemetry>,
   ) {
-    if (actor.roles.includes("admin")) {
+    if (actor?.roles.includes("admin")) {
       return { accepted: true as const };
     }
 
@@ -156,8 +186,9 @@ export class TelemetryService {
       await this.telemetry.create({
         ...payload,
         eventId: body.eventId,
-        actorId: new Types.ObjectId(actor.sub),
-        roles: actor.roles,
+        actorId: actor ? new Types.ObjectId(actor.sub) : null,
+        anonymousHash: body.anonymousId ? createHmac("sha256", this.config.env.JWT_SECRET).update(body.anonymousId).digest("hex") : null,
+        roles: actor?.roles ?? [],
         occurredAt: new Date(body.occurredAt),
         platform: body.platform,
         appVersion: body.appVersion,

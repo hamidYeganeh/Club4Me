@@ -1,4 +1,5 @@
 "use client";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
 import { WelcomeIntroduceCarouselSection } from "@modules/welcome/sections/WelcomeIntroduceCarouselSection";
 import { useTranslations } from "next-intl";
@@ -22,7 +23,8 @@ export function WelcomeIntroduceScreen() {
   }));
 
   return (
-    <main className="h-dvh overflow-hidden bg-background">
+    <main className="app-page gap-4">
+      <SecondaryHeader title="آشنایی با کلاب‌فورمی" showFilter={false} backHref="/welcome" />
       <WelcomeIntroduceCarouselSection
         slides={slides}
         prevLabel={t("prevSlide")}

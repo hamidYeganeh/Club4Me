@@ -167,6 +167,14 @@ export type DiscoverySection =
   | DiscoverySectionBase<"articles", DiscoveryArticleItem>;
 
 export type PublicCatalogParams = {
+  minPrice?: number;
+  maxPrice?: number;
+  admission?: "automatic" | "requires_approval";
+  startsFrom?: string;
+  startsTo?: string;
+  timeFrom?: string;
+  timeTo?: string;
+  skillLevelId?: string;
   q?: string;
   page?: number;
   limit?: number;
@@ -228,6 +236,8 @@ export type PublicCatalogClubTypesResponse = {
 };
 
 export type PublicCatalogCoach = DiscoveryCoachItem & {
+  serviceArea?: Array<{ type: string; name: string }>;
+  travelRadiusKm?: number | null;
   bio?: string;
   languages?: string[];
   minAcceptedAge?: number | null;
@@ -291,10 +301,42 @@ export type PublicCatalogPage<T> = {
 };
 
 export type PublicCatalogSearchResponse = {
+  businessClasses?: Array<{
+    startDate: string;
+    id: string;
+    title: string;
+    description: string;
+    clubId: string;
+    capacity: number;
+    enrollmentCount: number;
+    price: { amount: number; currency: string };
+    imageMediaId?: string | null;
+    galleryMediaIds?: string[];
+    prerequisites?: string[];
+    requiredEquipmentIds?: string[];
+    amenityIds?: string[];
+    minAge?: number | null;
+    maxAge?: number | null;
+    registrationStartAt?: string | null;
+    registrationEndAt?: string | null;
+    coachIds?: string[];
+    branchId?: string | null;
+    averageRating?: number;
+    reviewsCount?: number;
+  }>;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
   clubs: PublicCatalogClub[];
   coaches: PublicCatalogCoach[];
   classes: PublicCatalogClass[];
   total: number;
+  alternatives?: {
+    reason: "outside_selected_radius";
+    clubs: PublicCatalogClub[];
+    classes: PublicCatalogClass[];
+    businessClasses: NonNullable<PublicCatalogSearchResponse["businessClasses"]>;
+  };
 };
 
 export type PublicResourceItem = {

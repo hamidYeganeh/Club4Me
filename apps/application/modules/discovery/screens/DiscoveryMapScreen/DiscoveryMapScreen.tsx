@@ -1,11 +1,11 @@
 "use client";
+import { SecondaryHeader } from "../../components/SecondaryHeader";
 
 import { useMemo, useState } from "react";
 import { Icon } from "@theme/icon";
 import { ClubCard } from "@ui/club-card";
 import { useCatalogClubs } from "@api/discovery";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
 
 import { ButtonLink } from "@/components/button-link";
 import { NeshanMap, type NeshanMapMarker } from "@/components/maps/neshan-map";
@@ -23,7 +23,6 @@ const TEHRAN = { latitude: 35.6892, longitude: 51.389 };
 
 export function DiscoveryMapScreen() {
   const t = useTranslations("discovery.map");
-  const router = useRouter();
   const styles = discoveryMapScreenStyles();
   const { active } = useActiveLocation();
   const coords = getActiveCoordinates(active);
@@ -64,28 +63,20 @@ export function DiscoveryMapScreen() {
 
   return (
     <main className={styles.root()}>
-      <header className={styles.header()}>
-        <button
-          type="button"
-          aria-label="بازگشت"
-          className={styles.headerButton()}
-          onClick={() => router.back()}
-        >
-          <Icon name="chevron-right" size={22} />
-        </button>
-        <h1 className={styles.title()}>{t("title")}</h1>
-        <div className={styles.headerAction()}>
+      <SecondaryHeader
+        title={t("title")}
+        showFilter={false}
+        action={
           <ButtonLink
             isIconOnly
             variant="secondary"
             aria-label={t("listAria")}
             href="/discovery/clubs"
-            className={styles.headerButton()}
           >
             <Icon name="list-two-bullet" size={22} />
           </ButtonLink>
-        </div>
-      </header>
+        }
+      />
       <div className={styles.mapWrap()}>
         <NeshanMap
           center={center}
@@ -96,9 +87,7 @@ export function DiscoveryMapScreen() {
           locateClassName={styles.locate()}
           onMarkerSelect={setSelectedId}
         />
-        {clubs.isLoading && !failure ? (
-          <MapResultsSkeleton />
-        ) : null}
+        {clubs.isLoading && !failure ? <MapResultsSkeleton /> : null}
         {failure ? (
           <div className={styles.status()}>
             <RequestFailureState

@@ -61,9 +61,5 @@ export function getAppRouteRedirect(
     return null;
   }
 
-  if (!welcomeSeen && !isAuthed) {
-    return WELCOME_PATH;
-  }
-
   return null;
 }

@@ -16,7 +16,15 @@ export default function ClubsPage() {
 
 function ClubsPageContent() {
   const searchParams = useSearchParams();
-  return <DiscoveryClubsScreen browse={toBrowse(searchParams)} />;
+  const cityId = searchParams.get("cityId") || undefined;
+  return (
+    <DiscoveryClubsScreen
+      key={searchParams.toString()}
+      browse={toBrowse(searchParams)}
+      layout={cityId ? "list" : "rails"}
+      initialFilters={cityId ? { cityId } : undefined}
+    />
+  );
 }
 
 function toBrowse(params: Pick<URLSearchParams, "get">): DiscoveryClubsBrowse {

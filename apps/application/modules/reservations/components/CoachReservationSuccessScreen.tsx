@@ -1,5 +1,7 @@
 "use client";
+import { TaskStatusIntro } from "@/components/task-status-intro";
 
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { Button, Card } from "@heroui/react";
 import type { CoachBooking } from "@api";
 import { Icon } from "@theme/icon";
@@ -33,30 +35,30 @@ export function CoachReservationSuccessScreen({
   const isOnline = booking.deliveryMode === "online";
 
   return (
-    <main className="flex min-h-dvh bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-xl flex-col px-5 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(3rem+env(safe-area-inset-top))]">
+    <main className="flex min-h-dvh flex-col bg-background text-foreground">
+      <SecondaryHeader title="رسید رزرو" showFilter={false} />
+      <div className="mx-auto flex w-full max-w-xl flex-col px-5 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-5">
         <section className="flex flex-1 flex-col justify-center">
-          <div className="mx-auto mb-7 grid size-16 place-items-center rounded-full bg-success/12 text-success">
-            <Icon name="check-circle" size={36} />
-          </div>
-          <h1 className="mx-auto max-w-md text-center text-3xl font-black leading-tight sm:text-4xl">
-            رزرو جلسه با {coach.displayName} قطعی شد
-          </h1>
+          <TaskStatusIntro tone="success" title={`رزرو جلسه با ${coach.displayName} قطعی شد`}>
           <p className="mx-auto mt-4 max-w-sm text-center text-base leading-8 text-muted">
             {startsAt.toLocaleDateString("fa-IR", {
               weekday: "long",
               day: "numeric",
               month: "long",
             })}
-            ، ساعت {startsAt.toLocaleTimeString("fa-IR", {
+            ، ساعت{" "}
+            {startsAt.toLocaleTimeString("fa-IR", {
               hour: "2-digit",
               minute: "2-digit",
               hour12: false,
             })}
-            {isOnline ? " یک جلسه آنلاین دارید." : " جلسه تمرینی شما برگزار می‌شود."}
+            {isOnline
+              ? " یک جلسه آنلاین دارید."
+              : " جلسه تمرینی شما برگزار می‌شود."}
           </p>
+          </TaskStatusIntro>
 
-          <Card className="app-card mt-10 shadow-none">
+          <Card className="app-card mt-5 shadow-none">
             <Card.Content className="flex items-center gap-4 p-5">
               <div className="relative size-20 shrink-0 overflow-hidden rounded-full bg-surface-secondary ring-2 ring-accent/20">
                 <FallbackImage
@@ -76,7 +78,9 @@ export function CoachReservationSuccessScreen({
                   {coach.displayName}
                 </Card.Title>
                 <Card.Description className="mt-1 line-clamp-1 text-muted">
-                  {booking.offeringTitle || coach.shortBio || booking.sessionTitle}
+                  {booking.offeringTitle ||
+                    coach.shortBio ||
+                    booking.sessionTitle}
                 </Card.Description>
                 <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                   <span className="flex items-center gap-1 font-bold">

@@ -1,25 +1,23 @@
 "use client";
+import { DiscoveryHeroScrim } from "@modules/discovery/components/DiscoveryImageHero";
 
 import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/components/app-link";
 import { useAccountMe } from "@api/account";
-import { Avatar, Badge, Button, Chip, Skeleton, Typography } from "@heroui/react";
+import { Avatar, Badge, Chip, Skeleton, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { ThemeToggle } from "@theme/theme-toggle";
 import { useFormatter, useTranslations } from "next-intl";
 
 import { ButtonLink } from "@/components/button-link";
-import { PROFILE_AVATAR_SRC, PROFILE_COVER_SRC } from "../../profile.constants";
+import { PROFILE_COVER_SRC } from "../../profile.constants";
 import { getProfileDisplayName } from "../../profile.utils";
 import { profileHeroSectionStyles } from "./ProfileHeroSection.styles";
 import type { ProfileHeroSectionProps } from "./ProfileHeroSection.types";
 
 export function ProfileHeroSection({ role }: ProfileHeroSectionProps) {
-  const router = useRouter();
   const styles = profileHeroSectionStyles();
   const t = useTranslations("profile");
-  const commonT = useTranslations("common");
   const format = useFormatter();
   const me = useAccountMe();
 
@@ -45,18 +43,9 @@ export function ProfileHeroSection({ role }: ProfileHeroSectionProps) {
           className={styles.cover()}
         />
         <div aria-hidden className={styles.notch()} />
-        <Button
-          isIconOnly
-          aria-label={commonT("back")}
-          variant="secondary"
-          size="lg"
-          className={styles.backButton()}
-          onPress={() => router.back()}
-        >
-          <Icon name="chevron-right" size="lg" />
-        </Button>
       </div>
 
+      <DiscoveryHeroScrim />
       <div className={styles.overlap()} dir="ltr">
         <ThemeToggle className={styles.sideButton()} />
 
@@ -70,16 +59,15 @@ export function ProfileHeroSection({ role }: ProfileHeroSectionProps) {
             <Avatar className={styles.avatar()}>
               <Avatar.Image
                 alt={t("avatarAlt", { name })}
-                src={me.data?.avatarUrl ?? PROFILE_AVATAR_SRC}
+                src={me.data?.avatarUrl ?? undefined}
               />
-              <Avatar.Fallback className="overflow-hidden p-0">
-                {/* Avatar fallback supports runtime and local asset URLs. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={me.data?.avatarUrl ?? PROFILE_AVATAR_SRC}
-                  alt=""
-                  className="size-full object-cover"
-                />
+              <Avatar.Fallback className="bg-accent text-2xl font-bold text-accent-foreground">
+                {name
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((word) => word[0])
+                  .join(" ")}
               </Avatar.Fallback>
             </Avatar>
             <Badge
@@ -107,9 +95,11 @@ export function ProfileHeroSection({ role }: ProfileHeroSectionProps) {
       </div>
 
       <div className={styles.identity()}>
-        <Chip color="accent" size="sm" variant="soft">
+        <Chip color="accent" size="sm">
           <Icon name="sparkle-1" className={styles.badgeIcon()} />
-          <Chip.Label>{t("plusBadge")}</Chip.Label>
+          <Chip.Label>
+            {role === "coach" ? "حساب مربی" : "حساب ورزشکار"}
+          </Chip.Label>
         </Chip>
         {me.isPending ? (
           <div

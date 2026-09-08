@@ -8,7 +8,7 @@ export type SecondaryHeaderProps = {
   showFilter?: boolean;
   showBack?: boolean;
   backLabel?: string;
-  /** Optional deterministic destination; defaults to browser history. */
+  /** Optional deterministic destination; otherwise inferred from the route tree. */
   backHref?: string;
   /** Optional in-place back behavior for screens rendered without a route change. */
   onBack?: () => void;

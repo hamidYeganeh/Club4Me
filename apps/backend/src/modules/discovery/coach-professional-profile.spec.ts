@@ -21,6 +21,8 @@ it("returns professional details through public discovery without exposing crede
         bio: "شرح روش آموزش",
         languages: ["فارسی"],
         minAcceptedAge: 18,
+        travelRadiusKm: 12,
+        geo: { cityId: "66d400000000000000000031", cityRegionIds: [] },
         professionalProfile,
       }),
     }),
@@ -33,6 +35,9 @@ it("returns professional details through public discovery without exposing crede
     {} as never,
     {} as never,
     { getReadyByIds: jest.fn().mockResolvedValue([]) } as never,
+    {
+      get: jest.fn().mockResolvedValue({ name: "تهران", isActive: true }),
+    } as never,
     {} as never,
   );
   const result = await service.getPublicCoach("coach");
@@ -43,6 +48,8 @@ it("returns professional details through public discovery without exposing crede
     bio: "شرح روش آموزش",
     languages: ["فارسی"],
     minAcceptedAge: 18,
+    travelRadiusKm: 12,
+    serviceArea: [{ type: "city", name: "تهران" }],
     professionalProfile: {
       audience: "ورزشکاران مبتدی",
       credentials: [{ title: "مربیگری درجه دو", issuer: "فدراسیون" }],

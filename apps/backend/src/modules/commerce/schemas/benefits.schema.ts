@@ -124,11 +124,23 @@ export class DiscountRedemption {
   @Prop({ type: Number, default: 0, min: 0 }) providerFundedAmount: number;
   @Prop({
     type: String,
-    enum: ["reservation", "benefit_purchase", "business_class_enrollment"],
+    enum: [
+      "reservation",
+      "benefit_purchase",
+      "business_class_enrollment",
+      "coach_booking",
+      "coach_class_enrollment",
+      "coach_package_purchase",
+    ],
     default: "reservation",
   })
   referenceType:
-    "reservation" | "benefit_purchase" | "business_class_enrollment";
+    | "reservation"
+    | "benefit_purchase"
+    | "business_class_enrollment"
+    | "coach_booking"
+    | "coach_class_enrollment"
+    | "coach_package_purchase";
   @Prop({
     type: String,
     enum: ["reserved", "consumed", "released"],

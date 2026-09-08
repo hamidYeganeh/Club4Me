@@ -1,48 +1,18 @@
 "use client";
-
 import { AccountAuthHomeActionsSection } from "@modules/account/sections/AccountAuthHomeActionsSection";
-import { AccountAuthHomeHeroSection } from "@modules/account/sections/AccountAuthHomeHeroSection";
-import { AccountAuthLoginBrandSection } from "@modules/account/sections/AccountAuthLoginBrandSection";
+import { DiscoveryImageHero } from "@modules/discovery/components/DiscoveryImageHero";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { useTranslations } from "next-intl";
-
-import { ProgressiveBlur } from "@/components/progressive-blur";
 
 export function AccountAuthHomeScreen() {
   const t = useTranslations("auth.home");
-  const tCommon = useTranslations("common");
-
-  return (
-    <main className="relative flex min-h-full flex-1 flex-col overflow-hidden">
-      <AccountAuthHomeHeroSection alt={t("illustrationAlt")} />
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[65dvh] overflow-hidden">
-        <ProgressiveBlur
-          direction="bottom"
-          className="h-full"
-          blurLayers={8}
-          blurIntensity={1.25}
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-linear-to-t from-background from-40% via-background/70 to-transparent"
-        />
-      </div>
-
-      <div className="relative z-20 flex min-h-full flex-1 flex-col px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-        <div className="relative mt-auto w-full">
-          <div className="relative z-10 flex w-full flex-col items-center gap-8 pt-16">
-            <AccountAuthLoginBrandSection
-              name={tCommon("appName")}
-              tagline={t("tagline")}
-              showIllustration={false}
-            />
-            <AccountAuthHomeActionsSection
-              otpLabel={t("loginWithOtp")}
-              passwordLabel={t("loginWithPassword")}
-            />
-          </div>
-        </div>
-      </div>
-    </main>
-  );
+  const common = useTranslations("common");
+  return <main className="app-page gap-5">
+    <SecondaryHeader title="ورود به حساب" showFilter={false} backHref="/welcome" />
+    <DiscoveryImageHero imageUrl="/profile/cover.jpg" title={common("appName")} description={t("tagline")} eyebrow="شروع مسیر ورزشی شما" compact />
+    <section className="app-card space-y-5 p-5">
+      <div><h2 className="text-lg font-extrabold">خوش آمدید</h2><p className="mt-2 text-sm leading-7 text-muted">روش ورود به حساب خود را انتخاب کنید.</p></div>
+      <AccountAuthHomeActionsSection otpLabel={t("loginWithOtp")} passwordLabel={t("loginWithPassword")} />
+    </section>
+  </main>;
 }

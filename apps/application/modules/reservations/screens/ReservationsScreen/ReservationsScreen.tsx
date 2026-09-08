@@ -123,6 +123,7 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
       status: toTimelineStatus(item.status),
       totalPrice: item.priceSnapshot.amount,
       paymentStatus: item.paymentStatus,
+      paymentExpiresAt: item.paymentExpiresAt,
       refundPercent: item.refundPercent,
       refundAmount: item.refundAmount,
       changeTimeHref: `/discovery/coaches/${item.coachId}`,
@@ -140,6 +141,7 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
       status: toClassTimelineStatus(item.status),
       totalPrice: item.priceSnapshot.amount,
       paymentStatus: item.paymentStatus,
+      paymentExpiresAt: item.paymentExpiresAt,
       refundPercent: item.refundPercent,
       refundAmount: item.refundAmount,
       changeTimeHref: `/discovery/classes/${item.classId}`,
@@ -191,23 +193,27 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
   const finishPayment = async (result: "approve" | "reject") => {
     if (!pendingPayment?.sourceId) return;
     try {
+      let paid = false;
       if (pendingPayment.source === "coach") {
-        await resolveCoachPayment.mutateAsync({
+        const resolved = await resolveCoachPayment.mutateAsync({
           bookingId: pendingPayment.sourceId,
           result,
         });
+        paid = resolved.paymentStatus === "paid";
       } else if (pendingPayment.source === "class") {
-        await resolveClassPayment.mutateAsync({
+        const resolved = await resolveClassPayment.mutateAsync({
           enrollmentId: pendingPayment.sourceId,
           result,
         });
+        paid = resolved.paymentStatus === "paid";
       } else {
-        await resolveClubPayment.mutateAsync({
+        const resolved = await resolveClubPayment.mutateAsync({
           reservationId: pendingPayment.sourceId,
           result,
         });
+        paid = resolved.status === "paid";
       }
-      if (result === "approve") {
+      if (paid) {
         toast.success("پرداخت موفق بود و رزرو قطعی شد");
       } else {
         toast.danger("پرداخت ناموفق بود و ظرفیت رزرو آزاد شد");
@@ -374,8 +380,10 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
       />
       {pendingPayment ? (
         <MockPaymentGateway
+          reference={{ referenceType: pendingPayment.source === "coach" ? "coach_booking" : pendingPayment.source === "class" ? "coach_class_enrollment" : "reservation", referenceId: pendingPayment.sourceId! }}
           title={pendingPayment.sessionTitle}
           amount={pendingPayment.totalPrice}
+          expiresAt={pendingPayment.paymentExpiresAt}
           isPending={
             resolveClubPayment.isPending ||
             resolveCoachPayment.isPending ||

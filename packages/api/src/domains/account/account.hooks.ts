@@ -17,6 +17,7 @@ import type {
   ReviewRoleRequestPayload,
   SetPasswordPayload,
   UpdateAccountMePayload,
+  PrivacyPurpose,
 } from "./account.dto";
 import { accountQueries } from "./account.queries";
 import {
@@ -175,6 +176,18 @@ export function useDeleteAccount() {
   });
 }
 
+export function useAccountPrivacy() {
+  return useQuery({ queryKey: [...accountQueries.all(), "privacy"], queryFn: accountClient.privacy, enabled: Boolean(tokenStore.get()) });
+}
+
+export function useUpdateAccountConsent() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { purpose: PrivacyPurpose; granted: boolean; version: string }) => accountClient.updateConsent(payload),
+    onSuccess: () => client.invalidateQueries({ queryKey: [...accountQueries.all(), "privacy"] }),
+  });
+}
+
 export function useUpdateAccountMe() {
   const queryClient = useQueryClient();
 
@@ -182,7 +195,11 @@ export function useUpdateAccountMe() {
     mutationFn: (payload: UpdateAccountMePayload) =>
       accountClient.updateMe(payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: accountQueries.me() });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: accountQueries.me() }),
+        queryClient.invalidateQueries({ queryKey: ["business", "me"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "me"] }),
+      ]);
     },
   });
 }

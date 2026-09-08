@@ -1,0 +1,57 @@
+.scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.edge {
+  position: absolute;
+  inset-inline: 0;
+  height: 72%;
+  bottom: 0;
+  background: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.88),
+    rgb(0 0 0 / 0.32) 55%,
+    transparent
+  );
+}
+.layer {
+  position: absolute;
+  inset: 0;
+  -webkit-backdrop-filter: blur(var(--blur));
+  backdrop-filter: blur(var(--blur));
+  -webkit-mask-image: linear-gradient(to top, black, transparent var(--reach));
+  mask-image: linear-gradient(to top, black, transparent var(--reach));
+}
+.hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 24rem;
+  overflow: hidden;
+  border-radius: 2rem;
+  background: #24262a;
+  color: white;
+}
+.content {
+  position: relative;
+  z-index: 2;
+  padding: 7rem 1.25rem 1.5rem;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .layer {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+.compact {
+  min-height: 16rem;
+}
+.compact .content {
+  padding-top: 4rem;
+}

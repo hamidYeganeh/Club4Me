@@ -32,6 +32,7 @@ import { TelemetryModule } from "./modules/telemetry/telemetry.module";
 import { BusinessOperationsModule } from "./modules/business-operations/business-operations.module";
 import { CommerceModule } from "./modules/commerce/commerce.module";
 import { SupportModule } from "./modules/support/support.module";
+import { TrainingModule } from "./modules/training/training.module";
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { SupportModule } from "./modules/support/support.module";
     BusinessOperationsModule,
     CommerceModule,
     SupportModule,
+    TrainingModule,
   ],
   controllers: [AppController],
   providers: [

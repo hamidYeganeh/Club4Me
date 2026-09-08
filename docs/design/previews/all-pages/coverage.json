@@ -1,0 +1,930 @@
+[
+  {
+    "app": "application",
+    "route": "/articles",
+    "images": {
+      "light": "application--articles-light.png",
+      "dark": "application--articles-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/benefits",
+    "images": {
+      "light": "application--athlete-benefits-light.png",
+      "dark": "application--athlete-benefits-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/classes",
+    "images": {
+      "light": "application--athlete-classes-light.png",
+      "dark": "application--athlete-classes-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/favorites",
+    "images": {
+      "light": "application--athlete-favorites-light.png",
+      "dark": "application--athlete-favorites-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/memberships/[entitlementId]",
+    "images": {
+      "light": "application--athlete-memberships-entitlementId--light.png",
+      "dark": "application--athlete-memberships-entitlementId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/memberships",
+    "images": {
+      "light": "application--athlete-memberships-light.png",
+      "dark": "application--athlete-memberships-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/notifications",
+    "images": {
+      "light": "application--athlete-notifications-light.png",
+      "dark": "application--athlete-notifications-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete",
+    "images": {
+      "light": "application--athlete-light.png",
+      "dark": "application--athlete-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/profile/edit",
+    "images": {
+      "light": "application--athlete-profile-edit-light.png",
+      "dark": "application--athlete-profile-edit-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/profile/image",
+    "images": {
+      "light": "application--athlete-profile-image-light.png",
+      "dark": "application--athlete-profile-image-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/profile/locations/[locationId]/edit",
+    "images": {
+      "light": "application--athlete-profile-locations-locationId-edit-light.png",
+      "dark": "application--athlete-profile-locations-locationId-edit-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/profile/locations/new",
+    "images": {
+      "light": "application--athlete-profile-locations-new-light.png",
+      "dark": "application--athlete-profile-locations-new-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/profile/locations",
+    "images": {
+      "light": "application--athlete-profile-locations-light.png",
+      "dark": "application--athlete-profile-locations-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/profile",
+    "images": {
+      "light": "application--athlete-profile-light.png",
+      "dark": "application--athlete-profile-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/reservations/[reservationId]",
+    "images": {
+      "light": "application--athlete-reservations-reservationId--light.png",
+      "dark": "application--athlete-reservations-reservationId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/reservations",
+    "images": {
+      "light": "application--athlete-reservations-light.png",
+      "dark": "application--athlete-reservations-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/settings",
+    "images": {
+      "light": "application--athlete-settings-light.png",
+      "dark": "application--athlete-settings-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/support/[ticketId]",
+    "images": {
+      "light": "application--athlete-support-ticketId--light.png",
+      "dark": "application--athlete-support-ticketId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/support/new",
+    "images": {
+      "light": "application--athlete-support-new-light.png",
+      "dark": "application--athlete-support-new-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/athlete/support",
+    "images": {
+      "light": "application--athlete-support-light.png",
+      "dark": "application--athlete-support-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/auth/forgot-password/confirm",
+    "images": {
+      "light": "application--auth-forgot-password-confirm-light.png",
+      "dark": "application--auth-forgot-password-confirm-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/auth/forgot-password",
+    "images": {
+      "light": "application--auth-forgot-password-light.png",
+      "dark": "application--auth-forgot-password-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/auth/login",
+    "images": {
+      "light": "application--auth-login-light.png",
+      "dark": "application--auth-login-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/auth/otp/confirm",
+    "images": {
+      "light": "application--auth-otp-confirm-light.png",
+      "dark": "application--auth-otp-confirm-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/auth/otp",
+    "images": {
+      "light": "application--auth-otp-light.png",
+      "dark": "application--auth-otp-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/auth",
+    "images": {
+      "light": "application--auth-light.png",
+      "dark": "application--auth-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/auth/roles/coach",
+    "images": {
+      "light": "application--auth-roles-coach-light.png",
+      "dark": "application--auth-roles-coach-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/auth/roles/owner",
+    "images": {
+      "light": "application--auth-roles-owner-light.png",
+      "dark": "application--auth-roles-owner-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/auth/roles",
+    "images": {
+      "light": "application--auth-roles-light.png",
+      "dark": "application--auth-roles-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/auth/roles/requests",
+    "images": {
+      "light": "application--auth-roles-requests-light.png",
+      "dark": "application--auth-roles-requests-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/auth/set-password",
+    "images": {
+      "light": "application--auth-set-password-light.png",
+      "dark": "application--auth-set-password-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/club-memberships/[membershipId]",
+    "images": {
+      "light": "application--club-memberships-membershipId--light.png",
+      "dark": "application--club-memberships-membershipId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/availability",
+    "images": {
+      "light": "application--coach-availability-light.png",
+      "dark": "application--coach-availability-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/benefits",
+    "images": {
+      "light": "application--coach-benefits-light.png",
+      "dark": "application--coach-benefits-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/classes/new",
+    "images": {
+      "light": "application--coach-classes-new-light.png",
+      "dark": "application--coach-classes-new-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/club-classes/[classId]",
+    "images": {
+      "light": "application--coach-club-classes-classId--light.png",
+      "dark": "application--coach-club-classes-classId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/club-classes",
+    "images": {
+      "light": "application--coach-club-classes-light.png",
+      "dark": "application--coach-club-classes-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/favorites",
+    "images": {
+      "light": "application--coach-favorites-light.png",
+      "dark": "application--coach-favorites-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/notifications",
+    "images": {
+      "light": "application--coach-notifications-light.png",
+      "dark": "application--coach-notifications-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach",
+    "images": {
+      "light": "application--coach-light.png",
+      "dark": "application--coach-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/profile/edit",
+    "images": {
+      "light": "application--coach-profile-edit-light.png",
+      "dark": "application--coach-profile-edit-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/profile/image",
+    "images": {
+      "light": "application--coach-profile-image-light.png",
+      "dark": "application--coach-profile-image-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/profile/locations/[locationId]/edit",
+    "images": {
+      "light": "application--coach-profile-locations-locationId-edit-light.png",
+      "dark": "application--coach-profile-locations-locationId-edit-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/profile/locations/new",
+    "images": {
+      "light": "application--coach-profile-locations-new-light.png",
+      "dark": "application--coach-profile-locations-new-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/profile/locations",
+    "images": {
+      "light": "application--coach-profile-locations-light.png",
+      "dark": "application--coach-profile-locations-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/profile",
+    "images": {
+      "light": "application--coach-profile-light.png",
+      "dark": "application--coach-profile-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/profile/professional",
+    "images": {
+      "light": "application--coach-profile-professional-light.png",
+      "dark": "application--coach-profile-professional-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/reservations",
+    "images": {
+      "light": "application--coach-reservations-light.png",
+      "dark": "application--coach-reservations-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/services/new",
+    "images": {
+      "light": "application--coach-services-new-light.png",
+      "dark": "application--coach-services-new-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/settings",
+    "images": {
+      "light": "application--coach-settings-light.png",
+      "dark": "application--coach-settings-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/support/[ticketId]",
+    "images": {
+      "light": "application--coach-support-ticketId--light.png",
+      "dark": "application--coach-support-ticketId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/support/new",
+    "images": {
+      "light": "application--coach-support-new-light.png",
+      "dark": "application--coach-support-new-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/support",
+    "images": {
+      "light": "application--coach-support-light.png",
+      "dark": "application--coach-support-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/articles/[articleId]",
+    "images": {
+      "light": "application--discovery-articles-articleId--light.png",
+      "dark": "application--discovery-articles-articleId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/articles",
+    "images": {
+      "light": "application--discovery-articles-light.png",
+      "dark": "application--discovery-articles-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/business-class",
+    "images": {
+      "light": "application--discovery-business-class-light.png",
+      "dark": "application--discovery-business-class-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/business-classes/[classId]",
+    "images": {
+      "light": "application--discovery-business-classes-classId--light.png",
+      "dark": "application--discovery-business-classes-classId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/cities",
+    "images": {
+      "light": "application--discovery-cities-light.png",
+      "dark": "application--discovery-cities-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/city/[cityId]/district/[districtId]",
+    "images": {
+      "light": "application--discovery-city-cityId-district-districtId--light.png",
+      "dark": "application--discovery-city-cityId-district-districtId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/city/[cityId]",
+    "images": {
+      "light": "application--discovery-city-cityId--light.png",
+      "dark": "application--discovery-city-cityId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/classes/[classId]/gallery",
+    "images": {
+      "light": "application--discovery-classes-classId-gallery-light.png",
+      "dark": "application--discovery-classes-classId-gallery-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/classes/[classId]",
+    "images": {
+      "light": "application--discovery-classes-classId--light.png",
+      "dark": "application--discovery-classes-classId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/classes/[classId]/reviews/new",
+    "images": {
+      "light": "application--discovery-classes-classId-reviews-new-light.png",
+      "dark": "application--discovery-classes-classId-reviews-new-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/classes/[classId]/reviews",
+    "images": {
+      "light": "application--discovery-classes-classId-reviews-light.png",
+      "dark": "application--discovery-classes-classId-reviews-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/classes",
+    "images": {
+      "light": "application--discovery-classes-light.png",
+      "dark": "application--discovery-classes-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/club-types/[typeId]",
+    "images": {
+      "light": "application--discovery-club-types-typeId--light.png",
+      "dark": "application--discovery-club-types-typeId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/clubs/[clubId]/gallery",
+    "images": {
+      "light": "application--discovery-clubs-clubId-gallery-light.png",
+      "dark": "application--discovery-clubs-clubId-gallery-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/clubs/[clubId]",
+    "images": {
+      "light": "application--discovery-clubs-clubId--light.png",
+      "dark": "application--discovery-clubs-clubId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/clubs/[clubId]/reviews/new",
+    "images": {
+      "light": "application--discovery-clubs-clubId-reviews-new-light.png",
+      "dark": "application--discovery-clubs-clubId-reviews-new-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/clubs/[clubId]/reviews",
+    "images": {
+      "light": "application--discovery-clubs-clubId-reviews-light.png",
+      "dark": "application--discovery-clubs-clubId-reviews-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/clubs/[clubId]/slots",
+    "images": {
+      "light": "application--discovery-clubs-clubId-slots-light.png",
+      "dark": "application--discovery-clubs-clubId-slots-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/clubs",
+    "images": {
+      "light": "application--discovery-clubs-light.png",
+      "dark": "application--discovery-clubs-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/coaches/[coachId]/gallery",
+    "images": {
+      "light": "application--discovery-coaches-coachId-gallery-light.png",
+      "dark": "application--discovery-coaches-coachId-gallery-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/coaches/[coachId]",
+    "images": {
+      "light": "application--discovery-coaches-coachId--light.png",
+      "dark": "application--discovery-coaches-coachId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/coaches/[coachId]/reviews/new",
+    "images": {
+      "light": "application--discovery-coaches-coachId-reviews-new-light.png",
+      "dark": "application--discovery-coaches-coachId-reviews-new-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/coaches/[coachId]/reviews",
+    "images": {
+      "light": "application--discovery-coaches-coachId-reviews-light.png",
+      "dark": "application--discovery-coaches-coachId-reviews-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/map",
+    "images": {
+      "light": "application--discovery-map-light.png",
+      "dark": "application--discovery-map-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery",
+    "images": {
+      "light": "application--discovery-light.png",
+      "dark": "application--discovery-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/province/[provinceId]",
+    "images": {
+      "light": "application--discovery-province-provinceId--light.png",
+      "dark": "application--discovery-province-provinceId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/regions/[regionId]",
+    "images": {
+      "light": "application--discovery-regions-regionId--light.png",
+      "dark": "application--discovery-regions-regionId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/search",
+    "images": {
+      "light": "application--discovery-search-light.png",
+      "dark": "application--discovery-search-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/sports/[sportId]",
+    "images": {
+      "light": "application--discovery-sports-sportId--light.png",
+      "dark": "application--discovery-sports-sportId--dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/sports",
+    "images": {
+      "light": "application--discovery-sports-light.png",
+      "dark": "application--discovery-sports-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/",
+    "images": {
+      "light": "application---light.png",
+      "dark": "application---dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/welcome/introduce",
+    "images": {
+      "light": "application--welcome-introduce-light.png",
+      "dark": "application--welcome-introduce-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/welcome",
+    "images": {
+      "light": "application--welcome-light.png",
+      "dark": "application--welcome-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/welcome/sign-in",
+    "images": {
+      "light": "application--welcome-sign-in-light.png",
+      "dark": "application--welcome-sign-in-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/classes/[classId]/edit",
+    "images": {
+      "dark": "application--coach-classes-classId-edit-dark.png",
+      "light": "application--coach-classes-classId-edit-light.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coach/services/[offeringId]/edit",
+    "images": {
+      "dark": "application--coach-services-offeringId-edit-dark.png",
+      "light": "application--coach-services-offeringId-edit-light.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/coaches",
+    "images": {
+      "light": "application--coaches-light.png",
+      "dark": "application--coaches-dark.png"
+    }
+  },
+  {
+    "app": "application",
+    "route": "/discovery/coaches",
+    "images": {
+      "light": "application--discovery-coaches-light.png",
+      "dark": "application--discovery-coaches-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/attendance",
+    "images": {
+      "light": "business--attendance-light.png",
+      "dark": "business--attendance-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/branches",
+    "images": {
+      "light": "business--branches-light.png",
+      "dark": "business--branches-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/classes/new",
+    "images": {
+      "light": "business--classes-new-light.png",
+      "dark": "business--classes-new-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/classes",
+    "images": {
+      "light": "business--classes-light.png",
+      "dark": "business--classes-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/clubs/[clubId]/classes/[classId]/edit",
+    "images": {
+      "light": "business--clubs-clubId-classes-classId-edit-light.png",
+      "dark": "business--clubs-clubId-classes-classId-edit-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/clubs/[clubId]/classes/[classId]",
+    "images": {
+      "light": "business--clubs-clubId-classes-classId--light.png",
+      "dark": "business--clubs-clubId-classes-classId--dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/clubs/[clubId]",
+    "images": {
+      "light": "business--clubs-clubId--light.png",
+      "dark": "business--clubs-clubId--dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/clubs/[clubId]/reservations",
+    "images": {
+      "light": "business--clubs-clubId-reservations-light.png",
+      "dark": "business--clubs-clubId-reservations-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/clubs/new",
+    "images": {
+      "light": "business--clubs-new-light.png",
+      "dark": "business--clubs-new-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/clubs",
+    "images": {
+      "light": "business--clubs-light.png",
+      "dark": "business--clubs-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/coaches",
+    "images": {
+      "light": "business--coaches-light.png",
+      "dark": "business--coaches-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/data",
+    "images": {
+      "light": "business--data-light.png",
+      "dark": "business--data-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/memberships",
+    "images": {
+      "light": "business--memberships-light.png",
+      "dark": "business--memberships-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/",
+    "images": {
+      "light": "business---light.png",
+      "dark": "business---dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/payments",
+    "images": {
+      "light": "business--payments-light.png",
+      "dark": "business--payments-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/reviews",
+    "images": {
+      "light": "business--reviews-light.png",
+      "dark": "business--reviews-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/settings",
+    "images": {
+      "light": "business--settings-light.png",
+      "dark": "business--settings-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/students",
+    "images": {
+      "light": "business--students-light.png",
+      "dark": "business--students-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/auth/forgot-password/confirm",
+    "images": {
+      "light": "business--auth-forgot-password-confirm-light.png",
+      "dark": "business--auth-forgot-password-confirm-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/auth/forgot-password",
+    "images": {
+      "light": "business--auth-forgot-password-light.png",
+      "dark": "business--auth-forgot-password-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/auth/login",
+    "images": {
+      "light": "business--auth-login-light.png",
+      "dark": "business--auth-login-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/auth/otp/confirm",
+    "images": {
+      "light": "business--auth-otp-confirm-light.png",
+      "dark": "business--auth-otp-confirm-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/auth/otp",
+    "images": {
+      "light": "business--auth-otp-light.png",
+      "dark": "business--auth-otp-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/auth",
+    "images": {
+      "light": "business--auth-light.png",
+      "dark": "business--auth-dark.png"
+    }
+  },
+  {
+    "app": "business",
+    "route": "/missing-page",
+    "images": {
+      "light": "business--missing-page-light.png",
+      "dark": "business--missing-page-dark.png"
+    }
+  }
+]

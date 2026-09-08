@@ -5,7 +5,7 @@ const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "https://api.gym4me.ir/api/v1";
 const FALLBACK_SLUG = "unavailable";
 
-async function getItems<T>(path: string): Promise<T[]> {
+export async function getDiscoveryItems<T>(path: string): Promise<T[]> {
   try {
     const response = await fetch(`${API_URL}${path}`, { cache: "no-store" });
     if (!response.ok) return [];
@@ -20,7 +20,7 @@ export async function getDiscoverySlugParams(
   path: string,
   param: string,
 ): Promise<Array<Record<string, string>>> {
-  const items = await getItems<SlugItem>(path);
+  const items = await getDiscoveryItems<SlugItem>(path);
   const slugs = items
     .map((item) => item.slug?.trim())
     .filter((slug): slug is string => Boolean(slug));
@@ -31,10 +31,10 @@ export async function getDiscoverySlugParams(
 
 export async function getDistrictSlugParams() {
   const [cities, districts] = await Promise.all([
-    getItems<SlugItem & { id: string }>(
+    getDiscoveryItems<SlugItem & { id: string }>(
       "/geography/cities?action=options&limit=100",
     ),
-    getItems<SlugItem & { cityId?: string }>(
+    getDiscoveryItems<SlugItem & { cityId?: string }>(
       "/geography/districts?action=options&limit=100",
     ),
   ]);
@@ -53,4 +53,13 @@ export async function getDistrictSlugParams() {
   return params.length
     ? params
     : [{ cityId: FALLBACK_SLUG, districtId: FALLBACK_SLUG }];
+}
+
+export async function getDiscoveryEntity<T>(path: string): Promise<T | null> {
+  try {
+    const response = await fetch(`${API_URL}${path}`, { next: { revalidate: 900 } });
+    if (!response.ok) return null;
+    const body = (await response.json()) as T & { data?: T };
+    return body.data ?? body;
+  } catch { return null; }
 }

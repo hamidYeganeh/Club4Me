@@ -3,7 +3,53 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { http } from "../../http/client";
 
+export type SupportReferenceType =
+  | "reservation"
+  | "coach_booking"
+  | "class_enrollment"
+  | "business_class_enrollment"
+  | "payment"
+  | "benefit_purchase";
+export type SupportOrderContext = {
+  order: {
+    id: string;
+    type: SupportReferenceType;
+    title: string;
+    status: string;
+    paymentStatus: string | null;
+    amount: number | null;
+    currency: string;
+    createdAt: string | null;
+    cancelledAt: string | null;
+  } | null;
+  payments: Array<{
+    id: string;
+    status: string;
+    amount: number;
+    grossAmount: number;
+    refundedAmount: number;
+    currency: string;
+    providerReference: string | null;
+    createdAt: string | null;
+    paidAt: string | null;
+    failedAt: string | null;
+    updatedAt: string | null;
+  }>;
+};
+export function useSupportOrderContext(ticketId: string) {
+  return useQuery({
+    queryKey: ["admin", "support", "order-context", ticketId],
+    enabled: Boolean(ticketId),
+    queryFn: () =>
+      http.get<SupportOrderContext>(
+        `/admin/support/tickets/${ticketId}/context`,
+      ),
+  });
+}
+
 export type SupportTicket = {
+  referenceType?: SupportReferenceType | null;
+  referenceId?: string | null;
   id: string;
   requesterId: string;
   subject: string;
@@ -39,6 +85,44 @@ export type SupportTicket = {
   updatedAt: string;
 };
 
+export type ContactLead = {
+  _id: string;
+  name: string;
+  email: string;
+  note: string;
+  source: "website";
+  status: "new" | "contacted" | "closed";
+  consentedAt: string;
+  consentVersion: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function useAdminContactLeads(status?: ContactLead["status"]) {
+  return useQuery({
+    queryKey: ["admin", "contact-leads", status],
+    queryFn: () =>
+      http.get<{ items: ContactLead[] }>(
+        `/admin/contact-leads${status ? `?status=${status}` : ""}`,
+      ),
+  });
+}
+
+export function useUpdateContactLead() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: ContactLead["status"];
+    }) => http.patch<ContactLead>(`/admin/contact-leads/${id}`, { status }),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: ["admin", "contact-leads"] }),
+  });
+}
+
 const key = ["support", "tickets"] as const;
 
 export function useSupportTickets() {
@@ -52,6 +136,8 @@ export function useCreateSupportTicket() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (payload: {
+      referenceType?: SupportReferenceType;
+      referenceId?: string;
       subject: string;
       category: SupportTicket["category"];
       message: string;

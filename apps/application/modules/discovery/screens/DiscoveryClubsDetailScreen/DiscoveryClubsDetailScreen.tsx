@@ -9,7 +9,6 @@ import { useTranslations } from "next-intl";
 import { DiscoveryClubsDetailActionsSection } from "@modules/discovery/sections/DiscoveryClubsDetailActionsSection";
 import { DiscoveryClubsDetailBodySection } from "@modules/discovery/sections/DiscoveryClubsDetailBodySection";
 import { DiscoveryClubsDetailHeroSection } from "@modules/discovery/sections/DiscoveryClubsDetailHeroSection";
-import { DiscoveryClubsDetailStickyHeaderSection } from "@modules/discovery/sections/DiscoveryClubsDetailStickyHeaderSection";
 import { ClubReservationsAndReviewsSection } from "@modules/discovery/sections/ClubReservationsAndReviewsSection";
 import { ClubSlotsSection } from "@modules/discovery/sections/ClubSlotsSection";
 import { ClubProfileSection } from "@modules/discovery/sections/ClubProfileSection";
@@ -64,10 +63,8 @@ export function DiscoveryClubsDetailScreen({
   const persistedId = catalogClub.data?.id ?? "";
   const publicClub = usePublicClub(persistedId);
   const t = useTranslations("discovery.clubDetail");
-  const [heroElement, setHeroElement] = useState<HTMLElement | null>(null);
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [mainSwiper, setMainSwiper] = useState<SwiperType | null>(null);
-  const [stickyHeaderVisible, setStickyHeaderVisible] = useState(false);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
 
   useEffect(() => {
@@ -75,23 +72,6 @@ export function DiscoveryClubsDetailScreen({
       trackDiscoveryClubViewed({ club_id: persistedId });
     }
   }, [persistedId]);
-
-  useEffect(() => {
-    const hero = heroElement;
-    if (!hero) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setStickyHeaderVisible(!entry?.isIntersecting);
-      },
-      { threshold: 0 },
-    );
-
-    observer.observe(hero);
-    return () => observer.disconnect();
-  }, [heroElement]);
 
   const loadError =
     (!catalogClub.data
@@ -122,7 +102,7 @@ export function DiscoveryClubsDetailScreen({
 
   const data = publicClub.data;
   const location = data?.location;
-  if (!data || !location) {
+  if (!data) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-background p-6 text-center text-muted">
         {t("notFound")}
@@ -133,7 +113,7 @@ export function DiscoveryClubsDetailScreen({
   const club = {
     id: data.id,
     name: data.name,
-    location: location.address,
+    location: location?.address ?? "نشانی ثبت نشده",
     rating:
       data.reviewsCount > 0
         ? data.averageRating.toLocaleString("fa-IR", {
@@ -175,11 +155,13 @@ export function DiscoveryClubsDetailScreen({
     images: data.gallery
       .filter((item) => item.mimeType.startsWith("image/"))
       .map((item) => item.url),
-    map: {
-      address: location.address,
-      latitude: location.latitude,
-      longitude: location.longitude,
-    },
+    map: location
+      ? {
+          address: location.address,
+          latitude: location.latitude,
+          longitude: location.longitude,
+        }
+      : null,
   };
 
   const clubStats = [
@@ -197,16 +179,9 @@ export function DiscoveryClubsDetailScreen({
   ];
 
   return (
-    <main className="relative flex min-h-dvh w-full max-w-full shrink-0 flex-col overflow-x-clip [&>*]:shrink-0 bg-background pb-[calc(14rem+env(safe-area-inset-bottom))]">
-      <DiscoveryClubsDetailStickyHeaderSection
-        visible={stickyHeaderVisible}
-        name={club.name}
-        favoriteId={persistedId}
-      />
-
+    <main className="club-detail relative flex min-h-dvh w-full max-w-full shrink-0 flex-col overflow-x-clip [&>*]:shrink-0 bg-background pb-[calc(14rem+env(safe-area-inset-bottom))]">
       <DiscoveryClubsDetailHeroSection
         favoriteId={persistedId}
-        sectionRef={setHeroElement}
         clubId={clubId}
         name={club.name}
         location={club.location}
@@ -235,7 +210,7 @@ export function DiscoveryClubsDetailScreen({
         }}
       />
 
-      <div className="px-5 pb-6">
+      <div className="px-4 pb-8">
         <DetailGallerySection
           showEmpty
           images={club.images}
@@ -251,12 +226,12 @@ export function DiscoveryClubsDetailScreen({
       <ClubClassesSection clubId={club.id} />
       <ClubCoachesContextSection
         clubId={club.id}
-        timezone={location.timezone ?? "Asia/Tehran"}
+        timezone={location?.timezone ?? "Asia/Tehran"}
       />
 
       <ClubBenefitProductsSection clubId={club.id} />
 
-      <section className="px-5">
+      <section className="px-4">
         <DetailSocialSection items={data.socialMedia} />
         <DetailFaqSection showEmpty items={data.faqs} />
       </section>

@@ -1,7 +1,8 @@
 "use client";
 
 import { type ReactNode, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { StaffWorkspace } from "./staff-workspace";
 import { Spinner } from "@heroui/react";
 import { tokenStore } from "@api";
 import { useBusinessMe } from "@api/business";
@@ -13,6 +14,7 @@ type AuthGateProps = {
 
 export function AuthGate({ children }: AuthGateProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const t = useTranslations("common");
   const [hasToken, setHasToken] = useState<boolean | null>(null);
   const me = useBusinessMe(hasToken === true);
@@ -47,5 +49,13 @@ export function AuthGate({ children }: AuthGateProps) {
     );
   }
 
+  if (!me.data.roles.includes("owner"))
+    return (
+      <StaffWorkspace
+        key={pathname}
+        initialClubId={pathname.match(/^\/clubs\/([^/]+)/)?.[1]}
+        initialClassId={pathname.match(/\/classes\/([^/]+)/)?.[1]}
+      />
+    );
   return children;
 }

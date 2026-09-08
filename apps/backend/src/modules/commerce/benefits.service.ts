@@ -453,24 +453,22 @@ export class BenefitsService {
       { new: true },
     );
     if (!item) return;
-    await Promise.all([
-      this.credit({
-        userId: String(item.inviterId),
-        amount: REFERRAL_REWARD,
-        source: "referral",
-        idempotencyKey: `referral-inviter-${item._id}`,
-        note: "Referral reward",
-        expiresAt: null,
-      }),
-      this.credit({
-        userId: String(item.inviteeId),
-        amount: REFERRAL_REWARD,
-        source: "referral",
-        idempotencyKey: `referral-invitee-${item._id}`,
-        note: "Referral reward",
-        expiresAt: null,
-      }),
-    ]);
+    await this.credit({
+      userId: String(item.inviterId),
+      amount: REFERRAL_REWARD,
+      source: "referral",
+      idempotencyKey: `referral-inviter-${item._id}`,
+      note: "Referral reward",
+      expiresAt: null,
+    });
+    await this.credit({
+      userId: String(item.inviteeId),
+      amount: REFERRAL_REWARD,
+      source: "referral",
+      idempotencyKey: `referral-invitee-${item._id}`,
+      note: "Referral reward",
+      expiresAt: null,
+    });
   }
 
   async refundWallet(
@@ -526,7 +524,12 @@ export class BenefitsService {
 }
 
 export type DiscountReferenceType =
-  "reservation" | "benefit_purchase" | "business_class_enrollment";
+  | "reservation"
+  | "benefit_purchase"
+  | "business_class_enrollment"
+  | "coach_booking"
+  | "coach_class_enrollment"
+  | "coach_package_purchase";
 
 export type DiscountScopeType =
   "club" | "coach" | "class" | "sport" | "product" | "session_type";

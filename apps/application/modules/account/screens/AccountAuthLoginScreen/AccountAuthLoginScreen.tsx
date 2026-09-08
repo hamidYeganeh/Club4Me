@@ -4,14 +4,14 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AccountAuthLoginForm } from "@modules/account/forms/AccountAuthLoginForm";
 import { AccountAuthMethodActionsSection } from "@modules/account/sections/AccountAuthMethodActionsSection";
-import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
 import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
-import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
+import { AccountAuthLoginSocialSection } from "@modules/account/sections/AccountAuthLoginSocialSection";
+import { AuthPageIntro } from "@/components/auth-page-intro";
 import { useTranslations } from "next-intl";
 
 import { AuthScreen } from "@/components/auth-screen";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-inset";
-import { getPostAuthPath } from "@/lib/post-auth-path";
+import { completeAuthenticationPath } from "@/lib/auth-return-path";
 
 const ACCOUNT_AUTH_LOGIN_FORM_ID = "account-auth-login-form";
 
@@ -41,14 +41,11 @@ export function AccountAuthLoginScreen() {
         overlay
         transparent
       />
-      <AccountAuthOtpHeroSection
-        alt={t("illustrationAlt")}
-        size={isKeyboardOpen ? "compact" : "default"}
-      />
-      <AccountAuthOtpCopySection
+      <AuthPageIntro
         title={t("title")}
         subtitle={t("subtitle")}
         titleId="account-auth-login-title"
+        keyboardOpen={isKeyboardOpen}
       />
       <AccountAuthLoginForm
         formId={ACCOUNT_AUTH_LOGIN_FORM_ID}
@@ -67,9 +64,10 @@ export function AccountAuthLoginScreen() {
         passwordMin={t("passwordMin")}
         onSubmitStateChange={handleSubmitStateChange}
         onSuccess={(user) => {
-          router.replace(getPostAuthPath(user));
+          router.replace(completeAuthenticationPath(user));
         }}
       />
+      {!isKeyboardOpen ? <AccountAuthLoginSocialSection caption="یا ورود با" xLabel="ورود با X" facebookLabel="ورود با فیسبوک" googleLabel="ورود با گوگل" unavailable="این روش ورود هنوز برای این محیط فعال نشده است" /> : null}
       <AccountAuthMethodActionsSection
         formId={ACCOUNT_AUTH_LOGIN_FORM_ID}
         submitLabel={t("submit")}

@@ -6,6 +6,9 @@ const envSchema = z
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("development"),
+    PAYMENT_HOLD_MINUTES: z.coerce.number().int().min(1).max(120).default(15),
+    PAYMENT_MODE: z.enum(["disabled", "simulation"]).optional(),
+    PAYMENT_SWEEP_SECONDS: z.coerce.number().int().min(5).max(300).default(30),
     TRUST_PROXY: z
       .enum(["true", "false"])
       .default("false")
@@ -44,6 +47,16 @@ const envSchema = z
     FIREBASE_PRIVATE_KEY: z.string().optional(),
     FIREBASE_SERVICE_ACCOUNT_PATH: z.string().optional(),
     APIIR_KEY: z.string().optional(),
+    SOCIAL_CALLBACK_BASE_URL: z.url().default("http://localhost:7088"),
+    SOCIAL_APP_CALLBACK_URL: z
+      .url()
+      .default("http://localhost:7081/auth/social/callback"),
+    GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
+    GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),
+    FACEBOOK_OAUTH_CLIENT_ID: z.string().optional(),
+    FACEBOOK_OAUTH_CLIENT_SECRET: z.string().optional(),
+    X_OAUTH_CLIENT_ID: z.string().optional(),
+    X_OAUTH_CLIENT_SECRET: z.string().optional(),
     KAVENEGAR_API_KEY: z.string().optional(),
     KAVENEGAR_SENDER: z.string().optional(),
     KAVENEGAR_OTP_TEMPLATE: z.string().default("gym4meotp"),
@@ -91,7 +104,45 @@ const envSchema = z
         message: "EXPORT_GCS_BUCKET is required when GCS storage is enabled",
       });
     }
+    for (const [provider, clientId, clientSecret] of [
+      [
+        "GOOGLE",
+        value.GOOGLE_OAUTH_CLIENT_ID,
+        value.GOOGLE_OAUTH_CLIENT_SECRET,
+      ],
+      [
+        "FACEBOOK",
+        value.FACEBOOK_OAUTH_CLIENT_ID,
+        value.FACEBOOK_OAUTH_CLIENT_SECRET,
+      ],
+      ["X", value.X_OAUTH_CLIENT_ID, value.X_OAUTH_CLIENT_SECRET],
+    ] as const) {
+      if (Boolean(clientId) !== Boolean(clientSecret)) {
+        context.addIssue({
+          code: "custom",
+          path: [`${provider}_OAUTH_CLIENT_SECRET`],
+          message: `${provider} OAuth client id and secret must be configured together`,
+        });
+      }
+    }
     if (value.NODE_ENV !== "production") return;
+    const socialLoginEnabled = Boolean(
+      value.GOOGLE_OAUTH_CLIENT_ID ||
+      value.FACEBOOK_OAUTH_CLIENT_ID ||
+      value.X_OAUTH_CLIENT_ID,
+    );
+    for (const key of [
+      "SOCIAL_CALLBACK_BASE_URL",
+      "SOCIAL_APP_CALLBACK_URL",
+    ] as const) {
+      if (socialLoginEnabled && !value[key].startsWith("https://")) {
+        context.addIssue({
+          code: "custom",
+          path: [key],
+          message: `${key} must use HTTPS in production`,
+        });
+      }
+    }
     const requireProductionValue = (
       key: "APP_RELEASE" | "EXPORT_GCS_BUCKET" | "KAVENEGAR_API_KEY",
       invalid: boolean,

@@ -6,9 +6,8 @@ export const discoveryIranMapSectionStyles = tv({
     header: "",
     card: "w-full",
     content: "flex w-full flex-col",
-    mapWrap:
-      "relative -mx-5 w-[calc(100%+2.5rem)] overflow-hidden",
-    map: "block h-auto w-full overflow-visible",
+    mapWrap: "relative w-full overflow-hidden",
+    map: "block aspect-[720/510] h-auto w-full overflow-visible",
     province:
       "cursor-pointer stroke-background/80 transition-[fill-opacity,stroke,filter] duration-200 outline-none hover:fill-opacity-100 hover:stroke-accent focus-visible:fill-opacity-100 focus-visible:stroke-accent focus-visible:[filter:drop-shadow(0_0_5px_color-mix(in_oklch,var(--accent)_55%,transparent))]",
     detail:

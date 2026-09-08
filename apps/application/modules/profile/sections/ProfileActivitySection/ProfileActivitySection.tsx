@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/components/app-link";
 import {
   useAthleteClubClasses,
   useCoachBookings,
@@ -144,42 +144,21 @@ function ActivityGrid({ items }: { items: ActivityItem[] }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {items.map((item, index) => (
+      <div className="grid grid-cols-3 gap-3">
+        {items.map((item) => (
           <Link
             key={`${item.href}-${item.label}`}
             href={item.href}
-            className={`app-card group flex min-h-36 flex-col p-4 text-foreground ${
-              index === 0 ? "col-span-2 min-h-30 flex-row items-center" : ""
-            }`}
+            className="group flex min-w-0 flex-col gap-3 rounded-3xl bg-surface p-3 outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            aria-label={`${item.label}، ${item.description}`}
           >
-            <span className="grid size-11 shrink-0 place-items-center rounded-[1rem] bg-accent/14 text-accent">
-              <Icon name={item.icon} size={21} />
+            <span className="grid size-10 place-items-center rounded-2xl bg-accent text-accent-foreground">
+              <Icon name={item.icon} size={20} />
             </span>
-            <span
-              className={
-                index === 0 ? "mr-3 min-w-0 flex-1" : "mt-4 min-w-0 flex-1"
-              }
-            >
-              <strong className="block text-sm font-bold">{item.label}</strong>
-              <span className="mt-1 block text-xs leading-5 text-muted">
-                {item.description}
-              </span>
-            </span>
-            <span
-              className={
-                index === 0
-                  ? "mr-3 flex items-center gap-2"
-                  : "mt-3 flex items-center justify-between"
-              }
-            >
-              <ActivityValue value={item.value} />
-              <Icon
-                name="chevron-left"
-                size={16}
-                className="text-muted transition-transform duration-300 group-hover:-translate-x-1"
-              />
-            </span>
+            <ActivityValue value={item.value} />
+            <strong className="text-xs leading-6 font-semibold">
+              {item.label}
+            </strong>
           </Link>
         ))}
       </div>
@@ -203,7 +182,7 @@ function ActivityValue({ value }: { value: number | null | undefined }) {
   }
 
   return (
-    <strong className="text-2xl leading-7 font-black tabular-nums text-accent">
+    <strong className="text-2xl leading-7 font-black tabular-nums text-foreground">
       {value.toLocaleString("fa-IR")}
     </strong>
   );

@@ -7,14 +7,16 @@ import { AthleteScreenHeaderSection } from "@modules/athlete/sections/AthleteScr
 import { AthleteClubClassesSection } from "@modules/athlete/sections/AthleteClubClassesSection";
 import { AthleteRecommendationsSection } from "@modules/athlete/sections/AthleteRecommendationsSection";
 import { useTranslations } from "next-intl";
+import { ButtonLink } from "@/components/button-link";
 
 export function AthleteHomeScreen() {
   const t = useTranslations("nav");
 
   return (
-    <main className="app-page gap-6">
+    <main className="app-page gap-8">
       <AthleteScreenHeaderSection title={t("home")} />
       <AthleteQuickActionsSection />
+      <ButtonLink href="/athlete/training" variant="secondary">برنامه و ثبت تمرین من</ButtonLink>
       <AthleteReminderSection />
       <AthleteActivitySummarySection />
       <AthleteClubClassesSection compact />

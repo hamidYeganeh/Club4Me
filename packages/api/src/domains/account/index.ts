@@ -35,6 +35,8 @@ export type {
   SetPasswordResponse,
   UpdateAccountMePayload,
   UserRole,
+  AccountPrivacyResponse,
+  PrivacyPurpose,
 } from "./account.dto";
 export { accountEndpoints } from "./account.endpoints";
 export {
@@ -55,5 +57,7 @@ export {
   useReviewRoleRequest,
   useSetPassword,
   useUpdateAccountMe,
+  useAccountPrivacy,
+  useUpdateAccountConsent,
 } from "./account.hooks";
 export { accountQueries } from "./account.queries";

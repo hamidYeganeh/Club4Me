@@ -10,6 +10,7 @@ import {
   useBusinessClubMemberships,
   useBusinessClubs,
   useInviteBusinessClubMember,
+  useRevokeBusinessClubMember,
 } from "@api/business";
 import { Button, Card, Chip, toast } from "@heroui/react";
 import { type FormEvent, useMemo, useState } from "react";
@@ -34,6 +35,7 @@ export function MembershipProductsScreen() {
   const create = useCreateBenefitProduct(clubId);
   const update = useUpdateBenefitProduct(clubId);
   const team = useBusinessClubMemberships(clubId);
+  const revokeMember = useRevokeBusinessClubMember(clubId);
   const inviteMember = useInviteBusinessClubMember(clubId);
   const [type, setType] = useState<BenefitProduct["type"]>("session_pack");
   const [open, setOpen] = useState(false);
@@ -48,7 +50,10 @@ export function MembershipProductsScreen() {
     status: "" as "" | BenefitProduct["status"],
   });
 
-  const items = products.data?.items ?? [];
+  const items = useMemo(
+    () => products.data?.items ?? [],
+    [products.data?.items],
+  );
   const filtered = useMemo(() => {
     const query = filters.query.trim().toLowerCase();
     return items.filter((item) => {
@@ -95,6 +100,11 @@ export function MembershipProductsScreen() {
                   ? `${item.sessionCount} جلسه`
                   : `هفته‌ای ${item.weeklyLimit} بار`}{" "}
                 · {item.validityDays} روز
+                <span className="mt-1 block">
+                  {item.maxPauseDays
+                    ? `تا ${item.maxPauseDays.toLocaleString("fa-IR")} روز توقف`
+                    : "بدون توقف"}
+                </span>
               </span>
             );
           },
@@ -145,7 +155,8 @@ export function MembershipProductsScreen() {
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const data = new FormData(form);
     try {
       await create.mutateAsync({
         title: String(data.get("title")),
@@ -153,6 +164,7 @@ export function MembershipProductsScreen() {
         type,
         price: Number(data.get("price")),
         validityDays: Number(data.get("validityDays")),
+        maxPauseDays: Number(data.get("maxPauseDays")),
         sessionCount:
           type === "session_pack" ? Number(data.get("limit")) : null,
         weeklyLimit:
@@ -161,7 +173,7 @@ export function MembershipProductsScreen() {
           "sessionTypes",
         ) as BenefitProduct["sessionTypes"],
       });
-      event.currentTarget.reset();
+      form.reset();
       setOpen(false);
       toast.success("محصول عضویت ساخته شد");
     } catch {
@@ -175,13 +187,10 @@ export function MembershipProductsScreen() {
     const data = new FormData(form);
     try {
       await inviteMember.mutateAsync({
-        userId: String(data.get("userId")),
+        phone: String(data.get("phone")),
         role: String(data.get("role")) as
-          | "manager"
-          | "receptionist"
-          | "finance"
-          | "coach",
-        permissions: data.getAll("permissions").map(String),
+          "manager" | "receptionist" | "finance" | "coach",
+        permissions: [],
       });
       form.reset();
       toast.success("دعوت همکاری ثبت شد");
@@ -255,6 +264,13 @@ export function MembershipProductsScreen() {
                 isRequired
               />
               <PanelNumberField
+                label="سقف توقف در طول قرارداد (روز؛ صفر یعنی بدون توقف)"
+                name="maxPauseDays"
+                minValue={0}
+                maxValue={90}
+                defaultValue={0}
+              />
+              <PanelNumberField
                 label={
                   type === "session_pack"
                     ? "تعداد جلسه"
@@ -315,11 +331,11 @@ export function MembershipProductsScreen() {
           >
             <input
               required
-              name="userId"
-              minLength={24}
-              maxLength={24}
+              name="phone"
+              inputMode="tel"
+              aria-label="موبایل عضو تیم"
               className={input}
-              placeholder="شناسه ۲۴ کاراکتری کاربر"
+              placeholder="۰۹۱۲۱۲۳۴۵۶۷"
               dir="ltr"
             />
             <select name="role" className={input} defaultValue="manager">
@@ -336,19 +352,11 @@ export function MembershipProductsScreen() {
             >
               ارسال دعوت
             </Button>
-            <div className="flex flex-wrap gap-4 text-sm md:col-span-3">
-              {[
-                ["members", "اعضا"],
-                ["reservations", "رزروها"],
-                ["finance", "مالی"],
-                ["classes", "کلاس‌ها"],
-              ].map(([value, label]) => (
-                <label key={value} className="flex items-center gap-2">
-                  <input type="checkbox" name="permissions" value={value} />
-                  {label}
-                </label>
-              ))}
-            </div>
+            <p className="text-xs leading-6 text-muted md:col-span-3">
+              مدیر: عملیات باشگاه؛ پذیرش: شاگردان، ثبت‌نام و حضور؛ مالی: پرداخت
+              و فهرست شاگردان؛ مربی: کلاس، ثبت‌نام و حضور. دعوت تا پذیرش کاربر
+              دسترسی نمی‌دهد. کاربر باید حساب داشته باشد.
+            </p>
           </form>
           <div className="mt-4 grid gap-2">
             {(team.data?.items ?? []).map((member) => (
@@ -356,9 +364,21 @@ export function MembershipProductsScreen() {
                 key={member.id}
                 className="flex items-center justify-between rounded-xl bg-surface-secondary p-3 text-sm"
               >
-                <span dir="ltr">{member.userId}</span>
+                <span dir="ltr">
+                  {member.name || member.phone || member.userId}
+                </span>
                 <div className="flex gap-2">
-                  <Chip size="sm">{member.role}</Chip>
+                  <Chip size="sm">
+                    {
+                      {
+                        owner: "مالک",
+                        manager: "مدیر",
+                        receptionist: "پذیرش",
+                        finance: "مالی",
+                        coach: "مربی",
+                      }[member.role]
+                    }
+                  </Chip>
                   <Chip
                     size="sm"
                     color={
@@ -369,8 +389,45 @@ export function MembershipProductsScreen() {
                           : "default"
                     }
                   >
-                    {member.status}
+                    {
+                      {
+                        accepted: "فعال",
+                        invited: "منتظر پذیرش",
+                        rejected: "رد شده",
+                        suspended: "لغو شده",
+                      }[member.status]
+                    }
                   </Chip>
+                  {member.status === "invited" && (
+                    <Button
+                      size="sm"
+                      onPress={() =>
+                        void navigator.clipboard
+                          .writeText(
+                            `https://app.gym4me.ir/club-memberships/${member.id}`,
+                          )
+                          .then(() => toast.success("لینک دعوت کپی شد"))
+                          .catch(() => toast.danger("کپی لینک انجام نشد"))
+                      }
+                    >
+                      کپی دعوت
+                    </Button>
+                  )}
+                  {member.role !== "owner" && member.status !== "suspended" && (
+                    <Button
+                      size="sm"
+                      variant="danger-soft"
+                      isPending={revokeMember.isPending}
+                      onPress={() =>
+                        void revokeMember
+                          .mutateAsync(member.id)
+                          .then(() => toast.success("دسترسی لغو شد"))
+                          .catch(() => toast.danger("لغو دسترسی انجام نشد"))
+                      }
+                    >
+                      لغو دسترسی
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
@@ -435,7 +492,8 @@ export function MembershipProductsScreen() {
                   onChange={(event) =>
                     setDraftFilters((current) => ({
                       ...current,
-                      status: event.target.value as "" | BenefitProduct["status"],
+                      status: event.target.value as
+                        "" | BenefitProduct["status"],
                     }))
                   }
                 >

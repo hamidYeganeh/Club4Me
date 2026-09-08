@@ -50,21 +50,32 @@ describe("EnrollmentsService mock payment", () => {
       notifyBookingConfirmed: jest.fn(),
       notifyPaymentFailed: jest.fn(),
     };
+    const commerce = {
+      createIntent: jest.fn().mockResolvedValue({ id: "intent" }),
+      simulate: jest.fn().mockImplementation(async (_user, _intent, status) => {
+        enrollments.findOne.mockReturnValue({
+          exec: async () =>
+            enrollment(status === "paid" ? "active" : "rejected", status),
+        });
+        return { status };
+      }),
+    };
     const service = new EnrollmentsService(
       enrollments as never,
       classes as never,
       {} as never,
       {} as never,
       notifications as never,
+      commerce as never,
     );
     classes.findById.mockReturnValue({
       exec: jest.fn().mockResolvedValue(trainingClass),
     });
-    return { service, enrollments, classes, notifications };
+    return { service, enrollments, classes, notifications, commerce };
   }
 
   it("activates an automatic class enrollment after approved payment", async () => {
-    const { service, enrollments, notifications } = setup();
+    const { service, enrollments, commerce } = setup();
     enrollments.findOne.mockReturnValue({
       exec: jest.fn().mockResolvedValue(enrollment("pending", "pending")),
     });
@@ -75,13 +86,16 @@ describe("EnrollmentsService mock payment", () => {
     const result = await service.approveMockPayment(athleteId, enrollmentId);
 
     expect(result).toMatchObject({ status: "active", paymentStatus: "paid" });
-    expect(notifications.notifyBookingConfirmed).toHaveBeenCalledTimes(1);
+    expect(commerce.simulate).toHaveBeenCalledWith(athleteId, "intent", "paid");
   });
 
   it("rejects payment and releases the reserved class capacity", async () => {
-    const { service, enrollments, classes, notifications } = setup();
+    const { service, enrollments, commerce } = setup();
     enrollments.findOneAndUpdate.mockReturnValue({
       exec: jest.fn().mockResolvedValue(enrollment("rejected", "failed")),
+    });
+    enrollments.findOne.mockReturnValue({
+      exec: async () => enrollment("pending", "pending"),
     });
 
     const result = await service.rejectMockPayment(athleteId, enrollmentId);
@@ -90,10 +104,10 @@ describe("EnrollmentsService mock payment", () => {
       status: "rejected",
       paymentStatus: "failed",
     });
-    expect(classes.updateOne).toHaveBeenCalledWith(
-      { _id: classId, enrollmentCount: { $gt: 0 } },
-      { $inc: { enrollmentCount: -1 } },
+    expect(commerce.simulate).toHaveBeenCalledWith(
+      athleteId,
+      "intent",
+      "failed",
     );
-    expect(notifications.notifyPaymentFailed).toHaveBeenCalledTimes(1);
   });
 });

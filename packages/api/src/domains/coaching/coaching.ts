@@ -14,6 +14,14 @@ import type { CoachProfessionalProfile } from "./professional-profile";
 export * from "./professional-profile";
 
 export type CoachProfile = {
+  geo?: {
+    countryId?: string;
+    provinceId?: string;
+    cityId?: string;
+    districtId?: string;
+    cityRegionIds: string[];
+  } | null;
+  travelRadiusKm?: number;
   professionalProfile?: CoachProfessionalProfile;
   minAcceptedAge?: number | null;
   maxAcceptedAge?: number | null;
@@ -105,6 +113,12 @@ export type CoachClass = {
 };
 
 export type CoachOffering = {
+  minAge?: number | null;
+  maxAge?: number | null;
+  skillLevelId?: string | null;
+  sessionCount?: number | null;
+  requiredEquipmentText?: string;
+  coverMediaId?: string | null;
   id: string;
   coachId: string;
   sportId: string;
@@ -122,6 +136,11 @@ export type CoachOffering = {
 };
 
 export type CreateCoachOfferingPayload = {
+  minAge?: number | null;
+  maxAge?: number | null;
+  skillLevelId?: string | null;
+  sessionCount?: number | null;
+  coverMediaId?: string | null;
   sportId: string;
   title: string;
   description?: string;
@@ -137,6 +156,7 @@ export type CreateCoachOfferingPayload = {
 };
 
 export type CoachSession = {
+  pricingType?: "per_session" | "package" | "per_month";
   id: string;
   coachId: string;
   classId?: string;
@@ -205,7 +225,24 @@ export type CoachBooking = {
   refundPercent: number | null;
   refundAmount: number | null;
   bookedAt: string;
+  paymentExpiresAt?: string | null;
   cancelledAt?: string;
+  rescheduleKey?: string | null;
+  rescheduleHistory?: Array<{
+    fromSessionId: string;
+    toSessionId: string;
+    changedAt: string;
+  }>;
+};
+
+export type CoachBookingRescheduleOption = {
+  id: string;
+  title: string;
+  startAt: string;
+  endAt: string;
+  deliveryMode: CoachSession["deliveryMode"];
+  venue: CoachSession["venue"];
+  remainingCapacity: number;
 };
 
 export type ClassEnrollmentStatus =
@@ -228,6 +265,7 @@ export type ClassEnrollment = {
   refundPercent: number | null;
   refundAmount: number | null;
   registeredAt: string;
+  paymentExpiresAt?: string | null;
   cancelledAt?: string;
 };
 
@@ -268,6 +306,13 @@ export type CoachAttendanceItem = {
 };
 
 export type CreateCoachClassPayload = {
+  courtId?: string | null;
+  venue?: CoachClass["venue"] | null;
+  skillLevelId?: string | null;
+  minAge?: number | null;
+  maxAge?: number | null;
+  registrationStartAt?: string | null;
+  registrationEndAt?: string | null;
   clubId?: string | null;
   title: string;
   description: string;
@@ -304,7 +349,7 @@ export type CoachAvailabilityRule = {
   dayOfWeek: number;
   startMinute: number;
   endMinute: number;
-  deliveryModes: Array<"online" | "in_person" | "at_athlete" | "at_coach">;
+  deliveryModes: CoachOffering["deliveryModes"];
   clubId?: string | null;
   validFrom: string;
   validUntil?: string | null;
@@ -335,6 +380,9 @@ const client = {
       items,
     }),
   classes: () => http.get<{ items: CoachClass[] }>("/coach/classes"),
+  class: (classId: string) => http.get<CoachClass>(`/coach/classes/${classId}`),
+  updateClass: (classId: string, payload: Partial<CreateCoachClassPayload>) =>
+    http.patch<CoachClass>(`/coach/classes/${classId}`, payload),
   createClass: (payload: CreateCoachClassPayload) =>
     http.post<CoachClass>("/coach/classes", payload),
   generateSchedule: (
@@ -352,6 +400,9 @@ const client = {
   updateClassStatus: (classId: string, status: string) =>
     http.patch<CoachClass>(`/coach/classes/${classId}/status`, { status }),
   offerings: () => http.get<{ items: CoachOffering[] }>("/coach/services"),
+  offering: (id: string) => http.get<CoachOffering>(`/coach/services/${id}`),
+  updateOffering: (id: string, payload: Partial<CreateCoachOfferingPayload>) =>
+    http.patch<CoachOffering>(`/coach/services/${id}`, payload),
   createOffering: (payload: CreateCoachOfferingPayload) =>
     http.post<CoachOffering>("/coach/services", {
       description: "",
@@ -458,6 +509,18 @@ const client = {
     http.post<CoachBooking>(`/athlete/bookings/${bookingId}/cancel`, {
       reason,
     }),
+  bookingRescheduleOptions: (bookingId: string) =>
+    http.get<{ items: CoachBookingRescheduleOption[] }>(
+      `/athlete/bookings/${bookingId}/reschedule-options`,
+    ),
+  rescheduleBooking: (
+    bookingId: string,
+    payload: { sessionId: string; idempotencyKey: string },
+  ) =>
+    http.post<CoachBooking>(
+      `/athlete/bookings/${bookingId}/reschedule`,
+      payload,
+    ),
   approveMockPayment: (bookingId: string) =>
     http.patch<CoachBooking>(
       `/athlete/bookings/${bookingId}/mock-payment/approve`,
@@ -469,15 +532,21 @@ const client = {
 };
 
 export function useCoachProfile() {
-  return useQuery({ queryKey: ["coach", "profile"], queryFn: client.profile });
+  return useQuery({
+    queryKey: ["coach", "profile"],
+    queryFn: client.profile,
+    refetchOnMount: "always",
+  });
 }
 
 export function useUpdateCoachProfile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: client.updateProfile,
-    onSuccess: async () =>
-      queryClient.invalidateQueries({ queryKey: ["coach"] }),
+    onSuccess: async (profile) => {
+      queryClient.setQueryData(["coach", "profile"], profile);
+      await queryClient.invalidateQueries({ queryKey: ["coach"] });
+    },
   });
 }
 
@@ -491,7 +560,11 @@ export function useSubmitCoachProfile() {
 }
 
 export function useCoachSports() {
-  return useQuery({ queryKey: ["coach", "sports"], queryFn: client.sports });
+  return useQuery({
+    queryKey: ["coach", "sports"],
+    queryFn: client.sports,
+    refetchOnMount: "always",
+  });
 }
 
 export function useReplaceCoachSports() {
@@ -543,6 +616,29 @@ export function useCoachOfferings() {
   return useQuery({
     queryKey: ["coach", "offerings"],
     queryFn: client.offerings,
+  });
+}
+
+export function useCoachOffering(id: string) {
+  return useQuery({
+    queryKey: ["coach", "offering", id],
+    enabled: Boolean(id),
+    queryFn: () => client.offering(id),
+    refetchOnMount: "always",
+  });
+}
+export function useUpdateCoachOffering(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Partial<CreateCoachOfferingPayload>) =>
+      client.updateOffering(id, payload),
+    onSuccess: async (offering) => {
+      queryClient.setQueryData(["coach", "offering", id], offering);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["coach", "offerings"] }),
+        queryClient.invalidateQueries({ queryKey: ["coach", "offering", id] }),
+      ]);
+    },
   });
 }
 
@@ -810,6 +906,9 @@ export function useBookCoachSession() {
   return useMutation({
     mutationFn: client.bookSession,
     onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["athlete", "packages"],
+      });
       await queryClient.invalidateQueries({ queryKey: ["public", "coaches"] });
       await queryClient.invalidateQueries({
         queryKey: ["athlete", "coach-bookings"],
@@ -830,7 +929,45 @@ export function useCancelCoachBooking() {
     }) => client.cancelBooking(bookingId, reason),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
+        queryKey: ["athlete", "packages"],
+      });
+      await queryClient.invalidateQueries({
         queryKey: ["athlete", "coach-bookings"],
+      });
+      await queryClient.invalidateQueries({ queryKey: ["public", "coaches"] });
+    },
+  });
+}
+
+export function useCoachBookingRescheduleOptions(
+  bookingId: string,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ["athlete", "coach-booking-reschedule-options", bookingId],
+    queryFn: () => client.bookingRescheduleOptions(bookingId),
+    enabled: enabled && Boolean(bookingId),
+  });
+}
+
+export function useRescheduleCoachBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      bookingId,
+      sessionId,
+      idempotencyKey,
+    }: {
+      bookingId: string;
+      sessionId: string;
+      idempotencyKey: string;
+    }) => client.rescheduleBooking(bookingId, { sessionId, idempotencyKey }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["athlete", "coach-bookings"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["athlete", "coach-booking-reschedule-options"],
       });
       await queryClient.invalidateQueries({ queryKey: ["public", "coaches"] });
     },
@@ -856,5 +993,74 @@ export function useResolveMockCoachPayment() {
       });
       await queryClient.invalidateQueries({ queryKey: ["public", "coaches"] });
     },
+  });
+}
+
+export function useCoachClass(classId: string) {
+  return useQuery({
+    queryKey: ["coach", "classes", classId],
+    queryFn: () => client.class(classId),
+    enabled: Boolean(classId),
+    refetchOnMount: "always",
+  });
+}
+export function useUpdateCoachClass(classId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Partial<CreateCoachClassPayload>) =>
+      client.updateClass(classId, payload),
+    onSuccess: async (trainingClass) => {
+      qc.setQueryData(["coach", "classes", classId], trainingClass);
+      await qc.invalidateQueries({ queryKey: ["coach", "classes"] });
+    },
+  });
+}
+
+export type CoachPackagePurchase = {
+  id: string;
+  offeringId: string;
+  coachId: string;
+  title: string;
+  pricingType: "package" | "per_month";
+  status: "pending" | "active" | "failed" | "refunded";
+  priceSnapshot: { amount: number; currency: string };
+  remainingSessions: number | null;
+  sessionCount: number | null;
+  expiresAt: string | null;
+  paymentExpiresAt: string;
+};
+export function usePublicCoachOfferings(slug: string) {
+  return useQuery({
+    queryKey: ["public", "coaches", slug, "services"],
+    enabled: Boolean(slug),
+    queryFn: () =>
+      http.get<{ items: CoachOffering[] }>(
+        `/public/coaches/${encodeURIComponent(slug)}/services`,
+      ),
+  });
+}
+export function useCoachPackages() {
+  return useQuery({
+    queryKey: ["athlete", "packages"],
+    queryFn: () =>
+      http.get<{ items: CoachPackagePurchase[] }>("/athlete/packages"),
+  });
+}
+export function usePurchaseCoachPackage() {
+  const cache = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      offeringId,
+      idempotencyKey,
+    }: {
+      offeringId: string;
+      idempotencyKey: string;
+    }) =>
+      http.post<CoachPackagePurchase>(
+        `/athlete/services/${offeringId}/purchases`,
+        { idempotencyKey },
+      ),
+    onSuccess: () =>
+      cache.invalidateQueries({ queryKey: ["athlete", "packages"] }),
   });
 }

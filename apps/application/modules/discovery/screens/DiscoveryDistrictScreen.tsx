@@ -1,5 +1,8 @@
 "use client";
 
+import { DiscoveryQueryPage } from "../components/DiscoveryQueryPage";
+import { getQueryFailure } from "@/lib/request-failure";
+
 import { usePublicCatalogResource } from "@api/discovery";
 import { DiscoveryClubsScreen } from "@modules/discovery/screens/DiscoveryClubsScreen";
 import { ListPageSkeleton } from "@/components/loading-skeletons";
@@ -15,7 +18,9 @@ export function DiscoveryDistrictScreen({
   const cities = usePublicCatalogResource("location", "city", {
     search: citySlug,
   });
-  const city = cities.data?.items.find((item) => item.slug === citySlug);
+  const city = cities.data?.items.find(
+    (item) => item.slug === citySlug || item.id === citySlug,
+  );
   const districts = usePublicCatalogResource(
     "location",
     "district",
@@ -23,9 +28,16 @@ export function DiscoveryDistrictScreen({
     Boolean(city),
   );
   const district = districts.data?.items.find(
-    (item) => item.slug === districtSlug,
+    (item) => item.slug === districtSlug || item.id === districtSlug,
   );
 
+  if (getQueryFailure(cities.error, cities.fetchStatus) && !cities.data)
+    return <DiscoveryQueryPage title="کشف" query={cities} />;
+  if (
+    getQueryFailure(districts.error, districts.fetchStatus) &&
+    !districts.data
+  )
+    return <DiscoveryQueryPage title="کشف" query={districts} />;
   if (cities.isPending || (city && districts.isPending)) {
     return <ListPageSkeleton />;
   }
@@ -40,6 +52,7 @@ export function DiscoveryDistrictScreen({
   }
   return (
     <DiscoveryClubsScreen
+      key={district.id}
       layout="list"
       title={`باشگاه‌های ${district.name}`}
       description={`بهترین باشگاه‌های ${district.name} در ${city.name}`}

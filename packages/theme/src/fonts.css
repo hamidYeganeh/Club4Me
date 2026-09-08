@@ -1,4 +1,12 @@
 @font-face {
+  font-family: "Monoton";
+  src: url("../fonts/Monoton-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: "IRANSansX";
   src:
     url("../fonts/IRANSansXV.woff2") format("woff2-variations"),
@@ -11,12 +19,12 @@
 
 @theme inline {
   --font-sans: "IRANSansX", Tahoma, ui-sans-serif, system-ui, sans-serif;
-  --font-brand: var(--font-monoton), "Monoton", cursive;
+  --font-brand: var(--font-monoton, "Monoton"), cursive;
 }
 
 :root {
   --font-sans: "IRANSansX", Tahoma, ui-sans-serif, system-ui, sans-serif;
-  --font-brand: var(--font-monoton), "Monoton", cursive;
+  --font-brand: var(--font-monoton, "Monoton"), cursive;
 }
 
 html {

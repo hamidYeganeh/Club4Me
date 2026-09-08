@@ -11,18 +11,53 @@ function fixture() {
     save: jest.fn().mockResolvedValue(undefined),
     toObject: jest.fn(() => ({})),
   };
-  const media = { assertOwnedReady: jest.fn().mockResolvedValue(undefined) };
+  const media = {
+    assertOwnedReady: jest.fn().mockResolvedValue(undefined),
+    makePrivate: jest.fn().mockResolvedValue(undefined),
+  };
+  const resources = { requireActive: jest.fn().mockResolvedValue({}) };
   const service = new CoachesService(
     {} as never,
     {} as never,
-    {} as never,
+    resources as never,
     media as never,
   );
   jest.spyOn(service, "getOrCreateDocument").mockResolvedValue(coach as never);
-  return { service, coach, media };
+  return { service, coach, media, resources };
 }
 
 describe("coach profile updates", () => {
+  it("rejects a district in another city and persists a valid service region", async () => {
+    const { service, coach, resources } = fixture();
+    const geo = {
+      countryId: String(new Types.ObjectId()),
+      provinceId: String(new Types.ObjectId()),
+      cityId: String(new Types.ObjectId()),
+      districtId: String(new Types.ObjectId()),
+      cityRegionIds: [String(new Types.ObjectId())],
+    };
+    let districtCity = String(new Types.ObjectId());
+    resources.requireActive.mockImplementation(
+      async (_category, resource) =>
+        ({
+          country: {},
+          province: { countryId: geo.countryId },
+          city: { provinceId: geo.provinceId },
+          district: { cityId: districtCity },
+          "city-region": { cityId: geo.cityId },
+        })[resource as "country"],
+    );
+    await expect(
+      service.updateProfile("user", { geo, travelRadiusKm: 12 }),
+    ).rejects.toMatchObject({ code: "COACH_LOCATION_HIERARCHY_INVALID" });
+    expect(coach.save).not.toHaveBeenCalled();
+    districtCity = geo.cityId;
+    await service.updateProfile("user", { geo, travelRadiusKm: 12 });
+    expect(coach).toHaveProperty("geo.cityId", new Types.ObjectId(geo.cityId));
+    expect(coach).toHaveProperty("travelRadiusKm", 12);
+    expect(coach.save).toHaveBeenCalledTimes(1);
+  });
+
   it("checks ownership of every credential attachment before saving", async () => {
     const { service, coach, media } = fixture();
     const mediaId = new Types.ObjectId().toHexString();
@@ -33,7 +68,11 @@ describe("coach profile updates", () => {
     await expect(
       service.updateProfile("user", { professionalProfile }),
     ).rejects.toThrow("Not owned");
-    expect(media.assertOwnedReady).toHaveBeenCalledWith("user", [mediaId]);
+    expect(media.assertOwnedReady).toHaveBeenCalledWith(
+      "user",
+      [mediaId],
+      true,
+    );
     expect(coach.save).not.toHaveBeenCalled();
     await service.updateProfile("user", { professionalProfile });
     expect(coach).toHaveProperty("professionalProfile", professionalProfile);

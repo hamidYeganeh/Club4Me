@@ -1,3 +1,8 @@
+import {
+  Atomic,
+  inAtomicOperation,
+} from "../../infrastructure/database/atomic-operation";
+import { Coach } from "../coaching/schemas/coaching.schemas";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { randomUUID } from "node:crypto";
@@ -46,7 +51,8 @@ export class PayoutsService {
       providerId: String(resolvedId),
       ledgerBalance,
       reservedAmount: account.reservedAmount,
-      availableAmount: account.availableAmount,
+      availableAmount: Math.max(0, account.availableAmount),
+      outstandingDebt: Math.max(0, -account.availableAmount),
     };
   }
 
@@ -57,6 +63,7 @@ export class PayoutsService {
     return { items: items.map((item) => payoutDto(item)) };
   }
 
+  @Atomic("payouts")
   async request(userId: string, input: CreatePayoutDto) {
     const current = await this.balance(
       userId,
@@ -98,6 +105,7 @@ export class PayoutsService {
         status: "requested",
       });
     } catch (error) {
+      if (inAtomicOperation()) throw error;
       await this.accounts.updateOne(
         { providerId: oid(current.providerId) },
         {
@@ -127,6 +135,7 @@ export class PayoutsService {
     return { items: items.map((item) => payoutDto(item, true)) };
   }
 
+  @Atomic("payouts")
   async review(adminId: string, payoutId: string, input: ReviewPayoutDto) {
     const payout = await this.payouts.findOneAndUpdate(
       {
@@ -165,6 +174,16 @@ export class PayoutsService {
       return payoutDto(payout);
     }
     if (input.status === "paid") {
+      const account = await this.accounts.findOne({
+        providerId: payout.providerId,
+      });
+      if (!account || account.availableAmount < 0) {
+        throw new AppError(
+          409,
+          "PAYOUT_REFUND_PENDING",
+          "ابتدا بدهی بازپرداخت را تسویه یا درخواست برداشت را لغو کنید.",
+        );
+      }
       const transactionId = randomUUID();
       await this.ledger.insertMany([
         {
@@ -212,6 +231,7 @@ export class PayoutsService {
     return payoutDto(payout);
   }
 
+  @Atomic("payouts")
   async cancel(userId: string, payoutId: string) {
     const payout = await this.payouts.findOneAndUpdate(
       {
@@ -258,14 +278,20 @@ export class PayoutsService {
       await this.clubs.get(userId, providerId);
       return oid(providerId);
     }
-    if (providerId && providerId !== userId) {
+    const coach = await this.accounts.db
+      .model<Coach>(Coach.name)
+      .findOne({ userId: oid(userId) });
+    if (
+      !coach ||
+      (providerId && providerId !== String(coach._id) && providerId !== userId)
+    ) {
       throw new AppError(
         403,
         "FORBIDDEN",
         "Coach can only withdraw their own balance",
       );
     }
-    return oid(userId);
+    return coach._id;
   }
 
   private async ensureAccount(providerId: Types.ObjectId) {
@@ -292,7 +318,7 @@ export class PayoutsService {
       { providerId },
       {
         $setOnInsert: {
-          availableAmount: Math.max(0, posted[0]?.balance ?? 0),
+          availableAmount: posted[0]?.balance ?? 0,
           reservedAmount: 0,
         },
       },

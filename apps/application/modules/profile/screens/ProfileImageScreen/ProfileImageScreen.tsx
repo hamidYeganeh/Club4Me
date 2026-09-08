@@ -2,7 +2,7 @@
 
 import { useAccountMe, useUpdateAccountMe } from "@api/account";
 import { useCreateMedia } from "@api";
-import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { ProfileImageHeroSection } from "@modules/profile/sections/ProfileImageHeroSection";
 import { toast } from "@heroui/react";
 import { useTranslations } from "next-intl";
@@ -21,9 +21,11 @@ export function ProfileImageScreen({ role }: ProfileImageScreenProps) {
 
   return (
     <main className="flex min-h-0 w-full max-w-full flex-1 flex-col overflow-x-hidden bg-transparent px-5">
-      <AccountAuthOtpHeaderSection
+      <SecondaryHeader
+        title="تصویر پروفایل"
+        showFilter={false}
         backLabel={tCommon("back")}
-        href={`/${role}/profile`}
+        backHref={`/${role}/profile`}
       />
       <ProfileImageHeroSection
         title={t("imageTitle")}

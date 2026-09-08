@@ -47,6 +47,8 @@ export class SessionCancellationPolicy {
 
 @Schema({ collection: "reservable_sessions", timestamps: true })
 export class ReservableSession {
+  @Prop({ type: [Types.ObjectId], default: [] })
+  releasedReservationIds: Types.ObjectId[];
   @Prop({ type: Types.ObjectId, ref: "Club", required: true, index: true })
   clubId: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: "Court" })

@@ -1,7 +1,12 @@
 "use client";
+import { DiscoveryImageHero } from "../../components/DiscoveryImageHero";
 
-import { useState } from "react";
-import { Button, Skeleton } from "@heroui/react";
+import { useDiscoveryList } from "../../hooks/use-discovery-list";
+import { DiscoveryPagination } from "../../components/DiscoveryPagination";
+import { DiscoveryQueryState } from "../../components/DiscoveryQueryState";
+import { DiscoveryEmptySection } from "../../components/DiscoveryEmptySection";
+
+import { Skeleton } from "@heroui/react";
 import { useCoachSections, useCoaches } from "@api/discovery";
 import { useTranslations } from "next-intl";
 
@@ -17,30 +22,32 @@ import {
 
 export function DiscoveryPeopleScreen() {
   const t = useTranslations("discovery.coaches");
-  const [query, setQuery] = useState("");
+  const { query, setQuery, q, page, setPage } = useDiscoveryList();
   const sections = useCoachSections();
-  const result = useCoaches();
+  const result = useCoaches({ q, page, limit: 20 });
   const coaches = result.data?.items ?? [];
 
   return (
     <main className="app-page gap-6">
-      <SecondaryHeader title={t("title")} />
+      <SecondaryHeader title={t("title")} showFilter={false} />
+      <DiscoveryImageHero
+        imageUrl="/profile/avatar.jpg"
+        title="همراه مسیر ورزشی تو"
+        description="تجربه، تخصص و شیوه تمرین مربی‌ها را ببین و مربی مناسب خودت را انتخاب کن."
+        eyebrow="مربی‌های جیم‌فورمی"
+      />
       <DiscoverySearchField
         value={query}
         onChange={setQuery}
         placeholder={t("searchPlaceholder")}
-        href="/discovery/search?kind=coach"
       />
 
-      {sections.data?.map((section) => (
-        <DiscoveryDynamicSection key={section.id} section={section} />
-      ))}
+      {!q &&
+        sections.data?.map((section) => (
+          <DiscoveryDynamicSection key={section.id} section={section} />
+        ))}
       {sections.isLoading ? <SectionSkeleton cards={2} /> : null}
-      {sections.isError ? (
-        <Button variant="secondary" onPress={() => void sections.refetch()}>
-          دریافت دوباره بخش‌های مربی‌ها
-        </Button>
-      ) : null}
+      <DiscoveryQueryState query={sections} />
 
       {result.isLoading ? (
         <div
@@ -79,11 +86,20 @@ export function DiscoveryPeopleScreen() {
         ))}
       </div>
       {result.isLoading ? <DiscoveryResultCardSkeleton count={4} /> : null}
-      {result.isError ? (
-        <Button onPress={() => void result.refetch()}>{t("retry")}</Button>
-      ) : null}
-      {!result.isLoading && !result.isError && coaches.length === 0 ? (
-        <p className="py-16 text-center text-sm text-muted">{t("empty")}</p>
+      <DiscoveryQueryState query={result} />
+      <DiscoveryPagination
+        page={page}
+        total={result.data?.total ?? 0}
+        limit={20}
+        onChange={setPage}
+        pending={result.isFetching}
+      />
+      {result.isSuccess && coaches.length === 0 ? (
+        <DiscoveryEmptySection
+          title="مربی‌ای پیدا نشد"
+          subtitle="نام یا تخصص دیگری را جست‌وجو کن."
+          icon="medal"
+        />
       ) : null}
     </main>
   );

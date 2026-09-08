@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/app-link";
 import { useAccountMe } from "@api/account";
 import { Skeleton, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
@@ -29,7 +29,7 @@ export function ProfileCompletionSection({ role }: { role: ProfileRole }) {
   if (me.isPending) {
     return (
       <section
-        className="app-reveal overflow-hidden rounded-[1.35rem] border border-accent/20 bg-linear-to-l from-accent/14 via-surface/88 to-surface/75 p-5"
+        className="app-reveal overflow-hidden rounded-3xl bg-surface p-5"
         aria-busy="true"
         aria-label="در حال بارگذاری وضعیت پروفایل"
       >
@@ -52,7 +52,7 @@ export function ProfileCompletionSection({ role }: { role: ProfileRole }) {
 
   return (
     <section
-      className="app-reveal overflow-hidden rounded-[1.35rem] border border-accent/20 bg-linear-to-l from-accent/14 via-surface/88 to-surface/75 p-5"
+      className="app-reveal overflow-hidden rounded-3xl bg-surface p-5"
       aria-labelledby="profile-completion-title"
     >
       <div className="flex items-start gap-4">
@@ -72,7 +72,7 @@ export function ProfileCompletionSection({ role }: { role: ProfileRole }) {
         <Link
           href={`/${role}/profile/edit`}
           scroll={false}
-          className="shrink-0 rounded-xl bg-foreground px-3 py-2 text-xs font-bold whitespace-nowrap text-background transition-transform active:scale-95"
+          className="inline-flex min-h-11 items-center shrink-0 rounded-2xl bg-accent px-3 py-2 text-xs font-bold whitespace-nowrap text-accent-foreground transition-transform active:scale-95"
         >
           {isComplete ? "ویرایش" : "تکمیل"}
         </Link>

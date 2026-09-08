@@ -1,8 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Button, Card, Skeleton, Typography } from "@heroui/react";
+import { useState } from "react";
+import { DiscoveryPagination } from "../../components/DiscoveryPagination";
+
+import { DiscoveryQueryPage } from "../../components/DiscoveryQueryPage";
+import { getQueryFailure } from "@/lib/request-failure";
+
+import Link from "@/components/app-link";
+import { ButtonLink } from "@/components/button-link";
+import { DiscoveryQueryState } from "../../components/DiscoveryQueryState";
+import { SecondaryHeader } from "../../components/SecondaryHeader";
+import { DiscoveryImageHero } from "../../components/DiscoveryImageHero";
+import { Card, Skeleton, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { useCatalogClubs, usePublicCatalogResource } from "@api/discovery";
 
@@ -17,16 +26,18 @@ import { DiscoveryEmptyPage } from "@modules/discovery/components/DiscoveryEmpty
 import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 
 export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
-  const router = useRouter();
+  const [page, setPage] = useState(1);
   const styles = discoveryCityScreenStyles();
   const cities = usePublicCatalogResource("location", "city", {
     search: cityId,
   });
-  const city = cities.data?.items.find((item) => item.slug === cityId);
+  const city = cities.data?.items.find(
+    (item) => item.slug === cityId || item.id === cityId,
+  );
   const districts = usePublicCatalogResource(
     "location",
     "district",
-    city ? { parentId: city.id } : undefined,
+    city ? { parentId: city.id, page, limit: 50 } : undefined,
     Boolean(city),
   );
   const clubs = useCatalogClubs(
@@ -34,6 +45,8 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
     Boolean(city),
   );
 
+  if (getQueryFailure(cities.error, cities.fetchStatus) && !cities.data)
+    return <DiscoveryQueryPage title="کشف" query={cities} />;
   if (cities.isPending) return <CityDetailSkeleton />;
   if (!city)
     return (
@@ -46,58 +59,37 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
 
   return (
     <main className={styles.root()}>
-      <section className={styles.hero()} aria-labelledby="city-title">
-        <FallbackImage
-          src={typeof city.imageUrl === "string" ? city.imageUrl : ""}
-          alt={`باشگاه‌های ${city.name}`}
-          fill
-          priority
-          unoptimized
-          sizes="(max-width: 576px) 100vw, 576px"
-          className={styles.heroImage()}
-        />
-        <div className={styles.heroOverlay()} aria-hidden />
-        <div className={styles.topBar()}>
-          <Button
-            isIconOnly
-            variant="secondary"
-            size="lg"
-            aria-label="بازگشت"
-            className={styles.backButton()}
-            onPress={() => router.back()}
-          >
-            <Icon name="chevron-right" size="lg" />
-          </Button>
-        </div>
-        <div className={styles.heroCopy()}>
-          {clubs.isPending ? (
-            <Skeleton
-              className="h-4 w-20 rounded-lg"
-              aria-label="در حال بارگذاری تعداد باشگاه‌ها"
-            />
-          ) : (
-            <Typography
-              type="body-sm"
-              weight="bold"
-              className={styles.eyebrow()}
-            >
-              {(clubs.data?.total ?? 0).toLocaleString("fa-IR")} باشگاه
-            </Typography>
-          )}
-          <Typography
-            id="city-title"
-            type="h2"
-            weight="bold"
-            className={styles.heroTitle()}
-          >
-            باشگاه‌های {city.name}
-          </Typography>
-          <Typography type="body-sm" className={styles.heroDescription()}>
-            بهترین باشگاه‌ها را در منطقه مورد نظرت پیدا و مقایسه کن.
-          </Typography>
-        </div>
-      </section>
+      <SecondaryHeader title={city.name} showFilter={false} />
+      <div className="mx-4 mt-4">
+        <DiscoveryImageHero
+          imageUrl={
+            typeof city.imageUrl === "string"
+              ? city.imageUrl
+              : "/profile/cover.jpg"
+          }
+          title={`باشگاه‌های ${city.name}`}
+          titleId="city-title"
+          eyebrow="کشف شهر"
+          description="باشگاه‌ها را در منطقهٔ مورد نظرت پیدا و مقایسه کن."
+        >
+          {clubs.data ? (
+            <p className="mt-3 text-sm font-bold text-white">
+              {clubs.data.total.toLocaleString("fa-IR")} باشگاه
+            </p>
+          ) : null}
+        </DiscoveryImageHero>
+      </div>
       <section className={styles.sheet()} aria-labelledby="districts-title">
+        <ButtonLink
+          href={`/discovery/clubs?cityId=${city.id}`}
+          variant="primary"
+          className="w-full"
+        >
+          مشاهده همه باشگاه‌های {city.name}
+          <Icon name="arrow-left" size={18} />
+        </ButtonLink>
+        <DiscoveryQueryState query={clubs} />
+        <DiscoveryQueryState query={districts} />
         <div className={styles.sheetHeader()}>
           <Typography id="districts-title" type="h4" weight="bold">
             مناطق {city.name}
@@ -114,7 +106,7 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
           )}
         </div>
         {districts.isPending ? <DiscoveryResultCardSkeleton count={4} /> : null}
-        {!districts.isPending && (districts.data?.items.length ?? 0) === 0 ? (
+        {districts.isSuccess && districts.data.items.length === 0 ? (
           <DiscoveryEmptySection
             title={`منطقه‌ای در ${city.name} پیدا نشد`}
             subtitle="با اضافه شدن مناطق جدید، آن‌ها را اینجا خواهی دید."
@@ -155,6 +147,13 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
           ))}
         </div>
       </section>
+      <DiscoveryPagination
+        page={page}
+        total={districts.data?.total ?? 0}
+        limit={50}
+        onChange={setPage}
+        pending={districts.isFetching}
+      />
     </main>
   );
 }

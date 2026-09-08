@@ -1,3 +1,4 @@
+import { ClubAccessService } from "./club-access.service";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { Connection, Model, Types, createConnection } from "mongoose";
 import { Club, ClubSchema, type ClubDocument } from "./schemas/club.schema";
@@ -31,6 +32,7 @@ describe("club profile persistence and trial concurrency", () => {
     connection = await createConnection(mongo.getUri()).asPromise();
     clubs = new ClubsRepository(
       connection.model(Club.name, ClubSchema) as unknown as Model<ClubDocument>,
+      new ClubAccessService(connection),
     );
     reservations = connection.model(
       Reservation.name,

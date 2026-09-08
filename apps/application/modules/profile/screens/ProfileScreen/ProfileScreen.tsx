@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/app-link";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { Chip, Typography } from "@heroui/react";
 import { useAccountMe } from "@api/account";
 import { Icon } from "@theme/icon";
@@ -20,8 +21,9 @@ export function ProfileScreen({ role }: ProfileScreenProps) {
   } as const;
   return (
     <main className="flex min-h-dvh w-full max-w-full flex-1 flex-col overflow-x-hidden bg-transparent pb-[calc(7rem+env(safe-area-inset-bottom))]">
+      <SecondaryHeader title="پروفایل من" showFilter={false} />
       <ProfileHeroSection role={role} />
-      <div className="flex flex-col gap-7 px-5 pt-6">
+      <div className="flex flex-col gap-8 px-4 pt-6">
         <ProfileCompletionSection role={role} />
         <ProfileActivitySection role={role} />
         <section aria-labelledby="profile-account-title">
@@ -34,11 +36,22 @@ export function ProfileScreen({ role }: ProfileScreenProps) {
             </p>
           </div>
           <div className="flex flex-col gap-3">
+            {role === "athlete" ? (
+              <Link
+                href="/athlete/memberships"
+                className="app-settings-row app-reveal"
+              >
+                <Icon name="ticket" size={22} />
+                <span className="flex-1 font-bold">بسته‌ها و عضویت‌های من</span>
+                <Icon name="chevron-left" size={18} />
+              </Link>
+            ) : null}
+            {role === "athlete" ? <Link href="/athlete/packages" className="app-settings-row app-reveal"><Icon name="ticket" size={22} /><span className="flex-1 font-bold">بسته‌های مربی من</span><Icon name="chevron-left" size={18} /></Link> : null}
             <Link
               href="/auth/roles?manage=1"
-              className="app-card app-reveal flex items-center gap-3 p-4"
+              className="app-settings-row app-reveal"
             >
-              <span className="flex size-10 items-center justify-center rounded-full bg-surface-secondary">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
                 <Icon name="users-two" size={20} />
               </span>
               <span className="flex min-w-0 flex-1 flex-col gap-2">
@@ -94,9 +107,9 @@ export function ProfileScreen({ role }: ProfileScreenProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="app-card app-reveal flex items-center gap-3 p-4"
+                className="app-settings-row app-reveal"
               >
-                <span className="flex size-10 items-center justify-center rounded-full bg-surface-secondary">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
                   <Icon name={item.icon} size={20} />
                 </span>
                 <Typography type="body" weight="bold" className="flex-1">

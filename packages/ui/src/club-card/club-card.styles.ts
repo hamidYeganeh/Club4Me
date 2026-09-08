@@ -2,7 +2,7 @@ import { tv } from "tailwind-variants";
 
 export const clubCardStyles = tv({
   slots: {
-    root: "group relative isolate shrink-0 gap-0 overflow-hidden rounded-[var(--club-card-radius)] border-none bg-surface p-0 shadow-md transition-transform duration-300 active:scale-[0.985] [--club-card-padding:16px] [--club-card-radius:24px]",
+    root: "group relative isolate shrink-0 gap-0 overflow-hidden rounded-[var(--club-card-radius)] border-none bg-surface p-0 shadow-md transition-transform duration-300 active:scale-[0.985] [--club-card-padding:16px] [--club-card-radius:var(--app-radius-feature,24px)]",
     image:
       "pointer-events-none absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.02] select-none",
     shade:

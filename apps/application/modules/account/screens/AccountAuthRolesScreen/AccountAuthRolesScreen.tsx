@@ -4,9 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { tokenStore } from "@api";
 import { useAccountMe } from "@api/account";
-import type { RequestableRole } from "@api/account";
 import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
-import { AccountAuthRolesCopySection } from "@modules/account/sections/AccountAuthRolesCopySection";
+import { AuthPageIntro } from "@/components/auth-page-intro";
 import { AccountAuthRolesOptionsSection } from "@modules/account/sections/AccountAuthRolesOptionsSection";
 import { useTranslations } from "next-intl";
 
@@ -18,7 +17,6 @@ import {
 } from "@/lib/post-auth-path";
 import { AUTH_PATH } from "@/lib/welcome-onboarding";
 import { AuthScreenSkeleton } from "@/components/loading-skeletons";
-import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
 export function AccountAuthRolesScreen() {
   const router = useRouter();
@@ -26,9 +24,10 @@ export function AccountAuthRolesScreen() {
   const t = useTranslations("auth.roles");
   const tCommon = useTranslations("common");
   const [hasToken, setHasToken] = useState<boolean | null>(null);
-  const [requestRole, setRequestRole] = useState<RequestableRole | null>(null);
   const me = useAccountMe(hasToken === true);
   const isFirstTime = searchParams.get("firstTime") === "1";
+  const needsPassword =
+    me.data && !me.data.hasPassword && !me.data.roles.includes("athlete");
   const isManaging = searchParams.get("manage") === "1";
   const roles = useMemo(
     () => (me.data ? getApplicationRoles(me.data.roles) : []),
@@ -50,17 +49,12 @@ export function AccountAuthRolesScreen() {
   }, [hasToken, me.isError, router]);
 
   useEffect(() => {
-    if (me.data && !me.data.hasPassword) {
+    if (needsPassword) {
       router.replace(SET_PASSWORD_PATH);
-    } else if (
-      me.data?.hasPassword &&
-      !isFirstTime &&
-      !isManaging &&
-      roles.length === 1
-    ) {
+    } else if (me.data && !isFirstTime && !isManaging && roles.length === 1) {
       router.replace(getRolePath(roles[0]));
     }
-  }, [isFirstTime, isManaging, me.data, roles, router]);
+  }, [isFirstTime, isManaging, me.data, roles, router, needsPassword]);
 
   if (
     hasToken === null ||
@@ -68,7 +62,7 @@ export function AccountAuthRolesScreen() {
     me.isError ||
     me.isLoading ||
     !me.data ||
-    !me.data.hasPassword ||
+    needsPassword ||
     (!isFirstTime && !isManaging && roles.length === 1)
   ) {
     return <AuthScreenSkeleton />;
@@ -76,38 +70,31 @@ export function AccountAuthRolesScreen() {
 
   return (
     <AuthScreen>
-      {requestRole ? (
-        <SecondaryHeader
-          title="درخواست نقش"
-          showFilter={false}
-          onBack={() => setRequestRole(null)}
-        />
-      ) : (
-        <>
-          <AccountAuthOtpHeaderSection
-            backLabel={tCommon("back")}
-            href={isManaging ? `/${roles[0] ?? "athlete"}/profile` : "/auth"}
-            overlay
-            transparent
-          />
-          <AccountAuthRolesCopySection
-            title={isManaging ? "نقش‌های من" : t("title")}
-            subtitle={
-              isManaging
-                ? "نقش فعال خود را ببینید یا برای نقش تازه درخواست ثبت کنید."
-                : t("subtitle")
-            }
-          />
-        </>
-      )}
+      <AccountAuthOtpHeaderSection
+        backLabel={tCommon("back")}
+        href={isManaging ? `/${roles[0] ?? "athlete"}/profile` : "/auth"}
+        overlay
+        transparent
+      />
+      <AuthPageIntro
+        titleId="account-auth-roles-title"
+        title={isManaging ? "نقش‌های من" : t("title")}
+        subtitle={
+          isManaging
+            ? "نقش فعال خود را ببینید یا برای نقش تازه درخواست ثبت کنید."
+            : t("subtitle")
+        }
+      />
       <AccountAuthRolesOptionsSection
         athleteLabel={t("athlete")}
         coachLabel={t("coach")}
         ownerLabel={t("owner")}
         grantedRoles={roles}
         isFirstTime={isFirstTime}
-        requestRole={requestRole}
-        onRequestRoleChange={setRequestRole}
+        requestRole={null}
+        onRequestRoleChange={(role) =>
+          router.push(role ? `/auth/roles/${role}` : "/auth/roles/requests")
+        }
         onSelectRole={(role) => {
           const path = getRolePath(role);
           if (path.startsWith("http")) {

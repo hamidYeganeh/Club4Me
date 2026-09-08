@@ -2,7 +2,7 @@
 
 import type { PublicResourceItem } from "@api/discovery";
 import { ScrollShadow, Typography } from "@heroui/react";
-import Link from "next/link";
+import Link from "@/components/app-link";
 import { useRouter } from "next/navigation";
 import { Icon } from "@theme/icon";
 import { AmenityCard } from "@ui/amenity-card";

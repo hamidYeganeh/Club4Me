@@ -1,19 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { tokenStore } from "@api";
+import { ApiError, tokenStore } from "@api";
 import { useAccountMe } from "@api/account";
 import { AccountAuthSetPasswordForm } from "@modules/account/forms/AccountAuthSetPasswordForm";
-import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
-import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
+import { AuthPageIntro } from "@/components/auth-page-intro";
 import { useTranslations } from "next-intl";
 
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { AuthScreen } from "@/components/auth-screen";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-inset";
-import { FIRST_TIME_ROLES_PATH, getPostAuthPath } from "@/lib/post-auth-path";
+import { FIRST_TIME_ROLES_PATH } from "@/lib/post-auth-path";
+import { completeAuthenticationPath } from "@/lib/auth-return-path";
 import { AUTH_PATH } from "@/lib/welcome-onboarding";
 import { AuthScreenSkeleton } from "@/components/loading-skeletons";
+import { RequestFailureState } from "@/components/request-failure-state";
+import { getQueryFailure } from "@/lib/request-failure";
 
 const ACCOUNT_AUTH_SET_PASSWORD_FORM_ID = "account-auth-set-password-form";
 
@@ -23,7 +26,24 @@ export function AccountAuthSetPasswordScreen() {
   const isKeyboardOpen = useKeyboardOpen();
   const [hasToken, setHasToken] = useState<boolean | null>(null);
   const me = useAccountMe(hasToken === true);
+  const sessionExpired =
+    me.error instanceof ApiError && me.error.status === 401;
+  const failure = getQueryFailure(me.error, me.fetchStatus);
   const observedMissingPassword = useRef(false);
+  const navigated = useRef(false);
+  const finish = useCallback(
+    (firstTime: boolean) => {
+      if (!me.data || navigated.current) return;
+      navigated.current = true;
+      router.replace(
+        completeAuthenticationPath(
+          { ...me.data, hasPassword: true },
+          firstTime ? FIRST_TIME_ROLES_PATH : undefined,
+        ),
+      );
+    },
+    [me.data, router],
+  );
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -33,11 +53,11 @@ export function AccountAuthSetPasswordScreen() {
   }, []);
 
   useEffect(() => {
-    if (hasToken === false || me.isError) {
+    if (hasToken === false || sessionExpired) {
       tokenStore.clear();
       router.replace(AUTH_PATH);
     }
-  }, [hasToken, me.isError, router]);
+  }, [hasToken, sessionExpired, router]);
 
   useEffect(() => {
     if (!me.data) {
@@ -47,18 +67,24 @@ export function AccountAuthSetPasswordScreen() {
     if (!me.data.hasPassword) {
       observedMissingPassword.current = true;
     } else {
-      router.replace(
-        observedMissingPassword.current
-          ? FIRST_TIME_ROLES_PATH
-          : getPostAuthPath(me.data),
-      );
+      finish(observedMissingPassword.current);
     }
-  }, [me.data, router]);
+  }, [me.data, finish]);
+
+  if (failure && !sessionExpired && !me.data)
+    return (
+      <main className="app-page justify-center">
+        <RequestFailureState
+          error={failure}
+          onRetry={() => void me.refetch()}
+        />
+      </main>
+    );
 
   if (
     hasToken === null ||
     hasToken === false ||
-    me.isError ||
+    sessionExpired ||
     me.isLoading ||
     !me.data ||
     me.data.hasPassword
@@ -68,17 +94,16 @@ export function AccountAuthSetPasswordScreen() {
 
   return (
     <AuthScreen>
-      <AccountAuthOtpHeroSection
-        alt={t("illustrationAlt")}
-        src="/auth/club-access-iran-v2.png"
-        width={1086}
-        height={1448}
-        size={isKeyboardOpen ? "compact" : "default"}
+      <SecondaryHeader
+        title="تعیین رمز عبور"
+        showFilter={false}
+        showBack={false}
       />
-      <AccountAuthOtpCopySection
+      <AuthPageIntro
         titleId="account-auth-set-password-title"
         title={t("title")}
         subtitle={t("subtitle")}
+        keyboardOpen={isKeyboardOpen}
       />
       <AccountAuthSetPasswordForm
         formId={ACCOUNT_AUTH_SET_PASSWORD_FORM_ID}
@@ -101,7 +126,7 @@ export function AccountAuthSetPasswordScreen() {
           strong: t("strength.strong"),
         }}
         onSuccess={() => {
-          router.replace(FIRST_TIME_ROLES_PATH);
+          finish(true);
         }}
       />
     </AuthScreen>

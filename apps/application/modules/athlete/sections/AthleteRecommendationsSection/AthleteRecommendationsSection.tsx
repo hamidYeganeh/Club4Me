@@ -21,9 +21,7 @@ export function AthleteRecommendationsSection() {
           بر اساس موقعیت پیش‌فرض، ورزش‌ها و سابقه ثبت‌نام شما
         </p>
       </div>
-      {query.isPending ? (
-        <CompactCardListSkeleton count={2} />
-      ) : null}
+      {query.isPending ? <CompactCardListSkeleton count={2} /> : null}
       {query.isError ? (
         <Card className="app-card rounded-2xl p-5 text-center text-sm text-muted shadow-none">
           پیشنهادها فعلاً در دسترس نیستند.

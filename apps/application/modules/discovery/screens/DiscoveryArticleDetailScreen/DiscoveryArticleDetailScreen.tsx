@@ -1,12 +1,13 @@
 "use client";
 
 import { SaveButton } from "@/components/save-button";
-import Link from "next/link";
-import { Button } from "@heroui/react";
-import { Icon } from "@theme/icon";
+import { SecondaryHeader } from "../../components/SecondaryHeader";
+import { DiscoveryQueryPage } from "../../components/DiscoveryQueryPage";
+import { DiscoveryEmptyPage } from "../../components/DiscoveryEmptyPage";
+import { getQueryFailure } from "@/lib/request-failure";
 import { useCatalogArticle } from "@api/discovery";
 
-import { FallbackImage } from "@/components/FallbackImage";
+import { DiscoveryImageHero } from "../../components/DiscoveryImageHero";
 import { ArticleDetailSkeleton } from "@/components/loading-skeletons";
 
 export function DiscoveryArticleDetailScreen({
@@ -16,61 +17,43 @@ export function DiscoveryArticleDetailScreen({
 }) {
   const query = useCatalogArticle(articleId);
 
+  if (getQueryFailure(query.error, query.fetchStatus) && !query.data)
+    return <DiscoveryQueryPage title="مقاله" query={query} />;
   if (query.isPending) {
     return <ArticleDetailSkeleton />;
   }
-  if (query.isError || !query.data) {
+  if (!query.data)
     return (
-      <main className="grid min-h-dvh place-items-center p-6 text-center">
-        <div>
-          <p className="text-sm text-muted">
-            این مقاله پیدا نشد یا منتشر نشده است.
-          </p>
-          <Button className="mt-4" onPress={() => void query.refetch()}>
-            تلاش دوباره
-          </Button>
-        </div>
-      </main>
+      <DiscoveryEmptyPage
+        headerTitle="مقاله"
+        title="این مقاله پیدا نشد"
+        description="ممکن است مقاله هنوز منتشر نشده باشد."
+      />
     );
-  }
 
   const article = query.data;
   return (
     <main className="min-h-dvh bg-background pb-[calc(3rem+env(safe-area-inset-bottom))]">
-      <div className="fixed inset-x-0 top-0 z-40 mx-auto flex h-[calc(64px+env(safe-area-inset-top))] max-w-xl items-end justify-between bg-linear-to-b from-background/90 to-transparent px-5 pb-2 pt-[env(safe-area-inset-top)] backdrop-blur-[2px]">
-        <Link
-          href="/discovery/articles"
-          aria-label="بازگشت به مقالات"
-          className="app-icon-button"
-        >
-          <Icon name="chevron-right" size={22} />
-        </Link>
-        <SaveButton entityType="article" entityId={article.id} />
-      </div>
+      <SecondaryHeader
+        title="مقاله"
+        showFilter={false}
+        backHref="/discovery/articles"
+        backLabel="بازگشت به مقالات"
+        action={<SaveButton entityType="article" entityId={article.id} />}
+      />
 
       <article>
-        <div className="relative aspect-[4/5] max-h-[34rem] overflow-hidden bg-surface-secondary">
-          <FallbackImage
-            src={article.coverImageUrl}
-            alt={article.title}
-            fill
-            priority
-            unoptimized
-            sizes="(max-width: 576px) 100vw, 576px"
-            className="object-cover"
+        <div className="mx-4 pt-4">
+          <DiscoveryImageHero
+            imageUrl={article.coverImageUrl || "/profile/cover.jpg"}
+            imageClassName="object-cover object-center"
+            title={article.title}
+            eyebrow="مجله جیم‌فورمی"
+            description={article.excerpt}
           />
-          <div className="absolute inset-0 bg-linear-to-t from-background via-background/15 to-background/10" />
-          <header className="absolute inset-x-0 bottom-0 px-5 pb-7">
-            <h1 className="max-w-lg text-3xl leading-[1.3] font-black tracking-tight text-white drop-shadow-sm">
-              {article.title}
-            </h1>
-            <p className="mt-3 max-w-lg text-sm leading-6 text-white/78">
-              {article.excerpt}
-            </p>
-          </header>
         </div>
         <div className="px-5">
-          <div className="border-b border-white/8 py-5">
+          <div className="border-b border-border py-5">
             <p className="text-sm font-bold">{article.authorName}</p>
             {article.publishedAt ? (
               <p className="mt-1 text-xs text-muted">

@@ -11,7 +11,7 @@ export const accountAuthOtpCopySectionStyles = tv({
     cue: {
       true: {
         subtitle:
-          "after:absolute after:top-full after:left-1/2 after:h-12 after:w-px after:-translate-x-1/2 after:bg-linear-to-b after:from-transparent after:to-foreground after:content-[''] max-[700px]:after:h-10",
+          "after:absolute after:top-full after:left-1/2 after:h-12 after:w-px after:-translate-x-1/2 after:bg-linear-to-t after:from-foreground after:to-transparent after:content-[''] max-[700px]:after:h-10",
       },
       false: {
         subtitle: "",

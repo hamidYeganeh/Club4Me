@@ -1,4 +1,7 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
+import { Preferences } from "@capacitor/preferences";
+
+const LOCATION_GRANTED_KEY = "gym4me.location.granted";
 
 type NativePosition = {
   timestamp: number;
@@ -11,18 +14,18 @@ type NativePosition = {
 };
 
 type NativeGeolocationPlugin = {
+  checkPermission(): Promise<{ granted: boolean }>;
   getCurrentPosition(): Promise<NativePosition>;
 };
 
 export type LocationErrorCode =
-  | "unsupported"
-  | "denied"
-  | "unavailable"
-  | "timeout"
-  | "unknown";
+  "unsupported" | "denied" | "unavailable" | "timeout" | "unknown";
 
 export class LocationAccessError extends Error {
-  constructor(public readonly code: LocationErrorCode, message: string) {
+  constructor(
+    public readonly code: LocationErrorCode,
+    message: string,
+  ) {
     super(message);
     this.name = "LocationAccessError";
   }
@@ -34,9 +37,14 @@ const nativeGeolocation =
 export async function getCurrentPosition(): Promise<NativePosition> {
   if (Capacitor.getPlatform() === "android") {
     try {
-      return await nativeGeolocation.getCurrentPosition();
+      const position = await nativeGeolocation.getCurrentPosition();
+      await Preferences.set({ key: LOCATION_GRANTED_KEY, value: "true" });
+      return position;
     } catch (error) {
-      throw normalizeLocationError(error);
+      const normalized = normalizeLocationError(error);
+      if (normalized.code === "denied")
+        await Preferences.remove({ key: LOCATION_GRANTED_KEY });
+      throw normalized;
     }
   }
 
@@ -63,6 +71,33 @@ export async function getCurrentPosition(): Promise<NativePosition> {
       { enableHighAccuracy: true, maximumAge: 30_000, timeout: 12_000 },
     );
   });
+}
+
+export async function hasGrantedLocationPermission() {
+  if (Capacitor.getPlatform() === "android") {
+    try {
+      const permission = await nativeGeolocation.checkPermission();
+      if (permission.granted) {
+        await Preferences.set({ key: LOCATION_GRANTED_KEY, value: "true" });
+        return true;
+      }
+      await Preferences.remove({ key: LOCATION_GRANTED_KEY });
+      return false;
+    } catch {
+      return (
+        (await Preferences.get({ key: LOCATION_GRANTED_KEY })).value === "true"
+      );
+    }
+  }
+  if (!("permissions" in navigator)) return false;
+  try {
+    return (
+      (await navigator.permissions.query({ name: "geolocation" })).state ===
+      "granted"
+    );
+  } catch {
+    return false;
+  }
 }
 
 function normalizeLocationError(error: unknown): LocationAccessError {

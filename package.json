@@ -2,6 +2,8 @@
   "name": "Gym4Me",
   "private": true,
   "scripts": {
+    "design:sync": "node scripts/sync-sandow-design.mjs",
+    "design:check": "node scripts/sync-sandow-design.mjs --check",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",

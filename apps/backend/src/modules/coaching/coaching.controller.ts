@@ -1,3 +1,5 @@
+import { CoachPurchasesService } from "./services/coach-purchases.service";
+import { CreateCoachPurchaseDto } from "./dto/coach-purchase.dto";
 import {
   Body,
   Controller,
@@ -28,6 +30,7 @@ import {
   GenerateScheduleDto,
   ReplaceAvailabilityDto,
   ReplaceCoachSportsDto,
+  RescheduleCoachBookingDto,
   RescheduleSessionDto,
   ReviewCoachDto,
   ReviewClubClassDto,
@@ -328,7 +331,22 @@ export class AthleteCoachingController {
   constructor(
     private readonly enrollments: EnrollmentsService,
     private readonly bookings: BookingsService,
+    private readonly purchases: CoachPurchasesService,
   ) {}
+
+  @Get("packages")
+  packages(@CurrentUser() user: AuthTokenPayload) {
+    return this.purchases.list(user.sub);
+  }
+
+  @Post("services/:offeringId/purchases")
+  purchase(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("offeringId") offeringId: string,
+    @Body() body: CreateCoachPurchaseDto,
+  ) {
+    return this.purchases.create(user.sub, offeringId, body.idempotencyKey);
+  }
 
   @Get("enrollments")
   listEnrollments(@CurrentUser() user: AuthTokenPayload) {
@@ -389,6 +407,28 @@ export class AthleteCoachingController {
     @Body() body: CancelSessionDto,
   ) {
     return this.bookings.cancelByAthlete(user.sub, bookingId, body.reason);
+  }
+
+  @Get("bookings/:bookingId/reschedule-options")
+  getBookingRescheduleOptions(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("bookingId") bookingId: string,
+  ) {
+    return this.bookings.listRescheduleOptions(user.sub, bookingId);
+  }
+
+  @Post("bookings/:bookingId/reschedule")
+  rescheduleBooking(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("bookingId") bookingId: string,
+    @Body() body: RescheduleCoachBookingDto,
+  ) {
+    return this.bookings.reschedule(
+      user.sub,
+      bookingId,
+      body.sessionId,
+      body.idempotencyKey,
+    );
   }
 
   @Patch("bookings/:bookingId/mock-payment/approve")

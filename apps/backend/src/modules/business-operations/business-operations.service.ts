@@ -1,3 +1,7 @@
+import { createHash } from "node:crypto";
+import { ClassBillingService, receiptDto } from "./class-billing.service";
+import { membershipWeekKey } from "../commerce/membership-week";
+import type { ClubPermission } from "../clubs/club-permissions";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
@@ -58,10 +62,15 @@ export class BusinessOperationsService {
     private classAttendance: Model<BusinessClassAttendanceDocument>,
     private clubs: ClubsRepository,
     private users: UsersRepository,
+    private billing: ClassBillingService,
   ) {}
 
-  private async club(ownerId: string, clubId: string) {
-    await this.clubs.findForOwner(ownerId, clubId);
+  private async club(
+    ownerId: string,
+    clubId: string,
+    permission?: ClubPermission,
+  ) {
+    await this.clubs.findForOwner(ownerId, clubId, permission);
     return oid(clubId);
   }
 
@@ -110,6 +119,12 @@ export class BusinessOperationsService {
       return exportResult(
         kind,
         [
+          "receiptId",
+          "enrollmentId",
+          "voidedAt",
+          "refundedAmount",
+          "netAmount",
+          "recordedBy",
           "studentId",
           "type",
           "title",
@@ -120,6 +135,12 @@ export class BusinessOperationsService {
           "notes",
         ],
         rows.map((row) => ({
+          receiptId: String(row._id),
+          enrollmentId: row.enrollmentId ? String(row.enrollmentId) : "",
+          voidedAt: row.voidedAt?.toISOString() ?? "",
+          refundedAmount: row.refundedAmount ?? 0,
+          netAmount: row.voidedAt ? 0 : row.amount - (row.refundedAmount ?? 0),
+          recordedBy: String(row.recordedBy),
           studentId: String(row.studentId),
           type: row.type,
           title: row.title,
@@ -225,12 +246,24 @@ export class BusinessOperationsService {
         : input.rows!;
     const errors: Array<{ row: number; message: string }> = [];
     const valid: Array<CreateStudentDto | CreatePaymentDto> = [];
+    const importFingerprint =
+      input.kind === "payments"
+        ? createHash("sha256").update(JSON.stringify(sourceRows)).digest("hex")
+        : "";
     sourceRows.forEach((row, index) => {
       const schema =
         input.kind === "students"
           ? CreateStudentDto.schema
           : CreatePaymentDto.schema;
-      const parsed = schema.safeParse(row);
+      const parsed = schema.safeParse(
+        input.kind === "payments"
+          ? {
+              ...row,
+              idempotencyKey:
+                row.idempotencyKey || `import:${importFingerprint}:${index}`,
+            }
+          : row,
+      );
       if (parsed.success)
         valid.push(parsed.data as CreateStudentDto | CreatePaymentDto);
       else
@@ -246,26 +279,188 @@ export class BusinessOperationsService {
         dryRun: true,
         total: sourceRows.length,
         valid: valid.length,
+        imported: 0,
         errors,
       };
     let imported = 0;
-    for (const row of valid) {
-      if (input.kind === "students")
-        await this.createStudent(ownerId, clubId, row as CreateStudentDto);
-      else
-        await this.createPayment(
-          ownerId,
-          clubId,
-          actorId,
-          row as CreatePaymentDto,
-        );
-      imported += 1;
+    for (const [index, row] of valid.entries()) {
+      try {
+        if (input.kind === "students")
+          await this.createStudent(ownerId, clubId, row as CreateStudentDto);
+        else
+          await this.createPayment(
+            ownerId,
+            clubId,
+            actorId,
+            row as CreatePaymentDto,
+          );
+        imported += 1;
+      } catch (error) {
+        errors.push({
+          row: index + 2,
+          message:
+            error instanceof AppError
+              ? `${error.code}: ${error.message}`
+              : "ذخیره این ردیف تأیید نشد؛ پیش از تلاش دوباره وضعیت آن را بررسی کنید.",
+        });
+      }
     }
-    return { dryRun: false, total: sourceRows.length, imported, errors: [] };
+    return {
+      dryRun: false,
+      total: sourceRows.length,
+      valid: valid.length,
+      imported,
+      errors,
+    };
+  }
+
+  async reception(userId: string, clubId: string, phone: string) {
+    const id = await this.club(userId, clubId, "reception.read");
+    const canonical = toE164IranianPhone(phone);
+    const variants = [canonical, `0${canonical.slice(3)}`, canonical.slice(3)];
+    const [student, account] = await Promise.all([
+      this.students.findOne({ clubId: id, phone: { $in: variants } }),
+      this.users.findDocumentByPhone(canonical),
+    ]);
+    const accountMismatch = Boolean(
+      student?.userId &&
+      account &&
+      String(student.userId) !== String(account._id),
+    );
+    const accountId = accountMismatch
+      ? null
+      : (account?._id ?? student?.userId);
+    const [memberships, reservations, enrollments, receipts] =
+      await Promise.all([
+        accountId
+          ? this.students.db
+              .collection("user_entitlements")
+              .find({ clubId: id, userId: accountId })
+              .sort({ endsAt: -1 })
+              .limit(100)
+              .toArray()
+          : [],
+        accountId
+          ? this.students.db
+              .collection("session_reservations")
+              .find({ clubId: id, userId: accountId })
+              .sort({ sessionStartsAt: -1 })
+              .limit(100)
+              .toArray()
+          : [],
+        student
+          ? this.students.db
+              .collection("business_class_enrollments")
+              .find({ clubId: id, studentId: student._id })
+              .sort({ enrolledAt: -1 })
+              .limit(100)
+              .toArray()
+          : [],
+        student
+          ? this.payments
+              .find({ clubId: id, studentId: student._id, voidedAt: null })
+              .sort({ paidAt: -1 })
+          : [],
+      ]);
+    if (!student && !memberships.length && !reservations.length)
+      return {
+        found: false,
+        accountMismatch: false,
+        person: null,
+        memberships: [],
+        reservations: [],
+        enrollments: [],
+        unallocatedReceiptCount: 0,
+      };
+    const classes = await this.classes
+      .find({
+        _id: { $in: enrollments.map((item) => item.classId) },
+        clubId: id,
+      })
+      .select("title currency");
+    const names = new Map(classes.map((item) => [String(item._id), item]));
+    const now = new Date();
+    return {
+      found: true,
+      accountMismatch,
+      person: {
+        studentId: student ? String(student._id) : null,
+        name: student
+          ? `${student.firstName} ${student.lastName}`
+          : [account?.firstName, account?.lastName].filter(Boolean).join(" ") ||
+            "ورزشکار",
+        phone: canonical,
+      },
+      memberships: memberships.map((item) => {
+        const week = membershipWeekKey(now, item.weekCalendar);
+        const used =
+          item.weeklyReservations?.[week] ??
+          (item.usageWeekKey === week ? (item.weeklyUsed ?? 0) : 0);
+        return {
+          id: String(item._id),
+          title: item.title,
+          type: item.type,
+          startsAt: new Date(item.startsAt).toISOString(),
+          endsAt: new Date(item.endsAt).toISOString(),
+          pauseUntil: item.pauseUntil
+            ? new Date(item.pauseUntil).toISOString()
+            : null,
+          status:
+            item.status === "revoked"
+              ? "revoked"
+              : new Date(item.endsAt) < now
+                ? "expired"
+                : new Date(item.startsAt) > now
+                  ? "scheduled"
+                  : item.pauseUntil && new Date(item.pauseUntil) > now
+                    ? "paused"
+                    : item.status,
+          remainingSessions: item.remainingSessions ?? null,
+          weeklyRemaining:
+            item.weeklyLimit == null
+              ? null
+              : Math.max(0, item.weeklyLimit - used),
+          weekCalendar: item.weekCalendar ?? "iso_utc",
+        };
+      }),
+      reservations: reservations.map((item) => ({
+        id: String(item._id),
+        title: item.sessionTitle,
+        startsAt: new Date(item.sessionStartsAt).toISOString(),
+        endsAt: new Date(item.sessionEndsAt).toISOString(),
+        status: item.status,
+        paymentStatus: item.paymentStatus,
+        participantCount: item.participantCount,
+        checkedInParticipants: item.checkedInParticipants ?? 0,
+        checkedInAt: item.checkedInAt
+          ? new Date(item.checkedInAt).toISOString()
+          : null,
+        checkInOpensAt: new Date(
+          new Date(item.sessionStartsAt).getTime() - 30 * 60000,
+        ).toISOString(),
+        changes: item.checkInChanges ?? [],
+      })),
+      enrollments: enrollments.map((item) => ({
+        id: String(item._id),
+        classId: String(item.classId),
+        title: names.get(String(item.classId))?.title ?? "کلاس",
+        status: item.status,
+        paymentStatus: item.paymentStatus,
+        agreedPrice: item.agreedPrice,
+        currency: names.get(String(item.classId))?.currency ?? "IRR",
+        remainingSessions: item.remainingSessions ?? null,
+        outstandingAmount: this.billing.snapshot(
+          item as unknown as import("./schemas/training-class.schema").BusinessClassEnrollment,
+          receipts,
+        ).outstandingAmount,
+      })),
+      unallocatedReceiptCount: receipts.filter((row) => !row.enrollmentId)
+        .length,
+    };
   }
 
   async listStudents(ownerId: string, clubId: string) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "students.read");
     const items = await this.students
       .find({ clubId: id })
       .sort({ createdAt: -1 })
@@ -277,7 +472,7 @@ export class BusinessOperationsService {
     clubId: string,
     input: CreateStudentDto,
   ) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "students.write");
     const duplicate = await this.students.exists({
       clubId: id,
       phone: input.phone,
@@ -306,7 +501,7 @@ export class BusinessOperationsService {
     itemId: string,
     input: UpdateStudentDto,
   ) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "students.write");
     const userId = input.phone
       ? await this.linkedUserId(input.phone, "athlete")
       : undefined;
@@ -332,7 +527,7 @@ export class BusinessOperationsService {
   }
 
   async listCoaches(ownerId: string, clubId: string) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "coaches.read");
     const items = await this.coaches
       .find({ clubId: id })
       .sort({ createdAt: -1 })
@@ -340,7 +535,7 @@ export class BusinessOperationsService {
     return { items: items.map(coachDto) };
   }
   async createCoach(ownerId: string, clubId: string, input: CreateCoachDto) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "coaches.write");
     const duplicate = await this.coaches.exists({
       clubId: id,
       phone: input.phone,
@@ -367,7 +562,7 @@ export class BusinessOperationsService {
     itemId: string,
     input: UpdateCoachDto,
   ) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "coaches.write");
     const userId = input.phone
       ? await this.linkedUserId(input.phone, "coach")
       : undefined;
@@ -396,12 +591,12 @@ export class BusinessOperationsService {
   }
 
   async listPayments(ownerId: string, clubId: string) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "payments.read");
     const items = await this.payments
       .find({ clubId: id })
       .sort({ paidAt: -1 })
       .limit(1000);
-    return { items: items.map(paymentDto) };
+    return { items: items.map(receiptDto) };
   }
   async createPayment(
     ownerId: string,
@@ -409,24 +604,11 @@ export class BusinessOperationsService {
     userId: string,
     input: CreatePaymentDto,
   ) {
-    const id = await this.club(ownerId, clubId);
-    if (
-      !(await this.students.exists({ _id: oid(input.studentId), clubId: id }))
-    )
-      throw notFound("STUDENT_NOT_FOUND");
-    return paymentDto(
-      await this.payments.create({
-        ...input,
-        clubId: id,
-        studentId: oid(input.studentId),
-        paidAt: new Date(input.paidAt),
-        recordedBy: oid(userId),
-      }),
-    );
+    return this.billing.createReceipt(userId, clubId, input);
   }
 
   async listAttendance(ownerId: string, clubId: string, date?: string) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "attendance.read");
     const filter: Record<string, unknown> = { clubId: id };
     if (date) {
       const start = new Date(`${date}T00:00:00.000Z`);
@@ -448,7 +630,7 @@ export class BusinessOperationsService {
     userId: string,
     input: UpsertAttendanceDto,
   ) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "attendance.write");
     const studentId = oid(input.studentId);
     if (!(await this.students.exists({ _id: studentId, clubId: id })))
       throw notFound("STUDENT_NOT_FOUND");
@@ -468,7 +650,7 @@ export class BusinessOperationsService {
   }
 
   async listBranches(ownerId: string, clubId: string) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "branches.read");
     const items = await this.branches
       .find({ clubId: id })
       .sort({ createdAt: -1 })
@@ -476,7 +658,7 @@ export class BusinessOperationsService {
     return { items: items.map(branchDto) };
   }
   async createBranch(ownerId: string, clubId: string, input: CreateBranchDto) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "branches.write");
     return branchDto(await this.branches.create({ ...input, clubId: id }));
   }
   async updateBranch(
@@ -485,7 +667,7 @@ export class BusinessOperationsService {
     itemId: string,
     input: UpdateBranchDto,
   ) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "branches.write");
     const item = await this.branches.findOneAndUpdate(
       { _id: oid(itemId), clubId: id },
       { $set: input },
@@ -496,7 +678,7 @@ export class BusinessOperationsService {
   }
 
   async summary(ownerId: string, clubId: string) {
-    const id = await this.club(ownerId, clubId);
+    const id = await this.club(ownerId, clubId, "reports.read");
     const now = new Date();
     const sixMonthsAgo = new Date(
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1),
@@ -516,8 +698,15 @@ export class BusinessOperationsService {
       this.classes.countDocuments({ clubId: id, status: "active" }),
       this.branches.countDocuments({ clubId: id, status: "active" }),
       this.payments
-        .find({ clubId: id, paidAt: { $gte: sixMonthsAgo } })
-        .select("amount type paidAt"),
+        .find({
+          clubId: id,
+          voidedAt: null,
+          $or: [
+            { paidAt: { $gte: sixMonthsAgo } },
+            { "refunds.paidAt": { $gte: sixMonthsAgo } },
+          ],
+        })
+        .select("amount type paidAt refunds"),
       this.attendance
         .find({ clubId: id, date: { $gte: sevenDaysAgo } })
         .select("status date"),
@@ -552,10 +741,21 @@ export class BusinessOperationsService {
     );
     const paymentMix = { tuition: 0, session: 0, other: 0 };
     for (const payment of payments) {
-      const key = `${payment.paidAt.getUTCFullYear()}-${String(payment.paidAt.getUTCMonth() + 1).padStart(2, "0")}`;
-      const point = revenueMap.get(key);
-      if (point) point.value += payment.amount;
-      paymentMix[payment.type] += payment.amount;
+      const entries = [
+        { paidAt: payment.paidAt, amount: payment.amount },
+        ...(payment.refunds ?? []).map((refund) => ({
+          paidAt: new Date(refund.paidAt),
+          amount: -refund.amount,
+        })),
+      ];
+      for (const entry of entries) {
+        const key = `${entry.paidAt.getUTCFullYear()}-${String(entry.paidAt.getUTCMonth() + 1).padStart(2, "0")}`;
+        const point = revenueMap.get(key);
+        if (point) {
+          point.value += entry.amount;
+          paymentMix[payment.type] += entry.amount;
+        }
+      }
     }
     const attendanceByDay = Array.from({ length: 7 }, (_, index) => {
       const date = new Date(now.valueOf() - (6 - index) * 86_400_000);
@@ -686,20 +886,6 @@ function coachDto(item: ClubCoachProfileDocument) {
     employmentType: item.employmentType,
     status: item.status,
     notes: item.notes,
-  };
-}
-function paymentDto(item: ClubManualPaymentDocument) {
-  return {
-    ...common(item),
-    studentId: String(item.studentId),
-    type: item.type,
-    title: item.title,
-    amount: item.amount,
-    currency: item.currency,
-    paidAt: item.paidAt.toISOString(),
-    method: item.method,
-    notes: item.notes,
-    recordedBy: String(item.recordedBy),
   };
 }
 

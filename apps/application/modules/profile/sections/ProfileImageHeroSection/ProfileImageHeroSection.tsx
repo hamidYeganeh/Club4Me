@@ -1,9 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/refs -- react-dropzone prop getters attach managed refs during render. */
-
 import { ImageCropper } from "@/components/image-cropper";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Avatar, Badge, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { FALLBACK_IMAGE_SRC, resolveImageSrc } from "@ui/fallback-image";
@@ -12,7 +10,6 @@ import { useDropzone } from "react-dropzone";
 
 import { profileImageHeroSectionStyles } from "./ProfileImageHeroSection.styles";
 import type { ProfileImageHeroSectionProps } from "./ProfileImageHeroSection.types";
-import { PermissionGrantSheet } from "@/components/permissions/permission-grant-sheet";
 
 const profileImageAccept = {
   "image/jpeg": [".jpg", ".jpeg"],
@@ -30,8 +27,6 @@ export function ProfileImageHeroSection({
   const [cropFile, setCropFile] = useState<File | null>(null);
   const styles = profileImageHeroSectionStyles();
   const t = useTranslations("profile");
-  const [cameraPrimerOpen, setCameraPrimerOpen] = useState(false);
-  const openFileDialogRef = useRef<(() => void) | null>(null);
   const { getInputProps, getRootProps, isDragActive, open } = useDropzone({
     accept: profileImageAccept,
     maxSize: 10 * 1024 * 1024,
@@ -47,8 +42,7 @@ export function ProfileImageHeroSection({
   });
 
   const requestImage = () => {
-    openFileDialogRef.current = open;
-    setCameraPrimerOpen(true);
+    open();
   };
 
   return (
@@ -153,16 +147,6 @@ export function ProfileImageHeroSection({
       </div>
 
       <Typography className={styles.uploadHint()}>{t("upload")}</Typography>
-
-      <PermissionGrantSheet
-        kind="camera"
-        open={cameraPrimerOpen}
-        onOpenChange={setCameraPrimerOpen}
-        onGrant={() => {
-          setCameraPrimerOpen(false);
-          window.setTimeout(() => openFileDialogRef.current?.(), 180);
-        }}
-      />
     </section>
   );
 }

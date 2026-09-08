@@ -13,7 +13,7 @@ import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoveryS
 
 export function ClubClassesSection({ clubId }: { clubId: string }) {
   const classes = useCatalogClasses({ clubId, limit: 6 });
-  const businessClasses = usePublicClubClasses({ clubId });
+  const businessClasses = usePublicClubClasses({ clubId, limit: 6 });
   const items = classes.data?.items ?? [];
   const businessItems = businessClasses.data?.items ?? [];
   const pending = classes.isPending || businessClasses.isPending;
@@ -105,12 +105,12 @@ export function ClubClassesSection({ clubId }: { clubId: string }) {
             );
           })}
           <ButtonLink
-            href="/discovery/classes"
+            href={`/discovery/classes?clubId=${clubId}`}
             variant="secondary"
             size="sm"
             className="mt-1 w-full"
           >
-            همه کلاس‌ها
+            همه کلاس‌های این باشگاه
           </ButtonLink>
         </div>
       ) : null}

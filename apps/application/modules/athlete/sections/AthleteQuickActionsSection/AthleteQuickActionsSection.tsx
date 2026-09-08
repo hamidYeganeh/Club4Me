@@ -1,4 +1,5 @@
-import Link from "next/link";
+import Link from "@/components/app-link";
+import { SectionHeading } from "@ui/section-heading";
 import { Icon, type IconName } from "@theme/icon";
 
 type QuickAction = {
@@ -37,17 +38,11 @@ export function AthleteQuickActionsSection() {
       className="app-reveal flex flex-col gap-4"
       aria-labelledby="athlete-quick-actions-title"
     >
-      <div>
-        <h2
-          id="athlete-quick-actions-title"
-          className="text-xl leading-7 font-bold"
-        >
-          شروع سریع
-        </h2>
-        <p className="mt-1 text-xs text-muted">
-          از همین‌جا به کارهای اصلی دسترسی داشته باش.
-        </p>
-      </div>
+      <SectionHeading
+        id="athlete-quick-actions-title"
+        title="شروع سریع"
+        description="از همین‌جا به کارهای اصلی دسترسی داشته باش."
+      />
 
       <div className="grid grid-cols-2 gap-3">
         {actions.map((action) => (
@@ -56,14 +51,14 @@ export function AthleteQuickActionsSection() {
             href={action.href}
             className={
               action.featured
-                ? "group col-span-2 flex min-h-32 items-center gap-4 overflow-hidden rounded-[1.35rem] border border-accent/25 bg-accent/12 p-5 text-foreground transition-transform duration-300 active:scale-[0.985]"
+                ? "app-feature-card group col-span-2 flex min-h-36 items-center gap-4 overflow-hidden p-5 transition-transform duration-300 active:scale-[0.985] motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
                 : "app-card group flex min-h-40 flex-col justify-between p-4 text-foreground"
             }
           >
             <span
               className={
                 action.featured
-                  ? "grid size-14 shrink-0 place-items-center rounded-[1.1rem] bg-accent text-accent-foreground"
+                  ? "grid size-14 shrink-0 place-items-center rounded-2xl bg-accent-foreground/10 text-accent-foreground"
                   : "grid size-11 place-items-center rounded-[1rem] bg-surface-secondary text-accent"
               }
             >
@@ -74,7 +69,9 @@ export function AthleteQuickActionsSection() {
               <strong className="block text-sm leading-6 font-bold">
                 {action.title}
               </strong>
-              <span className="mt-1 block text-xs leading-5 text-muted">
+              <span
+                className={`mt-1 block text-sm leading-6 ${action.featured ? "text-accent-foreground" : "text-muted"}`}
+              >
                 {action.description}
               </span>
             </span>
@@ -84,7 +81,7 @@ export function AthleteQuickActionsSection() {
               size={17}
               className={
                 action.featured
-                  ? "shrink-0 text-accent"
+                  ? "shrink-0 text-accent-foreground"
                   : "mt-4 self-end text-muted transition-transform duration-300 group-hover:-translate-x-1"
               }
             />

@@ -1,7 +1,7 @@
 "use client";
 
 import { BannerCardSkeleton } from "../../components/skeletons/BannerCardSkeleton";
-import Link from "next/link";
+import Link from "@/components/app-link";
 import { useReducedMotion } from "motion/react";
 import { useLocale } from "next-intl";
 import { Autoplay, FreeMode, Pagination } from "swiper/modules";

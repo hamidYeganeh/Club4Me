@@ -1,3 +1,11 @@
+import { CoachPackagePurchase } from "../coaching/schemas/coach-purchase.schema";
+import { allocateRefund } from "./refund-allocation";
+import { paymentDeadline } from "./payment-deadline";
+import {
+  Atomic,
+  inAtomicOperation,
+  lockPaymentReference,
+} from "../../infrastructure/database/atomic-operation";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { createHash, randomUUID } from "node:crypto";
@@ -16,6 +24,7 @@ import {
 } from "../reservations/schemas/reservable-session.schema";
 import type {
   CreatePaymentIntentDto,
+  QuotePaymentDto,
   MockPaymentCallbackDto,
   RefundPaymentDto,
 } from "./commerce.dto";
@@ -32,6 +41,11 @@ import {
   SettlementAccount,
   type SettlementAccountDocument,
 } from "./schemas/commerce.schema";
+
+import {
+  CoachingPaymentReference,
+  isCoachingReference,
+} from "./coaching-payment-reference";
 
 const PLATFORM_FEE_PERCENT = 10;
 
@@ -58,12 +72,35 @@ export class CommerceService {
   ) {}
 
   async createIntent(userId: string, input: CreatePaymentIntentDto) {
-    const existing = await this.intents.findOne({
-      userId: oid(userId),
-      idempotencyKey: input.idempotencyKey,
-    });
-    if (existing) return paymentDto(existing);
+    try {
+      return await this.createIntentAtomic(userId, input);
+    } catch (error) {
+      if (isDuplicateKey(error)) {
+        const existing = await this.intents.findOne({
+          userId: oid(userId),
+          idempotencyKey: input.idempotencyKey,
+        });
+        if (existing) {
+          if (
+            existing.referenceType !== input.referenceType ||
+            String(existing.referenceId) !== input.referenceId
+          )
+            throw new AppError(
+              409,
+              "IDEMPOTENCY_KEY_REUSED",
+              "کلید پرداخت قبلاً برای سفارش دیگری استفاده شده است.",
+            );
+          return paymentDto(existing);
+        }
+      }
+      throw error;
+    }
+  }
 
+  private async paymentContext(
+    userId: string,
+    input: Pick<CreatePaymentIntentDto, "referenceType" | "referenceId">,
+  ) {
     const reservation =
       input.referenceType === "reservation"
         ? await this.reservations.findOne({
@@ -71,6 +108,10 @@ export class CommerceService {
             userId: oid(userId),
             status: "reserved",
             paymentStatus: "pending",
+            $or: [
+              { paymentExpiresAt: null },
+              { paymentExpiresAt: { $gt: new Date() } },
+            ],
           })
         : null;
     const purchase =
@@ -81,7 +122,14 @@ export class CommerceService {
       input.referenceType === "business_class_enrollment"
         ? await this.classPortal.payableEnrollment(userId, input.referenceId)
         : null;
-    if (!reservation && !purchase && !classEnrollment) {
+    const coaching = isCoachingReference(input.referenceType)
+      ? await new CoachingPaymentReference(this.intents.db).payable(
+          userId,
+          input.referenceType,
+          input.referenceId,
+        )
+      : null;
+    if (!reservation && !purchase && !classEnrollment && !coaching) {
       throw new AppError(
         409,
         "REFERENCE_NOT_PAYABLE",
@@ -89,15 +137,36 @@ export class CommerceService {
       );
     }
     const grossAmount =
-      reservation?.totalPrice ?? purchase?.amount ?? classEnrollment!.amount;
+      reservation?.totalPrice ??
+      purchase?.amount ??
+      classEnrollment?.amount ??
+      coaching!.amount;
+    const currency =
+      reservation?.currency ??
+      classEnrollment?.currency ??
+      coaching?.currency ??
+      "IRR";
+    if (currency !== "IRR")
+      throw new AppError(
+        409,
+        "UNSUPPORTED_PAYMENT_CURRENCY",
+        "قیمت این خدمت باید به ریال ثبت شود.",
+      );
     const clubId =
-      reservation?.clubId ?? purchase?.clubId ?? classEnrollment!.clubId;
+      reservation?.clubId ??
+      purchase?.clubId ??
+      classEnrollment?.clubId ??
+      coaching?.clubId;
     const referenceId =
-      reservation?._id ?? purchase?._id ?? classEnrollment!.referenceId;
+      reservation?._id ??
+      purchase?._id ??
+      classEnrollment?.referenceId ??
+      coaching!.referenceId;
     const description =
       reservation?.sessionTitle ??
       (purchase ? `خرید مزایا ${String(purchase._id)}` : undefined) ??
-      classEnrollment!.title;
+      classEnrollment?.title ??
+      coaching!.title;
     const session = reservation
       ? await this.sessions.findById(reservation.sessionId)
       : null;
@@ -109,38 +178,126 @@ export class CommerceService {
       );
     }
 
-    const walletReservationKey = `payment-wallet-${input.idempotencyKey}`;
+    const discountContext = {
+      referenceType: input.referenceType,
+      referenceId,
+      grossAmount,
+      scopeValues: {
+        club: clubId ? [String(clubId)] : [],
+        coach: [
+          ...(coaching ? [String(coaching.coachId)] : []),
+          ...(session?.coachId ? [String(session.coachId)] : []),
+          ...(classEnrollment?.coachId
+            ? [String(classEnrollment.coachId)]
+            : []),
+        ],
+        class: [
+          ...(coaching?.classId ? [String(coaching.classId)] : []),
+          ...(session?.classId ? [String(session.classId)] : []),
+          ...(classEnrollment?.classId
+            ? [String(classEnrollment.classId)]
+            : []),
+        ],
+        sport: classEnrollment?.sport
+          ? [classEnrollment.sport.trim().toLocaleLowerCase("fa-IR")]
+          : [],
+        product: purchase ? [String(purchase.productId)] : [],
+        session_type: reservation
+          ? [reservation.sessionType]
+          : classEnrollment
+            ? ["class"]
+            : [],
+      },
+    };
+    return {
+      reservation,
+      purchase,
+      classEnrollment,
+      coaching,
+      grossAmount,
+      clubId,
+      referenceId,
+      description,
+      session,
+      discountContext,
+    };
+  }
+
+  @Atomic("intents")
+  private async createIntentAtomic(
+    userId: string,
+    input: CreatePaymentIntentDto,
+  ) {
+    await lockPaymentReference(
+      this.intents.db,
+      input.referenceType,
+      input.referenceId,
+    );
+    const existing = await this.intents.findOne({
+      userId: oid(userId),
+      idempotencyKey: input.idempotencyKey,
+    });
+    if (existing) {
+      if (
+        existing.referenceType !== input.referenceType ||
+        String(existing.referenceId) !== input.referenceId
+      )
+        throw new AppError(
+          409,
+          "IDEMPOTENCY_KEY_REUSED",
+          "کلید پرداخت برای سفارش دیگری استفاده شده است.",
+        );
+      return paymentDto(existing);
+    }
+
+    const {
+      reservation,
+      purchase,
+      classEnrollment,
+      coaching,
+      grossAmount,
+      clubId,
+      referenceId,
+      description,
+      session,
+      discountContext,
+    } = await this.paymentContext(userId, input);
+    const pending = await this.intents.findOne({
+      userId: oid(userId),
+      referenceType: input.referenceType,
+      referenceId: oid(input.referenceId),
+      status: "pending",
+      ...(coaching || classEnrollment
+        ? {
+            createdAt: {
+              $gte:
+                coaching?.generationStartedAt ??
+                classEnrollment!.generationStartedAt,
+            },
+          }
+        : {}),
+    });
+    if (pending) {
+      if (
+        input.expectedAmount !== undefined &&
+        input.expectedAmount !== pending.amount
+      )
+        throw new AppError(
+          409,
+          "PAYMENT_PRICE_CHANGED",
+          "مبلغ پرداخت باز را دوباره بررسی کنید.",
+        );
+      return paymentDto(pending);
+    }
+
+    const walletReservationKey = `payment-wallet-${userId}-${input.idempotencyKey}`;
     try {
       const discount = input.couponCode
-        ? await this.benefits.reserveDiscount(userId, input.couponCode, {
-            referenceType: input.referenceType,
-            referenceId,
-            grossAmount,
-            scopeValues: {
-              club: [String(clubId)],
-              coach: [
-                ...(session?.coachId ? [String(session.coachId)] : []),
-                ...(classEnrollment?.coachId
-                  ? [String(classEnrollment.coachId)]
-                  : []),
-              ],
-              class: [
-                ...(session?.classId ? [String(session.classId)] : []),
-                ...(classEnrollment?.classId
-                  ? [String(classEnrollment.classId)]
-                  : []),
-              ],
-              sport: classEnrollment?.sport
-                ? [classEnrollment.sport.trim().toLocaleLowerCase("fa-IR")]
-                : [],
-              product: purchase ? [String(purchase.productId)] : [],
-              session_type: reservation
-                ? [reservation.sessionType]
-                : classEnrollment
-                  ? ["class"]
-                  : [],
-            },
-          })
+        ? await this.benefits.reserveDiscount(
+            userId,
+            input.couponCode,
+            discountContext,
+          )
         : null;
       const discountAmount = discount?.amount ?? 0;
       const walletAmount = Math.min(
@@ -154,6 +311,12 @@ export class CommerceService {
           walletReservationKey,
         );
       const amount = grossAmount - discountAmount - walletAmount;
+      if (input.expectedAmount !== undefined && input.expectedAmount !== amount)
+        throw new AppError(
+          409,
+          "PAYMENT_PRICE_CHANGED",
+          "مبلغ تغییر کرده است؛ قیمت جدید را دوباره تأیید کنید.",
+        );
       const providerPayment = await this.mockProvider.createPayment({
         amount,
         callbackUrl: input.returnUrl,
@@ -162,6 +325,8 @@ export class CommerceService {
       const intent = await this.intents.create({
         userId: oid(userId),
         clubId,
+        providerId: coaching?.coachId ?? clubId,
+        providerType: coaching ? "coach" : "club",
         referenceType: input.referenceType,
         referenceId,
         amount,
@@ -182,9 +347,13 @@ export class CommerceService {
         idempotencyKey: input.idempotencyKey,
         returnUrl: input.returnUrl,
         status: "pending",
+        expiresAt:
+          reservation?.paymentExpiresAt ??
+          paymentDeadline(coaching?.expiresAt ?? classEnrollment?.expiresAt),
       });
       return paymentDto(intent);
     } catch (error) {
+      if (inAtomicOperation()) throw error;
       const intent = await this.intents.findOne({
         userId: oid(userId),
         idempotencyKey: input.idempotencyKey,
@@ -198,6 +367,70 @@ export class CommerceService {
       );
       throw error;
     }
+  }
+
+  async quotePayment(userId: string, input: QuotePaymentDto) {
+    const context = await this.paymentContext(userId, input);
+    const generation =
+      context.coaching?.generationStartedAt ??
+      context.classEnrollment?.generationStartedAt;
+    const pending = await this.intents.findOne({
+      userId: oid(userId),
+      referenceType: input.referenceType,
+      referenceId: oid(input.referenceId),
+      status: "pending",
+      ...(generation ? { createdAt: { $gte: generation } } : {}),
+    });
+    if (pending)
+      return {
+        referenceType: pending.referenceType,
+        referenceId: String(pending.referenceId),
+        currency: "IRR" as const,
+        grossAmount: pending.grossAmount,
+        discountAmount: pending.discountAmount,
+        walletAmount: pending.walletAmount,
+        amount: pending.amount,
+        expiresAt: pending.expiresAt?.toISOString() ?? null,
+        intentId: String(pending._id),
+        priceBreakdown: context.reservation?.priceBreakdown ?? null,
+      };
+    const discount = input.couponCode
+      ? await this.benefits.quoteDiscountForContext(
+          userId,
+          input.couponCode,
+          context.discountContext,
+        )
+      : null;
+    const discountAmount = discount?.amount ?? 0;
+    const walletAmount = Math.min(
+      input.walletAmount ?? 0,
+      context.grossAmount - discountAmount - 1,
+    );
+    if (
+      walletAmount > 0 &&
+      walletAmount > (await this.benefits.wallet(userId)).availableAmount
+    )
+      throw new AppError(
+        409,
+        "INSUFFICIENT_WALLET_BALANCE",
+        "موجودی کیف پول کافی نیست.",
+      );
+    return {
+      referenceType: input.referenceType,
+      referenceId: input.referenceId,
+      currency: "IRR" as const,
+      grossAmount: context.grossAmount,
+      discountAmount,
+      walletAmount,
+      amount: context.grossAmount - discountAmount - walletAmount,
+      expiresAt: paymentDeadline(
+        context.reservation?.paymentExpiresAt ??
+          context.coaching?.expiresAt ??
+          context.classEnrollment?.expiresAt,
+      ).toISOString(),
+      intentId: null,
+      priceBreakdown: context.reservation?.priceBreakdown ?? null,
+    };
   }
 
   async simulate(userId: string, intentId: string, status: "paid" | "failed") {
@@ -224,6 +457,28 @@ export class CommerceService {
   }
 
   async processCallback(payload: MockPaymentCallbackDto, signature?: string) {
+    try {
+      return await this.processCallbackAtomic(payload, signature);
+    } catch (error) {
+      if (error instanceof AppError && error.code === "PAYMENT_EXPIRED") {
+        const expired = await this.intents.findOne({
+          _id: oid(payload.intentId),
+          authority: payload.authority,
+          amount: payload.amount,
+          status: "pending",
+          expiresAt: { $lte: new Date() },
+        });
+        if (expired) await this.fail(expired);
+      }
+      throw error;
+    }
+  }
+
+  @Atomic("intents")
+  private async processCallbackAtomic(
+    payload: MockPaymentCallbackDto,
+    signature?: string,
+  ) {
     if (!this.mockProvider.assertSignature(payload, signature)) {
       throw new AppError(
         401,
@@ -265,15 +520,18 @@ export class CommerceService {
         processedAt: new Date(),
       });
     } catch (error) {
-      if (!isDuplicateKey(error)) throw error;
+      if (inAtomicOperation() || !isDuplicateKey(error)) throw error;
     }
     return result;
   }
 
+  @Atomic("intents")
   async refund(intentId: string, input: RefundPaymentDto) {
+    const refundKey = `${intentId}:${input.idempotencyKey}`;
     const priorEntries = await this.ledger.find({
       sourceType: "refund",
-      idempotencyKey: input.idempotencyKey,
+      sourceId: oid(intentId),
+      idempotencyKey: { $in: [input.idempotencyKey, refundKey] },
     });
     if (priorEntries.length) {
       const intent = await this.intents.findById(intentId);
@@ -298,47 +556,37 @@ export class CommerceService {
         "Refund exceeds remaining paid amount",
       );
     }
-    const cumulativeGrossRefund = intent.refundedAmount + grossRefund;
-    const targetGatewayRefund = Math.round(
-      (intent.amount * cumulativeGrossRefund) / intent.grossAmount,
-    );
-    const targetWalletRefund = Math.round(
-      (intent.walletAmount * cumulativeGrossRefund) / intent.grossAmount,
-    );
-    const gatewayRefund =
-      targetGatewayRefund - (intent.refundedGatewayAmount ?? 0);
-    const walletRefund =
-      targetWalletRefund - (intent.refundedWalletAmount ?? 0);
-    const discountReversal = grossRefund - gatewayRefund - walletRefund;
-    const targetTotalDiscountReversal =
-      cumulativeGrossRefund - targetGatewayRefund - targetWalletRefund;
-    const targetProviderDiscountReversal = Math.round(
-      ((intent.providerFundedDiscount ?? 0) * cumulativeGrossRefund) /
-        intent.grossAmount,
-    );
-    const targetPlatformDiscountReversal =
-      targetTotalDiscountReversal - targetProviderDiscountReversal;
-    const platformDiscountReversal =
-      targetPlatformDiscountReversal -
-      (intent.refundedPlatformFundedDiscount ?? 0);
-    const providerDiscountReversal =
-      targetProviderDiscountReversal -
-      (intent.refundedProviderFundedDiscount ?? 0);
-    const targetFeeReversal = Math.round(
-      (intent.platformFee * cumulativeGrossRefund) / intent.grossAmount,
-    );
-    const previousFeeReversal = Math.round(
-      (intent.platformFee * intent.refundedAmount) / intent.grossAmount,
-    );
-    const feeReversal = targetFeeReversal - previousFeeReversal;
-    const providerReversal =
-      grossRefund - feeReversal - providerDiscountReversal;
+    if (intent.referenceType === "coach_package_purchase") {
+      const purchase = await this.intents.db
+        .model<CoachPackagePurchase>(CoachPackagePurchase.name)
+        .findById(intent.referenceId);
+      if (
+        !purchase ||
+        purchase.status !== "active" ||
+        purchase.usedSessions > 0 ||
+        grossRefund !== remainingGross
+      )
+        throw new AppError(
+          409,
+          "PACKAGE_NOT_REFUNDABLE",
+          "فقط بازپرداخت کامل بسته مصرف‌نشده مجاز است.",
+        );
+    }
+    const {
+      gatewayRefund,
+      walletRefund,
+      discountReversal,
+      platformDiscountReversal,
+      providerDiscountReversal,
+      feeReversal,
+      providerReversal,
+      refundedPlatformFee,
+    } = allocateRefund(intent, grossRefund);
 
     if (providerReversal > 0) {
       const account = await this.settlementAccounts.findOneAndUpdate(
         {
-          providerId: intent.clubId,
-          availableAmount: { $gte: providerReversal },
+          providerId: intent.providerId ?? intent.clubId,
         },
         { $inc: { availableAmount: -providerReversal } },
         { new: true },
@@ -346,8 +594,8 @@ export class CommerceService {
       if (!account) {
         throw new AppError(
           409,
-          "PROVIDER_BALANCE_RESERVED",
-          "Provider balance is currently reserved for payout",
+          "PROVIDER_ACCOUNT_NOT_FOUND",
+          "حساب مالی ارائه‌دهنده پیدا نشد.",
         );
       }
     }
@@ -356,12 +604,12 @@ export class CommerceService {
       {
         transactionId,
         account: "provider_payable",
-        ownerId: intent.clubId,
+        ownerId: intent.providerId ?? intent.clubId,
         direction: "debit",
         amount: providerReversal,
         sourceType: "refund",
         sourceId: intent._id,
-        idempotencyKey: input.idempotencyKey,
+        idempotencyKey: refundKey,
       },
       ...(feeReversal
         ? [
@@ -373,7 +621,7 @@ export class CommerceService {
               amount: feeReversal,
               sourceType: "refund" as const,
               sourceId: intent._id,
-              idempotencyKey: input.idempotencyKey,
+              idempotencyKey: refundKey,
             },
           ]
         : []),
@@ -387,7 +635,7 @@ export class CommerceService {
               amount: gatewayRefund,
               sourceType: "refund" as const,
               sourceId: intent._id,
-              idempotencyKey: input.idempotencyKey,
+              idempotencyKey: refundKey,
             },
           ]
         : []),
@@ -401,7 +649,7 @@ export class CommerceService {
               amount: walletRefund,
               sourceType: "refund" as const,
               sourceId: intent._id,
-              idempotencyKey: input.idempotencyKey,
+              idempotencyKey: refundKey,
             },
           ]
         : []),
@@ -415,7 +663,7 @@ export class CommerceService {
               amount: platformDiscountReversal,
               sourceType: "refund" as const,
               sourceId: intent._id,
-              idempotencyKey: input.idempotencyKey,
+              idempotencyKey: refundKey,
             },
           ]
         : []),
@@ -424,9 +672,10 @@ export class CommerceService {
       String(intent.userId),
       walletRefund,
       intent._id,
-      input.idempotencyKey,
+      refundKey,
     );
     intent.refundedAmount += grossRefund;
+    intent.refundedPlatformFee = refundedPlatformFee;
     intent.refundedGatewayAmount =
       (intent.refundedGatewayAmount ?? 0) + gatewayRefund;
     intent.refundedWalletAmount =
@@ -460,9 +709,81 @@ export class CommerceService {
       intent.referenceType === "business_class_enrollment" &&
       intent.status === "refunded"
     ) {
-      await this.classPortal.refundEnrollmentPayment(intent.referenceId);
+      await this.classPortal.refundEnrollmentPayment(
+        intent.referenceId,
+        intent.createdAt,
+      );
     }
+    if (isCoachingReference(intent.referenceType))
+      await new CoachingPaymentReference(this.intents.db).refund(
+        intent.referenceType,
+        intent.referenceId,
+        intent.refundedAmount,
+        intent.status === "refunded",
+        intent.createdAt,
+      );
     return paymentDto(intent);
+  }
+
+  async refundCoaching(
+    referenceType: "coach_booking" | "coach_class_enrollment",
+    referenceId: Types.ObjectId,
+    amount: number,
+  ) {
+    if (amount <= 0) return null;
+    const intent = await this.intents
+      .findOne({
+        referenceType,
+        referenceId,
+        status: { $in: ["paid", "partially_refunded", "refunded"] },
+      })
+      .sort({ createdAt: -1 });
+    // Older simulated purchases did not create a ledger entry.
+    if (!intent) return null;
+    return this.refund(String(intent._id), {
+      amount,
+      reason: "لغو خدمت مربی",
+      idempotencyKey: `coach-cancel-${referenceId}`,
+    });
+  }
+
+  async refundBusinessClass(referenceId: Types.ObjectId, amount: number) {
+    const intent = await this.intents
+      .findOne({
+        referenceType: "business_class_enrollment",
+        referenceId,
+        status: { $in: ["paid", "partially_refunded", "refunded"] },
+      })
+      .sort({ createdAt: -1 });
+    if (!intent)
+      throw new AppError(
+        409,
+        "PAID_INTENT_NOT_FOUND",
+        "سابقه پرداخت برای بازپرداخت پیدا نشد.",
+      );
+    return this.refund(String(intent._id), {
+      amount,
+      reason: "لغو کلاس باشگاه",
+      idempotencyKey: `class-cancel-${referenceId}`,
+    });
+  }
+
+  async quoteReservationRefund(reservationId: Types.ObjectId, amount: number) {
+    if (amount === 0) return { gatewayRefund: 0, walletRefund: 0 };
+    const intent = await this.intents
+      .findOne({
+        referenceType: "reservation",
+        referenceId: reservationId,
+        status: { $in: ["paid", "partially_refunded"] },
+      })
+      .sort({ createdAt: -1 });
+    if (!intent)
+      throw new AppError(
+        409,
+        "PAID_INTENT_NOT_FOUND",
+        "سابقه مالی رزرو برای محاسبه بازپرداخت پیدا نشد.",
+      );
+    return allocateRefund(intent, amount);
   }
 
   async refundReservation(
@@ -539,6 +860,18 @@ export class CommerceService {
 
   private async capture(intent: PaymentIntentDocument) {
     if (intent.status === "paid") return paymentDto(intent);
+    if (
+      intent.status === "pending" &&
+      intent.expiresAt &&
+      intent.expiresAt <= new Date()
+    ) {
+      await this.fail(intent);
+      throw new AppError(
+        409,
+        "PAYMENT_EXPIRED",
+        "مهلت پرداخت تمام شده است؛ دوباره رزرو کنید.",
+      );
+    }
     if (intent.status !== "pending") {
       throw new AppError(
         409,
@@ -567,7 +900,7 @@ export class CommerceService {
         amount: paid.amount,
         sourceType: "payment",
         sourceId: paid._id,
-        idempotencyKey: paid.idempotencyKey,
+        idempotencyKey: `payment-${paid._id}`,
       },
       ...(paid.walletAmount
         ? [
@@ -579,7 +912,7 @@ export class CommerceService {
               amount: paid.walletAmount,
               sourceType: "payment" as const,
               sourceId: paid._id,
-              idempotencyKey: paid.idempotencyKey,
+              idempotencyKey: `payment-${paid._id}`,
             },
           ]
         : []),
@@ -593,7 +926,7 @@ export class CommerceService {
               amount: paid.platformFundedDiscount,
               sourceType: "payment" as const,
               sourceId: paid._id,
-              idempotencyKey: paid.idempotencyKey,
+              idempotencyKey: `payment-${paid._id}`,
             },
           ]
         : []),
@@ -602,7 +935,7 @@ export class CommerceService {
             {
               transactionId,
               account: "provider_payable" as const,
-              ownerId: paid.clubId,
+              ownerId: paid.providerId ?? paid.clubId,
               direction: "credit" as const,
               amount:
                 paid.grossAmount -
@@ -610,7 +943,7 @@ export class CommerceService {
                 paid.providerFundedDiscount,
               sourceType: "payment" as const,
               sourceId: paid._id,
-              idempotencyKey: paid.idempotencyKey,
+              idempotencyKey: `payment-${paid._id}`,
             },
           ]
         : []),
@@ -624,13 +957,13 @@ export class CommerceService {
               amount: paid.platformFee,
               sourceType: "payment" as const,
               sourceId: paid._id,
-              idempotencyKey: paid.idempotencyKey,
+              idempotencyKey: `payment-${paid._id}`,
             },
           ]
         : []),
     ]);
     await this.settlementAccounts.updateOne(
-      { providerId: paid.clubId },
+      { providerId: paid.providerId ?? paid.clubId },
       {
         $inc: {
           availableAmount:
@@ -651,6 +984,12 @@ export class CommerceService {
             { new: true },
           )
         : null;
+    if (paid.referenceType === "reservation" && !reservation)
+      throw new AppError(
+        409,
+        "REFERENCE_STATUS_CHANGED",
+        "وضعیت رزرو تغییر کرده است.",
+      );
     if (reservation) {
       await this.entitlements.finalizeReservation(reservation._id, true);
       await this.notifications.notifyBookingConfirmed({
@@ -672,25 +1011,54 @@ export class CommerceService {
       const enrollment = await this.classPortal.finalizeEnrollmentPayment(
         paid.referenceId,
         true,
+        paid.createdAt,
       );
       await this.notifications.notifyBookingConfirmed({
         userId: paid.userId,
         bookingId: paid.referenceId,
         title: enrollment.title,
-        href: `/athlete/classes/${String(paid.referenceId)}`,
+        href: `/discovery/business-class?classId=${enrollment.classId}`,
+      });
+    }
+    if (isCoachingReference(paid.referenceType)) {
+      const reference = await new CoachingPaymentReference(
+        this.intents.db,
+      ).finalize(
+        paid.referenceType,
+        paid.referenceId,
+        true,
+        paid._id,
+        paid.createdAt,
+      );
+      if (!reference)
+        throw new AppError(
+          409,
+          "REFERENCE_GENERATION_CHANGED",
+          "وضعیت سفارش تغییر کرده است.",
+        );
+      await this.notifications.notifyBookingConfirmed({
+        userId: reference.userId,
+        bookingId: reference.referenceId,
+        title: reference.title,
+        href: reference.href,
       });
     }
     await this.benefits.settleReferral(String(paid.userId));
     return paymentDto(paid);
   }
 
+  @Atomic("intents")
   private async fail(intent: PaymentIntentDocument) {
-    if (intent.status === "failed") return paymentDto(intent);
-    const failed = await this.intents.findOneAndUpdate(
-      { _id: intent._id, status: "pending" },
-      { $set: { status: "failed", failedAt: new Date() } },
-      { new: true },
-    );
+    if (intent.status === "failed" && intent.failureFinalizedAt)
+      return paymentDto(intent);
+    const failed =
+      intent.status === "failed"
+        ? intent
+        : await this.intents.findOneAndUpdate(
+            { _id: intent._id, status: "pending" },
+            { $set: { status: "failed", failedAt: new Date() } },
+            { new: true },
+          );
     if (!failed) {
       throw new AppError(
         409,
@@ -698,7 +1066,7 @@ export class CommerceService {
         "Payment is no longer pending",
       );
     }
-    const reservation =
+    let reservation =
       failed.referenceType === "reservation"
         ? await this.reservations.findOneAndUpdate(
             {
@@ -710,6 +1078,7 @@ export class CommerceService {
               $set: {
                 paymentStatus: "failed",
                 status: "cancelled",
+                cancellationReason: "payment_failed",
                 cancelledAt: new Date(),
                 refundPercent: 0,
                 refundAmount: 0,
@@ -718,6 +1087,13 @@ export class CommerceService {
             { new: true },
           )
         : null;
+    if (!reservation && failed.referenceType === "reservation") {
+      reservation = await this.reservations.findOne({
+        _id: failed.referenceId,
+        status: "cancelled",
+        cancellationReason: "payment_failed",
+      });
+    }
     if (reservation) {
       await this.entitlements.finalizeReservation(reservation._id, false);
       await this.releaseInventory(reservation);
@@ -740,6 +1116,7 @@ export class CommerceService {
       const enrollment = await this.classPortal.finalizeEnrollmentPayment(
         failed.referenceId,
         false,
+        failed.createdAt,
       );
       await this.notifications.notifyPaymentFailed({
         userId: failed.userId,
@@ -747,6 +1124,28 @@ export class CommerceService {
         title: enrollment.title,
       });
     }
+    if (isCoachingReference(failed.referenceType)) {
+      const reference = await new CoachingPaymentReference(
+        this.intents.db,
+      ).finalize(
+        failed.referenceType,
+        failed.referenceId,
+        false,
+        failed._id,
+        failed.createdAt,
+      );
+      if (reference)
+        await this.notifications.notifyPaymentFailed({
+          userId: reference.userId,
+          paymentId: failed._id,
+          title: reference.title,
+          href: reference.href,
+        });
+    }
+    await this.intents.updateOne(
+      { _id: failed._id, status: "failed" },
+      { $set: { failureFinalizedAt: new Date() } },
+    );
     return paymentDto(failed);
   }
 
@@ -758,8 +1157,15 @@ export class CommerceService {
       increments[`options.$[option${index}].reservedQuantity`] = -item.quantity;
     });
     await this.sessions.updateOne(
-      { _id: reservation.sessionId },
-      { $inc: increments },
+      {
+        _id: reservation.sessionId,
+        status: "active",
+        releasedReservationIds: { $ne: reservation._id },
+      },
+      {
+        $inc: increments,
+        $addToSet: { releasedReservationIds: reservation._id },
+      },
       reservation.selectedOptions.length
         ? {
             arrayFilters: reservation.selectedOptions.map((item, index) => ({
@@ -768,6 +1174,141 @@ export class CommerceService {
           }
         : {},
     );
+  }
+
+  /** Retries failure cleanup; capacity release is idempotent on the session document. */
+  async expirePendingPayments(now = new Date()) {
+    const intents = await this.intents
+      .find({
+        $or: [
+          {
+            provider: "mock",
+            status: "pending",
+            expiresAt: { $lte: now, $ne: null },
+          },
+          {
+            status: "failed",
+            failureFinalizedAt: null,
+            expiresAt: { $ne: null },
+          },
+        ],
+      })
+      .limit(100);
+    const errors: string[] = [];
+    let expired = 0;
+    for (const intent of intents) {
+      try {
+        await this.fail(intent);
+        expired++;
+      } catch {
+        errors.push(String(intent._id));
+      }
+    }
+    const abandoned = await this.reservations
+      .find({
+        paymentExpiresAt: { $lte: now, $ne: null },
+        $or: [
+          { status: "reserved", paymentStatus: "pending" },
+          {
+            status: "cancelled",
+            cancellationReason: "payment_expired",
+            inventoryReleasedAt: null,
+          },
+        ],
+      })
+      .limit(100);
+    for (const item of abandoned) {
+      try {
+        if (await this.expireReservationHold(item._id, now)) expired++;
+      } catch {
+        errors.push(String(item._id));
+      }
+    }
+    for (const [type, modelName] of [
+      ["coach_booking", "SessionBooking"],
+      ["coach_class_enrollment", "ClassEnrollment"],
+      ["coach_package_purchase", "CoachPackagePurchase"],
+    ] as const) {
+      const holds = await this.intents.db
+        .model(modelName)
+        .find({
+          status: "pending",
+          paymentStatus: "pending",
+          paymentExpiresAt: { $lte: now, $ne: null },
+        })
+        .limit(100);
+      for (const hold of holds) {
+        try {
+          if (await this.expireCoachingHold(type, hold._id, now)) expired++;
+        } catch {
+          errors.push(String(hold._id));
+        }
+      }
+    }
+    const classes = await this.classPortal.expirePaymentHolds(now);
+    return {
+      expired: expired + classes.expired,
+      errors: [...errors, ...classes.errors],
+    };
+  }
+
+  @Atomic("intents")
+  private async expireReservationHold(id: Types.ObjectId, now: Date) {
+    const item = await this.reservations.findOne({
+      _id: id,
+      paymentExpiresAt: { $lte: now, $ne: null },
+      $or: [
+        { status: "reserved", paymentStatus: "pending" },
+        {
+          status: "cancelled",
+          cancellationReason: "payment_expired",
+          inventoryReleasedAt: null,
+        },
+      ],
+    });
+    if (!item) return false;
+    if (
+      await this.intents.exists({
+        referenceType: "reservation",
+        referenceId: item._id,
+        status: { $in: ["pending", "paid", "partially_refunded"] },
+      })
+    )
+      return false;
+    const cancelled =
+      item.status === "cancelled"
+        ? item
+        : await this.reservations.findOneAndUpdate(
+            { _id: item._id, status: "reserved", paymentStatus: "pending" },
+            {
+              $set: {
+                status: "cancelled",
+                paymentStatus: "failed",
+                cancelledAt: now,
+                cancellationReason: "payment_expired",
+                refundAmount: 0,
+                refundPercent: 0,
+              },
+            },
+            { new: true },
+          );
+    if (!cancelled) return false;
+    await this.entitlements.finalizeReservation(cancelled._id, false);
+    await this.releaseInventory(cancelled);
+    await this.reservations.updateOne(
+      { _id: cancelled._id },
+      { $set: { inventoryReleasedAt: new Date() } },
+    );
+    return true;
+  }
+
+  @Atomic("intents")
+  private async expireCoachingHold(
+    type: "coach_booking" | "coach_class_enrollment" | "coach_package_purchase",
+    id: Types.ObjectId,
+    now: Date,
+  ) {
+    return new CoachingPaymentReference(this.intents.db).expire(type, id, now);
   }
 
   private async postEntries(entries: Array<Omit<LedgerEntry, "createdAt">>) {
@@ -783,7 +1324,7 @@ export class CommerceService {
     try {
       await this.ledger.insertMany(entries, { ordered: true });
     } catch (error) {
-      if (!isDuplicateKey(error)) throw error;
+      if (inAtomicOperation() || !isDuplicateKey(error)) throw error;
     }
   }
 }
@@ -809,6 +1350,7 @@ function paymentDto(intent: PaymentIntentDocument) {
     providerFundedDiscount: intent.providerFundedDiscount ?? 0,
     checkoutUrl: intent.checkoutUrl || `/payments/mock/${intent.authority}`,
     returnUrl: intent.returnUrl,
+    expiresAt: intent.expiresAt?.toISOString() ?? null,
     paidAt: intent.paidAt?.toISOString() ?? null,
     reconciledAt: intent.reconciledAt?.toISOString() ?? null,
     createdAt: intent.createdAt.toISOString(),

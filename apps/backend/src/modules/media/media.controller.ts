@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -25,8 +26,8 @@ export class MediaController {
   constructor(private readonly service: MediaService) {}
 
   @Get()
-  list(@CurrentUser() user: AuthTokenPayload) {
-    return this.service.list(user.sub);
+  list(@CurrentUser() user: AuthTokenPayload, @Query("ids") ids?: string) {
+    return this.service.list(user.sub, ids);
   }
 
   @Post("upload")
@@ -47,5 +48,19 @@ export class MediaController {
   @HttpCode(HttpStatus.CREATED)
   create(@CurrentUser() user: AuthTokenPayload, @Body() body: CreateMediaDto) {
     return this.service.create(user.sub, body);
+  }
+
+  @Post("private/upload")
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: MAX_MEDIA_BYTES, files: 1, fields: 0 },
+    }),
+  )
+  uploadPrivate(
+    @CurrentUser() user: AuthTokenPayload,
+    @UploadedFile() file?: { buffer: Buffer; mimetype: string },
+  ) {
+    return this.service.upload(user.sub, file, true);
   }
 }

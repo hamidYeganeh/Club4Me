@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { http } from "../../http/client";
+import type { PaymentIntent } from "./commerce";
 
 export type BenefitProduct = {
   id: string;
@@ -12,7 +13,9 @@ export type BenefitProduct = {
   price: number;
   sessionCount: number | null;
   validityDays: number;
+  maxPauseDays?: number;
   weeklyLimit: number | null;
+  weekCalendar?: "iso_utc" | "iran_saturday";
   sessionTypes: Array<"court" | "class" | "coached_session">;
   status: "active" | "inactive";
 };
@@ -22,17 +25,52 @@ export type UserEntitlement = {
   clubId: string;
   title: string;
   type: BenefitProduct["type"];
+  maxPauseDays?: number;
+  remainingPauseDays?: number;
+  pauseUntil?: string | null;
+  changes?: Array<{
+    action: "pause" | "resume" | "renewal";
+    at: string;
+    beforeEndsAt: string;
+    afterEndsAt: string;
+  }>;
   remainingSessions: number | null;
   weeklyLimit: number | null;
+  weekCalendar?: "iso_utc" | "iran_saturday";
   weeklyUsed: number;
   sessionTypes: string[];
   startsAt: string;
   endsAt: string;
   status: "active" | "exhausted" | "expired" | "revoked";
 };
+export type EntitlementUsage = {
+  id: string;
+  reservationId: string;
+  sessionStartsAt: string;
+  status: "reserved" | "consumed" | "released";
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function useEntitlementUsage(entitlementId: string, page = 1) {
+  return useQuery({
+    queryKey: ["benefits", "entitlements", "usage", entitlementId, page],
+    queryFn: () =>
+      http.get<{
+        items: EntitlementUsage[];
+        total: number;
+        page: number;
+        totalPages: number;
+      }>(`/benefit-purchases/mine/entitlements/${entitlementId}/usage`, {
+        page,
+        limit: 10,
+      }),
+    enabled: Boolean(entitlementId),
+  });
+}
 export type BenefitProductPayload = Omit<
   BenefitProduct,
-  "id" | "clubId" | "status"
+  "id" | "clubId" | "status" | "weekCalendar"
 >;
 
 export function useBusinessBenefitProducts(clubId: string) {
@@ -100,14 +138,13 @@ export function useMyEntitlements(enabled = true) {
   });
 }
 export function usePurchaseBenefitProduct() {
-  const client = useQueryClient();
   return useMutation({
     mutationFn: async (productId: string) => {
       const purchase = await http.post<{ id: string }>(
         `/benefit-purchases/${productId}`,
         {},
       );
-      const intent = await http.post<{ id: string }>("/payments/intents", {
+      return http.post<PaymentIntent>("/payments/intents", {
         referenceType: "benefit_purchase",
         referenceId: purchase.id,
         idempotencyKey: `benefit-purchase-${purchase.id}`,
@@ -117,10 +154,51 @@ export function usePurchaseBenefitProduct() {
             : window.location.href,
         walletAmount: 0,
       });
-      return http.post(`/payments/intents/${intent.id}/mock/decision`, {
-        status: "paid",
-      });
     },
+  });
+}
+
+export function useCreateBenefitPurchase() {
+  return useMutation({
+    mutationFn: (
+      input:
+        | string
+        | {
+            productId: string;
+            renewedFromId: string;
+            startMode: "immediate" | "after_expiry";
+          },
+    ) => {
+      const { productId, ...options } =
+        typeof input === "string" ? { productId: input } : input;
+      return http.post<{ id: string; amount: number; status: string }>(
+        `/benefit-purchases/${productId}`,
+        options,
+      );
+    },
+  });
+}
+
+export function usePauseEntitlement() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, days }: { id: string; days: number }) =>
+      http.post<UserEntitlement>(
+        `/benefit-purchases/mine/entitlements/${id}/pause`,
+        { days },
+      ),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: ["benefits", "entitlements"] }),
+  });
+}
+export function useResumeEntitlement() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      http.post<UserEntitlement>(
+        `/benefit-purchases/mine/entitlements/${id}/resume`,
+        {},
+      ),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: ["benefits", "entitlements"] }),
   });

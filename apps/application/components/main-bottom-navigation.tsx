@@ -58,6 +58,14 @@ function getNavConfig(
     return coachNav;
   }
 
+  if (pathname === "/athlete/profile") {
+    return athleteNav;
+  }
+
+  if (pathname === "/coach/profile") {
+    return coachNav;
+  }
+
   if (pathname === "/discovery") {
     return discoveryRole === "coach" ? coachNav : athleteNav;
   }
@@ -110,7 +118,7 @@ export function MainBottomNavigation() {
       <div className="relative h-35">
         <div className="absolute inset-0 overflow-hidden">
           <ProgressiveBlur
-            direction="bottom"
+            direction="top"
             className="h-full"
             blurLayers={8}
             blurIntensity={1.25}

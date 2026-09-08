@@ -9,6 +9,7 @@ import {
 } from "./schemas/product-telemetry.schema";
 import {
   AdminTelemetryController,
+  PublicTelemetryController,
   TelemetryController,
 } from "./telemetry.controller";
 import { TelemetryService } from "./telemetry.service";
@@ -21,7 +22,7 @@ import { TelemetryService } from "./telemetry.service";
       { name: ProductTelemetry.name, schema: ProductTelemetrySchema },
     ]),
   ],
-  controllers: [TelemetryController, AdminTelemetryController],
+  controllers: [TelemetryController, PublicTelemetryController, AdminTelemetryController],
   providers: [TelemetryService],
   exports: [TelemetryService],
 })

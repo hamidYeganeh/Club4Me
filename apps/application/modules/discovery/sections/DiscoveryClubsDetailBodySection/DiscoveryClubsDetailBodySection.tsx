@@ -85,37 +85,39 @@ export function DiscoveryClubsDetailBodySection({
 
   return (
     <section className={styles.root()}>
-      <div dir={direction} className="w-full">
-        <Swiper
-          dir={direction}
-          modules={[FreeMode, Thumbs]}
-          onSwiper={onThumbsSwiper}
-          onClick={(swiper) => {
-            if (typeof swiper.clickedIndex === "number") {
-              onThumbClick(swiper.clickedIndex);
-            }
-          }}
-          spaceBetween={12}
-          slidesPerView={3}
-          watchSlidesProgress
-          slideToClickedSlide
-          watchOverflow
-          className={styles.thumbsSwiper()}
-        >
-          {images.map((src) => (
-            <SwiperSlide key={src} className={styles.thumbSlide()}>
-              <FallbackImage
-                src={src}
-                alt=""
-                fill
-                unoptimized
-                sizes="33vw"
-                className={styles.image()}
-              />
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </div>
+      {images.length > 1 ? (
+        <div dir={direction} className="w-full">
+          <Swiper
+            dir={direction}
+            modules={[FreeMode, Thumbs]}
+            onSwiper={onThumbsSwiper}
+            onClick={(swiper) => {
+              if (typeof swiper.clickedIndex === "number") {
+                onThumbClick(swiper.clickedIndex);
+              }
+            }}
+            spaceBetween={12}
+            slidesPerView={3}
+            watchSlidesProgress
+            slideToClickedSlide
+            watchOverflow
+            className={styles.thumbsSwiper()}
+          >
+            {images.map((src) => (
+              <SwiperSlide key={src} className={styles.thumbSlide()}>
+                <FallbackImage
+                  src={src}
+                  alt=""
+                  fill
+                  unoptimized
+                  sizes="33vw"
+                  className={styles.image()}
+                />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+      ) : null}
 
       <div className={styles.stats()}>
         {stats.map((stat) => (
@@ -143,6 +145,49 @@ export function DiscoveryClubsDetailBodySection({
             </div>
           </div>
         ))}
+      </div>
+
+      <div className={styles.about()}>
+        <Typography type="h5" className={styles.aboutTitle()}>
+          {t("aboutTitle")}
+        </Typography>
+        {!about.trim() ? (
+          <ClubEmptyState
+            title="هنوز توضیحی درباره باشگاه ثبت نشده است"
+            description="معرفی باشگاه پس از تکمیل اینجا نمایش داده می‌شود."
+          />
+        ) : null}
+        <Typography
+          type="body-sm"
+          color="muted"
+          className={styles.aboutBody()}
+          render={({ children, ref, ...p }) => (
+            <p
+              {...p}
+              ref={(node) => {
+                aboutRef.current = node;
+                if (typeof ref === "function") {
+                  ref(node);
+                } else if (ref) {
+                  ref.current = node;
+                }
+              }}
+            >
+              {children}
+            </p>
+          )}
+        >
+          {about}
+        </Typography>
+        {(canExpand || expanded) && (
+          <Button
+            variant="ghost"
+            size="lg"
+            onPress={() => setExpanded((value) => !value)}
+          >
+            {expanded ? t("seeLess") : t("seeMore")}
+          </Button>
+        )}
       </div>
 
       {sports.length > 0 ? (
@@ -211,49 +256,6 @@ export function DiscoveryClubsDetailBodySection({
         onItemPress={setDetailItem}
       />
 
-      <div className={styles.about()}>
-        <Typography type="h5" className={styles.aboutTitle()}>
-          {t("aboutTitle")}
-        </Typography>
-        {!about.trim() ? (
-          <ClubEmptyState
-            title="هنوز توضیحی درباره باشگاه ثبت نشده است"
-            description="معرفی باشگاه پس از تکمیل اینجا نمایش داده می‌شود."
-          />
-        ) : null}
-        <Typography
-          type="body-sm"
-          color="muted"
-          className={styles.aboutBody()}
-          render={({ children, ref, ...p }) => (
-            <p
-              {...p}
-              ref={(node) => {
-                aboutRef.current = node;
-                if (typeof ref === "function") {
-                  ref(node);
-                } else if (ref) {
-                  ref.current = node;
-                }
-              }}
-            >
-              {children}
-            </p>
-          )}
-        >
-          {about}
-        </Typography>
-        {(canExpand || expanded) && (
-          <Button
-            variant="ghost"
-            size="lg"
-            onPress={() => setExpanded((value) => !value)}
-          >
-            {expanded ? t("seeLess") : t("seeMore")}
-          </Button>
-        )}
-      </div>
-
       <div className={styles.location()}>
         <div className={styles.locationHeader()}>
           <Icon name="map-pin-1" size="lg" />
@@ -261,54 +263,60 @@ export function DiscoveryClubsDetailBodySection({
             {t("locationTitle")}
           </Typography>
         </div>
-        <div className={styles.locationCard()}>
-          <NeshanMap
-            center={location}
-            markers={[
-              {
-                id: "club-location",
-                ...location,
-                imageUrl: images[0],
-                label: name,
-              },
-            ]}
-            selectedMarkerId="club-location"
-            className={styles.locationMap()}
-          />
-          <div className={styles.locationDetails()}>
-            <div className={styles.locationInfo()}>
-              <span className={styles.locationVenueIcon()}>
-                <Icon name="building-1" size="lg" />
-              </span>
-              <div className={styles.locationText()}>
-                <Typography
-                  type="body"
-                  weight="semibold"
-                  className={styles.locationName()}
-                >
-                  {name}
-                </Typography>
-                <Typography
-                  type="body-sm"
-                  color="muted"
-                  className={styles.locationAddress()}
-                >
-                  {location.address}
-                </Typography>
+        {location ? (
+          <div className={styles.locationCard()}>
+            <NeshanMap
+              center={location}
+              markers={[
+                {
+                  id: "club-location",
+                  ...location,
+                  imageUrl: images[0],
+                  label: name,
+                },
+              ]}
+              selectedMarkerId="club-location"
+              className={styles.locationMap()}
+            />
+            <div className={styles.locationDetails()}>
+              <div className={styles.locationInfo()}>
+                <span className={styles.locationVenueIcon()}>
+                  <Icon name="building-1" size="lg" />
+                </span>
+                <div className={styles.locationText()}>
+                  <Typography
+                    type="body"
+                    weight="semibold"
+                    className={styles.locationName()}
+                  >
+                    {name}
+                  </Typography>
+                  <Typography
+                    type="body-sm"
+                    color="muted"
+                    className={styles.locationAddress()}
+                  >
+                    {location.address}
+                  </Typography>
+                </div>
               </div>
+              <div className={styles.locationDivider()} />
+              <a
+                href={`https://nshn.ir/?lat=${location.latitude}&lng=${location.longitude}`}
+                target="_blank"
+                rel="noreferrer"
+                className={styles.locationLink()}
+              >
+                {t("openInNeshan")}
+                <Icon name="map-pin-1" size="md" />
+              </a>
             </div>
-            <div className={styles.locationDivider()} />
-            <a
-              href={`https://nshn.ir/?lat=${location.latitude}&lng=${location.longitude}`}
-              target="_blank"
-              rel="noreferrer"
-              className={styles.locationLink()}
-            >
-              {t("openInNeshan")}
-              <Icon name="map-pin-1" size="md" />
-            </a>
           </div>
-        </div>
+        ) : (
+          <p className="rounded-2xl border border-border p-4 text-sm text-muted">
+            موقعیت دقیق ثبت نشده؛ پیش از مراجعه نشانی را با باشگاه هماهنگ کنید.
+          </p>
+        )}
       </div>
 
       <BottomSheet

@@ -1,3 +1,4 @@
+import { BusinessPortalGuard } from "../auth/guards/business-portal.guard";
 import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common";
 
 import { AppError } from "../../common/errors/app.exception";
@@ -21,8 +22,7 @@ const ALLOWED = new Set([
 ]);
 
 @Controller("api/v1/business/catalog")
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles("owner")
+@UseGuards(JwtAuthGuard, BusinessPortalGuard)
 export class BusinessCatalogController {
   constructor(private readonly resources: ResourcesService) {}
 

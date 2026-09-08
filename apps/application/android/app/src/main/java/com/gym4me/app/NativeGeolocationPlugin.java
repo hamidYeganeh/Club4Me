@@ -34,6 +34,13 @@ public class NativeGeolocationPlugin extends Plugin {
     private static final long LOCATION_TIMEOUT_MS = 12_000;
 
     @PluginMethod
+    public void checkPermission(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("granted", getPermissionState("location") == PermissionState.GRANTED);
+        call.resolve(result);
+    }
+
+    @PluginMethod
     public void getCurrentPosition(PluginCall call) {
         if (getPermissionState("location") != PermissionState.GRANTED) {
             requestPermissionForAlias("location", call, "locationPermissionCallback");

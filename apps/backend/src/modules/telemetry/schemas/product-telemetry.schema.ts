@@ -9,8 +9,10 @@ export class ProductTelemetry {
   @Prop({ required: true, unique: true }) eventId: string;
   @Prop({ required: true, enum: ["identify", "group", "track"], index: true })
   kind: "identify" | "group" | "track";
-  @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
-  actorId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: "User", default: null, index: true })
+  actorId?: Types.ObjectId | null;
+  @Prop({ type: String, default: null, index: true, select: false })
+  anonymousHash?: string | null;
   @Prop({ type: [String], default: [] }) roles: string[];
   @Prop({ index: true }) event?: string;
   @Prop({ enum: ["club", "session"] }) groupType?: "club" | "session";

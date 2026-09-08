@@ -72,8 +72,8 @@ export function CoachClubClassScreen({ classId }: { classId: string }) {
   const item = detail.data;
   if (!item)
     return (
-      <main className="app-page">
-        <SecondaryHeader title="کلاس باشگاه" />
+      <main className="app-page coach-workspace">
+        <SecondaryHeader showFilter={false} title="کلاس باشگاه" />
         <Card className="app-card p-6 text-center shadow-none">
           این کلاس به شما تخصیص داده نشده است.
         </Card>
@@ -117,9 +117,9 @@ export function CoachClubClassScreen({ classId }: { classId: string }) {
   };
 
   return (
-    <main className="app-page gap-5">
-      <SecondaryHeader title="مدیریت کلاس باشگاه" />
-      <Card className="app-card rounded-3xl bg-linear-to-br from-accent/15 to-surface p-5 shadow-none">
+    <main className="app-page coach-workspace gap-5">
+      <SecondaryHeader showFilter={false} title="مدیریت کلاس باشگاه" />
+      <Card className="app-card rounded-3xl bg-linear-to-t from-accent/15 to-surface p-5 shadow-none">
         <div className="flex items-start justify-between gap-3">
           <div>
             <Typography type="h3" weight="bold">
@@ -186,6 +186,7 @@ export function CoachClubClassScreen({ classId }: { classId: string }) {
 
       <Card className="app-card rounded-3xl p-5 shadow-none">
         <Card.Title>جلسه و حضور‌وغیاب</Card.Title>
+        <p className="mt-2 mb-4 text-sm leading-7 text-muted">جلسه را انتخاب کنید؛ سپس وضعیت حضور شاگردها را ثبت کنید.</p>
         <select
           className="mt-4 h-11 w-full rounded-xl border border-white/10 bg-surface-secondary px-3 text-sm"
           value={sessionId}
@@ -278,6 +279,7 @@ export function CoachClubClassScreen({ classId }: { classId: string }) {
 
       <Card className="app-card rounded-3xl p-5 shadow-none">
         <Card.Title>شاگردهای کلاس</Card.Title>
+        <p className="mt-2 text-sm leading-7 text-muted">فهرست اعضا و وضعیت ثبت‌نام در این کلاس.</p>
         <div className="mt-4 flex flex-col gap-2">
           {(enrollments.data?.items ?? []).map((entry) => (
             <div

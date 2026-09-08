@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { Button, Chip, Skeleton, Typography } from "@heroui/react";
+import Link from "@/components/app-link";
+import { Button, Skeleton, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { SwipeableList } from "@repo/ui/swipeable-list";
 import { RequestFailureState } from "@/components/request-failure-state";
@@ -33,6 +33,8 @@ function ReservationTimelineRow({
   durationLabel,
   statusLabel,
   historyMode,
+  onCancel,
+  cancelPending,
 }: {
   item: TimelineReservation;
   selected: boolean;
@@ -41,23 +43,12 @@ function ReservationTimelineRow({
   durationLabel: string;
   statusLabel: string;
   historyMode: boolean;
+  onCancel: (id: string) => void;
+  cancelPending: boolean;
 }) {
   const styles = reservationTimelineRowStyles({ selected });
   return (
     <div className={styles.root()}>
-      <div className={styles.timeRail()}>
-        <Chip size="sm" className={styles.time()}>
-          <Chip.Label className={styles.timeLabel()}>
-            {historyMode ? (
-              <span className={styles.timeDate()}>
-                {formatReservationDate(item.sessionStartsAt)}
-              </span>
-            ) : null}
-            <span>{formatReservationTime(item.sessionStartsAt)}</span>
-          </Chip.Label>
-        </Chip>
-      </div>
-
       <div className={styles.card()}>
         <Button
           variant="ghost"
@@ -68,7 +59,15 @@ function ReservationTimelineRow({
             <Icon name={reservationIcon(item)} size={22} />
           </span>
           <div className={styles.body()}>
-            <span className={styles.status()}>{statusLabel}</span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className={styles.status()}>{statusLabel}</span>
+              <span className="text-xs font-semibold tabular-nums text-muted">
+                {historyMode
+                  ? `${formatReservationDate(item.sessionStartsAt)} · `
+                  : ""}
+                {formatReservationTime(item.sessionStartsAt)}
+              </span>
+            </div>
             <Typography type="h6" className={styles.name()}>
               {item.sessionTitle}
             </Typography>
@@ -94,6 +93,27 @@ function ReservationTimelineRow({
             </div>
           </div>
         </Button>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+          <span className="text-xs font-semibold text-muted">
+            {item.source === "class"
+              ? "دوره ورزشی"
+              : item.source === "coach"
+                ? "جلسه با مربی"
+                : "رزرو باشگاه"}
+          </span>
+          {item.status === "reserved" ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="min-h-11 px-2 text-xs text-danger"
+              aria-label={`لغو ${item.sessionTitle}`}
+              isDisabled={cancelPending}
+              onPress={() => onCancel(item.id)}
+            >
+              لغو رزرو
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -235,9 +255,9 @@ export function ReservationsTimelineSection({
           <span aria-hidden className={styles.line()} />
           <SwipeableList
             className="gap-5"
-            itemClassName="rounded-[1.25rem] bg-surface-secondary"
-            surfaceClassName="rounded-[1.25rem] bg-surface"
-            railClassName="rounded-[1.35rem] bg-surface-secondary [direction:ltr]"
+            itemClassName="rounded-3xl bg-surface-secondary"
+            surfaceClassName="rounded-3xl bg-surface"
+            railClassName="rounded-3xl bg-surface-secondary [direction:ltr]"
             items={items.map((item) => ({
               id: item.id,
               content: (
@@ -251,6 +271,8 @@ export function ReservationsTimelineSection({
                   )}
                   statusLabel={statusLabel(item.status)}
                   historyMode={historyMode}
+                  onCancel={onCancel}
+                  cancelPending={cancelPending}
                 />
               ),
               leftActions: [

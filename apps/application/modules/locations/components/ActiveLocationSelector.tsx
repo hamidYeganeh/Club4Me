@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/app-link";
 import { useState } from "react";
 import { useUserLocations } from "@api/locations";
 import { Typography } from "@heroui/react";
@@ -14,8 +14,10 @@ import { useActiveLocation } from "../active-location";
 
 export function ActiveLocationSelector({
   variant = "compact",
+  onSelect,
 }: {
   variant?: "compact" | "search";
+  onSelect?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const locations = useUserLocations(open);
@@ -44,6 +46,7 @@ export function ActiveLocationSelector({
   function updateLocation() {
     if (!selected) return;
     selectSaved(selected);
+    onSelect?.();
     close();
   }
 

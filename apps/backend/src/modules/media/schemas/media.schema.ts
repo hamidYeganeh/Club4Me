@@ -25,6 +25,7 @@ export class Media {
 
   @Prop({ type: String, enum: ["ready", "blocked"], default: "ready" })
   status: "ready" | "blocked";
+  @Prop({ type: Boolean, default: false }) isPrivate: boolean;
 
   createdAt: Date;
   updatedAt: Date;

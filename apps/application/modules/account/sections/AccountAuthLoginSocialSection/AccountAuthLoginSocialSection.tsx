@@ -1,6 +1,8 @@
 "use client";
 
 import { Button, Typography, toast } from "@heroui/react";
+import { http } from "@api";
+import { useEffect, useState } from "react";
 
 import { accountAuthLoginSocialSectionStyles } from "./AccountAuthLoginSocialSection.styles";
 import type { AccountAuthLoginSocialSectionProps } from "./AccountAuthLoginSocialSection.types";
@@ -13,9 +15,20 @@ export function AccountAuthLoginSocialSection({
   unavailable,
 }: AccountAuthLoginSocialSectionProps) {
   const styles = accountAuthLoginSocialSectionStyles();
+  const [providers, setProviders] = useState<Record<string, boolean>>({});
 
-  const handleUnavailable = () => {
-    toast.info(unavailable);
+  useEffect(() => {
+    void http.get<{ items: Array<{ id: string; enabled: boolean }> }>("/account/auth/social/providers")
+      .then((data) => setProviders(Object.fromEntries(data.items.map((item) => [item.id, item.enabled]))))
+      .catch(() => setProviders({}));
+  }, []);
+
+  const start = async (provider: "google" | "facebook" | "x") => {
+    if (!providers[provider]) return toast.info(unavailable);
+    try {
+      const { url } = await http.post<{ url: string }>("/account/auth/social/start", { provider, returnTo: window.location.pathname + window.location.search });
+      window.location.assign(url);
+    } catch { toast.danger("شروع ورود اجتماعی انجام نشد"); }
   };
 
   return (
@@ -31,7 +44,8 @@ export function AccountAuthLoginSocialSection({
           variant="secondary"
           aria-label={xLabel}
           className={styles.button()}
-          onPress={handleUnavailable}
+          isDisabled={!providers.x}
+          onPress={() => void start("x")}
         >
           <XLogo />
         </Button>
@@ -40,7 +54,8 @@ export function AccountAuthLoginSocialSection({
           variant="secondary"
           aria-label={facebookLabel}
           className={styles.button()}
-          onPress={handleUnavailable}
+          isDisabled={!providers.facebook}
+          onPress={() => void start("facebook")}
         >
           <FacebookLogo />
         </Button>
@@ -49,7 +64,8 @@ export function AccountAuthLoginSocialSection({
           variant="secondary"
           aria-label={googleLabel}
           className={styles.button()}
-          onPress={handleUnavailable}
+          isDisabled={!providers.google}
+          onPress={() => void start("google")}
         >
           <GoogleLogo />
         </Button>

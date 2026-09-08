@@ -13,6 +13,9 @@ import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import type { AuthTokenPayload } from "../auth/services/token.service";
 import { NotificationsService } from "./notifications.service";
+import { NotificationOutboxService } from "./notification-outbox.service";
+import { Roles } from "../auth/decorators/roles.decorator";
+import { RolesGuard } from "../auth/guards/roles.guard";
 import { PushNotificationsService } from "./push-notifications.service";
 import {
   RegisterPushDeviceDto,
@@ -26,7 +29,22 @@ export class NotificationsController {
   constructor(
     private readonly notifications: NotificationsService,
     private readonly push: PushNotificationsService,
+    private readonly outbox: NotificationOutboxService,
   ) {}
+
+  @Get("delivery-report")
+  @UseGuards(RolesGuard)
+  @Roles("admin")
+  deliveryReport() {
+    return this.outbox.report();
+  }
+
+  @Post(":notificationId/retry")
+  @UseGuards(RolesGuard)
+  @Roles("admin")
+  retry(@Param("notificationId") id: string) {
+    return this.outbox.retry(id);
+  }
 
   @Get()
   list(@CurrentUser() user: AuthTokenPayload) {

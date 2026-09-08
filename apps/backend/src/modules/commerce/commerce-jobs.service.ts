@@ -29,8 +29,12 @@ export class CommerceJobsService implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit() {
     if (this.config.env.NODE_ENV === "test") return;
-    this.timer = setInterval(() => void this.runSafely(), 5 * 60_000);
+    this.timer = setInterval(
+      () => void this.runSafely(),
+      this.config.env.PAYMENT_SWEEP_SECONDS * 1000,
+    );
     this.timer.unref();
+    void this.runSafely();
   }
 
   onModuleDestroy() {
@@ -38,15 +42,34 @@ export class CommerceJobsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async run() {
+    const token = crypto.randomUUID();
     const acquired = await this.redis.eval(
       LOCK,
       1,
       "jobs:payment-reconciliation",
-      crypto.randomUUID(),
+      token,
       4 * 60_000,
     );
     if (Number(acquired) !== 1) return { skipped: true };
-    return { skipped: false, ...(await this.commerce.reconcile()) };
+    try {
+      const expiration = await this.commerce.expirePendingPayments();
+      if (expiration.errors.length)
+        this.logger.warn(
+          `Payment expiry cleanup needs retry for ${expiration.errors.length} records`,
+        );
+      return {
+        skipped: false,
+        ...expiration,
+        ...(await this.commerce.reconcile()),
+      };
+    } finally {
+      await this.redis.eval(
+        "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) end return 0",
+        1,
+        "jobs:payment-reconciliation",
+        token,
+      );
+    }
   }
 
   private async runSafely() {

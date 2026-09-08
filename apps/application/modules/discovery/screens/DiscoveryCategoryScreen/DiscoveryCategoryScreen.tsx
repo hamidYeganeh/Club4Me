@@ -1,6 +1,10 @@
 "use client";
 
+import { DiscoveryQueryPage } from "../../components/DiscoveryQueryPage";
+import { getQueryFailure } from "@/lib/request-failure";
+
 import { usePublicCatalogResource } from "@api/discovery";
+import { DiscoveryBrowseIntro } from "../../components/DiscoveryBrowseIntro";
 import { DiscoveryClubsScreen } from "@modules/discovery/screens/DiscoveryClubsScreen";
 import { ListPageSkeleton } from "@/components/loading-skeletons";
 import { DiscoveryEmptyPage } from "@modules/discovery/components/DiscoveryEmptyPage";
@@ -20,8 +24,12 @@ export function DiscoveryCategoryScreen({
 }) {
   const [category, resource] = resources[type];
   const query = usePublicCatalogResource(category, resource, { search: id });
-  const item = query.data?.items.find((entry) => entry.slug === id);
+  const item = query.data?.items.find(
+    (entry) => entry.slug === id || entry.id === id,
+  );
 
+  if (getQueryFailure(query.error, query.fetchStatus) && !query.data)
+    return <DiscoveryQueryPage title="کشف" query={query} />;
   if (query.isPending) {
     return <ListPageSkeleton />;
   }
@@ -43,6 +51,23 @@ export function DiscoveryCategoryScreen({
 
   return (
     <DiscoveryClubsScreen
+      key={item.id}
+      intro={
+        <DiscoveryBrowseIntro
+          title={item.name}
+          description={
+            (typeof item.description === "string" && item.description) ||
+            "باشگاه‌ها را مقایسه کن و محل تمرینت را انتخاب کن."
+          }
+          icon={
+            type === "sports"
+              ? "soccer"
+              : type === "regions"
+                ? "pin-1"
+                : "building-1"
+          }
+        />
+      }
       layout="list"
       title={item.name}
       description={

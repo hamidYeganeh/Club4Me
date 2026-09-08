@@ -29,7 +29,8 @@
     "test:offline": "node --import tsx --test tests/offline/*.test.ts",
     "cap:sync:android": "npm run build:cap && cap sync android && node scripts/verify-native.mjs",
     "android:demo": "npm run cap:sync:android && npm run android:apk",
-    "test:native": "playwright test --config playwright.native.config.ts"
+    "test:native": "playwright test --config playwright.native.config.ts",
+    "e2e:fullstack": "playwright test --config playwright.fullstack.config.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",

@@ -14,6 +14,7 @@ import { LandingEyebrow } from "../../lib/landing-ui";
 import { cn } from "../../lib/marketing-cn";
 import { landingContactModalStyles } from "./LandingContactModal.styles";
 import type { LandingContactModalProps } from "./LandingContactModal.types";
+import { http } from "@api";
 
 export function LandingContactModal({ className }: LandingContactModalProps) {
   const t = useTranslations("MarketingLanding.contact");
@@ -50,16 +51,30 @@ export function LandingContactModal({ className }: LandingContactModalProps) {
     return () => window.clearTimeout(resetTimer);
   }, [contactOpen]);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const name = String(fd.get("name") ?? "").trim();
     setFirstName(name.split(/\s+/)[0] || "");
     const email = String(fd.get("email") ?? "").trim();
     const note = String(fd.get("note") ?? "").trim();
-    const body = `${name}\n${email}\n\n${note}`;
-    window.location.href = `mailto:hello@gym4me.ir?subject=${encodeURIComponent("تماس با Gym4Me")}&body=${encodeURIComponent(body)}`;
-    setSuccess(true);
+    const website = String(fd.get("website") ?? "");
+    const consent = fd.get("consent") === "on";
+    setSending(true);
+    try {
+      await http.post<{ accepted: true }>("/public/contact", {
+        name,
+        email,
+        note,
+        consent,
+        website,
+      });
+      setSuccess(true);
+    } catch {
+      window.location.href = `mailto:hello@gym4me.ir?subject=${encodeURIComponent("تماس با Gym4Me")}&body=${encodeURIComponent(`${name}\n${email}\n\n${note}`)}`;
+    } finally {
+      setSending(false);
+    }
   };
 
   const successName = firstName || t("successFallbackName");
@@ -139,6 +154,14 @@ export function LandingContactModal({ className }: LandingContactModalProps) {
           </div>
         ) : (
           <form autoComplete="off" className={slots.form()} onSubmit={onSubmit}>
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="hidden"
+            />
             <label className={slots.field()}>
               <span className={slots.label()}>{t("nameLabel")}</span>
               <input
@@ -181,6 +204,10 @@ export function LandingContactModal({ className }: LandingContactModalProps) {
                 autoCorrect="off"
                 spellCheck={false}
               />
+            </label>
+            <label className="flex items-start gap-2 text-xs leading-6 text-muted">
+              <input name="consent" type="checkbox" required className="mt-1 size-4" />
+              با ثبت فرم، با ذخیره نام، ایمیل و متن پیام برای پیگیری همین درخواست مطابق سیاست حریم خصوصی موافقم.
             </label>
             <Button
               variant="primary"

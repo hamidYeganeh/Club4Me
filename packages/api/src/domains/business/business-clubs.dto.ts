@@ -52,6 +52,8 @@ export type ClubLocation = {
 };
 
 export type BusinessClub = {
+  permissions?: string[];
+  isOwner?: boolean;
   profileResources?: Record<string, { name: string; isActive: boolean }>;
   profile?: ClubProfile;
   trialBookingEnabled?: boolean;
@@ -123,6 +125,11 @@ export type BusinessClub = {
   publishedAt: string | null;
   archivedAt: string | null;
   suspendedAt: string | null;
+  qualityStatus: "active" | "review_required" | "suspended";
+  supplyVerifiedAt: string | null;
+  supplyReviewDueAt: string | null;
+  supplyAssigneeId: string | null;
+  qualityReasons: string[];
   schemaVersion: number;
   createdAt: string;
   updatedAt: string;

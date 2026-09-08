@@ -1,3 +1,5 @@
+import { Atomic } from "../../../infrastructure/database/atomic-operation";
+import { CoachPackagePurchase } from "../schemas/coach-purchase.schema";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
@@ -82,7 +84,6 @@ export class SessionsService {
       .find({
         _id: { $in: offeringIds },
         status: "published",
-        pricingType: "per_session",
       })
       .exec();
     const byId = new Map(offerings.map((item) => [String(item._id), item]));
@@ -191,8 +192,7 @@ export class SessionsService {
       if (
         String(priceOffering.sportId) !== input.sportId ||
         !priceOffering.deliveryModes.includes(input.deliveryMode) ||
-        input.capacity > priceOffering.capacity ||
-        priceOffering.pricingType !== "per_session"
+        input.capacity > priceOffering.capacity
       ) {
         throw new AppError(
           400,
@@ -376,6 +376,7 @@ export class SessionsService {
     return toPublicDocument(session);
   }
 
+  @Atomic("sessions")
   async cancel(userId: string, sessionId: string, reason: string) {
     const session = await this.requireOwnedDocument(userId, sessionId);
     if (["completed", "cancelled"].includes(session.status)) {
@@ -428,6 +429,28 @@ export class SessionsService {
           };
         }),
       );
+    }
+    for (const booking of activeBookings) {
+      if (booking.packagePurchaseId) {
+        await this.sessions.db
+          .model<CoachPackagePurchase>(CoachPackagePurchase.name)
+          .updateOne({ _id: booking.packagePurchaseId }, [
+            {
+              $set: {
+                usedSessions: {
+                  $max: [0, { $subtract: ["$usedSessions", 1] }],
+                },
+                remainingSessions: {
+                  $cond: [
+                    { $eq: ["$remainingSessions", null] },
+                    null,
+                    { $add: ["$remainingSessions", 1] },
+                  ],
+                },
+              },
+            },
+          ]);
+      }
     }
     const classEnrollments = session.classId
       ? await this.enrollments
@@ -556,7 +579,11 @@ function publicCoachSession(
     capacity: session.capacity,
     bookedCount: session.bookedCount,
     remainingCapacity: Math.max(0, session.capacity - session.bookedCount),
-    price: offering.price,
+    price:
+      offering.pricingType === "per_session"
+        ? offering.price
+        : { amount: 0, currency: offering.price.currency },
+    pricingType: offering.pricingType,
     cancellationPolicy: normalizeCoachCancellationPolicy(
       offering.cancellationPolicy,
     ),

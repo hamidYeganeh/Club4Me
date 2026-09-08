@@ -25,6 +25,7 @@ export const businessClubEndpoints = {
   list: "/business/clubs",
   detail: (clubId: string) => `/business/clubs/${clubId}` as const,
   submit: (clubId: string) => `/business/clubs/${clubId}/submit` as const,
+  activation: (clubId: string) => `/business/clubs/${clubId}/activation` as const,
   catalog: (category: string, resource: string) =>
     resourceApiPath(category, resource),
   media: "/media",
@@ -41,6 +42,7 @@ export const businessClubsClient = {
     http.patch<BusinessClub>(businessClubEndpoints.detail(clubId), payload),
   submit: (clubId: string) =>
     http.post<BusinessClub>(businessClubEndpoints.submit(clubId)),
+  activation: (clubId: string) => http.get<{ clubId: string; ready: boolean; completed: number; total: number; items: Array<{ id: string; label: string; complete: boolean }>; publicPreviewUrl: string }>(businessClubEndpoints.activation(clubId)),
   catalog: (
     category: string,
     resource: string,
@@ -80,6 +82,10 @@ export function useBusinessClub(clubId: string, enabled = true) {
     queryFn: () => businessClubsClient.get(clubId),
     enabled: enabled && Boolean(clubId),
   });
+}
+
+export function useBusinessClubActivation(clubId: string) {
+  return useQuery({ queryKey: [...businessClubQueries.detail(clubId), "activation"], queryFn: () => businessClubsClient.activation(clubId), enabled: Boolean(clubId) });
 }
 
 export function useCreateBusinessClub() {

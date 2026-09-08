@@ -71,3 +71,20 @@ test("expired and incompatible caches cannot restore a session", async () => {
   assert.equal(await storage.get("alice"), undefined);
   client.clear();
 });
+
+
+test("a recent persisted enrollment is revalidated after restart instead of hiding a completed payment", async () => {
+  const storage = memoryStorage();
+  const key = ["athlete", "class-enrollments"];
+  const beforePayment = new QueryClient();
+  beforePayment.setQueryData(key, { items: [] });
+  await saveOfflineCache(beforePayment, storage, "athlete");
+  const restarted = new QueryClient({ defaultOptions: { queries: { staleTime: 60000 } } });
+  await restoreOfflineCache(restarted, storage, "athlete");
+  assert.deepEqual(restarted.getQueryData(key), { items: [] });
+  let requests = 0;
+  const latest = await restarted.fetchQuery({ queryKey: key, queryFn: async () => { requests++; return { items: [{ id: "paid-course", paymentStatus: "paid" }] }; } });
+  assert.equal(requests, 1);
+  assert.equal(latest.items[0]?.paymentStatus, "paid");
+  beforePayment.clear(); restarted.clear();
+});

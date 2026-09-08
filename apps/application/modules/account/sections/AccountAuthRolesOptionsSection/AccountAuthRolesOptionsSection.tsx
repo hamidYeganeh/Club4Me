@@ -1,6 +1,8 @@
 "use client";
 
-import Image from "next/image";
+import Link from "@/components/app-link";
+import { AuthPageIntro } from "@/components/auth-page-intro";
+import { useKeyboardOpen } from "@/hooks/use-keyboard-inset";
 import type { FormEvent } from "react";
 import {
   Button,
@@ -10,7 +12,6 @@ import {
   Label,
   Spinner,
   TextField,
-  Typography,
   toast,
 } from "@heroui/react";
 import {
@@ -127,15 +128,15 @@ export function AccountAuthRolesOptionsSection({
               key={option.id}
               variant={formRole === option.id ? "secondary" : "tertiary"}
               fullWidth
-              isDisabled={
-                !granted && (pending || latest?.status === "approved")
-              }
+              isDisabled={!granted && option.id === "athlete"}
               className={styles.item()}
               onPress={() => {
                 if (granted) {
                   if (isFirstTime)
                     trackOnboardingCompleted({ selected_role: option.id });
                   onSelectRole(option.id);
+                } else if (pending || latest?.status === "approved") {
+                  onRequestRoleChange(null);
                 } else if (option.id !== "athlete") {
                   const requestableRole = option.id;
                   onRequestRoleChange(requestableRole);
@@ -185,6 +186,12 @@ export function AccountAuthRolesOptionsSection({
           );
         })}
       </div>
+      <Link
+        href="/auth/roles/requests"
+        className="rounded-2xl border border-border p-4 text-center text-sm font-bold"
+      >
+        پیگیری درخواست‌های نقش
+      </Link>
       {requests.isPending ? (
         <div className="flex justify-center py-2">
           <Spinner size="sm" />
@@ -205,34 +212,15 @@ function RoleRequestForm({
 }) {
   const styles = accountAuthRolesOptionsSectionStyles();
   const isCoach = role === "coach";
+  const keyboardOpen = useKeyboardOpen();
   return (
     <>
-      <div className={styles.hero()}>
-        <Image
-          src="/role-request-upload.png"
-          alt="ارسال اطلاعات برای بررسی درخواست نقش"
-          width={768}
-          height={416}
-          priority
-          className={styles.heroImage()}
-        />
-        <Typography
-          type="h2"
-          weight="bold"
-          id="role-request-title"
-          className={styles.heroTitle()}
-        >
-          {isCoach ? "درخواست مربیگری" : "درخواست مدیریت مجموعه"}
-        </Typography>
-        <Typography
-          type="body-sm"
-          color="muted"
-          className={styles.heroDescription()}
-        >
-          اطلاعات واقعی فعالیت خود را وارد کنید تا درخواست شما سریع‌تر بررسی
-          شود.
-        </Typography>
-      </div>
+      <AuthPageIntro
+        title={isCoach ? "درخواست مربیگری" : "درخواست مدیریت مجموعه"}
+        titleId="role-request-title"
+        subtitle="اطلاعات فعالیت خود را وارد کنید تا درخواست شما بررسی شود."
+        keyboardOpen={keyboardOpen}
+      />
       <Form onSubmit={onSubmit} className={styles.form()}>
         <RoleField
           name="displayName"

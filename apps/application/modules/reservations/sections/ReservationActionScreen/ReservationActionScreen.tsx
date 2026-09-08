@@ -1,7 +1,9 @@
 "use client";
+import { TaskStatusIntro } from "@/components/task-status-intro";
 
 import { useState } from "react";
-import Link from "next/link";
+import { RescheduleReservationForm } from "../../components/RescheduleReservationForm";
+import Link from "@/components/app-link";
 import { Button, Skeleton } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import type { PublicResourceItem } from "@api/discovery";
@@ -48,6 +50,17 @@ export function ReservationActionScreen({
         onBack={onBack}
       />
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-5 pt-5">
+        <TaskStatusIntro
+          title={
+            mode === "cancel"
+              ? "پیش از لغو بررسی کنید"
+              : "زمان مناسب‌تری انتخاب کنید"
+          }
+        >
+          {mode === "cancel"
+            ? "شرایط لغو و مبلغ قابل بازگشت را پیش از تأیید بخوانید."
+            : "برای رزرو زمان جدید، ظرفیت و شرایط جلسه را بررسی کنید."}
+        </TaskStatusIntro>
         <section className="app-card p-5">
           <div className="flex items-start gap-4">
             <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent/12 text-accent">
@@ -170,6 +183,15 @@ export function ReservationActionScreen({
               تأیید لغو رزرو
             </Button>
           </section>
+        ) : reservation.source === "club" &&
+          reservation.clubId &&
+          ["paid", "not_required"].includes(reservation.paymentStatus) ? (
+          <RescheduleReservationForm
+            id={reservation.sourceId ?? reservation.id}
+            clubId={reservation.clubId}
+            sessionId={reservation.sessionId}
+            onDone={onBack}
+          />
         ) : (
           <section className="app-card flex flex-col gap-4 p-5">
             <span className="flex size-12 items-center justify-center rounded-2xl bg-accent/12 text-accent">
@@ -180,7 +202,8 @@ export function ReservationActionScreen({
                 یک زمان تازه انتخاب کنید
               </h2>
               <p className="mt-1 text-sm leading-6 text-muted">
-                رزرو فعلی تا قطعی‌شدن زمان جدید محفوظ می‌ماند.
+                انتخاب زمان جدید، یک رزرو جدا می‌سازد و رزرو فعلی را لغو
+                نمی‌کند. برای لغو رزرو فعلی، شرایط بازپرداخت آن را بررسی کنید.
               </p>
             </div>
             {reservation.changeTimeHref ? (

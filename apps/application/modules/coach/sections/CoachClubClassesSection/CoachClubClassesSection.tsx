@@ -30,9 +30,7 @@ export function CoachClubClassesSection() {
           {(query.data?.items.length ?? 0).toLocaleString("fa-IR")}
         </span>
       </div>
-      {query.isPending ? (
-        <CompactCardListSkeleton count={2} />
-      ) : null}
+      {query.isPending ? <CompactCardListSkeleton count={2} /> : null}
       <div className="flex flex-col gap-3">
         {(query.data?.items ?? []).map((item) => (
           <ButtonLink

@@ -2,25 +2,25 @@ import { tv } from "tailwind-variants";
 
 export const discoveryClubsDetailBodySectionStyles = tv({
   slots: {
-    root: "relative z-10 -mt-8 flex flex-1 flex-col gap-6 bg-background px-5 pb-28 pt-6 rounded-t-[calc(var(--radius)*5)]",
+    root: "relative z-10 flex flex-col gap-8 bg-background px-4 pb-8 pt-5",
     thumbsSwiper:
       "w-full [&_.swiper-slide-thumb-active]:opacity-100 [&_.swiper-slide]:opacity-55",
     thumbSlide:
       "relative !box-border !h-[5.5rem] cursor-pointer overflow-hidden rounded-[calc(var(--radius)*3)]",
     image: "pointer-events-none object-cover",
-    stats: "grid grid-cols-2 gap-2.5",
-    stat: "flex min-h-16 items-center gap-3 rounded-[calc(var(--radius)*3)] bg-surface-secondary px-3.5 py-3.5",
+    stats: "grid grid-cols-3 gap-3",
+    stat: "flex min-w-0 flex-col items-start gap-3 rounded-3xl bg-surface p-4",
     statIcon:
-      "flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground",
+      "flex size-9 shrink-0 items-center justify-center rounded-2xl bg-accent text-accent-foreground",
     statText: "min-w-0",
-    statValue: "truncate",
-    statLabel: "truncate",
+    statValue: "text-base font-extrabold",
+    statLabel: "mt-1 text-xs leading-5 text-muted",
     facilitySection: "flex flex-col gap-3",
     facilityHeader: "flex items-center justify-between gap-3",
     facilityTitle: "",
     facilitySeeAll:
-      "shrink-0 text-sm font-semibold text-accent transition-opacity active:opacity-70",
-    facilityCarousel: "-mx-5 w-[calc(100%+2.5rem)] px-5",
+      "shrink-0 text-sm font-semibold text-foreground underline decoration-accent decoration-2 underline-offset-4 transition-opacity active:opacity-70",
+    facilityCarousel: "-mx-4 w-[calc(100%+2rem)] px-4",
     facilitySlide: "!w-auto",
     facilityList: "flex flex-col gap-2.5",
     facilityDetailImage:
@@ -35,7 +35,7 @@ export const discoveryClubsDetailBodySectionStyles = tv({
     coachesTitle: "",
     coachesList:
       "-mx-5 flex gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-    about: "flex flex-col gap-1",
+    about: "flex flex-col gap-3 rounded-[2rem] bg-surface p-5",
     aboutTitle: "",
     aboutBody: "leading-7",
     location: "flex flex-col gap-3",

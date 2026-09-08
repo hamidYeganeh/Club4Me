@@ -301,6 +301,12 @@ export class Club {
   @Prop({ type: Date }) publishedAt?: Date;
   @Prop({ type: Date }) archivedAt?: Date;
   @Prop({ type: Date }) suspendedAt?: Date;
+  @Prop({ type: String, enum: ["active", "review_required", "suspended"], default: "review_required", index: true })
+  qualityStatus: "active" | "review_required" | "suspended";
+  @Prop({ type: Date, default: null }) supplyVerifiedAt: Date | null;
+  @Prop({ type: Date, default: null, index: true }) supplyReviewDueAt: Date | null;
+  @Prop({ type: Types.ObjectId, ref: "User", default: null }) supplyAssigneeId: Types.ObjectId | null;
+  @Prop({ type: [String], default: [] }) qualityReasons: string[];
   @Prop({ type: Types.ObjectId, ref: "User" }) createdBy?: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: "User" }) updatedBy?: Types.ObjectId;
   @Prop({ type: Number, min: 1, default: 2 }) schemaVersion: number;

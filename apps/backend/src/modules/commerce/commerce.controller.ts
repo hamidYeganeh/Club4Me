@@ -16,6 +16,7 @@ import { RolesGuard } from "../auth/guards/roles.guard";
 import type { AuthTokenPayload } from "../auth/services/token.service";
 import {
   CreatePaymentIntentDto,
+  QuotePaymentDto,
   MockPaymentCallbackDto,
   MockPaymentDecisionDto,
   RefundPaymentDto,
@@ -29,6 +30,12 @@ import { PayoutsService } from "./payouts.service";
 @Controller("api/v1/payments")
 export class CommerceController {
   constructor(private readonly commerce: CommerceService) {}
+
+  @Post("quote")
+  @UseGuards(JwtAuthGuard)
+  quote(@CurrentUser() user: AuthTokenPayload, @Body() body: QuotePaymentDto) {
+    return this.commerce.quotePayment(user.sub, body);
+  }
 
   @Post("intents")
   @UseGuards(JwtAuthGuard)

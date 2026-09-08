@@ -68,31 +68,14 @@ test("کشف تا رزرو، پرداخت، اعلان، لغو و refund", asyn
 
   await page.goto("/athlete/reservations");
   const reservation = page.getByRole("button", {
-    name: /سانس تست باشگاه/,
+    name: /^فعال[\s\S]*سانس تست باشگاه/,
   });
   await expect(reservation).toBeVisible();
   await expect(
     page.getByRole("status", { name: "Gym4Me", exact: true }),
   ).toHaveCount(0);
 
-  const swipeSurface = page
-    .locator(".cursor-grab")
-    .filter({ has: reservation });
-  await swipeSurface.scrollIntoViewIfNeeded();
-  const bounds = await swipeSurface.boundingBox();
-  if (!bounds) throw new Error("Reservation swipe surface is missing");
-  await page.mouse.move(
-    bounds.x + bounds.width / 2,
-    bounds.y + bounds.height / 2,
-  );
-  await page.mouse.down();
-  await page.mouse.move(
-    bounds.x + bounds.width / 2 - 110,
-    bounds.y + bounds.height / 2,
-    { steps: 12 },
-  );
-  await page.mouse.up();
-  await page.getByRole("button", { name: "لغو رزرو", exact: true }).click();
+  await page.getByRole("button", { name: "لغو سانس تست باشگاه", exact: true }).click();
   await expect(page.getByRole("heading", { name: "لغو رزرو" })).toBeVisible();
   await page.getByLabel("تغییر برنامه").check();
   await page.getByRole("button", { name: "تأیید لغو رزرو" }).click();

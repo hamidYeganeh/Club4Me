@@ -1,10 +1,13 @@
 "use client";
+import { SecondaryHeader } from "../../components/SecondaryHeader";
+import { DiscoveryHeroScrim } from "../../components/DiscoveryImageHero";
 
 import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Button,
+  toast,
   Checkbox,
   Label,
   Radio,
@@ -21,6 +24,7 @@ import {
   usePublicClub,
   useReservableSessions,
   useReserveSession,
+  useQuoteReservation,
   useResolveMockClubPayment,
   useMyEntitlements,
   type ReservableSession,
@@ -31,6 +35,11 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import NumberFlow from "@number-flow/react";
 import { useTranslations } from "next-intl";
+import { rememberAuthReturnPath } from "@/lib/auth-return-path";
+import {
+  readReservationSelection,
+  writeReservationSelection,
+} from "@/lib/reservation-return-selection";
 import { cn } from "@/lib/cn";
 import { RequestFailureState } from "@/components/request-failure-state";
 import { getQueryFailure } from "@/lib/request-failure";
@@ -155,8 +164,8 @@ export function DiscoveryClubSlotsScreen({
   clubId,
 }: DiscoveryClubSlotsScreenProps) {
   const router = useRouter();
+  const params = useSearchParams();
   const t = useTranslations("discovery.clubSlots");
-  const tDetail = useTranslations("discovery.clubDetail");
   const styles = discoveryClubSlotsScreenStyles();
   const catalogClub = useCatalogClub(clubId);
   const persistedId = catalogClub.data?.id ?? "";
@@ -166,13 +175,16 @@ export function DiscoveryClubSlotsScreen({
   const publicClub = usePublicClub(persistedId);
   const sessionsQuery = useReservableSessions(persistedId);
   const reserve = useReserveSession();
+  const quote = useQuoteReservation();
   const resolvePayment = useResolveMockClubPayment();
   const entitlements = useMyEntitlements(Boolean(tokenStore.get()));
 
-  const [courtKey, setCourtKey] = useState<string>("");
-  const [dateKey, setDateKey] = useState<string>("");
+  const [courtKey, setCourtKey] = useState<string>(params.get("court") ?? "");
+  const [dateKey, setDateKey] = useState<string>(params.get("date") ?? "");
   const [onlyAvailableDates, setOnlyAvailableDates] = useState(true);
-  const [sessionId, setSessionId] = useState<string>("");
+  const [sessionId, setSessionId] = useState<string>(
+    params.get("session") ?? "",
+  );
   const [entitlementId, setEntitlementId] = useState("");
   const [isTrial, setIsTrial] = useState(false);
   const [bookingError, setBookingError] = useState<string>();
@@ -181,11 +193,15 @@ export function DiscoveryClubSlotsScreen({
     id: string;
     title: string;
     amount: number;
+    expiresAt?: string | null;
   } | null>(null);
   const [reservationResult, setReservationResult] = useState<
     "success" | "failed" | null
   >(null);
   const [showReview, setShowReview] = useState(false);
+  const [selection, setSelection] = useState(() =>
+    readReservationSelection(params),
+  );
 
   const dateWindow = useMemo(() => {
     const start = new Date();
@@ -284,8 +300,22 @@ export function DiscoveryClubSlotsScreen({
   const selectedSession: ReservableSession | undefined = timeSlots.find(
     (session) => session.id === selectedSessionId,
   );
+  const participantCount =
+    selection.sessionId === selectedSessionId ? selection.participantCount : 1;
+  const quantities =
+    selection.sessionId === selectedSessionId ? selection.quantities : {};
+  const selectedOptions = Object.entries(quantities)
+    .filter(([, quantity]) => quantity > 0)
+    .map(([optionId, quantity]) => ({ optionId, quantity }));
+  const optionsAmount = (selectedSession?.options ?? []).reduce(
+    (sum, option) => sum + option.unitPrice * (quantities[option.id] ?? 0),
+    0,
+  );
+  const baseAmount =
+    (selectedSession?.basePrice ?? 0) *
+    (selectedSession?.pricingUnit === "per_participant" ? participantCount : 1);
   const eligibleEntitlements = useMemo(() => {
-    if (!selectedSession) return [];
+    if (!selectedSession || participantCount !== 1) return [];
     const sessionType = selectedSession.courtId
       ? "court"
       : selectedSession.classId
@@ -297,10 +327,27 @@ export function DiscoveryClubSlotsScreen({
         item.status === "active" &&
         item.sessionTypes.includes(sessionType),
     );
-  }, [entitlements.data?.items, persistedId, selectedSession]);
+  }, [
+    entitlements.data?.items,
+    persistedId,
+    selectedSession,
+    participantCount,
+  ]);
   const selectedEntitlement = eligibleEntitlements.find(
     (item) => item.id === entitlementId,
   );
+  const goToAuth = () => {
+    const destination = new URL(window.location.href);
+    destination.searchParams.set("court", selectedCourtKey);
+    destination.searchParams.set("date", selectedDateKey);
+    writeReservationSelection(destination.searchParams, {
+      sessionId: selectedSessionId,
+      participantCount,
+      quantities,
+    });
+    rememberAuthReturnPath(destination.pathname + destination.search);
+    router.push("/auth");
+  };
   const reserveButtonSize = "lg" as const;
   const isReserveButtonLarge = reserveButtonSize === "lg";
 
@@ -422,7 +469,7 @@ export function DiscoveryClubSlotsScreen({
     setBookingError(undefined);
     if (!selectedSession) return;
     if (!tokenStore.get()) {
-      router.push("/auth");
+      goToAuth();
       return;
     }
     try {
@@ -432,7 +479,10 @@ export function DiscoveryClubSlotsScreen({
       });
       const result = await reserve.mutateAsync({
         sessionId: selectedSession.id,
-        participantCount: 1,
+        participantCount,
+        options: selectedOptions,
+        expectedTotalPrice: quote.data?.totalPrice,
+        expectedCurrency: quote.data?.currency,
         isTrial,
         ...(!isTrial && selectedEntitlement
           ? { entitlementId: selectedEntitlement.id }
@@ -444,6 +494,7 @@ export function DiscoveryClubSlotsScreen({
           id: result.id,
           title: result.sessionTitle,
           amount: result.totalPrice,
+          expiresAt: result.paymentExpiresAt,
         });
       } else {
         setShowReview(false);
@@ -456,6 +507,10 @@ export function DiscoveryClubSlotsScreen({
             "جلسه آزمایشی این باشگاه را قبلاً رزرو یا استفاده کرده‌اید. رزروهای خود را بررسی کنید.",
           TRIAL_NOT_AVAILABLE:
             "باشگاه در حال حاضر رزرو آزمایشی نمی‌پذیرد. برای رزرو عادی، گزینه آزمایشی را خاموش کنید.",
+          RESERVATION_PRICE_CHANGED:
+            "قیمت تغییر کرده است؛ خلاصه رزرو را دوباره بررسی کنید.",
+          PAYMENT_EXPIRED:
+            "مهلت پرداخت تمام شده است؛ دوباره زمان را انتخاب کنید.",
           INVALID_TRIAL_BOOKING:
             "رزرو آزمایشی فقط برای یک نفر و بدون خدمات جانبی امکان‌پذیر است.",
         };
@@ -469,11 +524,11 @@ export function DiscoveryClubSlotsScreen({
   const finishPayment = async (result: "approve" | "reject") => {
     if (!pendingPayment) return;
     try {
-      await resolvePayment.mutateAsync({
+      const payment = await resolvePayment.mutateAsync({
         reservationId: pendingPayment.id,
         result,
       });
-      if (result === "approve") {
+      if (payment.status === "paid") {
         trackPaymentSucceeded({
           reservation_id: pendingPayment.id,
           club_id: persistedId,
@@ -572,15 +627,21 @@ export function DiscoveryClubSlotsScreen({
           endsAt: selectedSession.endsAt,
           deliveryMode: "club",
           address: publicClub.data?.location?.address,
-          participantCount: 1,
-          amount: isTrial ? 0 : selectedSession.basePrice,
-          currency: selectedSession.currency,
+          participantCount,
+          amount: quote.data
+            ? quote.data.totalPrice + quote.data.coveredAmount
+            : isTrial
+              ? 0
+              : selectedSession.basePrice,
+          currency: quote.data?.currency ?? selectedSession.currency,
+          pricingUnit: quote.data?.pricingUnit ?? selectedSession.pricingUnit,
+          includedTaxAmount: quote.data?.taxAmount,
           paymentLabel: isTrial
             ? "جلسه آزمایشی رایگان"
             : selectedEntitlement?.title,
           coveredAmount:
             !isTrial && selectedEntitlement
-              ? selectedSession.basePrice
+              ? (quote.data?.coveredAmount ?? baseAmount)
               : undefined,
           cancellationPolicy: selectedSession.cancellationPolicy,
         }}
@@ -595,8 +656,10 @@ export function DiscoveryClubSlotsScreen({
     <main ref={rootRef} className={styles.root()}>
       {pendingPayment ? (
         <MockPaymentGateway
+          reference={{ referenceType: "reservation", referenceId: pendingPayment.id }}
           title={pendingPayment.title}
           amount={pendingPayment.amount}
+          expiresAt={pendingPayment.expiresAt}
           isPending={resolvePayment.isPending}
           onResult={(result) => void finishPayment(result)}
         />
@@ -643,6 +706,7 @@ export function DiscoveryClubSlotsScreen({
         </div>
       </BottomSheet>
 
+      <SecondaryHeader title={t("title")} showFilter={false} />
       <div className={styles.coverWrap()}>
         {coverUrl ? (
           <div
@@ -656,24 +720,13 @@ export function DiscoveryClubSlotsScreen({
           </div>
         )}
       </div>
-      <div aria-hidden className={styles.overlay()} />
+      <div aria-hidden className={styles.overlay()}>
+        <DiscoveryHeroScrim />
+      </div>
       <div aria-hidden className={styles.grain()} />
       <div aria-hidden className={styles.accentOrb()} />
 
       <section className={styles.hero()} aria-labelledby="club-slots-title">
-        <div className={styles.topBar()}>
-          <Button
-            isIconOnly
-            aria-label={tDetail("back")}
-            variant="secondary"
-            size="lg"
-            className={styles.backButton()}
-            onPress={() => router.back()}
-          >
-            <Icon name="chevron-right" size="lg" />
-          </Button>
-        </div>
-
         <div data-slots-title className={styles.heroCopy()}>
           <p className={styles.heroEyebrow()}>{t("eyebrow")}</p>
           <h1 id="club-slots-title" className={styles.heroTitle()}>
@@ -886,6 +939,9 @@ export function DiscoveryClubSlotsScreen({
                 <input
                   type="checkbox"
                   checked={isTrial}
+                  disabled={
+                    participantCount !== 1 || selectedOptions.length > 0
+                  }
                   onChange={(e) => {
                     setIsTrial(e.target.checked);
                     if (e.target.checked) setEntitlementId("");
@@ -923,6 +979,78 @@ export function DiscoveryClubSlotsScreen({
               </div>
             ) : null}
 
+            {selectedSession && !isTrial ? (
+              <div className="space-y-4 rounded-2xl border border-border p-4">
+                <label className="block text-sm font-bold">
+                  تعداد نفرات
+                  <input
+                    aria-label="تعداد نفرات رزرو"
+                    type="number"
+                    min={1}
+                    max={Math.min(
+                      100,
+                      selectedSession.capacity - selectedSession.reservedCount,
+                    )}
+                    value={participantCount}
+                    className="mt-2 h-11 w-full rounded-xl border border-border bg-surface px-3"
+                    onChange={(event) =>
+                      setSelection({
+                        sessionId: selectedSession.id,
+                        quantities,
+                        participantCount: Math.max(
+                          1,
+                          Math.min(100, Number(event.target.value) || 1),
+                        ),
+                      })
+                    }
+                  />
+                </label>
+                <p className="text-xs text-muted">
+                  {selectedSession.pricingUnit === "per_court"
+                    ? "قیمت پایه برای کل زمین است."
+                    : selectedSession.pricingUnit === "per_session"
+                      ? "قیمت پایه برای کل سانس است."
+                      : "قیمت پایه به‌ازای هر نفر محاسبه می‌شود."}
+                </p>
+                {selectedSession.options.map((option) => (
+                  <label key={option.id} className="block text-sm">
+                    {option.title ||
+                      (option.type === "equipment"
+                        ? "تجهیزات"
+                        : "خدمت جانبی")}{" "}
+                    · {option.unitPrice.toLocaleString("fa-IR")} ریال
+                    <input
+                      aria-label={`تعداد ${option.title || "خدمت جانبی"}`}
+                      className="mt-2 h-11 w-full rounded-xl border border-border bg-surface px-3"
+                      type="number"
+                      min={0}
+                      max={Math.max(
+                        0,
+                        Math.min(
+                          option.maxPerReservation,
+                          option.availableQuantity - option.reservedQuantity,
+                        ),
+                      )}
+                      value={quantities[option.id] ?? 0}
+                      onChange={(event) =>
+                        setSelection({
+                          sessionId: selectedSession.id,
+                          participantCount,
+                          quantities: {
+                            ...quantities,
+                            [option.id]: Math.max(
+                              0,
+                              Number(event.target.value) || 0,
+                            ),
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
+            ) : null}
+
             <div
               data-slots-section
               className={cn(
@@ -937,9 +1065,10 @@ export function DiscoveryClubSlotsScreen({
                     <>
                       <NumberFlow
                         value={
-                          isTrial || selectedEntitlement
+                          isTrial
                             ? 0
-                            : selectedSession.basePrice
+                            : (selectedEntitlement ? 0 : baseAmount) +
+                              optionsAmount
                         }
                         locales="fa-IR"
                         format={{ useGrouping: true }}
@@ -958,9 +1087,31 @@ export function DiscoveryClubSlotsScreen({
                 variant="primary"
                 size={reserveButtonSize}
                 className={styles.bookButton()}
-                isPending={reserve.isPending}
+                isPending={quote.isPending || reserve.isPending}
                 isDisabled={!selectedSession}
-                onPress={() => setShowReview(true)}
+                onPress={async () => {
+                  if (!selectedSession) return;
+                  if (!tokenStore.get()) {
+                    goToAuth();
+                    return;
+                  }
+                  try {
+                    await quote.mutateAsync({
+                      sessionId: selectedSession.id,
+                      participantCount,
+                      options: selectedOptions,
+                      isTrial,
+                      ...(!isTrial && selectedEntitlement
+                        ? { entitlementId: selectedEntitlement.id }
+                        : {}),
+                    });
+                    setShowReview(true);
+                  } catch {
+                    toast.danger(
+                      "دریافت قیمت نهایی انجام نشد؛ دوباره تلاش کنید",
+                    );
+                  }
+                }}
               >
                 {selectedSession ? t("bookNow") : "ابتدا ساعت را انتخاب کنید"}
               </Button>

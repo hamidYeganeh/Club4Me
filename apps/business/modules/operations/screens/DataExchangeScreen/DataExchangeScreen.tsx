@@ -74,12 +74,13 @@ export function DataExchangeScreen() {
         ...(contentBase64 ? { contentBase64 } : { rows }),
       });
       setPreview(result);
-      if (!dryRun) {
+      if (!result.dryRun) {
         setRows([]);
         setContentBase64("");
-        toast.success(
-          `${result.imported.toLocaleString("fa-IR")} ردیف وارد شد`,
-        );
+        const message = `${result.imported.toLocaleString("fa-IR")} ردیف وارد شد`;
+        if (result.errors.length)
+          toast.warning(`${message}؛ خطاهای ردیف‌ها را بررسی کنید`);
+        else toast.success(message);
       }
     } catch {
       toast.danger("پردازش فایل انجام نشد");
@@ -208,7 +209,10 @@ function ImportPreview({ result }: { result: OperationsImportResult }) {
       <div className="flex flex-wrap gap-2">
         <Chip size="sm">کل: {result.total.toLocaleString("fa-IR")}</Chip>
         <Chip size="sm" color="success">
-          معتبر: {result.valid.toLocaleString("fa-IR")}
+          {result.dryRun ? "معتبر" : "ثبت‌شده"}:{" "}
+          {(result.dryRun ? result.valid : result.imported).toLocaleString(
+            "fa-IR",
+          )}
         </Chip>
         <Chip size="sm" color={result.errors.length ? "danger" : "success"}>
           خطا: {result.errors.length.toLocaleString("fa-IR")}
@@ -223,7 +227,9 @@ function ImportPreview({ result }: { result: OperationsImportResult }) {
           ))}
         </ul>
       ) : (
-        <p className="mt-3 text-success">فایل آماده ثبت نهایی است.</p>
+        <p className="mt-3 text-success">
+          {result.dryRun ? "فایل آماده ثبت نهایی است." : "ورود داده انجام شد."}
+        </p>
       )}
     </div>
   );

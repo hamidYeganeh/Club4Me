@@ -5,6 +5,7 @@
 @import "@repo/theme/icons.css";
 @import "@repo/theme/theme-transition.css";
 @import "@repo/theme/app-surface.css";
+@import "@repo/theme/sandow.css";
 @import "@neshan-maps-platform/maplibre-sdk/style.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -82,22 +83,31 @@
 }
 
 @layer components {
-  /* App-wide HeroUI button height (icon-only + ghost text actions keep their own size) */
+  /* Sandow control scale; explicit small/large and icon actions retain their size. */
   .button:not(.button--icon-only):not(.button--ghost) {
-    @apply h-16 md:h-16;
+    min-height: 3rem;
+    height: 3.5rem;
+    border-radius: var(--app-radius-control);
   }
 
-  .button--sm:not(.button--icon-only):not(.button--ghost),
+  .button--sm:not(.button--icon-only):not(.button--ghost) {
+    height: 2.75rem;
+    min-height: 2.75rem;
+    border-radius: 0.8125rem;
+  }
+
   .button--lg:not(.button--icon-only):not(.button--ghost) {
-    @apply h-16 md:h-16;
+    height: 4rem;
+    border-radius: 1.3125rem;
   }
 
   .app-page {
-    @apply relative isolate flex min-h-dvh w-full max-w-full flex-1 flex-col overflow-x-clip px-5 pb-[calc(7rem+env(safe-area-inset-bottom))];
+    @apply relative isolate flex min-h-dvh w-full max-w-full flex-1 flex-col overflow-x-clip pb-[calc(7rem+env(safe-area-inset-bottom))];
+    padding-inline: var(--app-page-gutter);
   }
 
   .app-header {
-    @apply fixed inset-x-0 top-0 z-40 mx-auto flex h-[calc(72px+env(safe-area-inset-top))] w-full max-w-xl items-center gap-3 border-b border-white/7 bg-background/72 px-5 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] backdrop-blur-xl;
+    @apply fixed inset-x-0 top-0 z-40 mx-auto flex h-[calc(72px+env(safe-area-inset-top))] w-full max-w-xl items-center gap-3 border-b border-border/60 bg-background/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] backdrop-blur-lg;
   }
 
   .app-header-spacer {
@@ -180,3 +190,36 @@
   animation: discovery-skeleton-pulse 1.8s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) { .discovery-skeleton-province { animation: none; } }
+
+/* Management forms and task navigation share the application's surface tokens. */
+.form-section-navigation, .workspace-navigation { display:flex; flex-shrink:0; min-height:3.75rem; gap:.5rem; overflow-x:auto; padding:.5rem; border-radius:1.5rem; background:var(--color-surface); }
+.form-section-navigation a, .workspace-navigation button { display:flex; align-items:center; justify-content:center; gap:.5rem; flex-shrink:0; min-height:2.75rem; padding:.5rem .85rem; border-radius:1rem; font-size:.8rem; font-weight:700; color:var(--color-foreground); }
+.form-section-navigation a span { display:grid; place-items:center; width:1.4rem; height:1.4rem; border-radius:50%; background:var(--color-surface-secondary); color:var(--color-accent); }
+.workspace-navigation button[aria-pressed="true"] { background:var(--color-accent); color:var(--color-accent-foreground); }
+.form-section-navigation a:focus-visible, .workspace-navigation button:focus-visible { outline:2px solid var(--color-accent); outline-offset:2px; }
+.form-section-heading { scroll-margin-top:7rem; padding:1.5rem 0 .75rem; border-top:1px solid var(--color-border); }
+.form-section-heading:first-child { border:0; padding-top:0; }
+.form-section-heading h2 { font-weight:800; font-size:1.05rem; }
+.form-section-heading p { margin-top:.4rem; font-size:.8rem; line-height:1.8; color:var(--color-muted); }
+.coach-editor input:not([type="checkbox"]):not([type="radio"]), .coach-editor select, .coach-editor textarea, .coach-workspace input, .coach-workspace select { min-width:0; max-width:100%; min-height:3rem; border:1px solid var(--color-border); border-radius:1rem; background:var(--color-surface-secondary); color:var(--color-foreground); font-size:1rem; }
+.coach-editor :is(input,select,textarea):focus-visible, .coach-workspace :is(input,select):focus-visible { outline:2px solid var(--color-accent); outline-offset:2px; }
+.coach-editor fieldset { min-width:0; }
+.coach-workspace [hidden] { display:none !important; }
+.form-section-navigation { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); overflow:visible; }
+.form-section-navigation a { min-width:0; flex-direction:column; padding:.5rem .25rem; text-align:center; font-size:.75rem; }
+.form-section-navigation a span { background:var(--color-accent); color:var(--color-accent-foreground); }
+.workspace-navigation { flex-wrap:wrap; }
+.workspace-navigation button { flex:1 1 auto; }
+
+/* Keep fields scrolled into view below the fixed page header and above navigation. */
+.app-scroll-root {
+  scroll-padding-top: calc(88px + env(safe-area-inset-top));
+  scroll-padding-bottom: calc(100px + env(safe-area-inset-bottom));
+}
+
+.coach-editor input[type="checkbox"], .coach-editor input[type="radio"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  min-height: 0;
+  flex-shrink: 0;
+}

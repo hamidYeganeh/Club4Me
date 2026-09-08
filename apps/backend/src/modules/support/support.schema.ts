@@ -1,5 +1,9 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
+import {
+  supportReferenceTypes,
+  type SupportReferenceType,
+} from "./support-references.service";
 
 @Schema({ _id: true, timestamps: true })
 export class TicketMessage {
@@ -37,6 +41,10 @@ const TicketInternalNoteSchema =
 
 @Schema({ collection: "support_tickets", timestamps: true })
 export class SupportTicket {
+  @Prop({ type: String, enum: supportReferenceTypes, default: null })
+  referenceType: SupportReferenceType | null;
+  @Prop({ type: Types.ObjectId, default: null })
+  referenceId: Types.ObjectId | null;
   @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
   requesterId: Types.ObjectId;
   @Prop({ type: String, required: true, maxlength: 160 }) subject: string;
@@ -82,3 +90,5 @@ export type SupportTicketDocument = HydratedDocument<SupportTicket>;
 export const SupportTicketSchema = SchemaFactory.createForClass(SupportTicket);
 SupportTicketSchema.index({ requesterId: 1, createdAt: -1 });
 SupportTicketSchema.index({ status: 1, firstRespondedAt: 1, slaDueAt: 1 });
+
+SupportTicketSchema.index({ referenceType: 1, referenceId: 1 });

@@ -4,7 +4,7 @@ export const discoveryMapScreenStyles = tv({
   slots: {
     root: "relative isolate h-full min-h-full w-full overflow-hidden bg-background",
     header:
-      "absolute inset-x-0 top-0 z-30 grid h-[calc(76px+env(safe-area-inset-top))] grid-cols-[3rem_1fr_3rem] items-end gap-3 bg-gradient-to-b from-background/95 via-background/70 to-transparent px-5 pb-3 pt-[env(safe-area-inset-top)]",
+      "absolute inset-x-0 top-0 z-30 grid h-[calc(76px+env(safe-area-inset-top))] grid-cols-[3rem_1fr_3rem] items-end gap-3 bg-linear-to-t from-transparent via-background/70 to-background/95 px-5 pb-3 pt-[env(safe-area-inset-top)]",
     headerButton:
       "flex size-11 min-w-11 items-center justify-center rounded-2xl border border-border/60 bg-surface/85 text-foreground shadow-md backdrop-blur-md transition-transform active:scale-95",
     headerAction: "flex justify-end",

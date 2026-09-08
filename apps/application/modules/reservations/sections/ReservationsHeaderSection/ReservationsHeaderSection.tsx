@@ -113,7 +113,7 @@ export function ReservationsHeaderSection({
         </ScrollShadow>
         <button
           type="button"
-          className="mx-auto mt-3 flex flex-col items-center gap-2 text-xs text-muted"
+          className="mx-auto mt-3 flex min-h-11 flex-col items-center justify-center gap-2 text-xs text-muted"
           aria-expanded={monthExpanded}
           onClick={onToggleMonth}
         >

@@ -6,6 +6,7 @@ import { Icon } from "@theme/icon";
 import { useTheme } from "next-themes";
 import {
   getCurrentPosition,
+  hasGrantedLocationPermission,
   LocationAccessError,
 } from "@/lib/native-geolocation";
 import { cn } from "@/lib/cn";
@@ -320,6 +321,14 @@ export function NeshanMap({
     }
   }
 
+  async function requestCurrentLocation() {
+    if (await hasGrantedLocationPermission()) {
+      await locateUser();
+      return;
+    }
+    setLocationPrimerOpen(true);
+  }
+
   const unavailable = !apiKey || mapError;
 
   return (
@@ -372,7 +381,7 @@ export function NeshanMap({
           type="button"
           aria-label="نمایش موقعیت فعلی من"
           disabled={locating}
-          onClick={() => setLocationPrimerOpen(true)}
+          onClick={() => void requestCurrentLocation()}
           className={cn(
             "absolute bottom-4 right-4 z-10 flex size-11 items-center justify-center rounded-full border border-foreground/10 bg-background text-foreground shadow-lg transition-transform active:scale-95 disabled:opacity-50",
             locateClassName,

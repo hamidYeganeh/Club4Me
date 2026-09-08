@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/app-link";
 import { useRouter } from "next/navigation";
 import { Button, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";

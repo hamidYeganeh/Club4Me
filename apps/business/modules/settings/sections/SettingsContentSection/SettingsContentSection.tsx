@@ -1,336 +1,160 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Avatar, Button, Card, Chip, Input, Switch, toast } from "@heroui/react";
+import { useState } from "react";
+import { Avatar, Button, Card, Input, Spinner, toast } from "@heroui/react";
+import { useAccountMe, useUpdateAccountMe } from "@api/account";
 import { useLogout } from "@api/business";
 import { useCreateMedia } from "@api";
-import { Icon, type IconName } from "@theme/icon";
-import {
-  imageUploaderAccept,
-  Uploader,
-  type UploaderLabels,
-} from "@ui/uploader";
-import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-
+import { useTranslations } from "next-intl";
+import { Uploader, imageUploaderAccept } from "@ui/uploader";
 import { ButtonLink } from "@/components/button-link";
-import { cn } from "@theme/cn";
 
-import { settingsContentSectionStyles } from "./SettingsContentSection.styles";
-import type { SettingsContentSectionProps } from "./SettingsContentSection.types";
-
-const defaultAvatar = "https://picsum.photos/seed/gym4me-business/240/240";
-
-type NavItem = {
-  id: string;
-  label: string;
-  icon: IconName;
-  href?: string;
-  badge?: string;
-  active?: boolean;
-};
-
-export function SettingsContentSection({
-  name,
-  email,
-  phone,
-  proLabel,
-  shareLabel,
-  viewProfileLabel,
-  personalTitle,
-  personalHint,
-  fullName,
-  emailLabel,
-  phoneLabel,
-  accountType,
-  regular,
-  changeAvatar,
-  paymentsTitle,
-  paymentsHint,
-  autoPayout,
-  searchPlaceholder,
-  navHome,
-  navHealth,
-  navAssistant,
-  navAppointment,
-  navRecommendation,
-  navSettings,
-  navHelp,
-  proPromo,
-  goProNow,
-  memberBasic,
-  logoutLabel,
-}: SettingsContentSectionProps) {
-  const styles = settingsContentSectionStyles();
+export function SettingsContentSection() {
+  const account = useAccountMe();
+  const update = useUpdateAccountMe();
   const logout = useLogout();
-  const createMedia = useCreateMedia();
+  const media = useCreateMedia();
   const router = useRouter();
   const t = useTranslations("uploader");
-  const [avatarSrc, setAvatarSrc] = useState(defaultAvatar);
-  const [promoOpen, setPromoOpen] = useState(true);
-  const labels: UploaderLabels = {
-    clickToUpload: t("clickToUpload"),
-    dropHint: t("dropHint"),
-    formats: t("formats"),
-    progress: t("progress"),
-    success: t("success"),
-    error: t("error"),
-    retry: t("retry"),
-    remove: t("remove"),
-    dropzoneAria: t("dropzoneAria"),
+  const [draft, setDraft] = useState<{
+    firstName: string;
+    lastName: string;
+  } | null>(null);
+  const user = account.data;
+  if (account.isPending)
+    return (
+      <div className="grid min-h-64 place-items-center">
+        <Spinner />
+      </div>
+    );
+  if (!user || account.isError)
+    return (
+      <Card className="m-5 p-5">
+        <p role="alert">دریافت حساب انجام نشد.</p>
+        <Button onPress={() => void account.refetch()}>تلاش دوباره</Button>
+      </Card>
+    );
+  const values = draft ?? {
+    firstName: user.firstName ?? "",
+    lastName: user.lastName ?? "",
   };
-
-  const navItems: NavItem[] = [
-    { id: "home", label: navHome, icon: "house-1", href: "/", badge: "1" },
-    { id: "health", label: navHealth, icon: "heart-wellness-1", href: "/" },
-    {
-      id: "assistant",
-      label: navAssistant,
-      icon: "chat",
-      href: "/coach",
-      badge: "4",
-    },
-    {
-      id: "appointment",
-      label: navAppointment,
-      icon: "calendar-1",
-      href: "/classes",
-    },
-    {
-      id: "recommendation",
-      label: navRecommendation,
-      icon: "sparkle-1",
-      href: "/memberships",
-    },
-    {
-      id: "settings",
-      label: navSettings,
-      icon: "gear-1",
-      href: "/settings",
-      active: true,
-    },
-    { id: "help", label: navHelp, icon: "question-mark-circle", href: "/coach" },
-  ];
-
-  useEffect(() => {
-    return () => {
-      if (avatarSrc.startsWith("blob:")) {
-        URL.revokeObjectURL(avatarSrc);
-      }
-    };
-  }, [avatarSrc]);
-
+  const name =
+    [user.firstName, user.lastName].filter(Boolean).join(" ") || user.phone;
   return (
-    <main className={styles.root()}>
-      <aside className={styles.rail()}>
-        <div className={styles.brand()}>
-          <span className={styles.brandMark()}>
-            <Icon name="plus-fat" size={18} />
-          </span>
-          Gym4Me
-        </div>
-
-        <label className={styles.search()}>
-          <Icon name="magnifying-glass" className="text-muted" size={16} />
-          <input
-            aria-label={searchPlaceholder}
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
-            placeholder={searchPlaceholder}
-          />
-        </label>
-
-        <nav className={styles.nav()} aria-label={navSettings}>
-          {navItems.map((item) => (
-            <ButtonLink
-              key={item.id}
-              href={item.href ?? "/settings"}
-              className={cn(
-                styles.navItem(),
-                item.active && styles.navItemActive(),
-              )}
-              variant="ghost"
-            >
-              <Icon name={item.icon} size={18} />
-              <span className="min-w-0 flex-1 truncate text-start">
-                {item.label}
-              </span>
-              {item.badge ? (
-                <span className={styles.navBadge()}>{item.badge}</span>
-              ) : null}
-            </ButtonLink>
-          ))}
-        </nav>
-
-        {promoOpen ? (
-          <div className={styles.promo()}>
-            <Button
-              isIconOnly
-              size="sm"
-              aria-label={logoutLabel}
-              className={styles.promoClose()}
-              variant="ghost"
-              onPress={() => setPromoOpen(false)}
-            >
-              <Icon name="close-x" size={14} />
-            </Button>
-            <div className="flex items-start gap-2 pe-6">
-              <Icon name="star-full" className="text-danger" size={18} />
-              <div>
-                <p className="font-medium">{proPromo}</p>
-                <ButtonLink
-                  href="/memberships"
-                  className="mt-2 text-sm font-semibold text-danger"
-                  variant="ghost"
-                >
-                  {goProNow}
-                </ButtonLink>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        <div className={styles.userRow()}>
-          <Avatar className="size-10">
-            <Avatar.Image alt={name} src={avatarSrc} />
+    <main className="mx-auto w-full max-w-3xl space-y-5 p-5" dir="rtl">
+      <h1 className="text-2xl font-bold">تنظیمات حساب</h1>
+      <Card className="rounded-3xl p-5">
+        <div className="flex items-center gap-4">
+          <Avatar className="size-20">
+            <Avatar.Image src={user.avatarUrl} alt={name} />
             <Avatar.Fallback>{name.slice(0, 1)}</Avatar.Fallback>
           </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{name}</p>
-            <p className="truncate text-xs text-muted">{memberBasic}</p>
+          <div>
+            <Card.Title>{name}</Card.Title>
+            <p dir="ltr" className="mt-2 text-start text-muted">
+              {user.phone}
+            </p>
           </div>
-          <Button
-            isIconOnly
-            aria-label={logoutLabel}
-            variant="ghost"
-            isPending={logout.isPending}
-            onPress={() =>
-              void logout
-                .mutateAsync()
-                .then(() => router.replace("/auth"))
-                .catch(() => toast.danger(logoutLabel))
+        </div>
+        <form
+          className="mt-5 space-y-4"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            if (update.isPending) return;
+            try {
+              await update.mutateAsync(values);
+              setDraft(null);
+              toast.success("اطلاعات حساب ذخیره شد");
+            } catch {
+              toast.danger("ذخیره انجام نشد؛ دوباره تلاش کنید");
             }
-          >
-            <Icon name="power" className="text-danger" />
-          </Button>
-        </div>
-      </aside>
-
-      <section className={styles.stage()}>
-        <div className={styles.panel()}>
-          <div className={styles.cover()}>
-            {/* Remote demo artwork is intentionally rendered without Next image optimization. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              alt=""
-              src="https://picsum.photos/seed/gym4me-cover/1400/420"
-              className={styles.coverImage()}
+          }}
+        >
+          <label className="grid gap-2">
+            <span>نام</span>
+            <Input
+              className="w-full"
+              aria-label="نام"
+              required
+              maxLength={100}
+              value={values.firstName}
+              onChange={(event) =>
+                setDraft({ ...values, firstName: event.target.value })
+              }
             />
-            <Button
-              isIconOnly
-              aria-label={changeAvatar}
-              className={styles.edit()}
-              variant="secondary"
-            >
-              <Icon name="pencil-1" />
-            </Button>
-          </div>
-
-          <div className={styles.identity()}>
-            <div className={styles.person()}>
-              <Avatar className="size-24 ring-4 ring-background">
-                <Avatar.Image alt={name} src={avatarSrc} />
-                <Avatar.Fallback>{name.slice(0, 1)}</Avatar.Fallback>
-              </Avatar>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className={styles.name()}>{name}</h1>
-                  <Chip color="accent" size="sm" variant="soft">
-                    {proLabel}
-                  </Chip>
-                </div>
-                <p className={styles.email()}>{email}</p>
-              </div>
-            </div>
-            <div className={styles.actions()}>
-              <Button variant="secondary">
-                <Icon name="share-1" />
-                {shareLabel}
-              </Button>
-              <Button variant="primary">
-                <Icon name="user" />
-                {viewProfileLabel}
-              </Button>
-            </div>
-          </div>
-
-          <div className={styles.body()}>
-            <Card className={styles.card()}>
-              <h2 className="text-lg font-semibold">{personalTitle}</h2>
-              <p className="mt-1 text-sm text-muted">{personalHint}</p>
-              <div className={styles.grid()}>
-                <label className={styles.field()}>
-                  <Icon name="user" className="text-muted" />
-                  <Input
-                    aria-label={fullName}
-                    defaultValue={name}
-                    variant="secondary"
-                  />
-                </label>
-                <label className={styles.field()}>
-                  <Icon name="email-at" className="text-muted" />
-                  <Input
-                    aria-label={emailLabel}
-                    defaultValue={email}
-                    variant="secondary"
-                  />
-                </label>
-                <label className={styles.field()}>
-                  <Icon name="telephone-1" className="text-muted" />
-                  <Input
-                    aria-label={phoneLabel}
-                    defaultValue={phone}
-                    variant="secondary"
-                  />
-                </label>
-                <label className={styles.field()}>
-                  <Icon name="identity-card-1" className="text-muted" />
-                  <Input
-                    aria-label={accountType}
-                    defaultValue={regular}
-                    variant="secondary"
-                  />
-                </label>
-              </div>
-              <div className="mt-5">
-                <Uploader
-                  multiple={false}
-                  disabled={createMedia.isPending}
-                  accept={imageUploaderAccept}
-                  labels={labels}
-                  onUpload={async (file) => {
-                    try {
-                      const media = await createMedia.mutateAsync(file);
-                      setAvatarSrc(media.url);
-                    } catch {
-                      toast.danger(t("error"));
-                      throw new Error(t("error"));
-                    }
-                  }}
-                />
-              </div>
-            </Card>
-
-            <Card className={styles.card()}>
-              <h2 className="text-lg font-semibold">{paymentsTitle}</h2>
-              <p className="mt-1 text-sm text-muted">{paymentsHint}</p>
-              <div className={styles.payout()}>
-                <span>{autoPayout}</span>
-                <Switch defaultSelected aria-label={autoPayout} />
-              </div>
-            </Card>
-          </div>
+          </label>
+          <label className="grid gap-2">
+            <span>نام خانوادگی</span>
+            <Input
+              className="w-full"
+              aria-label="نام خانوادگی"
+              required
+              maxLength={100}
+              value={values.lastName}
+              onChange={(event) =>
+                setDraft({ ...values, lastName: event.target.value })
+              }
+            />
+          </label>
+          <p className="text-sm text-muted">
+            شماره موبایل، شناسه ورود تأییدشده شماست.
+          </p>
+          <Button
+            type="submit"
+            variant="primary"
+            isPending={update.isPending}
+            isDisabled={!draft || media.isPending}
+          >
+            ذخیره اطلاعات
+          </Button>
+        </form>
+        <div className="mt-5">
+          <p className="mb-2 text-sm font-bold">تصویر حساب</p>
+          <Uploader
+            multiple={false}
+            disabled={media.isPending || update.isPending}
+            accept={imageUploaderAccept}
+            labels={{
+              clickToUpload: t("clickToUpload"),
+              dropHint: t("dropHint"),
+              formats: t("formats"),
+              progress: t("progress"),
+              success: t("success"),
+              error: t("error"),
+              retry: t("retry"),
+              remove: t("remove"),
+              dropzoneAria: t("dropzoneAria"),
+            }}
+            onUpload={async (file) => {
+              const uploaded = await media.mutateAsync(file);
+              await update.mutateAsync({ avatarUrl: uploaded.url });
+              toast.success("تصویر حساب ذخیره شد");
+            }}
+          />
         </div>
-      </section>
+      </Card>
+      <Card className="rounded-3xl p-5">
+        <Card.Title>امور مالی</Card.Title>
+        <p className="my-3 text-sm text-muted">
+          حساب تسویه و درخواست‌های برداشت را در بخش پرداخت‌ها مدیریت کنید.
+        </p>
+        <ButtonLink href="/payments" variant="secondary">
+          مدیریت پرداخت‌ها
+        </ButtonLink>
+      </Card>
+      <Button
+        variant="danger"
+        isPending={logout.isPending}
+        onPress={() =>
+          void logout
+            .mutateAsync()
+            .then(() => router.replace("/auth"))
+            .catch(() => toast.danger("خروج انجام نشد"))
+        }
+      >
+        خروج از حساب
+      </Button>
     </main>
   );
 }

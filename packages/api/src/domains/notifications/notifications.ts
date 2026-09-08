@@ -15,6 +15,41 @@ export type AppNotification = {
   createdAt: string;
 };
 
+export type NotificationDeliveryState =
+  "pending" | "processing" | "accepted" | "skipped" | "failed";
+export type NotificationDeliveryReport = {
+  counts: Record<
+    "pushDelivery" | "smsDelivery",
+    Array<{ _id: NotificationDeliveryState; count: number }>
+  >;
+  failed: Array<{
+    id: string;
+    type: string;
+    createdAt: string;
+    pushDelivery: { state: NotificationDeliveryState; attempts: number } | null;
+    smsDelivery: { state: NotificationDeliveryState; attempts: number } | null;
+  }>;
+};
+
+export function useNotificationDeliveryReport() {
+  return useQuery({
+    queryKey: ["admin-notification-delivery"],
+    queryFn: () =>
+      http.get<NotificationDeliveryReport>("/notifications/delivery-report"),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useRetryNotificationDelivery() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      http.post<{ queued: true }>(`/notifications/${id}/retry`, {}),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: ["admin-notification-delivery"] }),
+  });
+}
+
 export type NotificationPreferences = {
   bookingUpdates: boolean;
   reminders: boolean;
@@ -66,6 +101,9 @@ export function useNotificationPreferences(enabled = true) {
   return useQuery({
     queryKey: ["notifications", "preferences"],
     queryFn: notificationsClient.preferences,
+    // Revalidate restored offline preferences when opening settings.
+    staleTime: 0,
+    refetchOnMount: "always",
     enabled,
   });
 }

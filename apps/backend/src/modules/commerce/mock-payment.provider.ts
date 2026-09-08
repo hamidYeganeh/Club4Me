@@ -1,3 +1,4 @@
+import { assertMockPaymentsEnabled } from "./mock-payment-policy";
 import { Injectable } from "@nestjs/common";
 import {
   createHmac,
@@ -23,6 +24,10 @@ export class MockPaymentProvider {
     callbackUrl: string;
     description: string;
   }) {
+    assertMockPaymentsEnabled(
+      this.config.env.NODE_ENV,
+      this.config.env.PAYMENT_MODE,
+    );
     const authority = this.createAuthority();
     return { authority, checkoutUrl: `/payments/mock/${authority}` };
   }
@@ -44,6 +49,10 @@ export class MockPaymentProvider {
     amount: number;
     status: "paid" | "failed";
   }) {
+    assertMockPaymentsEnabled(
+      this.config.env.NODE_ENV,
+      this.config.env.PAYMENT_MODE,
+    );
     const payload: MockPaymentCallbackDto = {
       eventId: randomUUID(),
       intentId: input.intentId,
@@ -57,6 +66,10 @@ export class MockPaymentProvider {
   }
 
   assertSignature(payload: MockPaymentCallbackDto, signature?: string) {
+    assertMockPaymentsEnabled(
+      this.config.env.NODE_ENV,
+      this.config.env.PAYMENT_MODE,
+    );
     if (!signature || Math.abs(Date.now() - payload.timestamp) > 5 * 60_000) {
       return false;
     }

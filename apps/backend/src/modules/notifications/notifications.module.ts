@@ -1,3 +1,4 @@
+import { NotificationOutboxService } from "./notification-outbox.service";
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 
@@ -34,7 +35,11 @@ import { PushDevice, PushDeviceSchema } from "./schemas/push-device.schema";
     ]),
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService, PushNotificationsService],
+  providers: [
+    NotificationsService,
+    PushNotificationsService,
+    NotificationOutboxService,
+  ],
   exports: [NotificationsService, PushNotificationsService],
 })
 export class NotificationsModule {}

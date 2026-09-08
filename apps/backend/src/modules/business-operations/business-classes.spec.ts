@@ -47,6 +47,21 @@ describe("business class management", () => {
     ).toBe(false);
   });
 
+  it("accepts a shared skill-level resource and keeps legacy text optional", () => {
+    const parsed = CreateBusinessClassDto.schema.safeParse({
+      ...validClass,
+      level: "",
+      skillLevelId: String(new Types.ObjectId()),
+    });
+    expect(parsed.success).toBe(true);
+    expect(
+      CreateBusinessClassDto.schema.safeParse({
+        ...validClass,
+        skillLevelId: "not-an-object-id",
+      }).success,
+    ).toBe(false);
+  });
+
   it("rejects duplicate weekly schedule entries", () => {
     expect(
       CreateBusinessClassDto.schema.safeParse({

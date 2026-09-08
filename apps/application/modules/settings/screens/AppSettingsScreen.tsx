@@ -7,6 +7,8 @@ import { Capacitor } from "@capacitor/core";
 import { Button, Skeleton, Switch, toast } from "@heroui/react";
 import {
   useDeleteAccount,
+  useAccountPrivacy,
+  useUpdateAccountConsent,
   useLogout,
   useNotificationPreferences,
   useUpdateNotificationPreferences,
@@ -14,11 +16,14 @@ import {
   type NotificationPreferences,
 } from "@api";
 import { Icon } from "@theme/icon";
+import { SettingsRow as SettingRow } from "@ui/settings-row";
+import { SectionHeading } from "@ui/section-heading";
 
 import {
   disablePushNotifications,
   enablePushNotifications,
   getPushNotificationState,
+  hasGrantedPushPermission,
 } from "@/lib/push-notifications";
 import { openExternalUrl } from "@/lib/native-browser";
 import { PermissionGrantSheet } from "@/components/permissions/permission-grant-sheet";
@@ -68,6 +73,8 @@ export function AppSettingsScreen({ role }: Props) {
   );
   const updatePreferences = useUpdateNotificationPreferences();
   const deleteAccount = useDeleteAccount();
+  const privacy = useAccountPrivacy();
+  const updateConsent = useUpdateAccountConsent();
   const logout = useLogout();
   const [pushState, setPushState] = useState<
     "enabled" | "disabled" | "denied" | "unsupported"
@@ -87,6 +94,10 @@ export function AppSettingsScreen({ role }: Props) {
 
   const togglePush = async (enabled: boolean) => {
     if (enabled) {
+      if (await hasGrantedPushPermission()) {
+        await grantPushAccess();
+        return;
+      }
       setPushPrimerOpen(true);
       return;
     }
@@ -173,9 +184,11 @@ export function AppSettingsScreen({ role }: Props) {
         <SettingRow
           title="اعلان‌های دستگاه"
           description={
-            pushState === "denied"
-              ? "مجوز در تنظیمات دستگاه غیرفعال است"
-              : "نمایش اعلان حتی وقتی اپ بسته است"
+            pushState === "unsupported"
+              ? "این گزینه فعلاً فقط در اپ اندروید در دسترس است"
+              : pushState === "denied"
+                ? "مجوز در تنظیمات دستگاه غیرفعال است"
+                : "نمایش اعلان حتی وقتی اپ بسته است"
           }
         >
           <Switch
@@ -231,6 +244,14 @@ export function AppSettingsScreen({ role }: Props) {
       </SettingsSection>
 
       <SettingsSection title="حریم خصوصی و پشتیبانی">
+        {privacy.data?.purposes.map((purpose) => {
+          const decision = privacy.data.items.find((item) => item.purpose === purpose.id);
+          return <SettingRow key={purpose.id} title={purpose.label} description={`رضایت نسخه ${privacy.data.policyVersion}؛ قابل تغییر در هر زمان`}>
+            <Switch aria-label={purpose.label} isSelected={decision?.granted ?? false} isDisabled={purpose.required || updateConsent.isPending} onChange={(granted) => void updateConsent.mutateAsync({ purpose: purpose.id, granted, version: privacy.data!.policyVersion }).catch(() => toast.danger("ذخیره رضایت انجام نشد"))}>
+              <Switch.Content aria-label={purpose.label}><Switch.Control><Switch.Thumb /></Switch.Control></Switch.Content>
+            </Switch>
+          </SettingRow>;
+        })}
         <LinkRow
           title="کیف پول و دعوت دوستان"
           onPress={() => router.push(`/${role}/benefits`)}
@@ -255,11 +276,7 @@ export function AppSettingsScreen({ role }: Props) {
         />
         <LinkRow
           title="تماس با پشتیبانی"
-          onPress={() =>
-            role === "athlete"
-              ? router.push("/athlete/support")
-              : openExternal("/support")
-          }
+          onPress={() => router.push(`/${role}/support`)}
         />
       </SettingsSection>
 
@@ -312,31 +329,9 @@ function SettingsSection({
 }) {
   return (
     <section>
-      <h2 className="mb-2 px-1 text-sm font-semibold text-muted">{title}</h2>
-      <div className="app-card divide-y divide-white/7 overflow-hidden">
-        {children}
-      </div>
+      <SectionHeading title={title} className="mb-3" />
+      <div className="flex flex-col gap-3">{children}</div>
     </section>
-  );
-}
-
-function SettingRow({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 p-4">
-      <div>
-        <p className="font-medium">{title}</p>
-        <p className="mt-1 text-xs leading-5 text-muted">{description}</p>
-      </div>
-      {children}
-    </div>
   );
 }
 
@@ -345,7 +340,7 @@ function LinkRow({ title, onPress }: { title: string; onPress: () => void }) {
     <button
       type="button"
       onClick={onPress}
-      className="flex w-full items-center justify-between p-4 text-start"
+      className="app-settings-row w-full text-start"
     >
       <span className="font-medium">{title}</span>
       <Icon name="chevron-left" size={18} className="text-muted" />

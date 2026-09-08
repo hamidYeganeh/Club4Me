@@ -1,0 +1,171 @@
+@import "./sandow-palette.css";
+
+/* Club4Me's application adapter. Source values and intentional differences:
+ * docs/design/sandow-design-system.md. Imported by web + Capacitor only.
+ */
+:root,
+.light,
+.default,
+[data-theme="light"],
+[data-theme="default"] {
+  /* Brand accent and its foreground are inherited from heroui.css. */
+  --background: var(--sandow-sandow-gray-white);
+  --foreground: var(--sandow-sandow-gray-100);
+  --surface: var(--sandow-sandow-gray-10);
+  --surface-foreground: var(--foreground);
+  --surface-secondary: var(--sandow-sandow-gray-20);
+  --surface-secondary-foreground: var(--foreground);
+  --surface-tertiary: var(--sandow-sandow-gray-30);
+  --surface-tertiary-foreground: var(--foreground);
+  --overlay: var(--sandow-sandow-gray-white);
+  --overlay-foreground: var(--foreground);
+  --muted: var(--sandow-sandow-gray-60);
+  --muted-foreground: var(--muted);
+  --border: var(--sandow-sandow-gray-20);
+  --separator: var(--border);
+  --default: var(--surface);
+  --default-foreground: var(--foreground);
+  --field-background: var(--surface);
+  --field-foreground: var(--foreground);
+  --field-placeholder: var(--muted);
+  --field-border: var(--sandow-sandow-gray-50);
+  --focus: var(--accent);
+  --segment: var(--background);
+  --segment-foreground: var(--foreground);
+  --scrollbar: var(--sandow-sandow-gray-40);
+  --success: var(--sandow-spinach-green-70);
+  --success-foreground: var(--sandow-sandow-gray-white);
+  --warning: var(--sandow-calorie-yellow-70);
+  --warning-foreground: var(--sandow-sandow-gray-white);
+  --danger: var(--sandow-endurance-red-60);
+  --danger-foreground: var(--sandow-sandow-gray-white);
+
+  --app-radius-control: 1rem;
+  --app-radius-card: 1.5rem;
+  --app-radius-feature: 2rem;
+  --app-space-section: 2rem;
+  --app-page-gutter: 1rem;
+  --app-shadow-card: 0 4px 8px #1112140d;
+  --app-shadow-raised: 0 8px 16px #1112140d;
+  --radius: 0.75rem;
+  --field-radius: var(--app-radius-control);
+  --field-control-height: 3.5rem;
+
+  /* Fixed chart palettes are categorical, never status indicators. */
+  --app-metric-energy: var(--sandow-pulse-orange-50);
+  --app-metric-energy-foreground: var(--sandow-sandow-gray-100);
+  --app-metric-activity: var(--sandow-tabata-blue-60);
+  --app-metric-activity-foreground: var(--sandow-sandow-gray-white);
+  --app-metric-neutral: var(--sandow-sandow-gray-60);
+  --app-metric-neutral-foreground: var(--sandow-sandow-gray-white);
+  --app-metric-progress: var(--sandow-spinach-green-50);
+  --app-metric-progress-foreground: var(--sandow-sandow-gray-100);
+}
+
+.dark,
+[data-theme="dark"] {
+  --background: var(--sandow-sandow-gray-100);
+  --foreground: var(--sandow-sandow-gray-white);
+  --surface: var(--sandow-sandow-gray-90);
+  --surface-foreground: var(--foreground);
+  --surface-secondary: var(--sandow-sandow-gray-80);
+  --surface-secondary-foreground: var(--foreground);
+  --surface-tertiary: var(--sandow-sandow-gray-70);
+  --surface-tertiary-foreground: var(--foreground);
+  --overlay: var(--surface);
+  --overlay-foreground: var(--foreground);
+  --muted: var(--sandow-sandow-gray-40);
+  --muted-foreground: var(--muted);
+  --border: var(--sandow-sandow-gray-80);
+  --separator: var(--border);
+  --default: var(--surface-secondary);
+  --default-foreground: var(--foreground);
+  --field-background: var(--surface);
+  --field-foreground: var(--foreground);
+  --field-placeholder: var(--muted);
+  --field-border: var(--sandow-sandow-gray-50);
+  --focus: var(--accent);
+  --segment: var(--surface-secondary);
+  --segment-foreground: var(--foreground);
+  --scrollbar: var(--sandow-sandow-gray-60);
+  --success: var(--sandow-spinach-green-40);
+  --success-foreground: var(--sandow-sandow-gray-100);
+  --warning: var(--sandow-calorie-yellow-40);
+  --warning-foreground: var(--sandow-sandow-gray-100);
+  --danger: var(--sandow-endurance-red-40);
+  --danger-foreground: var(--sandow-sandow-gray-100);
+}
+
+@layer components {
+  .app-surface {
+    @apply border border-border bg-surface;
+  }
+  .app-card {
+    @apply border border-border/60 bg-surface;
+    border-radius: var(--app-radius-card);
+    box-shadow: var(--app-shadow-card);
+    backdrop-filter: none;
+  }
+  .app-icon-button {
+    @apply border-border/60 bg-surface text-foreground;
+    border-radius: var(--app-radius-control);
+  }
+  .app-field {
+    border-color: var(--field-border);
+    background: var(--field-background);
+    min-height: var(--field-control-height);
+    border-radius: var(--app-radius-control);
+  }
+  .app-settings-row {
+    @apply flex min-h-18 items-center justify-between gap-4 bg-surface p-3;
+    border-radius: var(--app-radius-card);
+  }
+  .app-notification {
+    @apply flex min-h-24 w-full items-start gap-3 bg-surface p-3 text-start;
+    border-radius: var(--app-radius-feature);
+  }
+  .app-notification-icon {
+    @apply flex size-14 shrink-0 items-center justify-center bg-accent/15 text-accent;
+    border-radius: var(--app-radius-control);
+  }
+  .app-metric-energy {
+    background: var(--app-metric-energy);
+    color: var(--app-metric-energy-foreground);
+  }
+  .app-metric-activity {
+    background: var(--app-metric-activity);
+    color: var(--app-metric-activity-foreground);
+  }
+  .app-metric-neutral {
+    background: var(--app-metric-neutral);
+    color: var(--app-metric-neutral-foreground);
+  }
+  .app-metric-progress {
+    background: var(--app-metric-progress);
+    color: var(--app-metric-progress-foreground);
+  }
+  .app-feature-card {
+    @apply bg-accent text-accent-foreground;
+    border-radius: var(--app-radius-feature);
+  }
+  .app-section-heading {
+    @apply text-lg leading-7 font-bold;
+  }
+
+  :where(.app-card, .app-notification, .app-settings-row):focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .app-card,
+    .app-icon-button,
+    .app-field,
+    .app-notification {
+      transition: none;
+    }
+    .app-card:active,
+    .app-icon-button:active {
+      transform: none;
+    }
+  }
+}

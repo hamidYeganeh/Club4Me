@@ -26,6 +26,13 @@ export class BusinessClubMembershipsController {
   ) {
     return this.service.list(user.sub, clubId);
   }
+  @Patch(":membershipId/revoke") revoke(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("membershipId") id: string,
+  ) {
+    return this.service.revoke(user.sub, clubId, id);
+  }
   @Post() invite(
     @CurrentUser() user: AuthTokenPayload,
     @Param("clubId") clubId: string,
@@ -39,6 +46,12 @@ export class BusinessClubMembershipsController {
 @UseGuards(JwtAuthGuard)
 export class ClubMembershipInvitationsController {
   constructor(private readonly service: ClubMembershipsService) {}
+  @Get(":membershipId") get(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("membershipId") id: string,
+  ) {
+    return this.service.invitation(user.sub, id);
+  }
   @Patch(":membershipId/accept") accept(
     @CurrentUser() user: AuthTokenPayload,
     @Param("membershipId") id: string,

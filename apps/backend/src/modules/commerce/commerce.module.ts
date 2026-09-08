@@ -1,3 +1,21 @@
+import {
+  CoachPackagePurchase,
+  CoachPackagePurchaseSchema,
+} from "../coaching/schemas/coach-purchase.schema";
+import {
+  CoachOffering,
+  CoachOfferingSchema,
+  Coach,
+  CoachSchema,
+  SessionBooking,
+  SessionBookingSchema,
+  ClassEnrollment,
+  ClassEnrollmentSchema,
+  TrainingSession,
+  TrainingSessionSchema,
+  TrainingClass,
+  TrainingClassSchema,
+} from "../coaching/schemas/coaching.schemas";
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { AppConfigModule } from "../../config/app-config.module";
@@ -22,6 +40,7 @@ import {
 import { CommerceService } from "./commerce.service";
 import { CommerceJobsService } from "./commerce-jobs.service";
 import { EntitlementsService } from "./entitlements.service";
+import { MembershipRemindersService } from "./membership-reminders.service";
 import {
   BenefitPurchasesController,
   BusinessBenefitProductsController,
@@ -79,6 +98,13 @@ import {
     ClubsModule,
     BusinessOperationsModule,
     MongooseModule.forFeature([
+      { name: CoachPackagePurchase.name, schema: CoachPackagePurchaseSchema },
+      { name: CoachOffering.name, schema: CoachOfferingSchema },
+      { name: Coach.name, schema: CoachSchema },
+      { name: SessionBooking.name, schema: SessionBookingSchema },
+      { name: ClassEnrollment.name, schema: ClassEnrollmentSchema },
+      { name: TrainingSession.name, schema: TrainingSessionSchema },
+      { name: TrainingClass.name, schema: TrainingClassSchema },
       { name: PaymentIntent.name, schema: PaymentIntentSchema },
       { name: PaymentCallbackEvent.name, schema: PaymentCallbackEventSchema },
       { name: LedgerEntry.name, schema: LedgerEntrySchema },
@@ -109,6 +135,7 @@ import {
     BenefitPurchasesController,
   ],
   providers: [
+    MembershipRemindersService,
     CommerceService,
     PayoutsService,
     BenefitsService,

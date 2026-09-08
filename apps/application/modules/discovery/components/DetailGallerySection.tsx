@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Card } from "@heroui/react";
 import { useLocale } from "next-intl";
 import { Swiper, SwiperSlide } from "swiper/react";
-import Link from "next/link";
+import Link from "@/components/app-link";
 import { FallbackImage } from "@/components/FallbackImage";
 import { getLocaleDirection } from "@/lib/locale-direction";
 import { ButtonLink } from "@/components/button-link";

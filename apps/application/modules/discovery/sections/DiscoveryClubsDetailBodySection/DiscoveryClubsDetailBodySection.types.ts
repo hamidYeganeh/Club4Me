@@ -14,7 +14,7 @@ export type DiscoveryClubsDetailBodySectionProps = {
   equipment: DiscoveryFacilityItem[];
   sports: DiscoverySport[];
   coaches: DiscoveryCoach[];
-  location: GeoPoint & { address: string };
+  location: (GeoPoint & { address: string }) | null;
   onThumbsSwiper: (swiper: SwiperType) => void;
   onThumbClick: (index: number) => void;
   stats: Array<{

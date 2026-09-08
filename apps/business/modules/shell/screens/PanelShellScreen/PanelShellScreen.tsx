@@ -1,9 +1,10 @@
+import { BusinessPageIntro } from "@/components/business-page-intro";
 import { PanelFrame } from "@ui/panel-frame";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 
 import { PanelBreadcrumbsSection } from "@modules/shell/sections/PanelBreadcrumbsSection";
-import { PanelHeaderSection } from "@modules/shell/sections/PanelHeaderSection";
+import { PanelHeaderSection } from "@modules/shell/sections/PanelHeaderSection/PanelHeaderSection";
 import { PanelRailSection } from "@modules/shell/sections/PanelRailSection";
 import type { PanelRailItem } from "@modules/shell/sections/PanelRailSection/PanelRailSection.types";
 
@@ -26,6 +27,7 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
       icon: "grid-four",
       label: t("panel.clubs"),
     },
+    { href: "/check-in", icon: "scan-1", label: "ورود و پذیرش" },
     {
       href: "/students",
       icon: "users-two",
@@ -38,8 +40,13 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
     },
     {
       href: "/classes",
-      icon: "calendar-1",
+      icon: "barbell-horizontal",
       label: t("panel.classes"),
+    },
+    {
+      href: "/calendar",
+      icon: "calendar-1",
+      label: t("panel.calendar"),
     },
     {
       href: "/payments",
@@ -70,11 +77,6 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
       href: "/data",
       icon: "database",
       label: t("panel.data"),
-    },
-    {
-      href: "/coach",
-      icon: "chat",
-      label: t("panel.coach"),
     },
     {
       href: "/settings",
@@ -112,6 +114,7 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
       }
     >
       <PanelBreadcrumbsSection />
+      <BusinessPageIntro />
       {children}
     </PanelFrame>
   );

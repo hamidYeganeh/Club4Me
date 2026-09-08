@@ -17,11 +17,13 @@ export {
   useClubCoaches,
   useClubCourts,
   useCreateCourt,
+  useUpdateCourt,
   useCreateSession,
 } from "../reservations";
 export type {
   ClubCourt,
   CreateCourtPayload,
+  UpdateCourtPayload,
   CreateSessionPayload,
   ReservableSession,
   SessionReservation,

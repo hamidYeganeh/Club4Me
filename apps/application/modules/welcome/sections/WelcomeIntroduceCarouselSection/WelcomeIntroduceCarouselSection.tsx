@@ -1,4 +1,5 @@
 "use client";
+import { DiscoveryHeroScrim } from "@modules/discovery/components/DiscoveryImageHero";
 
 import { useState } from "react";
 import Image from "next/image";
@@ -74,8 +75,8 @@ export function WelcomeIntroduceCarouselSection({
                   />
                 ) : null}
                 <div aria-hidden className={styles.overlay()} />
-                <div aria-hidden className={styles.overlayBottom()} />
-                <div aria-hidden className={styles.glow()} />
+                <DiscoveryHeroScrim />
+
                 <div className={styles.copy()}>
                   <Typography
                     type="h2"
@@ -112,7 +113,7 @@ export function WelcomeIntroduceCarouselSection({
             swiper?.slideNext();
           }}
         >
-          <Icon name="chevron-left" size="lg" />
+          {isLast ? "شروع" : <Icon name="chevron-left" size="lg" />}
         </button>
 
         <div
@@ -144,6 +145,7 @@ export function WelcomeIntroduceCarouselSection({
 
         <button
           type="button"
+          disabled={isFirst}
           aria-label={prevLabel}
           className={styles.navPrev()}
           onClick={() => {

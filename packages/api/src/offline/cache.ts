@@ -60,7 +60,7 @@ export async function restoreOfflineCache(
         canPersistQuery(query.queryKey) &&
         query.state.status === "success" &&
         now - query.state.dataUpdatedAt <= OFFLINE_MAX_AGE,
-    ),
+    ).map(query => ({ ...query, state: { ...query.state, isInvalidated: true } })),
   });
 }
 

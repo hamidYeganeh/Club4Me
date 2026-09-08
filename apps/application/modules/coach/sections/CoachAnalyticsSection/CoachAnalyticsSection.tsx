@@ -139,7 +139,7 @@ export function CoachAnalyticsSection() {
                   }))}
                 />
               }
-              className="bg-warning text-warning-foreground"
+              tone="energy"
             />
             <DashboardMetricCard
               title="رزرو و ثبت‌نام"
@@ -158,7 +158,7 @@ export function CoachAnalyticsSection() {
                   secondaryKey="secondary"
                 />
               }
-              className="bg-accent text-accent-foreground"
+              tone="activity"
             />
             <DashboardMetricCard
               title="کلاس فعال"
@@ -168,7 +168,7 @@ export function CoachAnalyticsSection() {
               unit="کلاس"
               icon={<Icon name="weight" size={20} />}
               visual={<MetricHeatmapVisual value={analytics.activeClasses} />}
-              className="bg-surface-tertiary text-foreground"
+              tone="neutral"
             />
             <DashboardMetricCard
               title="تکمیل ظرفیت"
@@ -184,7 +184,7 @@ export function CoachAnalyticsSection() {
                   max={analytics.capacity}
                 />
               }
-              className="bg-success text-success-foreground"
+              tone="progress"
             />
           </div>
           {!loading && analytics.reservations > 0 ? (

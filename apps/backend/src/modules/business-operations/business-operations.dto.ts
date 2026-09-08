@@ -1,3 +1,4 @@
+import { iranianPhone } from "../../common/utils/phone.util";
 import { Types } from "mongoose";
 import { z } from "zod";
 
@@ -81,8 +82,10 @@ export class CreatePaymentDto {
       studentId: objectId,
       type: z.enum(["tuition", "session", "other"]),
       title: z.string().trim().min(2).max(120),
-      amount: z.number().finite().min(0),
+      amount: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
       currency: z.string().trim().min(3).max(8).default("IRR"),
+      enrollmentId: objectId.nullable().optional(),
+      idempotencyKey: z.string().trim().min(8).max(120),
       paidAt: z.iso.datetime(),
       method: z.enum(["cash", "card", "transfer", "other"]).default("card"),
       notes: optionalText(500),
@@ -93,6 +96,8 @@ export class CreatePaymentDto {
   title: string;
   amount: number;
   currency: string;
+  enrollmentId?: string | null;
+  idempotencyKey?: string;
   paidAt: string;
   method: "cash" | "card" | "transfer" | "other";
   notes: string;
@@ -193,4 +198,57 @@ export class QueueOperationsExportDto {
     .strict();
   kind: "students" | "coaches" | "classes" | "payments" | "attendance";
   format: "csv" | "xlsx";
+}
+
+export class ReceptionQueryDto {
+  static schema = z.object({ phone: iranianPhone }).strict();
+  phone: string;
+}
+
+export class AllocateReceiptDto {
+  static schema = z
+    .object({
+      enrollmentId: objectId,
+      reason: z.string().trim().min(5).max(500),
+    })
+    .strict();
+  enrollmentId: string;
+  reason: string;
+}
+export class VoidReceiptDto {
+  static schema = z
+    .object({ reason: z.string().trim().min(5).max(500) })
+    .strict();
+  reason: string;
+}
+export class ReconcileClassBillingDto {
+  static schema = z
+    .object({
+      openingPaidAmount: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+      waivedAmount: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+      expectedRevision: z.number().int().min(0),
+      reason: z.string().trim().min(5).max(500),
+    })
+    .strict();
+  openingPaidAmount: number;
+  waivedAmount: number;
+  expectedRevision: number;
+  reason: string;
+}
+
+export class RefundManualReceiptDto {
+  static schema = z
+    .object({
+      amount: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+      paidAt: z.iso.datetime(),
+      method: z.enum(["cash", "card", "transfer", "other"]),
+      reason: z.string().trim().min(5).max(500),
+      idempotencyKey: z.string().trim().min(8).max(120),
+    })
+    .strict();
+  amount: number;
+  paidAt: string;
+  method: "cash" | "card" | "transfer" | "other";
+  reason: string;
+  idempotencyKey: string;
 }

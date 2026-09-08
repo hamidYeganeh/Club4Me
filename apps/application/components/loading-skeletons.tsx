@@ -16,14 +16,16 @@ export function SkeletonLine({ className = "w-full" }: { className?: string }) {
 
 export function PageHeaderSkeleton() {
   return (
-    <div className="flex min-h-20 items-end justify-between gap-4 pb-2 pt-[env(safe-area-inset-top)]">
-      <Skeleton className="size-11 shrink-0 rounded-full" />
-      <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
-        <Skeleton className="h-6 w-32 rounded-lg" />
-        <Skeleton className="h-3 w-48 max-w-full rounded-lg" />
+    <>
+      <div className="fixed inset-x-0 top-0 z-40 mx-auto flex h-[calc(72px+env(safe-area-inset-top))] w-full max-w-xl items-center rounded-b-4xl bg-surface px-4 pb-3 pt-[calc(env(safe-area-inset-top)+12px)]">
+        <div className="flex w-full items-center gap-3">
+          <Skeleton className="size-11 shrink-0 rounded-full" />
+          <Skeleton className="h-5 w-32 rounded-lg" />
+          <Skeleton className="ms-auto size-11 shrink-0 rounded-full" />
+        </div>
       </div>
-      <Skeleton className="size-11 shrink-0 rounded-full" />
-    </div>
+      <div aria-hidden className="app-header-spacer" />
+    </>
   );
 }
 

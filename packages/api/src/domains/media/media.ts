@@ -21,7 +21,16 @@ export const mediaEndpoints = {
 };
 
 export const mediaClient = {
-  list: () => http.get<{ items: Media[] }>(mediaEndpoints.list),
+  uploadPrivate: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return http.post<Media>("/media/private/upload", form);
+  },
+  list: (ids?: string[]) =>
+    http.get<{ items: Media[] }>(
+      mediaEndpoints.list,
+      ids?.length ? { ids: ids.join(",") } : undefined,
+    ),
   upload: async (input: MediaUpload) => {
     if (typeof File !== "undefined" && input instanceof File) {
       const form = new FormData();
@@ -36,10 +45,11 @@ export const mediaClient = {
   },
 };
 
-export function useMedia() {
+export function useMedia(ids?: string[]) {
   return useQuery({
-    queryKey: ["media"],
-    queryFn: mediaClient.list,
+    queryKey: ids !== undefined ? ["media", { ids }] : ["media"],
+    enabled: ids === undefined || ids.length > 0,
+    queryFn: () => mediaClient.list(ids),
   });
 }
 
@@ -51,4 +61,9 @@ export function useCreateMedia() {
       await queryClient.invalidateQueries({ queryKey: ["media"] });
     },
   });
+}
+
+export function useCreatePrivateMedia() {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: mediaClient.uploadPrivate, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["media"] }) });
 }

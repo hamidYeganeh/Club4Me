@@ -19,7 +19,7 @@ export function FallbackImage({
   return (
     <Image
       {...props}
-      className={cn(className, "object-cover")}
+      className={cn("object-cover", className)}
       src={resolvedSrc}
       alt={alt}
       onError={onError}

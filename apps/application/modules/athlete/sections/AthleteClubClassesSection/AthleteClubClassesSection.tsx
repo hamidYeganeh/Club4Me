@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, Chip, Typography } from "@heroui/react";
+import { Button, Card, Chip, Typography } from "@heroui/react";
 import { useAthleteClubClasses } from "@api";
 import { ButtonLink } from "@/components/button-link";
 import { CompactCardListSkeleton } from "@/components/loading-skeletons";
@@ -10,6 +10,7 @@ const statusLabel: Record<string, string> = {
   active: "فعال",
   waitlisted: "لیست انتظار",
   completed: "تمام‌شده",
+  cancelled: "لغوشده",
 };
 
 export function AthleteClubClassesSection({
@@ -41,56 +42,72 @@ export function AthleteClubClassesSection({
       {query.isError ? (
         <Card className="app-card rounded-2xl p-5 text-center text-sm text-muted shadow-none">
           دریافت کلاس‌های شما انجام نشد.
+          <Button className="mt-3" onPress={() => void query.refetch()}>
+            تلاش دوباره
+          </Button>
         </Card>
       ) : null}
       <div className="flex flex-col gap-3">
         {items.map((item) => (
-          <ButtonLink
-            key={item.id}
-            href={`/discovery/business-class?classId=${item.classId}`}
-            variant="ghost"
-            className="h-auto justify-stretch p-0 text-start no-underline"
-          >
-            <Card className="app-card w-full rounded-2xl p-4 shadow-none">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-bold">{item.title}</p>
-                  <p className="mt-1 text-xs text-muted">
-                    {item.sport || "کلاس باشگاهی"} ·{" "}
-                    {new Date(item.startDate).toLocaleDateString("fa-IR")}
-                  </p>
+          <div key={item.id} className="space-y-2">
+            <ButtonLink
+              href={`/discovery/business-class?classId=${item.classId}`}
+              variant="ghost"
+              className="h-auto justify-stretch p-0 text-start no-underline"
+            >
+              <Card className="app-card w-full rounded-2xl p-4 shadow-none">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-bold">{item.title}</p>
+                    <p className="mt-1 text-xs text-muted">
+                      {item.sport || "کلاس باشگاهی"} ·{" "}
+                      {new Date(item.startDate).toLocaleDateString("fa-IR")}
+                    </p>
+                  </div>
+                  <Chip
+                    size="sm"
+                    color={
+                      item.status === "active"
+                        ? "success"
+                        : item.status === "waitlisted"
+                          ? "warning"
+                          : "default"
+                    }
+                    variant="soft"
+                  >
+                    {statusLabel[item.status] ?? item.status}
+                  </Chip>
                 </div>
-                <Chip
-                  size="sm"
-                  color={
-                    item.status === "active"
-                      ? "success"
-                      : item.status === "waitlisted"
-                        ? "warning"
-                        : "default"
-                  }
-                  variant="soft"
-                >
-                  {statusLabel[item.status] ?? item.status}
-                </Chip>
-              </div>
-              <div className="mt-3 flex items-center justify-between border-t border-white/7 pt-3 text-xs text-muted">
-                <span>
-                  {item.paymentStatus === "paid"
-                    ? "شهریه پرداخت شده"
-                    : item.paymentStatus === "waived"
-                      ? "رایگان"
-                      : "در انتظار پرداخت"}
-                </span>
-                {item.remainingSessions !== null ? (
+                <div className="mt-3 flex items-center justify-between border-t border-white/7 pt-3 text-xs text-muted">
                   <span>
-                    {item.remainingSessions.toLocaleString("fa-IR")} جلسه
-                    باقی‌مانده
+                    {{
+                      paid: "شهریه پرداخت شده",
+                      waived: "رایگان",
+                      pending: "در انتظار پرداخت",
+                      partial: "پرداخت ناقص",
+                      failed: "پرداخت ناموفق",
+                      refunded: "بازپرداخت‌شده",
+                    }[item.paymentStatus] ?? "وضعیت پرداخت نامشخص"}
                   </span>
-                ) : null}
-              </div>
-            </Card>
-          </ButtonLink>
+                  {item.remainingSessions !== null ? (
+                    <span>
+                      {item.remainingSessions.toLocaleString("fa-IR")} جلسه
+                      باقی‌مانده
+                    </span>
+                  ) : null}
+                </div>
+              </Card>
+            </ButtonLink>
+            {!compact ? (
+              <ButtonLink
+                href={`/athlete/support/new?referenceType=business_class_enrollment&referenceId=${item.id}`}
+                variant="ghost"
+                size="sm"
+              >
+                پیگیری این ثبت‌نام
+              </ButtonLink>
+            ) : null}
+          </div>
         ))}
       </div>
       {!query.isPending && !query.isError && !items.length ? (

@@ -84,7 +84,7 @@ export function DashboardWorkspaceSection({
   aiMessages,
   aiName,
   featuredHref = "/classes",
-  coachHref = "/coach",
+  coachHref = "/coaches",
 }: DashboardWorkspaceSectionProps) {
   const styles = dashboardWorkspaceSectionStyles();
   const [range, setRange] = useState(ranges[0]?.id ?? "1d");

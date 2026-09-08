@@ -1,81 +1,50 @@
 "use client";
-
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/components/app-link";
 import { useAccountMe } from "@api/account";
-import { Avatar, Badge, Button, Typography } from "@heroui/react";
-import { Icon } from "@theme/icon";
+import { Avatar } from "@heroui/react";
 import { useTranslations } from "next-intl";
-
-import { PROFILE_AVATAR_SRC } from "../../profile.constants";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
+import { DiscoveryImageHero } from "@modules/discovery/components/DiscoveryImageHero";
 import { getProfileDisplayName } from "../../profile.utils";
-import { profileEditHeroSectionStyles } from "./ProfileEditHeroSection.styles";
 import type { ProfileEditHeroSectionProps } from "./ProfileEditHeroSection.types";
-
 export function ProfileEditHeroSection({ role }: ProfileEditHeroSectionProps) {
-  const styles = profileEditHeroSectionStyles();
-  const router = useRouter();
   const t = useTranslations("profile");
-  const tCommon = useTranslations("common");
   const me = useAccountMe();
-
   const name = getProfileDisplayName(me.data, t("fallbackName"));
-  const imageHref = `/${role}/profile/image`;
-
   return (
-    <section className={styles.root()}>
-      <Button
-        isIconOnly
-        variant="ghost"
-        size="lg"
-        aria-label={tCommon("back")}
-        className={styles.back()}
-        onPress={() => router.push(`/${role}/profile`)}
-      >
-        <Icon name="chevron-right" size={22} />
-      </Button>
-
-      <Typography type="h2" align="center" className={styles.title()}>
-        {t("editHeadline")}
-      </Typography>
-
-      <div className={styles.avatarWrap()}>
-        <Link
-          href={imageHref}
-          scroll={false}
-          aria-label={t("changeImage")}
-          className={styles.avatarLink()}
+    <>
+      <SecondaryHeader
+        title="ویرایش پروفایل"
+        showFilter={false}
+        backHref={`/${role}/profile`}
+      />
+      <div className="mx-4 mt-4 shrink-0">
+        <DiscoveryImageHero
+          compact
+          imageUrl="/profile/cover.jpg"
+          title={t("editHeadline")}
+          description="اطلاعاتت را به‌روز نگه دار تا تجربهٔ مناسب‌تری داشته باشی."
         >
-          <Badge.Anchor>
-            <Avatar className={styles.avatar()}>
-              <Avatar.Image
-                alt={t("avatarAlt", { name })}
-                src={me.data?.avatarUrl ?? PROFILE_AVATAR_SRC}
-              />
-              <Avatar.Fallback
-                className={`${styles.avatarFallback()} overflow-hidden p-0`}
-              >
-                {/* Avatar fallback supports runtime and local asset URLs. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={me.data?.avatarUrl ?? PROFILE_AVATAR_SRC}
-                  alt=""
-                  className="size-full object-cover"
-                />
+          <Link
+            href={`/${role}/profile/image`}
+            aria-label={t("changeImage")}
+            className="mt-4 inline-flex items-center gap-3 rounded-2xl border border-white/30 bg-black/30 p-2 text-white"
+          >
+            <Avatar className="size-12">
+              <Avatar.Image src={me.data?.avatarUrl ?? undefined} alt={name} />
+              <Avatar.Fallback className="bg-accent text-accent-foreground">
+                {name
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((w) => w[0])
+                  .join(" ")}
               </Avatar.Fallback>
             </Avatar>
-            <Badge
-              aria-hidden
-              color="default"
-              placement="bottom-right"
-              size="sm"
-              className={styles.avatarBadge()}
-            >
-              <Icon name="pencil-1" size={12} />
-            </Badge>
-          </Badge.Anchor>
-        </Link>
+            <span className="pe-2 text-sm font-bold">{t("changeImage")}</span>
+          </Link>
+        </DiscoveryImageHero>
       </div>
-    </section>
+    </>
   );
 }

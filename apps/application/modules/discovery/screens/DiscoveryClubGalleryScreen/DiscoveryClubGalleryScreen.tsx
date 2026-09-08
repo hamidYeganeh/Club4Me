@@ -1,7 +1,7 @@
 "use client";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button, Skeleton } from "@heroui/react";
 import { usePublicClub } from "@api";
 import { useCatalogClub } from "@api/discovery";
@@ -50,7 +50,6 @@ function GallerySkeleton() {
 export function DiscoveryClubGalleryScreen({
   clubId,
 }: DiscoveryClubGalleryScreenProps) {
-  const router = useRouter();
   const catalogClub = useCatalogClub(clubId);
   const club = usePublicClub(catalogClub.data?.id ?? "");
   const [swiper, setSwiper] = useState<SwiperType | null>(null);
@@ -115,29 +114,21 @@ export function DiscoveryClubGalleryScreen({
           عکسی در این دسته ثبت نشده است.
         </p>
       )}
-      <header className="grid h-16 shrink-0 grid-cols-[3rem_1fr_3rem] items-center gap-3">
-        <Button
-          isIconOnly
-          variant="ghost"
-          size="lg"
-          aria-label="بازگشت"
-          onPress={() => router.back()}
-        >
-          <Icon name="chevron-right" size="xl" />
-        </Button>
-        <h1 className="text-center text-xl font-black tracking-tight text-foreground">
-          گالری ({images.length.toLocaleString("fa-IR")})
-        </h1>
-        <Button
-          isIconOnly
-          variant={gridVisible ? "primary" : "ghost"}
-          size="lg"
-          aria-label={gridVisible ? "نمایش اسلایدی" : "نمایش شبکه‌ای"}
-          onPress={() => setGridVisible((value) => !value)}
-        >
-          <Icon name="grid-four" size="xl" />
-        </Button>
-      </header>
+      <SecondaryHeader
+        title={`گالری (${images.length.toLocaleString("fa-IR")})`}
+        showFilter={false}
+        backHref={`/discovery/clubs/${clubId}`}
+        action={
+          <Button
+            isIconOnly
+            variant={gridVisible ? "primary" : "secondary"}
+            aria-label={gridVisible ? "نمایش اسلایدی" : "نمایش شبکه‌ای"}
+            onPress={() => setGridVisible((v) => !v)}
+          >
+            <Icon name="grid-four" size="xl" />
+          </Button>
+        }
+      />
 
       {gridVisible ? (
         <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto py-3">

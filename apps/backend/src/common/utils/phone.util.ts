@@ -3,7 +3,11 @@ import { z } from "zod";
 const IRAN_MOBILE = /^9\d{9}$/;
 
 export function normalizeIranianPhone(value: string): string {
-  const trimmed = value.trim().replace(/[\s-]/g, "");
+  const trimmed = value
+    .trim()
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 1776))
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 1632))
+    .replace(/[\s-]/g, "");
 
   let national: string;
 

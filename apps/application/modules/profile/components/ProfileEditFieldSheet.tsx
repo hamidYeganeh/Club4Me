@@ -88,8 +88,9 @@ export function ProfileEditFieldSheet({
   const [birthdate, setBirthdate] = useState(() =>
     toDateInputValue(me.data?.birthdate),
   );
-  const [idCardVerificationStage, setIdCardVerificationStage] =
-    useState<"edit" | "verify">("edit");
+  const [idCardVerificationStage, setIdCardVerificationStage] = useState<
+    "edit" | "verify"
+  >("edit");
   const [otpCode, setOtpCode] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [otpSessionKey, setOtpSessionKey] = useState(0);
@@ -100,7 +101,8 @@ export function ProfileEditFieldSheet({
   const otpStyles = accountAuthOtpConfirmFormStyles();
   const otpRequestStyles = accountAuthOtpFormStyles();
   const isIdCardField = field === "id-card";
-  const isVerifyingIdCard = isIdCardField && idCardVerificationStage === "verify";
+  const isVerifyingIdCard =
+    isIdCardField && idCardVerificationStage === "verify";
 
   const isPending = useMemo(
     () =>
@@ -133,9 +135,11 @@ export function ProfileEditFieldSheet({
 
   useEffect(() => {
     if (!isVerifyingIdCard) {
-      setResendCooldown(0);
-      setOtpCode("");
-      return;
+      const reset = window.setTimeout(() => {
+        setResendCooldown(0);
+        setOtpCode("");
+      }, 0);
+      return () => window.clearTimeout(reset);
     }
     if (resendCooldown <= 0) {
       return;
@@ -259,7 +263,8 @@ export function ProfileEditFieldSheet({
   };
 
   useSmsOtp({
-    enabled: isVerifyingIdCard && !isPending && idCardVerificationStage === "verify",
+    enabled:
+      isVerifyingIdCard && !isPending && idCardVerificationStage === "verify",
     length: ID_CARD_OTP_LENGTH,
     sessionKey: otpSessionKey,
     onCode: (code) => {
@@ -459,46 +464,46 @@ export function ProfileEditFieldSheet({
               </div>
               <AccountAuthOtpCopySection subtitle={t("idCardOtpHint")} />
               <div className={otpStyles.root()}>
-              <div dir="ltr" lang="en" className={otpStyles.otpWrap()}>
-                <OTPInput
-                  length={ID_CARD_OTP_LENGTH}
-                  value={otpCode}
-                  onChange={setOtpCode}
-                  disabled={isPending}
-                  className={otpStyles.otp()}
-                  slotsClassName={otpStyles.otpGroup()}
-                  slotClassName={otpStyles.slot()}
-                  autoFocus
-                  name="idCardOtp"
-                  enterKeyHint="done"
-                  aria-label={t("idCardOtpLabel")}
-                  onComplete={(code) => void confirmIdCardOtp(code)}
-                />
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                isDisabled={resendCooldown > 0 || isPending}
-                data-ready={resendCooldown <= 0 && !isPending}
-                className={otpStyles.resend()}
-                onPress={() => {
-                  void resendOtp();
-                }}
-              >
-                {resendCooldown > 0 ? (
-                  <span className={otpStyles.resendTimer()}>
-                    {t("resendIn")}{" "}
-                    <NumberFlow
-                      value={resendCooldown}
-                      trend={-1}
-                      className={otpStyles.resendSeconds()}
-                    />
-                  </span>
-                ) : (
-                  t("idCardResend")
-                )}
-              </Button>
+                <div dir="ltr" lang="en" className={otpStyles.otpWrap()}>
+                  <OTPInput
+                    length={ID_CARD_OTP_LENGTH}
+                    value={otpCode}
+                    onChange={setOtpCode}
+                    disabled={isPending}
+                    className={otpStyles.otp()}
+                    slotsClassName={otpStyles.otpGroup()}
+                    slotClassName={otpStyles.slot()}
+                    autoFocus
+                    name="idCardOtp"
+                    enterKeyHint="done"
+                    aria-label={t("idCardOtpLabel")}
+                    onComplete={(code) => void confirmIdCardOtp(code)}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  isDisabled={resendCooldown > 0 || isPending}
+                  data-ready={resendCooldown <= 0 && !isPending}
+                  className={otpStyles.resend()}
+                  onPress={() => {
+                    void resendOtp();
+                  }}
+                >
+                  {resendCooldown > 0 ? (
+                    <span className={otpStyles.resendTimer()}>
+                      {t("resendIn")}{" "}
+                      <NumberFlow
+                        value={resendCooldown}
+                        trend={-1}
+                        className={otpStyles.resendSeconds()}
+                      />
+                    </span>
+                  ) : (
+                    t("idCardResend")
+                  )}
+                </Button>
               </div>
             </div>
           )

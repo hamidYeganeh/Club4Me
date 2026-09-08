@@ -107,6 +107,10 @@ export async function installApiMock(page: Page, state: MockApiState) {
       return success(route, { items: state.notifications });
     }
 
+    if (/^\/public\/clubs\/[^/]+\/reviews$/.test(path) && method === "GET") {
+      return success(route, { items: [], averageRating: 0, reviewsCount: 0 });
+    }
+
     if (path === "/discovery/catalog/search" && method === "GET") {
       if (state.searchMode === "offline") {
         return route.abort("internetdisconnected");
@@ -157,6 +161,22 @@ export async function installApiMock(page: Page, state: MockApiState) {
       return success(route, { items: [] });
     }
 
+    if (path === "/reservations/quote" && method === "POST") {
+      const session = sessionFixture(state.startsAt, state.endsAt);
+      return success(route, {
+        sessionId: session.id,
+        currency: session.currency,
+        pricingUnit: session.pricingUnit,
+        participantCount: 1,
+        baseAmount: session.basePrice,
+        optionsAmount: 0,
+        coveredAmount: 0,
+        totalPrice: session.basePrice,
+        taxPercent: 0,
+        taxAmount: 0,
+        subtotal: session.basePrice,
+      });
+    }
     if (path === "/reservations" && method === "POST") {
       state.reservation = reservationFixture(
         state.startsAt,
@@ -193,6 +213,14 @@ export async function installApiMock(page: Page, state: MockApiState) {
         createdAt: new Date().toISOString(),
       });
       return success(route, state.reservation);
+    }
+
+    if (path === "/payments/quote" && method === "POST") {
+      const input = request.postDataJSON();
+      const grossAmount = state.reservation?.totalPrice ?? 100000;
+      const discountAmount = input.couponCode === "SAVE10" ? Math.floor(grossAmount / 10) : 0;
+      const walletAmount = input.walletAmount ?? 0;
+      return success(route, { referenceType: input.referenceType, referenceId: input.referenceId, currency: "IRR", grossAmount, discountAmount, walletAmount, amount: grossAmount - discountAmount - walletAmount, expiresAt: new Date(Date.now() + 900000).toISOString(), intentId: null, priceBreakdown: null });
     }
 
     if (path === "/payments/intents" && method === "POST") {
@@ -341,7 +369,7 @@ function catalogClubFixture() {
   };
 }
 
-function publicClubFixture() {
+export function publicClubFixture() {
   const timestamp = "2026-01-01T00:00:00.000Z";
   return {
     id: CLUB_ID,
@@ -391,7 +419,7 @@ function publicClubFixture() {
   };
 }
 
-function sessionFixture(startsAt: string, endsAt: string) {
+export function sessionFixture(startsAt: string, endsAt: string) {
   return {
     id: SESSION_ID,
     clubId: CLUB_ID,
@@ -413,7 +441,7 @@ function sessionFixture(startsAt: string, endsAt: string) {
   };
 }
 
-function reservationFixture(
+export function reservationFixture(
   startsAt = new Date().toISOString(),
   endsAt = new Date().toISOString(),
   status: "reserved" | "cancelled" = "reserved",

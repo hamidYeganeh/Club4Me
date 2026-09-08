@@ -1,3 +1,4 @@
+import { fakeTransactionConnection } from "../../infrastructure/database/atomic-operation.test-helper";
 import { Types } from "mongoose";
 
 import { CommerceService } from "./commerce.service";
@@ -32,6 +33,7 @@ describe("CommerceService business class payments", () => {
     };
     const paid = { ...intent, status: "paid", paidAt: new Date() };
     const intents = {
+      db: fakeTransactionConnection,
       findOne: jest.fn().mockResolvedValue(intent),
       findOneAndUpdate: jest.fn().mockResolvedValue(paid),
       findById: jest.fn(),
@@ -82,6 +84,7 @@ describe("CommerceService business class payments", () => {
     expect(classPortal.finalizeEnrollmentPayment).toHaveBeenCalledWith(
       intent.referenceId,
       true,
+      expect.any(Date),
     );
     expect(notifications.notifyBookingConfirmed).toHaveBeenCalledWith(
       expect.objectContaining({ title: "کلاس بدنسازی" }),

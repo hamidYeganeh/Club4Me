@@ -12,6 +12,8 @@ export const accountEndpoints = {
   updateMe: "/account/me",
   verifyIdCard: "/account/me/verify-id-card",
   deleteAccount: "/account",
+  privacy: "/account/privacy",
+  privacyConsent: "/account/privacy/consent",
   role: (role: "coach" | "owner") => `/account/roles/${role}` as const,
   myRoleRequests: "/account/role-requests",
   adminRoleRequests: "/admin/role-requests",

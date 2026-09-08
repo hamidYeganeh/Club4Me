@@ -66,6 +66,12 @@ describe("ResourcesService", () => {
       isActive: true,
     });
 
+    const byId = await service.list("location", "country", {
+      search: String(first.id),
+    });
+    expect(byId.total).toBe(1);
+    expect(byId.items[0]?.id).toBe(first.id);
+
     const updated = await service.update(
       "location",
       "country",

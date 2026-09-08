@@ -2,7 +2,12 @@
 
 import {
   type SupportTicket,
+  useAdminContactLeads,
+  useAdminServiceReviews,
   useAdminSupportTickets,
+  useModerateServiceReview,
+  useSupportOrderContext,
+  useUpdateContactLead,
   useUpdateSupportTicket,
 } from "@api";
 import {
@@ -38,6 +43,10 @@ export function SupportTicketsScreen() {
   const [formError, setFormError] = useState("");
   const tickets = useAdminSupportTickets(status || undefined);
   const update = useUpdateSupportTicket();
+  const leads = useAdminContactLeads();
+  const updateLead = useUpdateContactLead();
+  const reviews = useAdminServiceReviews();
+  const moderateReview = useModerateServiceReview();
 
   const act = async () => {
     if (!action || update.isPending) return;
@@ -193,6 +202,121 @@ export function SupportTicketsScreen() {
           </Table>
         )}
       </Card>
+      <section className="mt-8">
+        <h2 className="text-xl font-semibold">درخواست‌های فرم سایت</h2>
+        <p className="mt-1 text-sm text-muted">
+          سرنخ‌های ثبت‌شده همراه با رضایت تماس
+        </p>
+        <Card className="mt-4 rounded-[1.75rem] border border-border bg-surface p-4">
+          {leads.isPending ? (
+            <Spinner />
+          ) : !leads.data?.items.length ? (
+            <p className="py-6 text-center text-muted">
+              درخواستی ثبت نشده است.
+            </p>
+          ) : (
+            <div className="grid gap-3">
+              {leads.data.items.map((lead) => (
+                <div
+                  key={lead._id}
+                  className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border p-3"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold">
+                      {lead.name} ·{" "}
+                      <a className="text-accent" href={`mailto:${lead.email}`}>
+                        {lead.email}
+                      </a>
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted">
+                      {lead.note || "بدون توضیح"}
+                    </p>
+                  </div>
+                  <select
+                    aria-label={`وضعیت درخواست ${lead.name}`}
+                    className="h-10 rounded-xl border border-border bg-surface px-3 text-sm"
+                    value={lead.status}
+                    disabled={updateLead.isPending}
+                    onChange={(event) =>
+                      updateLead.mutate({
+                        id: lead._id,
+                        status: event.target.value as typeof lead.status,
+                      })
+                    }
+                  >
+                    <option value="new">جدید</option>
+                    <option value="contacted">تماس گرفته شد</option>
+                    <option value="closed">بسته</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </section>
+      <section className="mt-8">
+        <h2 className="text-xl font-semibold">نظرات مربی و کلاس</h2>
+        <p className="mt-1 text-sm text-muted">
+          بازبینی نظرات دارای حضور تأییدشده
+        </p>
+        <Card className="mt-4 rounded-[1.75rem] border border-border bg-surface p-4">
+          {reviews.isPending ? (
+            <Spinner />
+          ) : !reviews.data?.items.length ? (
+            <p className="py-6 text-center text-muted">نظری ثبت نشده است.</p>
+          ) : (
+            <div className="grid gap-3">
+              {reviews.data.items.map((review) => (
+                <div
+                  key={review.id}
+                  className="rounded-xl border border-border p-3"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">
+                        {review.targetType === "coach" ? "مربی" : "کلاس"} ·{" "}
+                        {review.rating.toLocaleString("fa-IR")} از ۵
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-muted">
+                        {review.body || "بدون متن"}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        isDisabled={review.status === "published"}
+                        onPress={() =>
+                          moderateReview.mutate({
+                            reviewId: review.id,
+                            status: "published",
+                          })
+                        }
+                      >
+                        انتشار
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger-soft"
+                        isDisabled={review.status === "hidden"}
+                        onPress={() =>
+                          moderateReview.mutate({
+                            reviewId: review.id,
+                            status: "hidden",
+                            reason: "moderated_by_admin",
+                          })
+                        }
+                      >
+                        پنهان‌سازی
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </section>
       <EntityDetailsModal
         isOpen={Boolean(selected)}
         onOpenChange={(isOpen) => {
@@ -228,6 +352,21 @@ export function SupportTicketsScreen() {
                     },
                   ],
                 },
+                ...(selected.referenceId
+                  ? [
+                      {
+                        title: "سفارش مرتبط",
+                        items: [
+                          {
+                            label: "وضعیت سفارش و پرداخت",
+                            value: (
+                              <SupportOrderDetails ticketId={selected.id} />
+                            ),
+                          },
+                        ],
+                      },
+                    ]
+                  : []),
                 {
                   title: "گفت‌وگو",
                   items: [
@@ -366,5 +505,93 @@ export function SupportTicketsScreen() {
         </Modal.Container>
       </Modal.Backdrop>
     </main>
+  );
+}
+
+function SupportOrderDetails({ ticketId }: { ticketId: string }) {
+  const context = useSupportOrderContext(ticketId);
+  if (context.isPending) return <p>در حال دریافت سفارش…</p>;
+  if (context.isError)
+    return (
+      <div>
+        <p role="alert">دریافت سفارش انجام نشد یا سفارش دیگر در دسترس نیست.</p>
+        <Button size="sm" onPress={() => void context.refetch()}>
+          تلاش دوباره
+        </Button>
+      </div>
+    );
+  const order = context.data?.order;
+  if (!order) return <p>این تیکت سفارش مرتبط ندارد.</p>;
+  const date = (value: string | null) =>
+    value
+      ? new Date(value).toLocaleString("fa-IR", { timeZone: "Asia/Tehran" })
+      : "—";
+  const state = (value: string | null) =>
+    value
+      ? ({
+          pending: "در انتظار",
+          paid: "پرداخت‌شده",
+          failed: "ناموفق",
+          refunded: "بازپرداخت‌شده",
+          partially_refunded: "بازپرداخت جزئی",
+          reserved: "رزروشده",
+          confirmed: "تأییدشده",
+          cancelled: "لغوشده",
+          active: "فعال",
+          completed: "تمام‌شده",
+          not_required: "بدون نیاز به پرداخت",
+        }[value] ?? value)
+      : "—";
+  return (
+    <div className="space-y-3">
+      <p className="font-bold">{order.title}</p>
+      <p dir="ltr" className="break-all font-mono text-xs">
+        {order.id}
+      </p>
+      <p>
+        وضعیت: {state(order.status)} · پرداخت: {state(order.paymentStatus)}
+      </p>
+      <p>
+        مبلغ سفارش:{" "}
+        {order.amount == null
+          ? "—"
+          : `${order.amount.toLocaleString("fa-IR")} ${order.currency === "IRR" ? "ریال" : order.currency}`}
+      </p>
+      <p>ثبت سفارش: {date(order.createdAt)}</p>
+      {order.cancelledAt ? <p>لغو: {date(order.cancelledAt)}</p> : null}
+      <h3 className="font-bold">سوابق سامانه پرداخت مشترک</h3>
+      {!context.data?.payments.length ? (
+        <p>تراکنشی در سامانه مشترک برای این سفارش ثبت نشده است.</p>
+      ) : (
+        context.data.payments.map((payment) => (
+          <div
+            key={payment.id}
+            className="space-y-1 rounded-xl border border-border p-3"
+          >
+            <p>
+              {state(payment.status)} · {payment.amount.toLocaleString("fa-IR")}{" "}
+              ریال
+            </p>
+            <p>
+              شناسه پرداخت: <span dir="ltr">{payment.id}</span>
+            </p>
+            <p>ایجاد: {date(payment.createdAt)}</p>
+            {payment.paidAt ? <p>ثبت پرداخت: {date(payment.paidAt)}</p> : null}
+            {payment.failedAt ? <p>ناموفق: {date(payment.failedAt)}</p> : null}
+            {payment.refundedAmount > 0 ? (
+              <p>
+                بازپرداخت ثبت‌شده:{" "}
+                {payment.refundedAmount.toLocaleString("fa-IR")} ریال
+              </p>
+            ) : null}
+            {payment.providerReference ? (
+              <p>
+                شناسه پیگیری: <span dir="ltr">{payment.providerReference}</span>
+              </p>
+            ) : null}
+          </div>
+        ))
+      )}
+    </div>
   );
 }

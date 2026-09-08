@@ -12,6 +12,8 @@ import {
   type CoachAvailabilityExceptionDocument,
   CoachAvailabilityRule,
   type CoachAvailabilityRuleDocument,
+  CoachAvailabilityPlan,
+  type CoachAvailabilityPlanDocument,
 } from "../schemas/coaching.schemas";
 import { objectId, toPublicDocument } from "../coaching.utils";
 import { CoachesService } from "./coaches.service";
@@ -24,15 +26,14 @@ export class AvailabilityService {
     @InjectModel(CoachAvailabilityException.name)
     private readonly exceptions: Model<CoachAvailabilityExceptionDocument>,
     private readonly coaches: CoachesService,
+    @InjectModel(CoachAvailabilityPlan.name)
+    private readonly plans: Model<CoachAvailabilityPlanDocument>,
   ) {}
 
   async get(userId: string) {
     const coach = await this.coaches.requireOwnedCoach(userId);
     const [rules, exceptions] = await Promise.all([
-      this.rules
-        .find({ coachId: coach._id })
-        .sort({ dayOfWeek: 1, startMinute: 1 })
-        .exec(),
+      this.readRules(coach._id),
       this.exceptions
         .find({ coachId: coach._id, date: { $gte: new Date() } })
         .sort({ date: 1 })
@@ -45,26 +46,33 @@ export class AvailabilityService {
     };
   }
 
+  private async readRules(coachId: CoachAvailabilityRule["coachId"]) {
+    const plan = await this.plans.findById(coachId).exec();
+    if (plan)
+      return [...plan.rules].sort(
+        (a, b) => a.dayOfWeek - b.dayOfWeek || a.startMinute - b.startMinute,
+      );
+    return this.rules
+      .find({ coachId })
+      .sort({ dayOfWeek: 1, startMinute: 1 })
+      .exec();
+  }
+
   async replace(userId: string, input: ReplaceAvailabilityDto["rules"]) {
     const coach = await this.coaches.requireOwnedCoach(userId);
     assertNoRuleOverlap(input);
-    if (input.length) {
-      const created = await this.rules.insertMany(
-        input.map((rule) => ({
-          coachId: coach._id,
-          ...rule,
-          clubId: rule.clubId ? objectId(rule.clubId) : undefined,
-        })),
-      );
-      await this.rules
-        .deleteMany({
-          coachId: coach._id,
-          _id: { $nin: created.map((rule) => rule._id) },
-        })
-        .exec();
-    } else {
-      await this.rules.deleteMany({ coachId: coach._id }).exec();
-    }
+    const rules = input.map((rule) => ({
+      ...rule,
+      coachId: coach._id,
+      clubId: rule.clubId ? objectId(rule.clubId) : undefined,
+    }));
+    await this.plans
+      .findOneAndUpdate(
+        { _id: coach._id },
+        { $set: { rules } },
+        { upsert: true, new: true, runValidators: true },
+      )
+      .exec();
     return this.get(userId);
   }
 
@@ -85,6 +93,8 @@ function assertNoRuleOverlap(rules: ReplaceAvailabilityDto["rules"]) {
       const second = rules[right]!;
       if (
         first.dayOfWeek === second.dayOfWeek &&
+        first.validFrom <= (second.validUntil ?? new Date(8640000000000000)) &&
+        second.validFrom <= (first.validUntil ?? new Date(8640000000000000)) &&
         first.startMinute < second.endMinute &&
         second.startMinute < first.endMinute
       ) {

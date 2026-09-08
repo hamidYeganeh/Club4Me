@@ -28,6 +28,35 @@ export class ClubManualPayment {
   @Prop({ trim: true, maxlength: 500, default: "" }) notes: string;
   @Prop({ type: Types.ObjectId, ref: "User", required: true })
   recordedBy: Types.ObjectId;
+  @Prop({
+    type: Types.ObjectId,
+    ref: "BusinessClassEnrollment",
+    default: null,
+    index: true,
+  })
+  enrollmentId: Types.ObjectId | null;
+  @Prop({ type: String, default: undefined }) idempotencyKey?: string;
+  @Prop({ type: String, default: "" }) requestFingerprint: string;
+  @Prop({ type: Date, default: null }) voidedAt: Date | null;
+  @Prop({ type: Types.ObjectId, ref: "User", default: null })
+  voidedBy: Types.ObjectId | null;
+  @Prop({ type: String, default: "", maxlength: 500 }) voidReason: string;
+  @Prop({ type: [Object], default: [] }) allocationChanges: Array<{
+    actorId: string;
+    at: Date;
+    enrollmentId: string;
+    reason: string;
+  }>;
+  @Prop({ type: Number, default: 0, min: 0 }) refundedAmount: number;
+  @Prop({ type: [Object], default: [] }) refunds: Array<{
+    idempotencyKey: string;
+    actorId: string;
+    at: Date;
+    paidAt: Date;
+    amount: number;
+    method: string;
+    reason: string;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,3 +65,11 @@ export type ClubManualPaymentDocument = HydratedDocument<ClubManualPayment>;
 export const ClubManualPaymentSchema =
   SchemaFactory.createForClass(ClubManualPayment);
 ClubManualPaymentSchema.index({ clubId: 1, paidAt: -1 });
+
+ClubManualPaymentSchema.index(
+  { clubId: 1, idempotencyKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { idempotencyKey: { $type: "string" } },
+  },
+);

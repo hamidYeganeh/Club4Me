@@ -23,6 +23,7 @@ const businessClassFields = z
       .default([]),
     sport: z.string().trim().max(120).default(""),
     level: z.string().trim().max(80).default(""),
+    skillLevelId: objectId.nullable().default(null),
     model: z.enum(["group", "private", "course", "single", "open"]),
     pricingModel: z.enum(["monthly", "course", "per_session", "package"]),
     price: z.number().finite().min(0),
@@ -37,6 +38,15 @@ const businessClassFields = z
     capacity: z.number().int().min(1).max(1000),
     coachProfileId: objectId.nullable().default(null),
     branchId: objectId.nullable().default(null),
+    coverMediaId: objectId.nullable().default(null),
+    galleryMediaIds: z.array(objectId).max(30).default([]),
+    prerequisites: z.array(z.string().trim().min(1).max(240)).max(30).default([]),
+    requiredEquipmentIds: z.array(objectId).max(50).default([]),
+    amenityIds: z.array(objectId).max(50).default([]),
+    minAge: z.number().int().min(0).max(120).nullable().default(null),
+    maxAge: z.number().int().min(0).max(120).nullable().default(null),
+    registrationStartAt: z.iso.datetime().nullable().default(null),
+    registrationEndAt: z.iso.datetime().nullable().default(null),
     startDate: date,
     endDate: date,
     schedule: z.array(schedule).min(1).max(20),
@@ -101,6 +111,7 @@ export class CreateBusinessClassDto {
   faqs?: Array<{ question: string; answer: string }>;
   sport: string;
   level: string;
+  skillLevelId?: string | null;
   model: "group" | "private" | "course" | "single" | "open";
   pricingModel: "monthly" | "course" | "per_session" | "package";
   price: number;
@@ -109,6 +120,15 @@ export class CreateBusinessClassDto {
   capacity: number;
   coachProfileId: string | null;
   branchId: string | null;
+  coverMediaId?: string | null;
+  galleryMediaIds?: string[];
+  prerequisites?: string[];
+  requiredEquipmentIds?: string[];
+  amenityIds?: string[];
+  minAge?: number | null;
+  maxAge?: number | null;
+  registrationStartAt?: string | null;
+  registrationEndAt?: string | null;
   startDate: string;
   endDate: string;
   schedule: Array<{
@@ -158,6 +178,15 @@ export class UpdateBusinessClassDto {
   capacity?: number;
   coachProfileId?: string | null;
   branchId?: string | null;
+  coverMediaId?: string | null;
+  galleryMediaIds?: string[];
+  prerequisites?: string[];
+  requiredEquipmentIds?: string[];
+  amenityIds?: string[];
+  minAge?: number | null;
+  maxAge?: number | null;
+  registrationStartAt?: string | null;
+  registrationEndAt?: string | null;
   startDate?: string;
   endDate?: string;
   schedule?: CreateBusinessClassDto["schedule"];
@@ -238,6 +267,7 @@ export class UpdateClassSessionDto {
       startsAt: z.iso.datetime().optional(),
       endsAt: z.iso.datetime().optional(),
       status: z.enum(["scheduled", "completed", "cancelled"]).optional(),
+      scope: z.enum(["single", "future"]).default("single"),
     })
     .strict()
     .refine(
@@ -248,4 +278,5 @@ export class UpdateClassSessionDto {
   startsAt?: string;
   endsAt?: string;
   status?: "scheduled" | "completed" | "cancelled";
+  scope?: "single" | "future";
 }

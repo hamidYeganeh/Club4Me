@@ -1,4 +1,5 @@
 import { http } from "../http/client";
+import { tokenStore } from "../http/token-store";
 import { EVENTS, type TelemetryEventName } from "./events";
 import type {
   AccountDeletedEvent,
@@ -28,6 +29,8 @@ declare const process: {
 
 const QUEUE_KEY = "gym4me.telemetry.queue.v1";
 const MAX_QUEUE_LENGTH = 100;
+const ANONYMOUS_KEY = "gym4me.telemetry.install-id.v1";
+const CONSENT_KEY = "gym4me.telemetry.consent.v1";
 
 type TelemetryContext = {
   platform: TelemetryPlatform;
@@ -132,6 +135,18 @@ export function resetTelemetryIdentity(): void {
   }
 }
 
+export function telemetryConsent(): boolean | null {
+  if (typeof window === "undefined") return null;
+  const value = window.localStorage.getItem(CONSENT_KEY);
+  return value === "granted" ? true : value === "denied" ? false : null;
+}
+
+export function setTelemetryConsent(granted: boolean): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CONSENT_KEY, granted ? "granted" : "denied");
+  if (!granted) window.localStorage.removeItem(QUEUE_KEY);
+}
+
 export function flushTelemetryQueue(): Promise<void> {
   initializeQueue();
   flushPromise ??= deliverQueue().finally(() => {
@@ -151,6 +166,7 @@ function enqueue(
   method: QueueItem["method"],
   payload: Record<string, unknown>,
 ): void {
+  if (telemetryConsent() !== true) return;
   initializeQueue();
   const item: QueueItem = {
     method,
@@ -160,6 +176,7 @@ function enqueue(
       occurredAt: new Date().toISOString(),
       platform: context.platform,
       appVersion: context.appVersion,
+      anonymousId: anonymousId(),
     },
   };
   const queue = [...readQueue(), item].slice(-MAX_QUEUE_LENGTH);
@@ -175,8 +192,10 @@ async function deliverQueue(): Promise<void> {
     const item = queue[0];
     if (!item) return;
     try {
+      const authenticated = Boolean(tokenStore.get());
+      if (!authenticated && item.method !== "events") return;
       await http.post<{ accepted: true }>(
-        `/telemetry/${item.method}`,
+        authenticated ? `/telemetry/${item.method}` : "/public/telemetry/events",
         item.payload,
       );
       queue = queue.slice(1);
@@ -191,6 +210,16 @@ async function deliverQueue(): Promise<void> {
       return;
     }
   }
+}
+
+function anonymousId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  let value = window.localStorage.getItem(ANONYMOUS_KEY);
+  if (!value) {
+    value = createEventId();
+    window.localStorage.setItem(ANONYMOUS_KEY, value);
+  }
+  return value;
 }
 
 function initializeQueue(): void {

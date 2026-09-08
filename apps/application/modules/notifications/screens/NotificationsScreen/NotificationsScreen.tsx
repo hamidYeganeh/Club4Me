@@ -146,7 +146,7 @@ export function NotificationsScreen() {
                       <button
                         type="button"
                         key={item.id}
-                        className="app-card flex min-h-28 w-full items-start gap-3 p-4 text-start"
+                        className="app-notification"
                         onClick={async () => {
                           if (!item.readAt) {
                             try {
@@ -160,14 +160,14 @@ export function NotificationsScreen() {
                           if (item.href) router.push(item.href);
                         }}
                       >
-                        <span className="flex size-12 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-muted shadow-sm">
+                        <span className="app-notification-icon" aria-hidden>
                           <Icon
                             name={iconByType[item.type] ?? "bell-ringing"}
                             size={22}
                           />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="flex items-start justify-between gap-3">
+                          <span className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
                             <strong className="text-sm leading-6 text-foreground">
                               {item.title}
                             </strong>

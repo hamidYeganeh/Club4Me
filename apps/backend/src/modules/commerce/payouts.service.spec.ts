@@ -1,3 +1,4 @@
+import { fakeTransactionConnection } from "../../infrastructure/database/atomic-operation.test-helper";
 import { Types } from "mongoose";
 
 import { PayoutsService } from "./payouts.service";
@@ -20,7 +21,10 @@ describe("PayoutsService", () => {
 
   it("moves a request to under review without releasing reserved balance", async () => {
     const item = payout("under_review");
-    const payouts = { findOneAndUpdate: jest.fn().mockResolvedValue(item) };
+    const payouts = {
+      db: fakeTransactionConnection,
+      findOneAndUpdate: jest.fn().mockResolvedValue(item),
+    };
     const ledger = { insertMany: jest.fn() };
     const accounts = { updateOne: jest.fn() };
     const notifications = { notifyPayoutStatus: jest.fn() };
@@ -48,7 +52,10 @@ describe("PayoutsService", () => {
 
   it("lets the requester cancel a pending payout and releases its balance", async () => {
     const item = payout("cancelled");
-    const payouts = { findOneAndUpdate: jest.fn().mockResolvedValue(item) };
+    const payouts = {
+      db: fakeTransactionConnection,
+      findOneAndUpdate: jest.fn().mockResolvedValue(item),
+    };
     const accounts = { updateOne: jest.fn() };
     const notifications = { notifyPayoutStatus: jest.fn() };
     const service = new PayoutsService(

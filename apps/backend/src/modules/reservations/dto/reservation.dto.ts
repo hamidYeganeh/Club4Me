@@ -100,6 +100,41 @@ export class CreateCourtDto {
   cleanupMinutes: number;
 }
 
+export class UpdateCourtDto {
+  static schema = z
+    .object({
+      ...CreateCourtDto.schema.shape,
+      sportIds: z.array(objectId).max(30),
+      environment: z.enum(["indoor", "outdoor", "covered"]),
+      galleryMediaIds: z.array(objectId).max(30),
+      minimumReservationMinutes: z.number().int().min(1).max(1440),
+      maximumReservationMinutes: z.number().int().min(1).max(10080),
+      preparationMinutes: z.number().int().min(0).max(1440),
+      cleanupMinutes: z.number().int().min(0).max(1440),
+      courtTypeId: objectId.nullable(),
+      surfaceTypeId: objectId.nullable(),
+      lengthMeters: z.number().positive().nullable(),
+      widthMeters: z.number().positive().nullable(),
+      status: z.enum(["active", "inactive"]),
+      expectedUpdatedAt: z.iso.datetime(),
+    })
+    .partial()
+    .strict();
+}
+export interface UpdateCourtDto extends Partial<
+  Omit<
+    CreateCourtDto,
+    "courtTypeId" | "surfaceTypeId" | "lengthMeters" | "widthMeters"
+  >
+> {
+  courtTypeId?: string | null;
+  surfaceTypeId?: string | null;
+  lengthMeters?: number | null;
+  widthMeters?: number | null;
+  status?: "active" | "inactive";
+  expectedUpdatedAt?: string;
+}
+
 export class CreateSessionDto {
   static schema = z
     .object({
@@ -190,6 +225,8 @@ export class CreateReservationDto {
   static schema = z
     .object({
       sessionId: objectId,
+      expectedTotalPrice: z.number().int().min(0).optional(),
+      expectedCurrency: z.string().length(3).optional(),
       isTrial: z.boolean().optional(),
       participantCount: z.number().int().min(1).max(100),
       entitlementId: objectId.optional(),
@@ -205,8 +242,58 @@ export class CreateReservationDto {
     })
     .strict();
   sessionId: string;
+  expectedTotalPrice?: number;
+  expectedCurrency?: string;
   isTrial?: boolean;
   participantCount: number;
   entitlementId?: string;
   options?: Array<{ optionId: string; quantity: number }>;
+}
+
+export class RescheduleQuoteDto {
+  static schema = z
+    .object({
+      sessionId: objectId,
+      options: z
+        .array(
+          z.object({
+            optionId: objectId,
+            quantity: z.number().int().min(1).max(1000),
+          }),
+        )
+        .max(50)
+        .default([]),
+    })
+    .strict();
+  sessionId: string;
+  options: Array<{ optionId: string; quantity: number }>;
+}
+export class RescheduleReservationDto {
+  static schema = RescheduleQuoteDto.schema.extend({
+    expectedTotalPrice: z.number().int().nonnegative(),
+    expectedRefundAmount: z.number().int().nonnegative(),
+    expectedRefundPercent: z.number().int().min(0).max(100),
+    idempotencyKey: z.string().min(8).max(120),
+    mockResult: z.enum(["paid", "failed"]),
+  });
+  sessionId: string;
+  options: Array<{ optionId: string; quantity: number }>;
+  expectedTotalPrice: number;
+  expectedRefundAmount: number;
+  expectedRefundPercent: number;
+  idempotencyKey: string;
+  mockResult: "paid" | "failed";
+}
+
+export class UpdateReservationCheckInDto {
+  static schema = z
+    .object({
+      participantCount: z.number().int().min(0).max(1000),
+      expectedParticipantCount: z.number().int().min(0).max(1000),
+      reason: z.string().trim().max(200).default(""),
+    })
+    .strict();
+  participantCount: number;
+  expectedParticipantCount: number;
+  reason: string;
 }

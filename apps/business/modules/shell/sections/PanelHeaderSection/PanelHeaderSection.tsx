@@ -4,6 +4,8 @@ import { Button, Drawer, SearchField } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { ThemeToggle } from "@theme/theme-toggle";
 import { cn } from "@theme/cn";
+import { businessPageTitle } from "@/components/business-page-intro";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
@@ -18,10 +20,10 @@ function isActive(pathname: string, href: string, exact?: boolean): boolean {
 }
 
 export function PanelHeaderSection({
-  searchPlaceholder,
+
   settingsHref,
   settingsLabel,
-  notificationsLabel,
+
   menuLabel,
   openMenuLabel,
   closeMenuLabel,
@@ -31,6 +33,7 @@ export function PanelHeaderSection({
 }: PanelHeaderSectionProps) {
   const styles = panelHeaderSectionStyles();
   const pathname = usePathname();
+  const [menuSearch, setMenuSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPath, setMenuPath] = useState(pathname);
 
@@ -40,7 +43,11 @@ export function PanelHeaderSection({
   }
 
   return (
+    <>
     <header className={styles.root()}>
+      {pathname.split("/").filter(Boolean).length > 1 ? (
+        <ButtonLink href={pathname.endsWith("/edit") ? pathname.slice(0,-5) : pathname.endsWith("/reservations") ? pathname.slice(0,-13) : pathname.includes("/classes") ? "/classes" : "/clubs"} isIconOnly variant="tertiary" aria-label="بازگشت" className="app-icon-button"><Icon name="chevron-right" /></ButtonLink>
+      ) : (
       <Button
         isIconOnly
         variant="tertiary"
@@ -52,20 +59,8 @@ export function PanelHeaderSection({
         <Icon name="hamburger" />
       </Button>
 
-      <SearchField
-        name="panel-search"
-        variant="secondary"
-        className={styles.search()}
-      >
-        <SearchField.Group className="panel-search-group w-full">
-          <Icon name="magnifying-glass" className="shrink-0 text-muted" />
-          <SearchField.Input
-            aria-label={searchPlaceholder}
-            placeholder={searchPlaceholder}
-          />
-          <Icon name="funnel-1" className="ms-1 shrink-0 text-muted" />
-        </SearchField.Group>
-      </SearchField>
+      )}
+      <p className="min-w-0 flex-1 truncate text-base font-bold">{businessPageTitle(pathname)}</p>
 
       <div className={styles.actions()}>
         <ThemeToggle className={styles.iconBtn()} />
@@ -78,14 +73,6 @@ export function PanelHeaderSection({
         >
           <Icon name="gear-1" />
         </ButtonLink>
-        <Button
-          isIconOnly
-          variant="primary"
-          aria-label={notificationsLabel}
-          className={styles.notifyBtn()}
-        >
-          <Icon name="bell-1" />
-        </Button>
       </div>
 
       <Drawer.Backdrop
@@ -101,6 +88,9 @@ export function PanelHeaderSection({
               <Drawer.Heading>{menuLabel}</Drawer.Heading>
             </Drawer.Header>
             <Drawer.Body>
+              <SearchField value={menuSearch} onChange={setMenuSearch} className="mb-4 w-full">
+                <SearchField.Group><SearchField.Input aria-label="جستجو در بخش‌ها" placeholder="جستجو در بخش‌ها" /></SearchField.Group>
+              </SearchField>
               <nav className={styles.drawerNav()} aria-label={menuLabel}>
                 <ButtonLink
                   href={addHref}
@@ -110,7 +100,7 @@ export function PanelHeaderSection({
                   <Icon name="plus-fat" size="lg" />
                   <span>{addLabel}</span>
                 </ButtonLink>
-                {items.map((item) => {
+                {items.filter(item => item.label.includes(menuSearch.trim())).map((item) => {
                   const active = isActive(pathname, item.href, item.exact);
                   return (
                     <ButtonLink
@@ -133,5 +123,10 @@ export function PanelHeaderSection({
         </Drawer.Content>
       </Drawer.Backdrop>
     </header>
+    <nav className="business-bottom-nav" aria-label="دسترسی سریع">
+      {items.filter(item => ["/", "/clubs", "/calendar", "/classes"].includes(item.href)).map(item => <Link key={item.href} href={item.href} aria-current={isActive(pathname,item.href,item.exact) ? "page" : undefined}><Icon name={item.icon} size={21} /><span>{item.label}</span></Link>)}
+      <button type="button" onClick={() => setMenuOpen(true)} aria-label={openMenuLabel}><Icon name="hamburger" size={21} /><span>بیشتر</span></button>
+    </nav>
+    </>
   );
 }

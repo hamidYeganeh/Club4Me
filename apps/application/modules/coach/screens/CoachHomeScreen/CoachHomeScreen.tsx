@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "@/components/app-link";
+import { ButtonLink } from "@/components/button-link";
 import { Button, Card, Chip, toast, Typography } from "@heroui/react";
 import {
   useCoachClasses,
@@ -55,8 +57,9 @@ export function CoachHomeScreen() {
   }
 
   return (
-    <main className="app-page gap-6">
+    <main className="app-page gap-8">
       <AthleteScreenHeaderSection title="پنل مربی" />
+      <ButtonLink href="/coach/training" variant="secondary">برنامه تمرینی شاگردان</ButtonLink>
       <Card className="rounded-3xl bg-surface p-5 shadow-none">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -125,6 +128,12 @@ export function CoachHomeScreen() {
                     {statusLabel[item.status] ?? item.status}
                   </p>
                 </div>
+                <Link
+                  href={`/coach/classes/${item.id}/edit`}
+                  className="inline-flex min-h-11 items-center px-3 text-sm font-bold text-accent"
+                >
+                  ویرایش
+                </Link>
                 {item.status === "draft" ? (
                   <Button
                     size="sm"

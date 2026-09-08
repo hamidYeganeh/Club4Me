@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@theme/provider";
 import { NextIntlClientProvider } from "next-intl";
-import { Monoton } from "next/font/google";
+import localFont from "next/font/local";
 import { getLocale, getMessages, getTimeZone } from "next-intl/server";
 
 import { ApplicationShell } from "@/components/application-shell";
@@ -14,9 +14,9 @@ import {
 
 import "./globals.css";
 
-const monoton = Monoton({
+const monoton = localFont({
+  src: "../../../packages/theme/fonts/Monoton-Regular.ttf",
   weight: "400",
-  subsets: ["latin"],
   variable: "--font-monoton",
   display: "swap",
 });

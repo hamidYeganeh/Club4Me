@@ -45,6 +45,7 @@ describe("SupportService", () => {
           SUPPORT_SLA_URGENT_MINUTES: 30,
         },
       } as never,
+      {} as never,
     );
 
     await service.update(String(new Types.ObjectId()), String(ticket._id), {

@@ -565,6 +565,18 @@ export class CancelSessionDto {
   reason: string;
 }
 
+const RescheduleCoachBookingSchema = z
+  .object({
+    sessionId: objectIdSchema,
+    idempotencyKey: z.string().trim().min(8).max(120),
+  })
+  .strict();
+export class RescheduleCoachBookingDto {
+  static schema = RescheduleCoachBookingSchema;
+  sessionId: string;
+  idempotencyKey: string;
+}
+
 const CreateEnrollmentSchema = z.object({ athleteId: objectIdSchema }).strict();
 export class CreateEnrollmentDto {
   static schema = CreateEnrollmentSchema;

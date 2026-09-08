@@ -1,5 +1,5 @@
-import { CoachScreen } from "@modules/coach/screens/CoachScreen";
+import { redirect } from "next/navigation";
 
 export default function CoachPage() {
-  return <CoachScreen />;
+  redirect("/data");
 }

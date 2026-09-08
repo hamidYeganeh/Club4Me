@@ -1,3 +1,4 @@
+import { BusinessPortalGuard } from "../auth/guards/business-portal.guard";
 import {
   Body,
   Controller,
@@ -7,6 +8,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
@@ -28,8 +30,7 @@ import { BusinessClassPortalService } from "./class-portal.service";
 import { GenerateClassCheckInDto } from "./class-portal.dto";
 
 @Controller("api/v1/business/clubs/:clubId/operations/classes")
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles("owner")
+@UseGuards(JwtAuthGuard, BusinessPortalGuard)
 export class BusinessClassesController {
   constructor(
     private readonly service: BusinessClassesService,
@@ -48,6 +49,14 @@ export class BusinessClassesController {
     @Body() body: CreateBusinessClassDto,
   ) {
     return this.service.create(user.sub, clubId, body);
+  }
+  @Get("calendar-sessions") calendarSessions(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+  ) {
+    return this.service.listCalendarSessions(user.sub, clubId, from, to);
   }
   @Get(":classId") get(
     @CurrentUser() user: AuthTokenPayload,
@@ -109,6 +118,16 @@ export class BusinessClassesController {
       sessionId,
       body,
     );
+  }
+
+  @Post(":classId/sessions/:sessionId/change-preview") previewSessionChange(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("classId") classId: string,
+    @Param("sessionId") sessionId: string,
+    @Body() body: UpdateClassSessionDto,
+  ) {
+    return this.service.previewSessionChange(user.sub, clubId, classId, sessionId, body);
   }
 
   @Get(":classId/enrollments") enrollments(

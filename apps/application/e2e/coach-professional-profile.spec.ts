@@ -92,7 +92,7 @@ test("coach saves professional details, keeps existing sports and sees them on t
   await page.route("**/api/v1/public/coaches/**", (route) =>
     route.fulfill({ json: { data: { items: [] } } }),
   );
-  await page.route("**/api/v1/media/upload", (route) =>
+  await page.route(/\/api\/v1\/media\/(?:private\/)?upload$/, (route) =>
     route.fulfill({
       json: {
         data: {
@@ -251,5 +251,81 @@ test("older coach profiles hide empty professional sections", async ({
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "این مربی برای چه کسی مناسب است؟" }),
+  ).toHaveCount(0);
+});
+
+test("coach can reorder and remove existing portfolio images without losing them on a second save", async ({
+  page,
+}) => {
+  const state = createMockApiState();
+  state.user.roles = ["coach"];
+  await installApiMock(page, state);
+  await setBrowserSession(page, true);
+  const ids = [
+    "66d400000000000000000031",
+    "66d400000000000000000032",
+    "66d400000000000000000033",
+  ];
+  let saved = {
+    ...profileFixture(),
+    galleryMediaIds: ids,
+    travelRadiusKm: 10,
+    geo: {
+      countryId: "66d400000000000000000041",
+      provinceId: "66d400000000000000000042",
+      cityId: "66d400000000000000000043",
+      cityRegionIds: [],
+    },
+  };
+  let writes = 0;
+  await page.route("**/api/v1/coach/profile", async (route) => {
+    if (route.request().method() === "PATCH") {
+      const body = route.request().postDataJSON();
+      expect(body.galleryMediaIds).toEqual([ids[2], ids[1]]);
+      expect(body.travelRadiusKm).toBe(15);
+      saved = { ...saved, ...body };
+      writes++;
+    }
+    await route.fulfill({ json: { data: saved } });
+  });
+  await page.route("**/api/v1/coach/sports", (route) =>
+    route.fulfill({ json: { data: { items: [] } } }),
+  );
+  await page.route(/\/api\/v1\/media(?:\?.*)?$/, (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          items: ids.map((id) => ({
+            id,
+            url: "/icon.png",
+            status: "ready",
+            mimeType: "image/png",
+          })),
+        },
+      },
+    }),
+  );
+  await page.goto("/coach/profile/professional");
+  await page
+    .getByRole("button", { name: "جلو بردن تصویر 3", exact: true })
+    .click();
+  await page.getByRole("button", { name: "حذف تصویر 1", exact: true }).click();
+  await page
+    .getByRole("spinbutton", { name: "شعاع رفت‌وآمد (کیلومتر)", exact: true })
+    .fill("15");
+  await page
+    .getByRole("button", { name: "ذخیره پروفایل", exact: true })
+    .click();
+  await expect.poll(() => writes).toBe(1);
+  await page
+    .getByRole("button", { name: "ذخیره پروفایل", exact: true })
+    .click();
+  await expect.poll(() => writes).toBe(2);
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "حذف تصویر 2", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "حذف تصویر 3", exact: true }),
   ).toHaveCount(0);
 });

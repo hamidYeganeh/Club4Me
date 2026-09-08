@@ -1,10 +1,9 @@
 "use client";
 
 import { Breadcrumbs } from "@heroui/react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useMemo, type ComponentProps } from "react";
+import { useMemo } from "react";
 
 type Crumb = {
   href?: string;
@@ -21,13 +20,15 @@ function segmentLabel(
     students: t("panel.students"),
     coaches: t("panel.coaches"),
     classes: t("panel.classes"),
+    calendar: t("panel.calendar"),
     payments: t("panel.payments"),
     memberships: t("panel.memberships"),
     reviews: t("panel.reviews"),
     data: t("panel.data"),
     attendance: t("panel.attendance"),
+    "check-in": "ورود و پذیرش",
+    reception: "ورود و پذیرش",
     branches: t("panel.branches"),
-    coach: t("panel.coach"),
     settings: t("panel.settings"),
     new: t("panel.new"),
     edit: t("panel.edit"),
@@ -73,17 +74,13 @@ export function PanelBreadcrumbsSection() {
   if (pathname === "/") return null;
 
   return (
-    <div className="border-b border-border/60 px-4 py-2.5 lg:px-6">
+    <div className="hidden px-6 py-3 lg:block">
       <Breadcrumbs aria-label={t("panel.breadcrumbs")}>
         {crumbs.map((crumb) =>
           crumb.href ? (
             <Breadcrumbs.Item
               key={`${crumb.href}-${crumb.label}`}
               href={crumb.href}
-              render={(props) => {
-                const linkProps = props as ComponentProps<typeof Link>;
-                return <Link {...linkProps} href={crumb.href!} />;
-              }}
             >
               {crumb.label}
             </Breadcrumbs.Item>

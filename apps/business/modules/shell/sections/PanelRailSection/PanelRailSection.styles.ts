@@ -3,7 +3,7 @@ import { tv } from "tailwind-variants";
 export const panelRailSectionStyles = tv({
   slots: {
     root: [
-      "z-40 flex shrink-0 items-center justify-between gap-3",
+      "z-40 hidden shrink-0 lg:flex items-center justify-between gap-3",
       "border-b border-border/60 bg-accent px-3 py-3 text-accent-foreground",
       "lg:sticky lg:top-3 lg:my-3 lg:ms-3 lg:h-[calc(100dvh-1.5rem)] lg:w-[4.5rem]",
       "lg:flex-col lg:rounded-[2rem] lg:border lg:border-accent/30 lg:px-2 lg:py-5",

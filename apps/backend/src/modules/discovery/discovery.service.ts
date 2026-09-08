@@ -1,3 +1,9 @@
+import { classDecisionFilters, classTimeFilter } from "./class-decision-filters";
+import { businessClassCatalogQuery } from "./business-class-catalog-query";
+import {
+  BusinessTrainingClass,
+  type BusinessTrainingClassDocument,
+} from "../business-operations/schemas/training-class.schema";
 import { publicProfessionalProfile } from "../coaching/dto/professional-profile";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
@@ -48,6 +54,8 @@ export class DiscoveryFeedService {
     private readonly articles: Model<ArticleDocument>,
     private readonly media: MediaService,
     private readonly resources: ResourcesService,
+    @InjectModel(BusinessTrainingClass.name)
+    private readonly businessClasses: Model<BusinessTrainingClassDocument>,
   ) {}
 
   async listPublicClubs(query: Record<string, string | undefined>) {
@@ -56,6 +64,7 @@ export class DiscoveryFeedService {
       reviewStatus: "approved",
       visibility: "public",
       operationalStatus: { $ne: "permanently_closed" },
+      qualityStatus: { $ne: "suspended" },
     };
     addIdFilter(filter, "geo.cityId", query.cityId);
     addIdFilter(filter, "geo.districtId", query.districtId);
@@ -74,28 +83,30 @@ export class DiscoveryFeedService {
         { tags: pattern },
       ];
     }
-    if (query.latitude && query.longitude) {
-      const latitude = coordinate(query.latitude, -90, 90, "latitude");
-      const longitude = coordinate(query.longitude, -180, 180, "longitude");
+    const geo = catalogGeo(query);
+    if (geo)
       filter.location = {
         $near: {
-          $geometry: { type: "Point", coordinates: [longitude, latitude] },
-          ...(query.radiusKm
-            ? {
-                $maxDistance:
-                  coordinate(query.radiusKm, 0.1, 500, "radiusKm") * 1000,
-              }
-            : {}),
+          $geometry: { type: "Point", coordinates: geo.coordinates },
+          $maxDistance: geo.radiusMeters,
         },
       };
-    }
     const countFilter = { ...filter };
-    if ("location" in countFilter) delete countFilter.location;
+    if (geo)
+      countFilter.location = {
+        $geoWithin: {
+          $centerSphere: [geo.coordinates, geo.radiusMeters / 6378137],
+        },
+      };
     const [documents, total] = await Promise.all([
       this.clubs
         .find(filter)
         .sort(
-          query.sort === "rating" ? { averageRating: -1 } : { updatedAt: -1 },
+          query.sort === "rating"
+            ? { averageRating: -1, _id: 1 }
+            : query.sort === "newest" || !geo
+              ? { updatedAt: -1, _id: 1 }
+              : {},
         )
         .skip(skip)
         .limit(limit)
@@ -113,6 +124,7 @@ export class DiscoveryFeedService {
         reviewStatus: "approved",
         visibility: "public",
         operationalStatus: { $ne: "permanently_closed" },
+        qualityStatus: { $ne: "suspended" },
       })
       .lean();
     if (!document) catalogNotFound("CLUB_NOT_FOUND");
@@ -133,6 +145,7 @@ export class DiscoveryFeedService {
           reviewStatus: "approved",
           visibility: "public",
           operationalStatus: { $ne: "permanently_closed" },
+          qualityStatus: { $ne: "suspended" },
         },
       },
       { $unwind: "$clubTypeIds" },
@@ -207,7 +220,42 @@ export class DiscoveryFeedService {
       })
       .lean();
     if (!document) catalogNotFound("COACH_NOT_FOUND");
-    return (await this.hydrateMedia([publicCoach(document!)]))[0];
+    const [coach, serviceArea] = await Promise.all([
+      this.hydrateMedia([publicCoach(document!)]),
+      this.coachServiceArea(document!.geo),
+    ]);
+    return { ...coach[0], serviceArea };
+  }
+
+  private async coachServiceArea(geo: Record<string, any> | null | undefined) {
+    if (!geo) return [];
+    const locations = [
+      { type: "province", id: geo.provinceId },
+      { type: "city", id: geo.cityId },
+      { type: "district", id: geo.districtId },
+      ...(geo.cityRegionIds ?? []).map((id: unknown) => ({
+        type: "city-region",
+        id,
+      })),
+    ].filter((location) => location.id);
+    const resolved = await Promise.all(
+      locations.map(async ({ type, id }) => {
+        try {
+          const resource = await this.resources.get(
+            "location",
+            type,
+            String(id),
+          );
+          return resource.isActive === true && typeof resource.name === "string"
+            ? { type, name: resource.name }
+            : null;
+        } catch (error) {
+          if (error instanceof AppError && error.status === 404) return null;
+          throw error;
+        }
+      }),
+    );
+    return resolved.filter((location) => location !== null);
   }
 
   async listPublicClasses(query: Record<string, string | undefined>) {
@@ -221,9 +269,11 @@ export class DiscoveryFeedService {
         reviewStatus: "approved",
         visibility: "public",
         operationalStatus: { $ne: "permanently_closed" },
+        qualityStatus: { $ne: "suspended" },
       }),
     ]);
     const filter: Record<string, unknown> = {
+      ...classDecisionFilters(query),
       status: { $in: ["published", "registration_closed", "in_progress"] },
       ownerCoachId: { $in: approvedCoachIds },
       $or: [
@@ -232,6 +282,21 @@ export class DiscoveryFeedService {
         { clubId: { $in: approvedClubIds }, clubApprovalStatus: "approved" },
       ],
     };
+    const time = classTimeFilter(query);
+    if (time) {
+      const localTime = { $dateToString: { format: "%H:%M", date: "$startAt", timezone: "Asia/Tehran" } };
+      const sessionIds = await this.classes.db.collection("class_sessions").distinct("classId", {
+        status: { $nin: ["cancelled", "rescheduled"] },
+        startAt: { $gte: new Date() },
+        $expr: {
+          $and: [
+            ...(time.$gte ? [{ $gte: [localTime, time.$gte] }] : []),
+            ...(time.$lte ? [{ $lte: [localTime, time.$lte] }] : []),
+          ],
+        },
+      });
+      filter._id = { $in: sessionIds };
+    }
     addIdFilter(filter, "sportId", query.sportId);
     addIdFilter(filter, "clubId", query.clubId);
     addIdFilter(filter, "coachAssignments.coachId", query.coachId);
@@ -282,6 +347,7 @@ export class DiscoveryFeedService {
         reviewStatus: "approved",
         visibility: "public",
         operationalStatus: { $ne: "permanently_closed" },
+        qualityStatus: { $ne: "suspended" },
       });
       if (!clubApproved || base!.clubApprovalStatus !== "approved") {
         catalogNotFound("CLASS_NOT_FOUND");
@@ -328,19 +394,105 @@ export class DiscoveryFeedService {
     return publicCatalogArticle(document!);
   }
 
+  async listPublicBusinessClasses(query: Record<string, string | undefined>) {
+    const level = query.skillLevelId
+      ? await this.resources.get("sports", "skill-level", query.skillLevelId)
+      : null;
+    const { page, limit, skip, clubFilter, filter, sort } =
+      businessClassCatalogQuery({
+        ...query,
+        legacyLevel: typeof level?.name === "string" ? level.name : undefined,
+      });
+    const clubIds = await this.clubs.distinct("_id", clubFilter);
+    filter.clubId = { $in: clubIds };
+    const [documents, total] = await Promise.all([
+      this.businessClasses
+        .find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.businessClasses.countDocuments(filter),
+    ]);
+    return {
+      items: documents.map((item) => ({
+        id: String(item._id),
+        startDate: item.startDate.toISOString(),
+        title: item.title,
+        description: item.description,
+        clubId: String(item.clubId),
+        capacity: item.capacity,
+        enrollmentCount: item.activeEnrollmentCount,
+        price: { amount: item.price, currency: item.currency },
+        imageMediaId: item.coverMediaId ? String(item.coverMediaId) : null,
+        galleryMediaIds: (item.galleryMediaIds ?? []).map(String),
+        prerequisites: item.prerequisites ?? [],
+        requiredEquipmentIds: (item.requiredEquipmentIds ?? []).map(String),
+        amenityIds: (item.amenityIds ?? []).map(String),
+        minAge: item.minAge ?? null,
+        maxAge: item.maxAge ?? null,
+        registrationStartAt: item.registrationStartAt?.toISOString() ?? null,
+        registrationEndAt: item.registrationEndAt?.toISOString() ?? null,
+        coachIds: item.coachProfileId ? [String(item.coachProfileId)] : [],
+        branchId: item.branchId ? String(item.branchId) : null,
+        averageRating: item.averageRating ?? 0,
+        reviewsCount: item.reviewsCount ?? 0,
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   async searchPublicCatalog(query: Record<string, string | undefined>) {
     const kind = query.kind;
-    const scoped = { ...query, page: "1", limit: query.limit ?? "20" };
-    const [clubs, coaches, classes] = await Promise.all([
+    if (kind && !["club", "coach", "class"].includes(kind))
+      throw new AppError(400, "INVALID_SEARCH_KIND", "Search kind is invalid");
+    const scoped = { ...query, limit: query.limit ?? "20" };
+    const { page, limit } = pagination(scoped);
+    const [clubs, coaches, classes, businessClasses] = await Promise.all([
       kind && kind !== "club" ? emptyPage() : this.listPublicClubs(scoped),
       kind && kind !== "coach" ? emptyPage() : this.listPublicCoaches(scoped),
       kind && kind !== "class" ? emptyPage() : this.listPublicClasses(scoped),
+      kind && kind !== "class"
+        ? emptyPage()
+        : this.listPublicBusinessClasses(scoped),
     ]);
-    return {
+    const response = {
       clubs: clubs.items,
       coaches: coaches.items,
       classes: classes.items,
-      total: clubs.total + coaches.total + classes.total,
+      businessClasses: businessClasses.items,
+      total:
+        clubs.total + coaches.total + classes.total + businessClasses.total,
+      page,
+      limit,
+      totalPages: Math.ceil(
+        Math.max(
+          clubs.total,
+          coaches.total,
+          classes.total,
+          businessClasses.total,
+        ) / limit,
+      ),
+    };
+    const hasGeo = query.latitude !== undefined && query.longitude !== undefined;
+    if (response.total > 0 || !hasGeo) return response;
+    const wider = { ...scoped, latitude: undefined, longitude: undefined, radiusKm: undefined, page: "1", limit: "3" };
+    const [nearbyClubs, nearbyClasses, nearbyBusinessClasses] = await Promise.all([
+      kind && kind !== "club" ? emptyPage() : this.listPublicClubs(wider),
+      kind && kind !== "class" ? emptyPage() : this.listPublicClasses(wider),
+      kind && kind !== "class" ? emptyPage() : this.listPublicBusinessClasses(wider),
+    ]);
+    return {
+      ...response,
+      alternatives: {
+        reason: "outside_selected_radius",
+        clubs: nearbyClubs.items,
+        classes: nearbyClasses.items,
+        businessClasses: nearbyBusinessClasses.items,
+      },
     };
   }
 
@@ -899,6 +1051,7 @@ function publicCoach(item: Record<string, any>) {
     languages: item.languages ?? [],
     minAcceptedAge: item.minAcceptedAge ?? null,
     maxAcceptedAge: item.maxAcceptedAge ?? null,
+    travelRadiusKm: item.travelRadiusKm ?? null,
     professionalProfile: publicProfessionalProfile(item.professionalProfile),
     avatarMediaId: item.avatarMediaId ? String(item.avatarMediaId) : null,
     coverMediaId: item.coverMediaId ? String(item.coverMediaId) : null,
@@ -1104,4 +1257,19 @@ function handleDuplicateKey(error: unknown) {
       "DISCOVERY_SECTION_KEY_TAKEN",
       "Discovery section key already exists",
     );
+}
+
+function catalogGeo(query: Record<string, string | undefined>) {
+  if (query.latitude == null && query.longitude == null) return null;
+  const latitude = coordinate(query.latitude ?? "", -90, 90, "latitude");
+  const longitude = coordinate(query.longitude ?? "", -180, 180, "longitude");
+  if (!query.latitude || !query.longitude)
+    throw new AppError(
+      400,
+      "INVALID_COORDINATES",
+      "Both coordinates are required",
+    );
+  const radiusMeters =
+    coordinate(query.radiusKm ?? "25", 0.1, 500, "radiusKm") * 1000;
+  return { coordinates: [longitude, latitude], radiusMeters };
 }

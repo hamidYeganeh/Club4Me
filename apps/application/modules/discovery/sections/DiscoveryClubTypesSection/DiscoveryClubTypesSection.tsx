@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/app-link";
 import { ScrollShadow, Skeleton, Typography } from "@heroui/react";
 import { useCatalogClubTypes } from "@api/discovery";
 import { Icon } from "@theme/icon";

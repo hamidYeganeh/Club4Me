@@ -65,3 +65,34 @@ export type CreateClubReviewPayload = {
   title?: string;
   body: string;
 };
+
+export type ServiceReviewTarget = "coach" | "class";
+export type ServiceReview = {
+  id: string;
+  targetType: ServiceReviewTarget;
+  targetId: string;
+  targetSource: "coach" | "coach_class" | "business_class";
+  rating: number;
+  title?: string;
+  body: string;
+  mediaIds: string[];
+  mediaUrls: string[];
+  isVerifiedAttendance: boolean;
+  ownerResponse?: { body: string; respondedAt: string; respondedBy: string };
+  status: "pending" | "published" | "hidden" | "reported";
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ServiceReviewsResponse = {
+  items: ServiceReview[];
+  averageRating: number;
+  reviewsCount: number;
+};
+
+export type CreateServiceReviewPayload = {
+  rating: number;
+  title?: string;
+  body: string;
+  mediaIds?: string[];
+};

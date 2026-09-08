@@ -97,7 +97,9 @@ test("reopens an authenticated native route offline and resolves an unvisited re
   await page.evaluate(() => sessionStorage.setItem("test:offline", "1"));
   await context.setOffline(true);
   await page.goto(`${ORIGIN}/athlete/reservations/${RESERVATION}?source=club`);
-  await expect(page.getByText("جزئیات رزرو", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "جزئیات رزرو", exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("سانس تست باشگاه").first()).toBeVisible();
   await expect(
     page.getByText("اینترنت قطع است؛ بعضی اطلاعات ممکن است به‌روز نباشند."),
@@ -212,4 +214,87 @@ test("a different account cannot restore the previous account's cached profile",
   await page.goto(`${ORIGIN}/athlete/profile`);
   await expect(page.locator("[data-state]")).toBeVisible();
   await expect(page.getByText("کاربر آزمایشی", { exact: true })).toHaveCount(0);
+});
+
+test("bundled Persian and brand fonts load without Google requests", async ({
+  page,
+}) => {
+  await installNativeFiles(page);
+  await installApiMock(page, createMockApiState());
+  await setBrowserSession(page, true);
+  const externalFonts: string[] = [];
+  page.on("request", (request) => {
+    if (/fonts\.(googleapis|gstatic)\.com/.test(request.url()))
+      externalFonts.push(request.url());
+  });
+  await page.goto(`${ORIGIN}/athlete/memberships`);
+  await expect(
+    page.getByRole("heading", { name: "بسته‌ها و عضویت‌های من" }),
+  ).toBeVisible();
+  const loaded = await page.evaluate(async () => {
+    const persian = await document.fonts.load('16px "IRANSansX"');
+    const brand = await document.fonts.load('16px "Monoton"');
+    return [persian.length, brand.length];
+  });
+  expect(loaded).toEqual([1, 1]);
+  expect(externalFonts).toEqual([]);
+});
+
+test("native search restores shared filters and keeps the query when opening filters", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await installNativeFiles(page);
+  await installApiMock(page, createMockApiState());
+  await setBrowserSession(page, true);
+  const params = new URLSearchParams({
+    q: "یوگا",
+    kind: "class",
+    nearby: "0",
+    maxPrice: "100000",
+    serviceMode: "online",
+    admission: "automatic",
+    startsFrom: "2026-09-01",
+    skillLevelId: "66d400000000000000000099",
+  });
+  await page.goto(`${ORIGIN}/discovery/search?${params}`);
+  await expect(
+    page.getByRole("searchbox", { name: "جست‌وجو در دیسکاوری" }),
+  ).toHaveValue("یوگا");
+  await page
+    .getByRole("button", { name: "فیلتر نوع نتیجه", exact: true })
+    .click();
+  await expect(
+    page.getByRole("searchbox", { name: "جست‌وجو در دیسکاوری" }),
+  ).toHaveValue("یوگا");
+  await expect(
+    page.getByLabel("حداکثر بودجه (ریال)", { exact: true }),
+  ).toHaveValue("100000");
+  await page.getByLabel("حداکثر بودجه (ریال)", { exact: true }).fill("200000");
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("maxPrice"))
+    .toBe("200000");
+  await page.reload();
+  await page
+    .getByRole("button", { name: "فیلتر نوع نتیجه", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("حداکثر بودجه (ریال)", { exact: true }),
+  ).toHaveValue("200000");
+  expect(new URL(page.url()).searchParams.get("admission")).toBe("automatic");
+  expect(new URL(page.url()).searchParams.get("startsFrom")).toBe("2026-09-01");
+  expect(new URL(page.url()).searchParams.get("skillLevelId")).toBe(
+    "66d400000000000000000099",
+  );
+  await page
+    .getByRole("button", { name: "پاک‌کردن فیلترها", exact: true })
+    .click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.has("maxPrice"))
+    .toBe(false);
+  await expect(
+    page.getByRole("searchbox", { name: "جست‌وجو در دیسکاوری" }),
+  ).toHaveValue("یوگا");
+  expect(errors).toEqual([]);
 });

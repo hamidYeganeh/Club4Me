@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { tokenStore } from "@api/http";
 import { useAccountMe } from "@api/account";
 
+import { rememberAuthReturnPath } from "@/lib/auth-return-path";
 import { SET_PASSWORD_PATH } from "@/lib/post-auth-path";
 import { AUTH_PATH, markWelcomeSeen } from "@/lib/welcome-onboarding";
 import { DashboardPageSkeleton } from "@/components/loading-skeletons";
@@ -22,6 +23,8 @@ export function AuthGate({ children }: AuthGateProps) {
   const me = useAccountMe(hasToken === true);
   const sessionExpired =
     me.error instanceof ApiError && me.error.status === 401;
+  const needsPassword =
+    me.data && !me.data.hasPassword && !me.data.roles.includes("athlete");
   const failure = getQueryFailure(me.error, me.fetchStatus);
 
   useEffect(() => {
@@ -33,6 +36,7 @@ export function AuthGate({ children }: AuthGateProps) {
 
   useEffect(() => {
     if (hasToken === false || sessionExpired) {
+      rememberAuthReturnPath(window.location.pathname + window.location.search);
       tokenStore.clear();
       router.replace(AUTH_PATH);
     }
@@ -45,10 +49,11 @@ export function AuthGate({ children }: AuthGateProps) {
   }, [me.data]);
 
   useEffect(() => {
-    if (me.data && !me.data.hasPassword) {
+    if (needsPassword) {
+      rememberAuthReturnPath(window.location.pathname + window.location.search);
       router.replace(SET_PASSWORD_PATH);
     }
-  }, [me.data, router]);
+  }, [needsPassword, router]);
 
   if (hasToken === null || hasToken === false || sessionExpired) {
     return <DashboardPageSkeleton />;
@@ -65,7 +70,7 @@ export function AuthGate({ children }: AuthGateProps) {
     );
   }
 
-  if (me.isLoading || !me.data || !me.data.hasPassword) {
+  if (me.isLoading || !me.data || needsPassword) {
     return <DashboardPageSkeleton />;
   }
 

@@ -59,6 +59,7 @@ describe("media upload and delivery", () => {
             env: {
               MEDIA_LOCAL_DIR: directory,
               MEDIA_PUBLIC_BASE_URL: "https://api.example.com",
+              JWT_SECRET: "test-private-media-signing-secret",
             },
           },
         },
@@ -119,6 +120,37 @@ describe("media upload and delivery", () => {
     const second = await upload().expect(201);
     expect(second.body.data.id).toBe(first.body.data.id);
     expect(await readdir(directory)).toHaveLength(1);
+  });
+
+  it("serves private files only with a short-lived signed URL and never caches them publicly", async () => {
+    const uploaded = await request(app.getHttpServer())
+      .post("/api/v1/media/private/upload")
+      .set("Authorization", "Bearer test")
+      .attach("file", png, "credential.png")
+      .expect(201);
+    expect(uploaded.body.data.url).toContain("signature=");
+    expect(records[0].isPrivate).toBe(true);
+    const storage = app.get(MediaStorageService);
+    const id = String(records[0]._id);
+    await request(app.getHttpServer()).get(`/media/${id}/file`).expect(404);
+    const url = new URL(storage.privateUrl(id));
+    await request(app.getHttpServer())
+      .get(url.pathname + url.search)
+      .expect(200)
+      .expect("Cache-Control", "private, no-store");
+    url.searchParams.set("signature", "0".repeat(64));
+    await request(app.getHttpServer())
+      .get(url.pathname + url.search)
+      .expect(404);
+    const expired = new URL(storage.privateUrl(id));
+    expired.searchParams.set("expires", String(Date.now() - 1));
+    await request(app.getHttpServer())
+      .get(expired.pathname + expired.search)
+      .expect(404);
+    const otherFile = new URL(storage.privateUrl("507f1f77bcf86cd799439099"));
+    await request(app.getHttpServer())
+      .get(url.pathname + otherFile.search)
+      .expect(404);
   });
 
   it("requires authentication and rejects missing, oversized, or disguised files", async () => {

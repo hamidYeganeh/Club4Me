@@ -1,4 +1,5 @@
 "use client";
+import { IranDateInput } from "@repo/ui/iran-date-input";
 
 import { useId, type ReactNode } from "react";
 import { Button, toast } from "@heroui/react";
@@ -149,7 +150,7 @@ export function CoachProfessionalFields({
       </Group>
       <Group
         title="مدارک و صلاحیت‌ها"
-        description="جزئیات مدارک در پروفایل نمایش داده می‌شود. ثبت مدرک به معنی تأیید اصالت آن نیست؛ تصویر مدرک در صفحه عمومی نمایش داده نمی‌شود."
+        description="عنوان مدارک در پروفایل نمایش داده می‌شود؛ تصویر از زمان بارگذاری خصوصی است و فقط شما و بازبین مجاز به آن دسترسی دارید. ثبت مدرک به معنی تأیید اصالت نیست."
       >
         {value.credentials.map((row, index) => (
           <fieldset
@@ -181,7 +182,7 @@ export function CoachProfessionalFields({
                 placeholder="۱۴۰۳"
               />
               <Text
-                label="تاریخ انقضا (میلادی)"
+                label="تاریخ انقضا (شمسی)"
                 value={row.expiresOn}
                 onChange={(expiresOn) =>
                   updateRow("credentials", index, { expiresOn })
@@ -475,7 +476,15 @@ function Text({
       <label htmlFor={id} className="text-sm font-bold">
         {label}
       </label>
-      {multiline ? (
+      {type === "date" ? (
+        <IranDateInput
+          id={id}
+          value={value}
+          onValueChange={onChange}
+          required={required}
+          className={control}
+        />
+      ) : multiline ? (
         <textarea {...props} rows={3} />
       ) : (
         <input

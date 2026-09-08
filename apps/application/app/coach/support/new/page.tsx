@@ -1,0 +1,4 @@
+import { SupportTicketsScreen } from "@modules/support/screens/SupportTicketsScreen";
+export default function Page() {
+  return <SupportTicketsScreen role="coach" view="new" />;
+}

@@ -1,3 +1,4 @@
+import { ClubAccessService } from "../clubs/club-access.service";
 import { Inject, Injectable } from "@nestjs/common";
 
 import { AppError } from "../../common/errors/app.exception";
@@ -38,11 +39,12 @@ export class AuthService {
     private readonly sessions: AuthSessionsService,
     private readonly config: AppConfigService,
     @Inject(SMS_PROVIDER) private readonly smsProvider: SmsProvider,
+    private readonly clubAccess: ClubAccessService,
   ) {}
 
   async requestLoginOtp(
     phone: string,
-    requiredRole?: UserRole,
+    requiredRole?: UserRole | "business",
   ): Promise<{ expiresIn: number }> {
     if (requiredRole) {
       await this.requirePortalUser(phone, requiredRole);
@@ -58,7 +60,7 @@ export class AuthService {
   async confirmLoginOtp(
     phone: string,
     code: string,
-    requiredRole?: UserRole,
+    requiredRole?: UserRole | "business",
   ): Promise<ClientAuthResult> {
     if (requiredRole) {
       await this.requirePortalUser(phone, requiredRole);
@@ -70,7 +72,7 @@ export class AuthService {
       : await this.usersService.findOrCreateByPhone(phone);
 
     if (requiredRole) {
-      this.assertRole(user, requiredRole);
+      await this.assertRole(user, requiredRole);
     }
 
     return this.toClientAuth(await this.issueAuth(user));
@@ -79,12 +81,12 @@ export class AuthService {
   async loginWithPassword(
     phone: string,
     password: string,
-    requiredRole?: UserRole,
+    requiredRole?: UserRole | "business",
   ): Promise<ClientAuthResult> {
     const user = await this.usersService.authenticate(phone, password);
 
     if (requiredRole) {
-      this.assertRole(user, requiredRole);
+      await this.assertRole(user, requiredRole);
     }
 
     return this.toClientAuth(await this.issueAuth(user));
@@ -100,7 +102,7 @@ export class AuthService {
 
   async requestPasswordReset(
     phone: string,
-    requiredRole?: UserRole,
+    requiredRole?: UserRole | "business",
   ): Promise<{ expiresIn: number }> {
     if (requiredRole) {
       await this.requirePortalUser(phone, requiredRole);
@@ -121,7 +123,7 @@ export class AuthService {
     phone: string,
     code: string,
     password: string,
-    requiredRole?: UserRole,
+    requiredRole?: UserRole | "business",
   ): Promise<ClientAuthResult> {
     if (requiredRole) {
       await this.requirePortalUser(phone, requiredRole);
@@ -131,7 +133,7 @@ export class AuthService {
     const user = await this.usersService.resetPassword(phone, password);
 
     if (requiredRole) {
-      this.assertRole(user, requiredRole);
+      await this.assertRole(user, requiredRole);
     }
 
     return this.toClientAuth(await this.issueAuth(user));
@@ -139,7 +141,7 @@ export class AuthService {
 
   async refreshAuth(
     refreshToken: string,
-    requiredRole?: UserRole,
+    requiredRole?: UserRole | "business",
   ): Promise<ClientAuthResult> {
     let payload;
 
@@ -156,7 +158,7 @@ export class AuthService {
     const user = await this.usersService.findById(payload.sub);
 
     if (requiredRole) {
-      this.assertRole(user, requiredRole);
+      await this.assertRole(user, requiredRole);
     }
 
     const tokens = this.tokenService.signTokenPair({
@@ -190,10 +192,14 @@ export class AuthService {
     return { success: true };
   }
 
-  async deleteAccount(userId: string): Promise<{ success: true }> {
+  async loginUserById(userId: string): Promise<ClientAuthResult> {
+    return this.toClientAuth(await this.issueAuth(await this.usersService.findById(userId)));
+  }
+
+  async deleteAccount(userId: string): Promise<{ success: true; deletedAt: string; receiptId: string }> {
     await this.sessions.revokeUserSessions(userId);
-    await this.usersService.deleteAccount(userId);
-    return { success: true };
+    const receipt = await this.usersService.deleteAccount(userId);
+    return { success: true, ...receipt };
   }
 
   getMe(userId: string): Promise<PublicUser> {
@@ -343,14 +349,22 @@ export class AuthService {
 
   private async requirePortalUser(
     phone: string,
-    role: UserRole,
+    role: UserRole | "business",
   ): Promise<PublicUser> {
     const user = await this.usersService.requireByPhone(phone);
-    this.assertRole(user, role);
+    await this.assertRole(user, role);
     return user;
   }
 
-  private assertRole(user: PublicUser, role: UserRole): void {
+  private async assertRole(
+    user: PublicUser,
+    role: UserRole | "business",
+  ): Promise<void> {
+    if (role === "business") {
+      if (!(await this.clubAccess.hasPortalAccess(user.id, user.roles)))
+        throw new AppError(403, "FORBIDDEN", "Access denied");
+      return;
+    }
     if (!user.roles.includes(role)) {
       throw new AppError(403, "FORBIDDEN", "Access denied");
     }

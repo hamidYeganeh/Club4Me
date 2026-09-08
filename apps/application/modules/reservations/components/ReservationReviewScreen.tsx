@@ -1,5 +1,7 @@
 "use client";
+import { TaskStatusIntro } from "@/components/task-status-intro";
 
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import type { ReactNode } from "react";
 import { Button, Card } from "@heroui/react";
 import { Icon } from "@theme/icon";
@@ -25,7 +27,9 @@ export type ReservationReviewSession = {
   address?: string | null;
   participantCount: number;
   amount: number;
+  pricingUnit?: "per_participant" | "per_session" | "per_court";
   currency: string;
+  includedTaxAmount?: number;
   paymentLabel?: string;
   coveredAmount?: number;
   cancellationPolicy?: {
@@ -62,22 +66,20 @@ export function ReservationReviewScreen({
   return (
     <main className="min-h-dvh bg-background pb-[calc(2rem+env(safe-area-inset-bottom))] text-foreground">
       <div className="mx-auto w-full max-w-xl px-5">
-        <header className="flex items-center justify-between pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
-          <Button
-            isIconOnly
-            variant="ghost"
-            aria-label="بازگشت به انتخاب سانس"
-            onPress={onBack}
-          >
-            <Icon name="chevron-right" size={22} />
-          </Button>
-          <h1 className="text-lg font-black">مرور رزرو</h1>
-          <span className="size-10" aria-hidden />
-        </header>
+        <SecondaryHeader
+          title="مرور رزرو"
+          showFilter={false}
+          onBack={onBack}
+          backLabel="بازگشت به انتخاب سانس"
+        />
 
+        <div className="mb-5"><TaskStatusIntro title="یک بررسی کوتاه پیش از رزرو">زمان، محل و مبلغ نهایی را بررسی کنید و سپس ادامه دهید.</TaskStatusIntro></div>
         <ol className="mb-8 grid grid-cols-3" aria-label="مراحل رزرو">
           {["انتخاب", "زمان", "تأیید و پرداخت"].map((label, index) => (
-            <li key={label} className="relative flex flex-col items-center gap-2">
+            <li
+              key={label}
+              className="relative flex flex-col items-center gap-2"
+            >
               {index > 0 ? (
                 <span className="absolute end-1/2 top-3 h-0.5 w-full bg-accent" />
               ) : null}
@@ -187,7 +189,13 @@ export function ReservationReviewScreen({
           <Card className="app-card overflow-hidden shadow-none">
             <Card.Content className="divide-y divide-foreground/8 p-0">
               <PriceRow
-                label={`${session.participantCount.toLocaleString("fa-IR")} × ${session.title}`}
+                label={
+                  session.pricingUnit === "per_court"
+                    ? `کل زمین · ${session.title}`
+                    : session.pricingUnit === "per_session"
+                      ? `کل سانس · ${session.title}`
+                      : `${session.participantCount.toLocaleString("fa-IR")} نفر · ${session.title}`
+                }
                 value={formatMoney(session.amount, session.currency)}
               />
               {coveredAmount > 0 ? (
@@ -195,6 +203,15 @@ export function ReservationReviewScreen({
                   label="اعتبار بسته یا عضویت"
                   value={`−${formatMoney(coveredAmount, session.currency)}`}
                   accent
+                />
+              ) : null}
+              {(session.includedTaxAmount ?? 0) > 0 ? (
+                <PriceRow
+                  label="مالیات لحاظ‌شده در مبلغ"
+                  value={formatMoney(
+                    session.includedTaxAmount!,
+                    session.currency,
+                  )}
                 />
               ) : null}
               <PriceRow
@@ -300,12 +317,12 @@ function cancellationCopy(
   policy: ReservationReviewSession["cancellationPolicy"],
 ) {
   const title = policy?.title?.trim();
-  const fullRefundTier = policy?.tiers
-    ?.filter((tier) => tier.refundPercent === 100)
-    .sort((a, b) => a.hoursBefore - b.hoursBefore)[0];
-  if (fullRefundTier && fullRefundTier.hoursBefore > 0) {
-    return `${title ? `${title}: ` : ""}لغو تا ${fullRefundTier.hoursBefore.toLocaleString("fa-IR")} ساعت پیش از شروع سانس با بازپرداخت کامل انجام می‌شود.`;
-  }
-  if (title) return `شرایط لغو و بازپرداخت مطابق «${title}» محاسبه می‌شود.`;
-  return "مبلغ بازپرداخت بر اساس زمان باقی‌مانده تا شروع سانس محاسبه می‌شود.";
+  const tiers = [...(policy?.tiers ?? [])].sort(
+    (a, b) => b.hoursBefore - a.hoursBefore,
+  );
+  if (!tiers.length)
+    return (
+      title || "شرایط لغو مشخص نشده است؛ پیش از پرداخت با پشتیبانی هماهنگ کنید."
+    );
+  return `${title ? `${title}: ` : ""}${tiers.map((tier) => `${tier.hoursBefore > 0 ? `از ${tier.hoursBefore.toLocaleString("fa-IR")} ساعت پیش از شروع` : "نزدیک به زمان شروع"}: ${tier.refundPercent.toLocaleString("fa-IR")}٪ بازپرداخت`).join("؛ ")}.`;
 }

@@ -67,6 +67,7 @@ export class MediaService {
   async upload(
     ownerId: string,
     file?: { buffer: Buffer; mimetype: string },
+    isPrivate = false,
   ): Promise<PublicMedia> {
     const ownerObjectId = toObjectId(ownerId);
     if (!file?.buffer?.length || file.buffer.length > MAX_MEDIA_BYTES) {
@@ -88,7 +89,16 @@ export class MediaService {
     const existing = await this.model
       .findOne({ ownerId: ownerObjectId, hash })
       .exec();
-    if (existing) return this.serialize(existing);
+    if (existing) {
+      if (isPrivate && !existing.isPrivate) {
+        await this.model.updateOne(
+          { _id: existing._id, ownerId: ownerObjectId },
+          { $set: { isPrivate: true } },
+        );
+        existing.isPrivate = true;
+      }
+      return this.serialize(existing);
+    }
     const storageKey = await this.storage.store(file.buffer);
     const id = new Types.ObjectId();
     try {
@@ -97,12 +107,13 @@ export class MediaService {
         ownerId: ownerObjectId,
         hash,
         storageKey,
+        isPrivate,
         url: this.storage.url(String(id)),
         mimeType,
         byteSize: file.buffer.length,
         status: "ready",
       });
-      return toPublic(media);
+      return isPrivate ? this.serialize(media) : toPublic(media);
     } catch (error) {
       await this.storage.remove(storageKey);
       if ((error as { code?: number }).code !== 11000) throw error;
@@ -110,19 +121,30 @@ export class MediaService {
         .findOne({ ownerId: ownerObjectId, hash })
         .exec();
       if (!duplicate) throw error;
+      if (isPrivate && !duplicate.isPrivate) {
+        await this.model.updateOne(
+          { _id: duplicate._id, ownerId: ownerObjectId },
+          { $set: { isPrivate: true } },
+        );
+        duplicate.isPrivate = true;
+      }
       return this.serialize(duplicate);
     }
   }
 
-  async getFile(id: string) {
+  async getFile(id: string, expires?: string, signature?: string) {
     const media = await this.model
       .findOne({ _id: toObjectId(id, "MEDIA_NOT_FOUND"), status: "ready" })
       .exec();
     if (!media?.storageKey)
       throw new AppError(404, "MEDIA_NOT_FOUND", "Media not found");
+    const isPrivate = await this.isRestricted(media);
+    if (isPrivate && !this.storage.allowsPrivateFile(id, expires, signature))
+      throw new AppError(404, "MEDIA_NOT_FOUND", "Media not found");
     return {
       path: this.storage.path(media.storageKey),
       mimeType: media.mimeType,
+      isPrivate,
     };
   }
 
@@ -157,7 +179,7 @@ export class MediaService {
         if (!result.modifiedCount) {
           await this.storage.remove(key);
           const current = await this.model.findById(media._id).exec();
-          if (current) return toPublic(current);
+          if (current) return this.serialize(current);
           throw new AppError(404, "MEDIA_NOT_FOUND", "Media not found");
         }
       } catch (error) {
@@ -166,12 +188,29 @@ export class MediaService {
       }
       Object.assign(media, update);
     }
-    return toPublic(media);
+    const result = toPublic(media);
+    return (await this.isRestricted(media))
+      ? { ...result, url: this.storage.privateUrl(String(media._id)) }
+      : result;
   }
 
-  async list(ownerId: string): Promise<{ items: PublicMedia[] }> {
+  async list(
+    ownerId: string,
+    selectedIds?: string,
+  ): Promise<{ items: PublicMedia[] }> {
+    if (selectedIds !== undefined && typeof selectedIds !== "string")
+      throw new AppError(400, "INVALID_MEDIA_IDS", "Invalid media identifiers");
+    const ids = selectedIds === undefined ? undefined : selectedIds.split(",");
+    if (
+      ids &&
+      (ids.length > 100 || ids.some((id) => !Types.ObjectId.isValid(id)))
+    )
+      throw new AppError(400, "INVALID_MEDIA_IDS", "Invalid media identifiers");
     const items = await this.model
-      .find({ ownerId: toObjectId(ownerId) })
+      .find({
+        ownerId: toObjectId(ownerId),
+        ...(ids ? { _id: { $in: ids.map((id) => toObjectId(id)) } } : {}),
+      })
       .sort({ createdAt: -1 })
       .limit(100)
       .exec();
@@ -180,13 +219,18 @@ export class MediaService {
     };
   }
 
-  async assertOwnedReady(ownerId: string, ids: string[]): Promise<void> {
+  async assertOwnedReady(
+    ownerId: string,
+    ids: string[],
+    allowPrivate = false,
+  ): Promise<void> {
     if (!ids.length) return;
     const objectIds = ids.map((id) => toObjectId(id, "MEDIA_NOT_FOUND"));
     const count = await this.model.countDocuments({
       _id: { $in: objectIds },
       ownerId: toObjectId(ownerId),
       status: "ready",
+      ...(!allowPrivate ? { isPrivate: { $ne: true } } : {}),
     });
     if (count !== new Set(ids).size) {
       throw new AppError(
@@ -201,8 +245,81 @@ export class MediaService {
     if (!ids.length) return [];
     const validIds = ids.filter((id) => Types.ObjectId.isValid(id));
     const items = await this.model
-      .find({ _id: { $in: validIds }, status: "ready" })
+      .find({
+        _id: { $in: validIds },
+        status: "ready",
+        isPrivate: { $ne: true },
+      })
       .exec();
+    const publicItems = [];
+    for (const item of items)
+      if (!(await this.isRestricted(item)))
+        publicItems.push(await this.serialize(item));
+    return publicItems;
+  }
+
+  private async isRestricted(media: MediaDocument) {
+    if (media.isPrivate) return true;
+    // Protect existing credentials immediately, before their next profile edit.
+    const coaches = this.model.db?.models.Coach;
+    const restricted = Boolean(
+      coaches &&
+      (await coaches.exists({
+        "professionalProfile.credentials.mediaId": String(media._id),
+      })),
+    );
+    if (restricted) {
+      await this.model.updateOne(
+        { _id: media._id },
+        { $set: { isPrivate: true } },
+      );
+      media.isPrivate = true;
+    }
+    return restricted;
+  }
+
+  async makePrivate(ownerId: string, ids: string[]) {
+    if (!ids.length) return;
+    await this.assertOwnedReady(ownerId, ids, true);
+    const items = await this.model.find({
+      ownerId: toObjectId(ownerId),
+      _id: { $in: ids.map((id) => toObjectId(id)) },
+    });
+    for (const item of items) {
+      await this.serialize(item);
+      if (!item.storageKey)
+        throw new AppError(
+          400,
+          "PRIVATE_MEDIA_REQUIRES_UPLOAD",
+          "فایل مدرک را مستقیماً بارگذاری کنید؛ لینک بیرونی خصوصی نمی‌شود.",
+        );
+    }
+    await this.model.updateMany(
+      {
+        ownerId: toObjectId(ownerId),
+        _id: { $in: ids.map((id) => toObjectId(id)) },
+      },
+      { $set: { isPrivate: true } },
+    );
+  }
+
+  async retainCredentialPrivacy(ownerId: string, ids: string[]) {
+    if (ids.length)
+      await this.model.updateMany(
+        {
+          ownerId: toObjectId(ownerId),
+          _id: { $in: ids.map((id) => toObjectId(id)) },
+        },
+        { $set: { isPrivate: true } },
+      );
+  }
+
+  /** Only call from the authenticated document-review service. */
+  async getReadyForReview(ids: string[]) {
+    const items = await this.model.find({
+      _id: { $in: ids.filter((id) => Types.ObjectId.isValid(id)) },
+      status: "ready",
+    });
     return Promise.all(items.map((item) => this.serialize(item)));
   }
 }

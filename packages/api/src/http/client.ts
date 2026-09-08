@@ -273,10 +273,12 @@ export async function sessionRequest<T>(
   identity: string,
   method: "PUT" | "DELETE",
   url: string,
+  data?: unknown,
 ): Promise<T> {
   const options: AxiosRequestConfig & { expectedSessionIdentity: string } = {
     method,
     url,
+    data,
     expectedSessionIdentity: identity,
   };
   const response = await getHttpClient().request<ApiSuccess<T>>(options);

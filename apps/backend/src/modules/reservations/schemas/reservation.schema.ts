@@ -40,6 +40,17 @@ export class Reservation {
   @Prop({ type: [ReservedOption], default: [] })
   selectedOptions: ReservedOption[];
   @Prop({ type: Number, required: true, min: 0 }) totalPrice: number;
+  @Prop({ type: String, default: "IRR" }) currency: string;
+  @Prop({
+    type: String,
+    enum: ["per_participant", "per_session", "per_court"],
+    default: "per_participant",
+  })
+  pricingUnit: "per_participant" | "per_session" | "per_court";
+  @Prop({ type: Object, default: null }) priceBreakdown: Record<
+    string,
+    number
+  > | null;
   @Prop({ type: Types.ObjectId, ref: "UserEntitlement", default: null })
   entitlementId: Types.ObjectId | null;
   @Prop({ type: Number, default: 0, min: 0 }) entitlementCoveredAmount: number;
@@ -59,9 +70,26 @@ export class Reservation {
     default: "reserved",
   })
   status: "reserved" | "cancelled" | "completed" | "no_show";
+  @Prop({ type: Date, default: null }) paymentExpiresAt: Date | null;
+  @Prop({ type: Date, default: null }) inventoryReleasedAt: Date | null;
+  @Prop({ type: String, default: null }) cancellationReason: string | null;
   @Prop({ type: Date, default: null }) cancelledAt: Date | null;
+  @Prop({ type: Types.ObjectId, default: null })
+  rescheduledFromId: Types.ObjectId | null;
+  @Prop({ type: Types.ObjectId, default: null })
+  rescheduledToId: Types.ObjectId | null;
+  @Prop({ type: String, default: null }) rescheduleKey: string | null;
   @Prop({ type: Date, default: null }) reminder24hSentAt: Date | null;
   @Prop({ type: Date, default: null }) reminder2hSentAt: Date | null;
+  @Prop({ type: Number, default: 0, min: 0 }) checkedInParticipants: number;
+  @Prop({ type: Date, default: null }) checkedInAt: Date | null;
+  @Prop({ type: [Object], default: [] }) checkInChanges: Array<{
+    actorId: string;
+    at: Date;
+    before: number;
+    after: number;
+    reason: string;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,3 +112,5 @@ ReservationSchema.index(
     },
   },
 );
+
+ReservationSchema.index({ paymentStatus: 1, status: 1, paymentExpiresAt: 1 });

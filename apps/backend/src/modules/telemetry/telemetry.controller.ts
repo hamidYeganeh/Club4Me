@@ -56,6 +56,18 @@ export class TelemetryController {
   }
 }
 
+@Controller("api/v1/public/telemetry")
+@Throttle({ default: { limit: 90, ttl: 60_000 } })
+export class PublicTelemetryController {
+  constructor(private readonly telemetry: TelemetryService) {}
+
+  @Post("events")
+  @HttpCode(HttpStatus.ACCEPTED)
+  track(@Body() body: TrackTelemetryDto) {
+    return this.telemetry.trackAnonymous(body);
+  }
+}
+
 @Controller("api/v1/admin/analytics")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles("admin")

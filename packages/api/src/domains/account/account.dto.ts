@@ -157,3 +157,9 @@ export type LogoutResponse = {
 };
 
 export type AccountMeResponse = AccountUser;
+export type PrivacyPurpose = "analytics" | "precise_location" | "training_results" | "marketing";
+export type AccountPrivacyResponse = {
+  policyVersion: string;
+  purposes: Array<{ id: PrivacyPurpose; required: boolean; label: string }>;
+  items: Array<{ purpose: PrivacyPurpose; version: string; granted: boolean; decidedAt: string }>;
+};

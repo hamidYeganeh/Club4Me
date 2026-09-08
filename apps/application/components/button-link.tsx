@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/app-link";
 import { buttonVariants, type ButtonVariants } from "@heroui/styles";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 

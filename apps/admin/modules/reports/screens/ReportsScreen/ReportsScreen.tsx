@@ -20,6 +20,7 @@ import {
   useResolveReport,
 } from "@api/admin";
 import { EntityDetailsModal } from "@ui/entity-details-modal";
+import { NotificationDeliverySection } from "./NotificationDeliverySection";
 
 const targetLabels = { club: "باشگاه", coach: "مربی", class: "کلاس" } as const;
 
@@ -201,6 +202,7 @@ export function ReportsScreen() {
           </Table>
         )}
       </Card>
+      <NotificationDeliverySection />
       <EntityDetailsModal
         isOpen={Boolean(selected)}
         onOpenChange={(isOpen) => {

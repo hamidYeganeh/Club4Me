@@ -28,7 +28,7 @@ export function getRolePath(role: ApplicationRole): string {
 export function getPostAuthPath(
   user: Pick<AccountUser, "hasPassword" | "roles">,
 ): string {
-  if (!user.hasPassword) {
+  if (!user.hasPassword && !user.roles.includes("athlete")) {
     return SET_PASSWORD_PATH;
   }
 

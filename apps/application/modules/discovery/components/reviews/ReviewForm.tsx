@@ -1,16 +1,9 @@
 "use client";
 
 import { FormEvent, useId, useState } from "react";
-import { Button, Card, TextArea } from "@heroui/react";
-import { Icon, type IconName } from "@theme/icon";
-
-const experiences: Array<{ icon: IconName; label: string }> = [
-  { icon: "smile-depressed", label: "خیلی بد" },
-  { icon: "smile-sad", label: "بد" },
-  { icon: "smile-neutral", label: "معمولی" },
-  { icon: "smile-happy", label: "خوب" },
-  { icon: "smile-overjoyed", label: "عالی" },
-];
+import { Button, Card, TextArea, toast } from "@heroui/react";
+import { useCreateMedia } from "@api";
+import { Icon } from "@theme/icon";
 
 export function ReviewForm({
   entityName,
@@ -24,27 +17,29 @@ export function ReviewForm({
   onSubmit: (value: {
     rating: number;
     body: string;
-    experience: number;
     ratings: Record<string, number>;
+    mediaIds: string[];
   }) => Promise<void> | void;
 }) {
   const bodyId = useId();
   const [rating, setRating] = useState(0);
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [body, setBody] = useState("");
-  const [experience, setExperience] = useState(0);
+  const [mediaIds, setMediaIds] = useState<string[]>([]);
+  const [mediaNames, setMediaNames] = useState<string[]>([]);
+  const upload = useCreateMedia();
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (isPending || !rating || !body.trim()) return;
     await onSubmit({
       rating,
       body: body.trim(),
-      experience,
       ratings: Object.fromEntries(
         Object.entries(ratings).filter(([id]) =>
           criteria.some((c) => c.id === id),
         ),
       ),
+      mediaIds,
     });
   };
 
@@ -138,56 +133,80 @@ export function ReviewForm({
           </div>
         </div>
 
-        <fieldset disabled={isPending}>
-          <legend className="text-sm font-bold">
-            تجربه کلی شما{" "}
-            <span className="font-normal text-muted">(اختیاری)</span>
-          </legend>
-          <div className="mt-3 grid grid-cols-5 gap-1 rounded-2xl bg-surface-secondary p-2">
-            {experiences.map((item, index) => (
-              <Button
-                type="button"
-                key={item.label}
-                variant="ghost"
-                aria-label={item.label}
-                aria-pressed={experience === index + 1}
-                onPress={() => setExperience(index + 1)}
-                className={`h-auto! min-w-0 flex-col gap-2 rounded-xl px-1 py-3 ${experience === index + 1 ? "bg-accent text-accent-foreground" : "text-muted"}`}
-              >
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="size-7 shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
+        <div className="space-y-2">
+          <label
+            className="block text-sm font-bold"
+            htmlFor={`${bodyId}-media`}
+          >
+            تصویر تجربه{" "}
+            <span className="font-normal text-muted">
+              (اختیاری، حداکثر ۳ تصویر)
+            </span>
+          </label>
+          <input
+            id={`${bodyId}-media`}
+            className="block w-full rounded-xl border border-border bg-surface-secondary p-3 text-sm"
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={isPending || upload.isPending || mediaIds.length >= 3}
+            onChange={async (event) => {
+              const files = Array.from(event.target.files ?? []).slice(
+                0,
+                3 - mediaIds.length,
+              );
+              if (!files.length) return;
+              try {
+                const uploaded = [] as Array<{ id: string; name: string }>;
+                for (const file of files) {
+                  const item = await upload.mutateAsync(file);
+                  uploaded.push({ id: item.id, name: file.name });
+                }
+                setMediaIds((current) => [
+                  ...current,
+                  ...uploaded.map((item) => item.id),
+                ]);
+                setMediaNames((current) => [
+                  ...current,
+                  ...uploaded.map((item) => item.name),
+                ]);
+              } catch {
+                toast.danger("بارگذاری تصویر انجام نشد");
+              } finally {
+                event.target.value = "";
+              }
+            }}
+          />
+          {mediaNames.length ? (
+            <div className="flex flex-wrap gap-2">
+              {mediaNames.map((name, index) => (
+                <Button
+                  key={`${name}-${index}`}
+                  size="sm"
+                  variant="secondary"
+                  onPress={() => {
+                    setMediaIds((current) =>
+                      current.filter((_, i) => i !== index),
+                    );
+                    setMediaNames((current) =>
+                      current.filter((_, i) => i !== index),
+                    );
+                  }}
                 >
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M8 9h.01M16 9h.01" strokeWidth="2.7" />
-                  <path
-                    d={
-                      index < 2
-                        ? "M8 16q4-5 8 0"
-                        : index === 2
-                          ? "M8 15h8"
-                          : "M8 14q4 5 8 0"
-                    }
-                  />
-                </svg>
-                <span className="text-[10px] sm:text-xs">{item.label}</span>
-              </Button>
-            ))}
-          </div>
-        </fieldset>
+                  {name} ×
+                </Button>
+              ))}
+            </div>
+          ) : null}
+        </div>
 
         <Button
           type="submit"
           variant="primary"
           size="lg"
           className="w-full font-bold"
-          isDisabled={isPending || !rating || !body.trim()}
-          isPending={isPending}
+          isDisabled={isPending || upload.isPending || !rating || !body.trim()}
+          isPending={isPending || upload.isPending}
         >
           ثبت نظر
           <Icon name="arrow-left" size={18} />

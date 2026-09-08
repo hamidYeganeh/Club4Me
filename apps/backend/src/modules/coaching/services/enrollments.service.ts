@@ -1,3 +1,10 @@
+import { paymentDeadline } from "../../commerce/payment-deadline";
+import {
+  Atomic,
+  inAtomicOperation,
+} from "../../../infrastructure/database/atomic-operation";
+import { CommerceService } from "../../commerce/commerce.service";
+import { assertMockPaymentsEnabled } from "../../commerce/mock-payment-policy";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
@@ -25,6 +32,7 @@ export class EnrollmentsService {
     private readonly coaches: CoachesService,
     private readonly users: UsersRepository,
     private readonly notifications: NotificationsService,
+    private readonly commerce: CommerceService,
   ) {}
 
   async list(userId: string, classId: string) {
@@ -71,6 +79,7 @@ export class EnrollmentsService {
     return this.createEnrollment(athleteUserId, classId, athleteUserId, false);
   }
 
+  @Atomic("enrollments")
   async cancelByAthlete(athleteUserId: string, enrollmentId: string) {
     const enrollment = await this.enrollments
       .findOne({
@@ -120,6 +129,12 @@ export class EnrollmentsService {
       );
     }
     await this.releaseCapacity(cancelled.classId);
+    if (refundAmount > 0)
+      await this.commerce.refundCoaching(
+        "coach_class_enrollment",
+        cancelled._id,
+        refundAmount,
+      );
     await this.notifications.notifyBookingCancelled({
       userId: cancelled.athleteId,
       bookingId: cancelled._id,
@@ -128,92 +143,40 @@ export class EnrollmentsService {
     return serializeEnrollment(cancelled, trainingClass);
   }
 
-  async approveMockPayment(athleteUserId: string, enrollmentId: string) {
+  async approveMockPayment(userId: string, enrollmentId: string) {
+    return this.resolvePayment(userId, enrollmentId, "paid");
+  }
+  async rejectMockPayment(userId: string, enrollmentId: string) {
+    return this.resolvePayment(userId, enrollmentId, "failed");
+  }
+  private async resolvePayment(
+    userId: string,
+    enrollmentId: string,
+    status: "paid" | "failed",
+  ) {
+    assertMockPaymentsEnabled();
     const enrollment = await this.requireAthleteEnrollment(
-      athleteUserId,
+      userId,
       enrollmentId,
     );
-    const trainingClass = await this.classes
-      .findById(enrollment.classId)
-      .exec();
-    if (!trainingClass) {
-      throw new AppError(404, "CLASS_NOT_FOUND", "Class not found");
-    }
-    if (enrollment.paymentStatus === "paid") {
-      return serializeEnrollment(enrollment, trainingClass);
-    }
-    const status =
-      trainingClass.enrollmentMode === "automatic" ? "active" : "pending";
-    const paid = await this.enrollments
-      .findOneAndUpdate(
-        {
-          _id: enrollment._id,
-          athleteId: objectId(athleteUserId),
-          status: "pending",
-          paymentStatus: "pending",
-        },
-        { $set: { paymentStatus: "paid", status } },
-        { new: true },
-      )
-      .exec();
-    if (!paid) {
-      throw new AppError(
-        409,
-        "PAYMENT_NOT_PENDING",
-        "Enrollment does not have a pending payment",
-      );
-    }
-    if (paid.status === "active") {
-      await this.notifications.notifyBookingConfirmed({
-        userId: paid.athleteId,
-        bookingId: paid._id,
-        title: trainingClass.title,
+    if (enrollment.paymentStatus !== status) {
+      const intent = await this.commerce.createIntent(userId, {
+        referenceType: "coach_class_enrollment",
+        referenceId: enrollmentId,
+        idempotencyKey: `coach-class-${enrollmentId}-${enrollment.registeredAt.getTime()}`,
+        walletAmount: 0,
+        returnUrl: "https://app.gym4me.ir/athlete/classes",
       });
+      await this.commerce.simulate(userId, intent.id, status);
     }
-    return serializeEnrollment(paid, trainingClass);
+    const current = await this.requireAthleteEnrollment(userId, enrollmentId);
+    const trainingClass = await this.classes.findById(current.classId).exec();
+    if (!trainingClass)
+      throw new AppError(404, "CLASS_NOT_FOUND", "کلاس پیدا نشد.");
+    return serializeEnrollment(current, trainingClass);
   }
 
-  async rejectMockPayment(athleteUserId: string, enrollmentId: string) {
-    const rejected = await this.enrollments
-      .findOneAndUpdate(
-        {
-          _id: objectId(enrollmentId, "ENROLLMENT_NOT_FOUND"),
-          athleteId: objectId(athleteUserId, "ATHLETE_NOT_FOUND"),
-          status: "pending",
-          paymentStatus: "pending",
-        },
-        {
-          $set: {
-            status: "rejected",
-            paymentStatus: "failed",
-            cancelledAt: new Date(),
-            refundPercent: 0,
-            refundAmount: 0,
-          },
-        },
-        { new: true },
-      )
-      .exec();
-    if (!rejected) {
-      throw new AppError(
-        409,
-        "PAYMENT_NOT_PENDING",
-        "Enrollment does not have a pending payment",
-      );
-    }
-    const trainingClass = await this.classes.findById(rejected.classId).exec();
-    if (!trainingClass) {
-      throw new AppError(404, "CLASS_NOT_FOUND", "Class not found");
-    }
-    await this.releaseCapacity(rejected.classId);
-    await this.notifications.notifyPaymentFailed({
-      userId: rejected.athleteId,
-      paymentId: rejected._id,
-      title: trainingClass.title,
-    });
-    return serializeEnrollment(rejected, trainingClass);
-  }
-
+  @Atomic("enrollments")
   async updateStatus(
     userId: string,
     enrollmentId: string,
@@ -262,6 +225,22 @@ export class EnrollmentsService {
       enrollment.cancelledAt = undefined;
     }
     enrollment.status = status;
+    if (
+      wasOccupying &&
+      !willOccupy &&
+      enrollment.paymentStatus === "paid" &&
+      ["rejected", "cancelled"].includes(status)
+    ) {
+      const amount = enrollment.priceSnapshot.amount;
+      await this.commerce.refundCoaching(
+        "coach_class_enrollment",
+        enrollment._id,
+        amount,
+      );
+      enrollment.refundAmount = amount;
+      enrollment.refundPercent = 100;
+      enrollment.paymentStatus = "refunded";
+    }
     await enrollment.save();
     const trainingClass = await this.classes
       .findById(enrollment.classId)
@@ -285,6 +264,7 @@ export class EnrollmentsService {
     return serializeEnrollment(enrollment);
   }
 
+  @Atomic("enrollments")
   private async createEnrollment(
     actorUserId: string,
     classId: string,
@@ -305,6 +285,13 @@ export class EnrollmentsService {
       );
     }
     const now = new Date();
+    if (trainingClass.courseStartAt <= now) {
+      throw new AppError(
+        409,
+        "REGISTRATION_CLOSED",
+        "زمان ثبت‌نام این دوره گذشته است.",
+      );
+    }
     if (
       !byCoach &&
       trainingClass.registrationStartAt &&
@@ -358,6 +345,9 @@ export class EnrollmentsService {
         status,
         priceSnapshot: trainingClass.price,
         paymentStatus: requiresPayment ? "pending" : "not_required",
+        paymentExpiresAt: requiresPayment
+          ? paymentDeadline(trainingClass.courseStartAt)
+          : null,
         createdBy: objectId(actorUserId, "USER_NOT_FOUND"),
         registeredAt: now,
         cancelledAt: undefined,
@@ -386,6 +376,11 @@ export class EnrollmentsService {
       }
       return serializeEnrollment(created, trainingClass);
     } catch (error) {
+      if (inAtomicOperation()) {
+        if (isDuplicateKey(error))
+          throw new AppError(409, "ALREADY_ENROLLED", "ثبت‌نام تکراری است.");
+        throw error;
+      }
       await this.classes.updateOne(
         { _id: trainingClass._id, enrollmentCount: { $gt: 0 } },
         { $inc: { enrollmentCount: -1 } },

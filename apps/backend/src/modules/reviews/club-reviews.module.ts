@@ -16,11 +16,22 @@ import {
   ReservationSchema,
 } from "../reservations/schemas/reservation.schema";
 import { MediaModule } from "../media/media.module";
+import {
+  AdminServiceReviewsController,
+  PublicServiceReviewsController,
+  ServiceReviewsController,
+} from "./service-reviews.controller";
+import { ServiceReviewsService } from "./service-reviews.service";
+import {
+  ServiceReview,
+  ServiceReviewSchema,
+} from "./schemas/service-review.schema";
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: ClubReview.name, schema: ClubReviewSchema },
+      { name: ServiceReview.name, schema: ServiceReviewSchema },
       { name: Reservation.name, schema: ReservationSchema },
     ]),
     AuthModule,
@@ -32,7 +43,10 @@ import { MediaModule } from "../media/media.module";
     PublicClubReviewsController,
     ClubReviewsController,
     BusinessClubReviewsController,
+    PublicServiceReviewsController,
+    ServiceReviewsController,
+    AdminServiceReviewsController,
   ],
-  providers: [ClubReviewsService],
+  providers: [ClubReviewsService, ServiceReviewsService],
 })
 export class ClubReviewsModule {}

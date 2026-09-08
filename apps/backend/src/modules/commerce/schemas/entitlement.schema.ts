@@ -18,6 +18,13 @@ export class BenefitProduct {
   sessionCount: number | null;
   @Prop({ type: Number, required: true, min: 1, max: 730 })
   validityDays: number;
+  @Prop({ type: Number, default: 0, min: 0, max: 90 }) maxPauseDays: number;
+  @Prop({
+    type: String,
+    enum: ["iso_utc", "iran_saturday"],
+    default: "iso_utc",
+  })
+  weekCalendar: "iso_utc" | "iran_saturday";
   @Prop({ type: Number, default: null, min: 1, max: 50 })
   weeklyLimit: number | null;
   @Prop({
@@ -45,6 +52,7 @@ export class BenefitPurchase {
   @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
   userId: Types.ObjectId;
   @Prop({ type: Number, required: true, min: 1 }) amount: number;
+  @Prop({ type: Object, default: null }) productSnapshot: BenefitProduct | null;
   @Prop({
     type: String,
     enum: ["pending", "paid", "failed", "refunded"],
@@ -53,6 +61,14 @@ export class BenefitPurchase {
   status: "pending" | "paid" | "failed" | "refunded";
   @Prop({ type: Types.ObjectId, ref: "UserEntitlement", default: null })
   entitlementId: Types.ObjectId | null;
+  @Prop({ type: Types.ObjectId, ref: "UserEntitlement", default: null })
+  renewedFromId: Types.ObjectId | null;
+  @Prop({
+    type: String,
+    enum: ["immediate", "after_expiry"],
+    default: "immediate",
+  })
+  startMode: "immediate" | "after_expiry";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -85,11 +101,36 @@ export class UserEntitlement {
   @Prop({ type: Number, default: null, min: 0 }) remainingSessions:
     number | null;
   @Prop({ type: Number, default: null, min: 1 }) weeklyLimit: number | null;
+  @Prop({
+    type: String,
+    enum: ["iso_utc", "iran_saturday"],
+    default: "iso_utc",
+  })
+  weekCalendar: "iso_utc" | "iran_saturday";
   @Prop({ type: String, default: null }) usageWeekKey: string | null;
   @Prop({ type: Number, default: 0, min: 0 }) weeklyUsed: number;
+  @Prop({ type: Map, of: Number, default: {} })
+  weeklyReservations: Map<string, number>;
   @Prop({ type: [String], default: [] }) sessionTypes: string[];
   @Prop({ type: Date, required: true }) startsAt: Date;
   @Prop({ type: Date, required: true, index: true }) endsAt: Date;
+  @Prop({ type: Number, default: 0 }) maxPauseDays: number;
+  @Prop({ type: Number, default: 0 }) pauseUsedMs: number;
+  @Prop({ type: Date, default: null }) pauseStartedAt: Date | null;
+  @Prop({ type: Date, default: null }) pauseUntil: Date | null;
+  @Prop({ type: Number, default: 0 }) renewalRevision: number;
+  @Prop({ type: Date, default: null }) expiryRemindedFor: Date | null;
+  @Prop({ type: Types.ObjectId, ref: "UserEntitlement", default: null })
+  renewedFromId: Types.ObjectId | null;
+  @Prop({ type: [Object], default: [] }) changes: Array<{
+    action: "pause" | "resume" | "renewal";
+    actorId: string;
+    at: Date;
+    beforeEndsAt: Date;
+    afterEndsAt: Date;
+    pauseUntil?: Date;
+    purchaseId?: string;
+  }>;
   @Prop({
     type: String,
     enum: ["active", "exhausted", "expired", "revoked"],

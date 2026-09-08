@@ -52,6 +52,10 @@ export class AdminSupportController {
   @Get() list(@Query("status") status?: string) {
     return this.support.listAdmin(status);
   }
+  @Get(":ticketId/context")
+  context(@Param("ticketId") ticketId: string) {
+    return this.support.context(ticketId);
+  }
   @Patch(":ticketId")
   update(
     @CurrentUser() user: AuthTokenPayload,

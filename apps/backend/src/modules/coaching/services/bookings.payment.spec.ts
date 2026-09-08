@@ -45,21 +45,33 @@ describe("BookingsService mock payment", () => {
       findById: jest.fn(),
       updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
     };
+    const commerce = {
+      createIntent: jest.fn().mockResolvedValue({ id: "intent" }),
+      simulate: jest.fn().mockImplementation(async (_user, _intent, status) => {
+        bookings.findOne.mockReturnValue({
+          exec: async () =>
+            booking(status === "paid" ? "confirmed" : "rejected", status),
+        });
+        return { status };
+      }),
+    };
     const service = new BookingsService(
       bookings as never,
       sessions as never,
+      {} as never,
       {} as never,
       {} as never,
       {
         notifyBookingConfirmed: jest.fn(),
         notifyPaymentFailed: jest.fn(),
       } as never,
+      commerce as never,
     );
-    return { service, bookings, sessions };
+    return { service, bookings, sessions, commerce };
   }
 
   it("confirms a coach booking after approved payment", async () => {
-    const { service, bookings, sessions } = setup();
+    const { service, bookings, sessions, commerce } = setup();
     bookings.findOne.mockReturnValue({
       exec: jest.fn().mockResolvedValue(booking("pending", "pending")),
     });
@@ -79,9 +91,12 @@ describe("BookingsService mock payment", () => {
   });
 
   it("rejects payment and reopens coach session capacity", async () => {
-    const { service, bookings, sessions } = setup();
+    const { service, bookings, sessions, commerce } = setup();
     bookings.findOneAndUpdate.mockReturnValue({
       exec: jest.fn().mockResolvedValue(booking("rejected", "failed")),
+    });
+    bookings.findOne.mockReturnValue({
+      exec: async () => booking("pending", "pending"),
     });
     sessions.findById.mockReturnValue({
       exec: jest.fn().mockResolvedValue(session),
@@ -93,9 +108,10 @@ describe("BookingsService mock payment", () => {
       status: "rejected",
       paymentStatus: "failed",
     });
-    expect(sessions.updateOne).toHaveBeenCalledWith(
-      { _id: sessionId, bookedCount: { $gt: 0 } },
-      { $inc: { bookedCount: -1 }, $set: { status: "open_for_booking" } },
+    expect(commerce.simulate).toHaveBeenCalledWith(
+      athleteId,
+      "intent",
+      "failed",
     );
   });
 });

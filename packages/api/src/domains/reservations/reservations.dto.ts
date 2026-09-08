@@ -65,6 +65,8 @@ export type ReservableSession = {
   status: "active" | "cancelled" | "completed";
 };
 export type SessionReservation = {
+  rescheduledFromId?: string | null;
+  rescheduledToId?: string | null;
   isTrial?: boolean;
   id: string;
   clubId: string;
@@ -75,6 +77,8 @@ export type SessionReservation = {
   sessionStartsAt: string;
   sessionEndsAt: string;
   participantCount: number;
+  checkedInParticipants?: number;
+  checkedInAt?: string | null;
   selectedOptions: Array<{
     optionId: string;
     type: "equipment" | "amenity";
@@ -83,6 +87,10 @@ export type SessionReservation = {
     unitPrice: number;
   }>;
   totalPrice: number;
+  currency?: string;
+  pricingUnit?: ReservableSession["pricingUnit"];
+  priceBreakdown?: Record<string, number> | null;
+  paymentExpiresAt?: string | null;
   entitlementId: string | null;
   entitlementCoveredAmount: number;
   paymentStatus: "not_required" | "pending" | "paid" | "failed" | "refunded";
@@ -113,6 +121,19 @@ export type CreateCourtPayload = {
   preparationMinutes?: number;
   cleanupMinutes?: number;
 };
+export type UpdateCourtPayload = Partial<
+  Omit<
+    CreateCourtPayload,
+    "courtTypeId" | "surfaceTypeId" | "lengthMeters" | "widthMeters"
+  >
+> & {
+  courtTypeId?: string | null;
+  surfaceTypeId?: string | null;
+  lengthMeters?: number | null;
+  widthMeters?: number | null;
+  status?: ClubCourt["status"];
+  expectedUpdatedAt?: string;
+};
 export type CreateSessionPayload = {
   title: string;
   courtId?: string;
@@ -137,7 +158,23 @@ export type CreateSessionPayload = {
 export type CreateReservationPayload = {
   isTrial?: boolean;
   sessionId: string;
+  expectedTotalPrice?: number;
+  expectedCurrency?: string;
   participantCount: number;
   entitlementId?: string;
   options?: Array<{ optionId: string; quantity: number }>;
+};
+
+export type ReservationQuote = {
+  sessionId: string;
+  currency: string;
+  pricingUnit: ReservableSession["pricingUnit"];
+  participantCount: number;
+  baseAmount: number;
+  optionsAmount: number;
+  coveredAmount: number;
+  totalPrice: number;
+  taxPercent: number;
+  taxAmount: number;
+  subtotal: number;
 };

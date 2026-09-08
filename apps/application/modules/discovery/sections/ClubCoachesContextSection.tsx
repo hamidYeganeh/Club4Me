@@ -1,7 +1,9 @@
 "use client";
 
 import { usePublicClubClasses } from "@api";
-import Link from "next/link";
+import Link from "@/components/app-link";
+import { useState } from "react";
+import { DiscoveryPagination } from "@modules/discovery/components/DiscoveryPagination";
 
 export function ClubCoachesContextSection({
   clubId,
@@ -10,7 +12,8 @@ export function ClubCoachesContextSection({
   clubId: string;
   timezone: string;
 }) {
-  const classes = usePublicClubClasses({ clubId });
+  const [page, setPage] = useState(1);
+  const classes = usePublicClubClasses({ clubId, page, limit: 20 });
   const items = classes.data?.items ?? [];
   const coaches = [
     ...new Map(
@@ -34,12 +37,12 @@ export function ClubCoachesContextSection({
         </button>
       </div>
     );
-  if (!coaches.length) return null;
+  if (!coaches.length && !classes.data?.total) return null;
   return (
     <section className="mx-auto w-full max-w-4xl space-y-3 px-5 pb-8">
       <h2 className="text-xl font-bold">مربی‌ها در این باشگاه</h2>
       <p className="text-xs text-muted">
-        بر اساس کلاس‌ها و جلسات منتشرشده این باشگاه
+        بر اساس کلاس‌های این صفحه و جلسات منتشرشده این باشگاه
       </p>
       {coaches.map((coach) => {
         const teaching = items.filter((item) => item.coach?.id === coach.id);
@@ -108,6 +111,13 @@ export function ClubCoachesContextSection({
           </article>
         );
       })}
+      <DiscoveryPagination
+        page={page}
+        total={classes.data?.total ?? 0}
+        limit={20}
+        onChange={setPage}
+        pending={classes.isFetching}
+      />
     </section>
   );
 }

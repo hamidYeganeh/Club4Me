@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Card, Chip, Spinner, Table, toast } from "@heroui/react";
-import { useAdminClubs, useReviewClub, useVerifyClub } from "@api/admin";
+import { useAdminClubs, useAdminSupplyQuality, useReviewClub, useUpdateClubSupplyQuality, useVerifyClub } from "@api/admin";
 import type { BusinessClub } from "@api/business";
 import { EntityDetailsModal } from "@ui/entity-details-modal";
 import { useTranslations } from "next-intl";
@@ -12,6 +12,8 @@ export function ClubsScreen() {
   const clubs = useAdminClubs();
   const review = useReviewClub();
   const verification = useVerifyClub();
+  const qualityQueue = useAdminSupplyQuality();
+  const updateQuality = useUpdateClubSupplyQuality();
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<BusinessClub | null>(null);
 
@@ -40,6 +42,7 @@ export function ClubsScreen() {
   return (
     <main className="flex-1 overflow-auto p-4 lg:p-6">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
+      {qualityQueue.data?.items.length ? <Card className="mt-5 rounded-2xl border border-warning/30 bg-warning/8 p-4"><strong>صف کنترل کیفیت عرضه: {qualityQueue.data.items.length.toLocaleString("fa-IR")}</strong><p className="mt-1 text-sm text-muted">موعد بررسی، تازگی برنامه یا علت توقف این باشگاه‌ها نیاز به اقدام دارد.</p></Card> : null}
       <Card
         variant="transparent"
         className="mt-5 overflow-hidden rounded-[1.75rem] border border-border bg-surface"
@@ -157,6 +160,8 @@ export function ClubsScreen() {
                               </Button>
                             </>
                           ) : null}
+                          <Button size="sm" variant={club.qualityStatus === "active" ? "secondary" : "primary"} isPending={updateQuality.isPending} onPress={() => void updateQuality.mutateAsync({ clubId: club.id, status: "active", reasons: [], nextReviewAt: new Date(Date.now() + 90 * 86_400_000).toISOString() }).then(() => toast.success("عرضه تا ۹۰ روز تأیید شد")).catch(() => toast.danger("ثبت کنترل کیفیت انجام نشد"))}>تأیید تازگی</Button>
+                          <Button size="sm" variant="ghost" isDisabled={updateQuality.isPending} onPress={() => { const reason = window.prompt("علت توقف عرضه را بنویسید")?.trim(); if (reason) void updateQuality.mutateAsync({ clubId: club.id, status: "suspended", reasons: [reason] }); }}>توقف عرضه</Button>
                         </div>
                       </Table.Cell>
                     </Table.Row>

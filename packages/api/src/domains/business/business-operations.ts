@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getHttpClient, http } from "../../http/client";
 
@@ -38,6 +39,25 @@ export type ClubManualPayment = EntityBase & {
   method: "cash" | "card" | "transfer" | "other";
   notes: string;
   recordedBy: string;
+  enrollmentId?: string | null;
+  voidedAt?: string | null;
+  voidedBy?: string | null;
+  voidReason?: string;
+  refundedAmount?: number;
+  refunds?: Array<{
+    actorId: string;
+    at: string;
+    paidAt: string;
+    amount: number;
+    method: string;
+    reason: string;
+  }>;
+  allocationChanges?: Array<{
+    actorId: string;
+    at: string;
+    enrollmentId: string;
+    reason: string;
+  }>;
 };
 export type ClubAttendanceRecord = EntityBase & {
   studentId: string;
@@ -77,8 +97,15 @@ export type CreateStudentPayload = Omit<ClubStudent, keyof EntityBase>;
 export type CreateCoachPayload = Omit<ClubCoachProfile, keyof EntityBase>;
 export type CreatePaymentPayload = Omit<
   ClubManualPayment,
-  keyof EntityBase | "recordedBy"
->;
+  | keyof EntityBase
+  | "recordedBy"
+  | "voidedAt"
+  | "voidedBy"
+  | "voidReason"
+  | "allocationChanges"
+  | "refundedAmount"
+  | "refunds"
+> & { idempotencyKey?: string };
 export type UpsertAttendancePayload = Omit<
   ClubAttendanceRecord,
   keyof EntityBase | "recordedBy"
@@ -171,10 +198,27 @@ export function useClubPayments(clubId: string) {
   return useListQuery<ClubManualPayment>(clubId, "payments");
 }
 export function useCreateClubPayment(clubId: string) {
-  return useCreateMutation<CreatePaymentPayload, ClubManualPayment>(
-    clubId,
-    "payments",
-  );
+  const client = useQueryClient();
+  // Keep the same key after an uncertain network result; clear only on acknowledgement.
+  const attempts = useRef(new Map<string, string>());
+  return useMutation({
+    mutationFn: (payload: CreatePaymentPayload) => {
+      const fingerprint = JSON.stringify([clubId, payload]);
+      const key =
+        payload.idempotencyKey ??
+        attempts.current.get(fingerprint) ??
+        crypto.randomUUID();
+      attempts.current.set(fingerprint, key);
+      return http.post<ClubManualPayment>(endpoint(clubId, "payments"), {
+        ...payload,
+        idempotencyKey: key,
+      });
+    },
+    onSuccess: (_result, payload) => {
+      attempts.current.delete(JSON.stringify([clubId, payload]));
+      return client.invalidateQueries({ queryKey: ["business"] });
+    },
+  });
 }
 export function useClubAttendance(clubId: string, date?: string) {
   return useListQuery<ClubAttendanceRecord>(
@@ -302,4 +346,199 @@ export function useImportBusinessOperations(clubId: string) {
 
 function delay(milliseconds: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+}
+
+export type ReceptionResult = {
+  found: boolean;
+  accountMismatch: boolean;
+  person: { studentId: string | null; name: string; phone: string } | null;
+  memberships: Array<{
+    id: string;
+    title: string;
+    type: string;
+    startsAt: string;
+    endsAt: string;
+    status: string;
+    remainingSessions: number | null;
+    weeklyRemaining: number | null;
+    pauseUntil: string | null;
+    weekCalendar: string;
+  }>;
+  reservations: Array<{
+    id: string;
+    title: string;
+    startsAt: string;
+    endsAt: string;
+    status: string;
+    paymentStatus: string;
+    participantCount: number;
+    checkedInParticipants: number;
+    checkedInAt: string | null;
+    checkInOpensAt: string;
+    changes: Array<{
+      actorId: string;
+      at: string;
+      before: number;
+      after: number;
+      reason: string;
+    }>;
+  }>;
+  enrollments: Array<{
+    id: string;
+    classId: string;
+    title: string;
+    status: string;
+    paymentStatus: string;
+    agreedPrice: number;
+    currency: string;
+    remainingSessions: number | null;
+    outstandingAmount: number | null;
+  }>;
+  unallocatedReceiptCount: number;
+};
+export function useReceptionDesk(clubId: string, phone: string) {
+  return useQuery({
+    queryKey: [...keys.root(clubId), "reception", phone],
+    queryFn: () =>
+      http.get<ReceptionResult>(`${root(clubId)}/reception`, { phone }),
+    enabled: Boolean(clubId && phone),
+    refetchInterval: 30000,
+  });
+}
+export function useCheckInClubReservation(clubId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      reservationId,
+      ...body
+    }: {
+      reservationId: string;
+      participantCount: number;
+      expectedParticipantCount: number;
+      reason: string;
+    }) =>
+      http.patch(
+        `/business/clubs/${clubId}/reservations/${reservationId}/check-in`,
+        body,
+      ),
+    onSuccess: () => client.invalidateQueries({ queryKey: keys.root(clubId) }),
+  });
+}
+
+export type StudentClassAccount = {
+  enrollmentId: string;
+  classId: string;
+  studentId: string;
+  title: string;
+  currency: string;
+  status: string;
+  paymentStatus: string;
+  agreedPrice: number;
+  mode: "online" | "ledger" | "legacy";
+  openingPaidAmount: number | null;
+  receiptAmount: number;
+  paidAmount: number | null;
+  waivedAmount: number | null;
+  outstandingAmount: number | null;
+  creditAmount: number | null;
+  revision: number;
+  changes: Array<{
+    actorId: string;
+    at: string;
+    action: string;
+    reason: string;
+    before: Record<string, unknown>;
+    after: Record<string, unknown>;
+  }>;
+};
+export function useStudentAccounts(clubId: string, studentId: string) {
+  return useQuery({
+    queryKey: [...keys.root(clubId), "accounts", studentId],
+    queryFn: () =>
+      http.get<{ items: StudentClassAccount[]; receipts: ClubManualPayment[] }>(
+        `${root(clubId)}/students/${studentId}/accounts`,
+      ),
+    enabled: Boolean(clubId && studentId),
+  });
+}
+export function useAllocateClubReceipt(clubId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      receiptId,
+      ...body
+    }: {
+      receiptId: string;
+      enrollmentId: string;
+      reason: string;
+    }) =>
+      http.patch<ClubManualPayment>(
+        `${root(clubId)}/payments/${receiptId}/allocate`,
+        body,
+      ),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["business"] }),
+  });
+}
+export function useVoidClubReceipt(clubId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      receiptId,
+      reason,
+    }: {
+      receiptId: string;
+      reason: string;
+    }) =>
+      http.patch<ClubManualPayment>(
+        `${root(clubId)}/payments/${receiptId}/void`,
+        { reason },
+      ),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["business"] }),
+  });
+}
+export function useReconcileStudentAccount(clubId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      enrollmentId,
+      ...body
+    }: {
+      enrollmentId: string;
+      openingPaidAmount: number;
+      waivedAmount: number;
+      expectedRevision: number;
+      reason: string;
+    }) =>
+      http.patch(`${root(clubId)}/accounts/${enrollmentId}/reconcile`, body),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["business"] }),
+  });
+}
+
+export function useRefundClubReceipt(clubId: string) {
+  const client = useQueryClient();
+  const attempts = useRef(new Map<string, string>());
+  return useMutation({
+    mutationFn: ({
+      receiptId,
+      ...body
+    }: {
+      receiptId: string;
+      amount: number;
+      paidAt: string;
+      method: string;
+      reason: string;
+    }) => {
+      const fingerprint = JSON.stringify([clubId, receiptId, body]);
+      const key = attempts.current.get(fingerprint) ?? crypto.randomUUID();
+      attempts.current.set(fingerprint, key);
+      return http.post<ClubManualPayment>(
+        `${root(clubId)}/payments/${receiptId}/refunds`,
+        { ...body, idempotencyKey: key },
+      );
+    },
+    onSuccess: () => {
+      attempts.current.clear();
+      return client.invalidateQueries({ queryKey: ["business"] });
+    },
+  });
 }

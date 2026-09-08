@@ -1,3 +1,5 @@
+import { CLUB_PERMISSIONS, STAFF_PERMISSIONS } from "../club-permissions";
+import { iranianPhone } from "../../../common/utils/phone.util";
 import { Types } from "mongoose";
 import { z } from "zod";
 
@@ -7,15 +9,25 @@ const objectId = z
 export class InviteClubMemberDto {
   static schema = z
     .object({
-      userId: objectId,
+      userId: objectId.optional(),
+      phone: iranianPhone.optional(),
       role: z.enum(["manager", "receptionist", "finance", "coach"]),
-      permissions: z
-        .array(z.string().trim().min(2).max(80))
-        .max(100)
-        .default([]),
+      permissions: z.array(z.enum(CLUB_PERMISSIONS)).max(100).default([]),
     })
-    .strict();
-  userId: string;
+    .strict()
+    .refine(
+      (value) => Boolean(value.userId) !== Boolean(value.phone),
+      "Provide phone or userId",
+    )
+    .refine(
+      (value) =>
+        value.permissions.every((p) =>
+          STAFF_PERMISSIONS[value.role].includes(p),
+        ),
+      "Permission exceeds this role",
+    );
+  userId?: string;
+  phone?: string;
   role: "manager" | "receptionist" | "finance" | "coach";
   permissions: string[];
 }

@@ -5,15 +5,30 @@ import { HydratedDocument, Types } from "mongoose";
 export class PaymentIntent {
   @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
   userId: Types.ObjectId;
-  @Prop({ type: Types.ObjectId, ref: "Club", required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: "Club", index: true })
   clubId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, index: true }) providerId?: Types.ObjectId;
+  @Prop({ type: String, enum: ["club", "coach"], default: "club" })
+  providerType: "club" | "coach";
   @Prop({
     type: String,
-    enum: ["reservation", "benefit_purchase", "business_class_enrollment"],
+    enum: [
+      "reservation",
+      "benefit_purchase",
+      "business_class_enrollment",
+      "coach_booking",
+      "coach_class_enrollment",
+      "coach_package_purchase",
+    ],
     required: true,
   })
   referenceType:
-    "reservation" | "benefit_purchase" | "business_class_enrollment";
+    | "reservation"
+    | "benefit_purchase"
+    | "business_class_enrollment"
+    | "coach_booking"
+    | "coach_class_enrollment"
+    | "coach_package_purchase";
   @Prop({ type: Types.ObjectId, required: true, index: true })
   referenceId: Types.ObjectId;
   @Prop({ type: Number, required: true, min: 1 }) amount: number;
@@ -37,6 +52,8 @@ export class PaymentIntent {
   })
   status: "pending" | "paid" | "failed" | "partially_refunded" | "refunded";
   @Prop({ type: Number, default: 0, min: 0 }) refundedAmount: number;
+  @Prop({ type: Number, default: null, min: 0 }) refundedPlatformFee:
+    number | null;
   @Prop({ type: Number, default: 0, min: 0 }) refundedGatewayAmount: number;
   @Prop({ type: Number, default: 0, min: 0 }) refundedWalletAmount: number;
   @Prop({ type: Number, default: 0, min: 0 }) refundedDiscountAmount: number;
@@ -49,6 +66,8 @@ export class PaymentIntent {
   @Prop({ type: Types.ObjectId, ref: "DiscountCampaign", default: null })
   discountCampaignId: Types.ObjectId | null;
   @Prop({ type: String, default: null }) providerRefundId: string | null;
+  @Prop({ type: Date, default: null }) expiresAt: Date | null;
+  @Prop({ type: Date, default: null }) failureFinalizedAt: Date | null;
   @Prop({ type: Date, default: null }) paidAt: Date | null;
   @Prop({ type: Date, default: null }) failedAt: Date | null;
   @Prop({ type: Date, default: null }) reconciledAt: Date | null;
@@ -58,6 +77,7 @@ export class PaymentIntent {
 export type PaymentIntentDocument = HydratedDocument<PaymentIntent>;
 export const PaymentIntentSchema = SchemaFactory.createForClass(PaymentIntent);
 PaymentIntentSchema.index({ userId: 1, idempotencyKey: 1 }, { unique: true });
+PaymentIntentSchema.index({ status: 1, expiresAt: 1 });
 PaymentIntentSchema.index({ referenceType: 1, referenceId: 1, createdAt: -1 });
 
 @Schema({ collection: "payment_callback_events", timestamps: true })
@@ -151,7 +171,8 @@ PayoutRequestSchema.index({ providerId: 1, status: 1, createdAt: -1 });
 export class SettlementAccount {
   @Prop({ type: Types.ObjectId, required: true, unique: true })
   providerId: Types.ObjectId;
-  @Prop({ type: Number, default: 0, min: 0 }) availableAmount: number;
+  // A refund after payout creates debt; future proceeds offset this signed balance.
+  @Prop({ type: Number, default: 0 }) availableAmount: number;
   @Prop({ type: Number, default: 0, min: 0 }) reservedAmount: number;
   updatedAt: Date;
 }

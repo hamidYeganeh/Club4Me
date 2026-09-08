@@ -20,6 +20,15 @@ import { UpdateClubDto } from "./dto/update-club.dto";
 import { ReviewClubDto } from "./dto/review-club.dto";
 import { VerifyClubDto } from "./dto/verify-club.dto";
 import { ClubsService } from "./clubs.service";
+import { z } from "zod";
+
+class UpdateSupplyQualityDto {
+  static schema = z.object({ status: z.enum(["active", "review_required", "suspended"]), reasons: z.array(z.string().trim().min(1).max(120)).max(20).default([]), assigneeId: z.string().regex(/^[a-f\d]{24}$/i).nullable().optional(), nextReviewAt: z.iso.datetime().nullable().optional() }).strict();
+  status: "active" | "review_required" | "suspended";
+  reasons: string[];
+  assigneeId?: string | null;
+  nextReviewAt?: string | null;
+}
 
 @Controller("api/v1/business/clubs")
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -28,8 +37,9 @@ export class ClubsController {
   constructor(private readonly service: ClubsService) {}
 
   @Get()
+  @Roles()
   list(@CurrentUser() user: AuthTokenPayload) {
-    return this.service.list(user.sub);
+    return this.service.listAccessible(user.sub);
   }
 
   @Post()
@@ -39,8 +49,9 @@ export class ClubsController {
   }
 
   @Get(":clubId")
+  @Roles()
   get(@CurrentUser() user: AuthTokenPayload, @Param("clubId") clubId: string) {
-    return this.service.get(user.sub, clubId);
+    return this.service.get(user.sub, clubId, "club.read");
   }
 
   @Patch(":clubId")
@@ -59,6 +70,10 @@ export class ClubsController {
   ) {
     return this.service.submit(user.sub, clubId);
   }
+
+  @Get(":clubId/activation")
+  @Roles()
+  activation(@CurrentUser() user: AuthTokenPayload, @Param("clubId") clubId: string) { return this.service.activation(user.sub, clubId); }
 }
 
 @Controller("api/v1/admin/clubs")
@@ -71,6 +86,10 @@ export class AdminClubsController {
   list() {
     return this.service.listForAdmin();
   }
+
+  @Get("quality/queue") qualityQueue() { return this.service.qualityQueue(); }
+
+  @Patch(":clubId/quality") quality(@CurrentUser() user: AuthTokenPayload, @Param("clubId") clubId: string, @Body() body: UpdateSupplyQualityDto) { return this.service.updateQuality(clubId, user.sub, body); }
 
   @Get(":clubId")
   get(@Param("clubId") clubId: string) {

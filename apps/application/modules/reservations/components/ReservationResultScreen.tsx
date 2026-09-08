@@ -1,4 +1,6 @@
 "use client";
+import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
+import { TaskStatusIntro } from "@/components/task-status-intro";
 
 import { Button, Card } from "@heroui/react";
 import { Icon } from "@theme/icon";
@@ -33,41 +35,12 @@ export function ReservationResultScreen({
       aria-live="polite"
       className="fixed inset-0 z-80 overflow-y-auto bg-background"
     >
-      <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pt-[max(3.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <SecondaryHeader title="نتیجه رزرو" showFilter={false} showBack={false} />
+      <div className="mx-auto flex min-h-[75dvh] w-full max-w-xl flex-col px-5 pt-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <section className="flex flex-1 flex-col items-center justify-center py-8 text-center">
-          <div
-            className={`relative mb-8 grid size-36 place-items-center rounded-full ${
-              succeeded
-                ? "bg-success/12 text-success"
-                : "bg-danger/12 text-danger"
-            }`}
-          >
-            <span
-              aria-hidden
-              className={`absolute inset-3 rounded-full border ${
-                succeeded ? "border-success/25" : "border-danger/25"
-              }`}
-            />
-            <span
-              className={`grid size-24 place-items-center rounded-[2rem] ${
-                succeeded
-                  ? "rotate-[-8deg] bg-success text-success-foreground"
-                  : "rotate-[8deg] bg-danger text-danger-foreground"
-              }`}
-            >
-              <Icon name={succeeded ? "check" : "close-x"} size={52} />
-            </span>
-          </div>
-
-          <h1 className="max-w-sm text-3xl leading-tight font-black tracking-tight text-foreground">
-            {succeeded ? "رزرو شما با موفقیت انجام شد" : "رزرو انجام نشد"}
-          </h1>
-          <p className="mt-3 max-w-sm text-sm leading-7 text-muted">
-            {message ??
-              (succeeded
-                ? "جزئیات رزرو در برنامه شما ثبت شد و همیشه از بخش رزروها در دسترس است."
-                : "پرداخت یا ثبت رزرو کامل نشد. پیش از تلاش دوباره، وضعیت رزروهایتان را بررسی کنید.")}
-          </p>
+          <TaskStatusIntro tone={succeeded ? "success" : "danger"} title={succeeded ? "رزرو شما با موفقیت انجام شد" : "رزرو انجام نشد"}>
+            {message ?? (succeeded ? "جزئیات رزرو در برنامه شما ثبت شد و از بخش رزروها در دسترس است." : "پرداخت یا ثبت رزرو کامل نشد. پیش از تلاش دوباره، وضعیت رزروهایتان را بررسی کنید.")}
+          </TaskStatusIntro>
 
           <Card className="app-card mt-8 flex w-full flex-row items-center gap-3 rounded-[1.5rem] p-3 text-start shadow-none">
             <div className="relative size-20 shrink-0 overflow-hidden rounded-[1.15rem] bg-surface-secondary">
