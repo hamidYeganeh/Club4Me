@@ -20,7 +20,7 @@ export function ProfileScreen({ role }: ProfileScreenProps) {
     admin: "مدیر",
   } as const;
   return (
-    <main className="flex min-h-dvh w-full max-w-full flex-1 flex-col overflow-x-hidden bg-transparent pb-[calc(7rem+env(safe-area-inset-bottom))]">
+    <main className="flex min-h-dvh w-full max-w-full flex-1 flex-col overflow-x-hidden bg-transparent pb-[calc(2rem+env(safe-area-inset-bottom))]">
       <SecondaryHeader title="پروفایل من" showFilter={false} />
       <ProfileHeroSection role={role} />
       <div className="flex flex-col gap-8 px-4 pt-6">
@@ -46,7 +46,16 @@ export function ProfileScreen({ role }: ProfileScreenProps) {
                 <Icon name="chevron-left" size={18} />
               </Link>
             ) : null}
-            {role === "athlete" ? <Link href="/athlete/packages" className="app-settings-row app-reveal"><Icon name="ticket" size={22} /><span className="flex-1 font-bold">بسته‌های مربی من</span><Icon name="chevron-left" size={18} /></Link> : null}
+            {role === "athlete" ? (
+              <Link
+                href="/athlete/packages"
+                className="app-settings-row app-reveal"
+              >
+                <Icon name="ticket" size={22} />
+                <span className="flex-1 font-bold">بسته‌های مربی من</span>
+                <Icon name="chevron-left" size={18} />
+              </Link>
+            ) : null}
             <Link
               href="/auth/roles?manage=1"
               className="app-settings-row app-reveal"

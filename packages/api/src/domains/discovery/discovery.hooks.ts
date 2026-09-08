@@ -101,7 +101,10 @@ export function useCatalogCoach(identifier: string) {
   });
 }
 
-export function useCatalogClasses(params?: PublicCatalogParams, enabled = true) {
+export function useCatalogClasses(
+  params?: PublicCatalogParams,
+  enabled = true,
+) {
   return useQuery({
     enabled,
     queryKey: discoveryQueries.catalog.classes(params),
@@ -268,5 +271,28 @@ export function useReserveSlot(clubId: string) {
         queryKey: discoveryQueries.clubs.slots(clubId),
       });
     },
+  });
+}
+
+export function useInfinitePublicCatalogResource(
+  category: string,
+  resource: string,
+  params?: Record<string, unknown>,
+) {
+  return useInfiniteQuery({
+    queryKey: [
+      ...discoveryQueries.catalog.resource(category, resource, params),
+      "infinite",
+    ],
+    initialPageParam: 1,
+    queryFn: ({ pageParam, signal }) =>
+      discoveryClient.listPublicResources(
+        category,
+        resource,
+        { ...params, page: pageParam },
+        signal,
+      ),
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
   });
 }

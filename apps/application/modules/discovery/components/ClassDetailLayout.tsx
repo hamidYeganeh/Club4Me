@@ -1,5 +1,7 @@
 "use client";
 
+import { DetailSocialSection } from "./DetailSocialSection";
+import { RelatedClasses } from "./RelatedContent";
 import type { ReactNode } from "react";
 import { Button } from "@heroui/react";
 import type { PublicCatalogClass } from "@api/discovery";
@@ -129,6 +131,11 @@ export function ClassDetailLayout({
           </p>
         </section>
         {children}
+        <DetailSocialSection items={item.socialMedia} />
+        <RelatedClasses
+          excludeId={item.id}
+          params={{ sportId: item.sportId }}
+        />
       </div>
       <aside
         aria-label="ثبت‌نام کلاس"

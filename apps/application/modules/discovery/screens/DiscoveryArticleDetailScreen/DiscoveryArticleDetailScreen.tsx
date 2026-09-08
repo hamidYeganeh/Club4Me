@@ -1,5 +1,6 @@
 "use client";
 
+import { RelatedArticles } from "../../components/RelatedContent";
 import { SaveButton } from "@/components/save-button";
 import { SecondaryHeader } from "../../components/SecondaryHeader";
 import { DiscoveryQueryPage } from "../../components/DiscoveryQueryPage";
@@ -67,6 +68,12 @@ export function DiscoveryArticleDetailScreen({
           />
         </div>
       </article>
+      <div className="px-5 py-8">
+        <RelatedArticles
+          excludeId={article.id}
+          params={{ categoryId: article.categoryId }}
+        />
+      </div>
     </main>
   );
 }

@@ -151,7 +151,7 @@ export function ClubSlotsSection({ clubId }: { clubId: string }) {
         </Button>
       </div>
 
-      <Card className="app-card app-stack-card min-w-0 overflow-hidden rounded-[1.75rem] p-0 shadow-none">
+      <Card className="border-0 bg-transparent shadow-none app-stack-card min-w-0 overflow-hidden rounded-[1.75rem] p-0 shadow-none">
         <Card.Content className="min-w-0 px-5 py-6 sm:px-7">
           <div className="flex items-end justify-between gap-4">
             <div>
@@ -166,7 +166,7 @@ export function ClubSlotsSection({ clubId }: { clubId: string }) {
           </div>
 
           {sessions.isError ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-border bg-surface-tertiary/45 p-5 text-center text-sm text-muted">
+            <div className="mt-6 rounded-2xl border-0 bg-transparent p-5 text-center text-sm text-muted">
               {t("slotsLoadError")}
             </div>
           ) : !sessions.isPending && totalAvailable === 0 ? (

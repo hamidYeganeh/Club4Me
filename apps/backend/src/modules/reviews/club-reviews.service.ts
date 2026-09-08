@@ -72,12 +72,14 @@ export class ClubReviewsService {
       criteria: criteria.map((item) => ({
         id: item.id,
         name: String(item.name),
+        icon: typeof item.icon === "string" ? item.icon : undefined,
       })),
       criteriaSummary: criteria.map((item) => {
         const stats = criteriaSummary.find((row) => row._id === item.id);
         return {
           id: item.id,
           name: String(item.name),
+          icon: typeof item.icon === "string" ? item.icon : undefined,
           averageRating: stats?.averageRating ?? 0,
           reviewsCount: stats?.reviewsCount ?? 0,
         };
@@ -207,7 +209,7 @@ export class ClubReviewsService {
   }
 
   private async activeCriteria() {
-    const items: Array<{ id: string; name?: unknown }> = [];
+    const items: Array<{ id: string; name?: unknown; icon?: unknown }> = [];
     for (let page = 1; ; page++) {
       const result = await this.resources.list("clubs", "review-criterion", {
         isActive: "true",
@@ -218,6 +220,7 @@ export class ClubReviewsService {
         ...result.items.map((item) => ({
           id: String(item.id),
           name: item.name,
+          icon: item.icon,
         })),
       );
       if (page >= result.totalPages) return items;

@@ -1,4 +1,6 @@
 "use client";
+import { DetailSocialSection } from "../../components/DetailSocialSection";
+import { RelatedBusinessClasses } from "../../components/RelatedBusinessClasses";
 
 import { useCallback, useState } from "react";
 import { Button, Card, Chip, toast } from "@heroui/react";
@@ -361,6 +363,8 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
           onResult={(result, intent) => void resolve(result, intent)}
         />
       ) : null}
+      <DetailSocialSection items={item.socialMedia} />
+      <RelatedBusinessClasses excludeId={item.id} clubId={item.clubId} />
     </main>
   );
 }

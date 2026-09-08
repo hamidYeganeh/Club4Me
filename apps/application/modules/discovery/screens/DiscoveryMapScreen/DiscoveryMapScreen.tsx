@@ -1,7 +1,10 @@
 "use client";
 import { SecondaryHeader } from "../../components/SecondaryHeader";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import type { Swiper as SwiperType } from "swiper";
+import "swiper/css";
 import { Icon } from "@theme/icon";
 import { ClubCard } from "@ui/club-card";
 import { useCatalogClubs } from "@api/discovery";
@@ -45,6 +48,12 @@ export function DiscoveryMapScreen() {
     [clubs.data?.items],
   );
   const [selectedId, setSelectedId] = useState<string>();
+  const carousel = useRef<SwiperType | null>(null);
+  useEffect(() => {
+    const index = mappable.findIndex((club) => club.id === selectedId);
+    if (index >= 0 && carousel.current && !carousel.current.destroyed)
+      carousel.current.slideTo(index);
+  }, [selectedId, mappable]);
   const selected =
     mappable.find((club) => club.id === selectedId) ?? mappable[0];
   const center = selected
@@ -102,16 +111,32 @@ export function DiscoveryMapScreen() {
         ) : null}
         {selected ? (
           <div className={styles.rail()}>
-            <ClubCard
-              variant="compact"
-              title={selected.name}
-              location={selected.address || selected.shortDescription}
-              imageUrl={selected.imageUrl}
-              rating={selected.averageRating}
-              reviewsCount={selected.reviewsCount}
-              href={`/discovery/clubs/${selected.slug}`}
-              className={styles.card()}
-            />
+            <Swiper
+              dir="rtl"
+              slidesPerView={1.12}
+              spaceBetween={12}
+              onSwiper={(swiper) => {
+                carousel.current = swiper;
+              }}
+              onSlideChange={(swiper) =>
+                setSelectedId(mappable[swiper.activeIndex]?.id)
+              }
+            >
+              {mappable.map((club) => (
+                <SwiperSlide key={club.id}>
+                  <ClubCard
+                    variant="compact"
+                    title={club.name}
+                    location={club.address}
+                    imageUrl={club.imageUrl}
+                    rating={club.averageRating}
+                    reviewsCount={club.reviewsCount}
+                    href={`/discovery/clubs/${club.slug}`}
+                    className={styles.card()}
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
           </div>
         ) : null}
       </div>

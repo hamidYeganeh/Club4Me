@@ -1,5 +1,6 @@
 "use client";
 
+import { RelatedCoaches } from "../../components/RelatedContent";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DiscoveryHeroScrim } from "../../components/DiscoveryImageHero";
@@ -238,7 +239,10 @@ function CoachDetails({ id }: { id: string }) {
           kind: "coach",
           title: coach.displayName,
           subtitle:
-            (reviewSession.pricingType && reviewSession.pricingType !== "per_session" ? "مصرف اعتبار بسته این خدمت؛ بدون پرداخت مجدد" : reviewSession.offeringTitle) ||
+            (reviewSession.pricingType &&
+            reviewSession.pricingType !== "per_session"
+              ? "مصرف اعتبار بسته این خدمت؛ بدون پرداخت مجدد"
+              : reviewSession.offeringTitle) ||
             coach.shortBio ||
             "مربی تأییدشده کلاب‌فورمی",
           imageUrl: coach.imageUrl,
@@ -375,7 +379,13 @@ function CoachDetails({ id }: { id: string }) {
           مشاهده و ثبت نظر
         </ButtonLink>
       </section>
-      <ButtonLink href={`/athlete/packages/${encodeURIComponent(coach.slug)}`} variant="secondary" className="w-full">بسته‌ها و خدمات ماهانه مربی</ButtonLink>
+      <ButtonLink
+        href={`/athlete/packages/${encodeURIComponent(coach.slug)}`}
+        variant="secondary"
+        className="w-full"
+      >
+        بسته‌ها و خدمات ماهانه مربی
+      </ButtonLink>
       <Card
         id="coach-sessions"
         className="app-card app-stack-card scroll-mt-6 p-5 shadow-none"
@@ -415,7 +425,10 @@ function CoachDetails({ id }: { id: string }) {
                   </div>
                   <div className="text-end">
                     <p className="text-sm font-bold text-accent">
-                      {session.pricingType && session.pricingType !== "per_session" ? "نیازمند اعتبار این خدمت" : `${(session.price?.amount ?? 0).toLocaleString("fa-IR")} ریال`}
+                      {session.pricingType &&
+                      session.pricingType !== "per_session"
+                        ? "نیازمند اعتبار این خدمت"
+                        : `${(session.price?.amount ?? 0).toLocaleString("fa-IR")} ریال`}
                     </p>
                     <Button
                       size="sm"
@@ -455,6 +468,10 @@ function CoachDetails({ id }: { id: string }) {
           onResult={(result) => void finishPayment(result)}
         />
       ) : null}
+      <RelatedCoaches
+        excludeId={coach.id}
+        params={{ serviceMode: coach.serviceModes[0] }}
+      />
     </DetailLayout>
   );
 }

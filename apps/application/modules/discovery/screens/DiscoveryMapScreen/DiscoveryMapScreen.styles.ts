@@ -18,8 +18,8 @@ export const discoveryMapScreenStyles = tv({
       "pointer-events-none absolute inset-x-5 top-[calc(5.5rem+env(safe-area-inset-top))] z-20 rounded-2xl border border-border/60 bg-surface/90 px-4 py-3 text-center text-sm text-muted shadow-lg backdrop-blur-md",
     retry: "mt-2",
     locate:
-      "!right-5 !bottom-[calc(18.5rem+env(safe-area-inset-bottom))] !size-12 !border-border/60 !bg-surface/90 !text-accent backdrop-blur-md",
-    rail: "absolute inset-x-5 bottom-0 z-20 pb-[calc(7rem+env(safe-area-inset-bottom))]",
+      "!right-5 !bottom-[calc(15rem+env(safe-area-inset-bottom))] !size-12 !border-border/60 !bg-surface/90 !text-accent backdrop-blur-md",
+    rail: "absolute inset-x-0 bottom-0 z-20 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]",
     card: "!aspect-auto !h-48 !w-full !rounded-[1.75rem] border border-border/60 shadow-2xl",
   },
 });

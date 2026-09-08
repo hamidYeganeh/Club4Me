@@ -1,4 +1,5 @@
 "use client";
+import { ResourceIcon } from "@/components/resource-icon";
 
 import { Button, Typography } from "@heroui/react";
 import { useClubReviews } from "@api";
@@ -41,7 +42,7 @@ export function ClubReservationsAndReviewsSection({
               key={item.id}
               className="rounded-xl bg-surface-secondary p-3 text-sm"
             >
-              {item.name}:{" "}
+              <ResourceIcon icon={item.icon} /> {item.name}:{" "}
               {item.reviewsCount
                 ? `${item.averageRating.toFixed(1)} از ۵ · ${item.reviewsCount} رأی`
                 : "هنوز ارزیابی نشده"}

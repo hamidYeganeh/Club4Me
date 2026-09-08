@@ -149,7 +149,7 @@ export function DayRow({
           {state.enabled ? (
             ranges.map((range, index) => {
               const audienceLabel = showAudience
-                ? AUDIENCE_LABELS[index]
+                ? range.audience ? ({ men: "آقایان", women: "بانوان", mixed: "عمومی" })[range.audience] : AUDIENCE_LABELS[index]
                 : null;
 
               return (

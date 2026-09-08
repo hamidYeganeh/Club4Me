@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "@/components/app-link";
+import { OnboardingChecklist } from "@/components/ui/onboarding-checklist";
 import { useAccountMe } from "@api/account";
-import { Skeleton, Typography } from "@heroui/react";
-import { Icon } from "@theme/icon";
+import { Skeleton } from "@heroui/react";
 
 import type { ProfileRole } from "../../profile.types";
 
@@ -11,17 +10,6 @@ const profileFieldCount = 6;
 
 export function ProfileCompletionSection({ role }: { role: ProfileRole }) {
   const me = useAccountMe();
-  const completedFields = [
-    me.data?.firstName?.trim(),
-    me.data?.lastName?.trim(),
-    me.data?.birthdate,
-    me.data?.gender,
-    me.data?.activityLevel,
-    me.data?.idCard?.trim(),
-  ].filter(Boolean).length;
-  const remainingFields = profileFieldCount - completedFields;
-  const isComplete = completedFields === profileFieldCount;
-
   if (me.isError) {
     return null;
   }
@@ -50,51 +38,22 @@ export function ProfileCompletionSection({ role }: { role: ProfileRole }) {
     );
   }
 
+  const fields = [
+    ["firstName", "نام", me.data?.firstName?.trim()],
+    ["lastName", "نام خانوادگی", me.data?.lastName?.trim()],
+    ["birthdate", "تاریخ تولد", me.data?.birthdate],
+    ["gender", "جنسیت", me.data?.gender],
+    ["activityLevel", "سطح فعالیت", me.data?.activityLevel],
+    ["idCard", "کد ملی", me.data?.idCard?.trim()],
+  ];
   return (
-    <section
-      className="app-reveal overflow-hidden rounded-3xl bg-surface p-5"
-      aria-labelledby="profile-completion-title"
-    >
-      <div className="flex items-start gap-4">
-        <span className="grid size-12 shrink-0 place-items-center rounded-[1rem] bg-accent text-accent-foreground">
-          <Icon name={isComplete ? "check-circle" : "user"} size={23} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <Typography id="profile-completion-title" type="h5" weight="bold">
-            {isComplete ? "پروفایل کامل است" : "پروفایلت را کامل کن"}
-          </Typography>
-          <p className="mt-1 text-xs leading-5 text-muted">
-            {isComplete
-              ? "اطلاعات اصلی حسابت ثبت شده است."
-              : `${remainingFields.toLocaleString("fa-IR")} مورد دیگر باقی مانده است.`}
-          </p>
-        </div>
-        <Link
-          href={`/${role}/profile/edit`}
-          scroll={false}
-          className="inline-flex min-h-11 items-center shrink-0 rounded-2xl bg-accent px-3 py-2 text-xs font-bold whitespace-nowrap text-accent-foreground transition-transform active:scale-95"
-        >
-          {isComplete ? "ویرایش" : "تکمیل"}
-        </Link>
-      </div>
-
-      <div
-        className="mt-5 grid grid-cols-6 gap-2"
-        role="progressbar"
-        aria-label="میزان تکمیل پروفایل"
-        aria-valuemin={0}
-        aria-valuemax={profileFieldCount}
-        aria-valuenow={completedFields}
-      >
-        {Array.from({ length: profileFieldCount }).map((_, index) => (
-          <span
-            key={index}
-            className={`h-1.5 rounded-full transition-colors ${
-              index < completedFields ? "bg-accent" : "bg-surface-tertiary"
-            }`}
-          />
-        ))}
-      </div>
-    </section>
+    <OnboardingChecklist
+      steps={fields.map(([id, title, value]) => ({
+        id: String(id),
+        title: String(title),
+        isCompleted: Boolean(value),
+        href: `/${role}/profile/edit?field=${id}`,
+      }))}
+    />
   );
 }

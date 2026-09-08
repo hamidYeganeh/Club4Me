@@ -21,5 +21,6 @@ export type DiscoveryClubsDetailBodySectionProps = {
     icon: "clock" | "compass" | "star-full";
     label: string;
     value: string;
+    description?: string;
   }>;
 };

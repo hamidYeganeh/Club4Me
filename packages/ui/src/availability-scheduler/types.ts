@@ -1,6 +1,6 @@
 export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
-export type TimeRange = { id: string; start: string; end: string };
+export type TimeRange = { id: string; start: string; end: string; audience?: "men" | "women" | "mixed" };
 export type DayAvailability = { enabled: boolean; ranges: TimeRange[] };
 export type WeekAvailability = Record<DayKey, DayAvailability>;
 export type TimeOption = { value: string; label: string };

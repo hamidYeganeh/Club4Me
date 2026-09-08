@@ -13,6 +13,7 @@ export type ClubClassSession = {
 };
 
 export type PublicClubClass = {
+  socialMedia?: Array<{ platform: string; link: string }>;
   id: string;
   slug: string;
   clubId: string;

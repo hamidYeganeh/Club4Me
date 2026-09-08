@@ -79,7 +79,11 @@ export type PublicClub = {
   }>;
   weeklyHours: Array<{
     dayOfWeek: number;
-    periods: Array<{ opensAt: string; closesAt: string }>;
+    periods: Array<{
+      opensAt: string;
+      closesAt: string;
+      audience?: "men" | "women" | "mixed";
+    }>;
     isClosed: boolean;
   }>;
   closures: Array<{ startsAt: string; endsAt: string; reason: string }>;
@@ -234,7 +238,9 @@ export function toPublicClub(club: ClubDocument): PublicClub {
     qualityStatus: club.qualityStatus ?? "review_required",
     supplyVerifiedAt: club.supplyVerifiedAt?.toISOString() ?? null,
     supplyReviewDueAt: club.supplyReviewDueAt?.toISOString() ?? null,
-    supplyAssigneeId: club.supplyAssigneeId ? String(club.supplyAssigneeId) : null,
+    supplyAssigneeId: club.supplyAssigneeId
+      ? String(club.supplyAssigneeId)
+      : null,
     qualityReasons: club.qualityReasons ?? [],
     schemaVersion: club.schemaVersion ?? 1,
     createdAt: club.createdAt.toISOString(),

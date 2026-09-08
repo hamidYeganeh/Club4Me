@@ -1,5 +1,6 @@
 "use client";
 
+import { RelatedClubs } from "../../components/RelatedContent";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { tokenStore, trackDiscoveryClubViewed, usePublicClub } from "@api";
@@ -50,7 +51,7 @@ function toFacilityItem(input: {
     title: input.title ?? input.id,
     count: input.quantity,
     description: input.description,
-    icon: toIconName(input.icon),
+    icon: toIconName(input.icon) ?? "weight",
     backgroundImage: input.imageUrl,
   };
 }
@@ -168,14 +169,24 @@ export function DiscoveryClubsDetailScreen({
     {
       icon: "clock" as const,
       label: "روزهای کاری",
+      description: "ساعت هر روز و شرایط مراجعه در بخش ساعت کاری آمده است.",
       value: `${data.weeklyHours.filter((item) => !item.isClosed).length.toLocaleString("fa-IR")} روز`,
     },
     {
       icon: "compass" as const,
       label: "وضعیت",
+      description:
+        data.operationalStatus === "active"
+          ? "باشگاه فعال است؛ ظرفیت سانس‌ها را پیش از مراجعه بررسی کن."
+          : "باشگاه موقتاً بسته است؛ پیش از مراجعه تماس بگیر.",
       value: data.operationalStatus === "active" ? "فعال" : "موقتاً بسته",
     },
-    { icon: "star-full" as const, label: t("rating"), value: club.rating },
+    {
+      icon: "star-full" as const,
+      label: t("rating"),
+      value: club.rating,
+      description: `${data.reviewsCount.toLocaleString("fa-IR")} نظر ثبت‌شده توسط کاربران`,
+    },
   ];
 
   return (
@@ -237,6 +248,12 @@ export function DiscoveryClubsDetailScreen({
       </section>
 
       <ClubReservationsAndReviewsSection clubId={club.id} />
+      <div className="px-5 py-8">
+        <RelatedClubs
+          excludeId={club.id}
+          params={{ sportId: data.sportIds[0] }}
+        />
+      </div>
 
       <DiscoveryClubsDetailActionsSection
         primaryLabel={t("bookNow")}

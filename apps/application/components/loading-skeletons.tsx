@@ -17,7 +17,7 @@ export function SkeletonLine({ className = "w-full" }: { className?: string }) {
 export function PageHeaderSkeleton() {
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-40 mx-auto flex h-[calc(72px+env(safe-area-inset-top))] w-full max-w-xl items-center rounded-b-4xl bg-surface px-4 pb-3 pt-[calc(env(safe-area-inset-top)+12px)]">
+      <div className="fixed inset-x-0 top-0 z-40 mx-auto flex h-[calc(72px+var(--app-safe-top))] w-full max-w-xl items-center rounded-b-4xl bg-surface px-4 pb-3 pt-[calc(var(--app-safe-top)+12px)]">
         <div className="flex w-full items-center gap-3">
           <Skeleton className="size-11 shrink-0 rounded-full" />
           <Skeleton className="h-5 w-32 rounded-lg" />
@@ -151,7 +151,7 @@ export function DetailPageSkeleton() {
     <main className="min-h-dvh bg-background pb-12" {...loadingProps}>
       <div className="relative aspect-[4/5] max-h-[32rem]">
         <Skeleton className="absolute inset-0 rounded-none" />
-        <div className="absolute inset-x-5 top-[calc(1rem+env(safe-area-inset-top))] flex justify-between">
+        <div className="absolute inset-x-5 top-[calc(1rem+var(--app-safe-top))] flex justify-between">
           <Skeleton className="size-11 rounded-full" />
           <Skeleton className="size-11 rounded-full" />
         </div>
@@ -190,7 +190,7 @@ export function ArticleDetailSkeleton() {
     <main className="min-h-dvh bg-background pb-12" {...loadingProps}>
       <div className="relative aspect-[4/5] max-h-[34rem]">
         <Skeleton className="absolute inset-0 rounded-none" />
-        <Skeleton className="absolute right-5 top-[calc(1rem+env(safe-area-inset-top))] size-11 rounded-full" />
+        <Skeleton className="absolute right-5 top-[calc(1rem+var(--app-safe-top))] size-11 rounded-full" />
         <div className="absolute inset-x-5 bottom-8 space-y-3">
           <Skeleton className="h-8 w-5/6 rounded-xl" />
           <Skeleton className="h-4 w-full rounded-lg" />
@@ -260,7 +260,7 @@ export function CityDetailSkeleton() {
     <main className="min-h-dvh bg-background" {...loadingProps}>
       <div className="relative h-[23rem]">
         <Skeleton className="absolute inset-0 rounded-none" />
-        <Skeleton className="absolute right-5 top-[calc(1rem+env(safe-area-inset-top))] size-11 rounded-full" />
+        <Skeleton className="absolute right-5 top-[calc(1rem+var(--app-safe-top))] size-11 rounded-full" />
         <div className="absolute inset-x-5 bottom-8 space-y-3">
           <Skeleton className="h-4 w-24 rounded-lg" />
           <Skeleton className="h-8 w-48 rounded-xl" />
@@ -324,7 +324,7 @@ export function FormPageSkeleton({ fields = 5 }: { fields?: number }) {
 export function AuthScreenSkeleton() {
   return (
     <main
-      className="flex min-h-dvh flex-col bg-background px-5 pb-8 pt-[calc(2rem+env(safe-area-inset-top))]"
+      className="flex min-h-dvh flex-col bg-background px-5 pb-8 pt-[calc(2rem+var(--app-safe-top))]"
       {...loadingProps}
     >
       <Skeleton className="size-11 rounded-full" />
@@ -504,7 +504,7 @@ export function SlotBookingSkeleton() {
 export function MapResultsSkeleton() {
   return (
     <div
-      className="absolute inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))]"
+      className="absolute inset-x-4 bottom-[calc(1rem+var(--app-safe-bottom))]"
       {...loadingProps}
     >
       <DiscoveryResultCardSkeleton count={1} />

@@ -50,6 +50,15 @@ function makeResourceController(definition: ServerResourceDefinition) {
     @Get()
     list(@Query() query: Record<string, string | undefined>) {
       assertAction(query.action, [undefined, "list", "options"]);
+      // Only the already-public province options gain discovery counts.
+      // ResourceAccessGuard and all other resource routes keep their existing policy.
+      if (
+        category === "location" &&
+        segment === "province" &&
+        query.action === "options"
+      ) {
+        return this.resources.listPublic(category, segment, query);
+      }
       return this.resources.list(category, segment, {
         ...query,
         ...(query.action === "options" ? { isActive: "true" } : {}),

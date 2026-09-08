@@ -6,6 +6,7 @@ const withNextIntl = createNextIntlPlugin("../../packages/i18n/src/request.ts");
 const isCapacitor = process.env.CAPACITOR === "1";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   webpack(config) {
     if (process.env.CLUB4ME_BUILD_NO_CACHE === "1") config.cache = false;
     return config;

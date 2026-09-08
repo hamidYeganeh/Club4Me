@@ -9,7 +9,11 @@ import {
 
 export type ClubWeeklyHour = {
   dayOfWeek: number;
-  periods: Array<{ opensAt: string; closesAt: string }>;
+  periods: Array<{
+    opensAt: string;
+    closesAt: string;
+    audience?: "men" | "women" | "mixed";
+  }>;
   isClosed: boolean;
 };
 
@@ -39,6 +43,7 @@ export function weeklyHoursToWeekAvailability(
         periods.length > 0
           ? periods.map((period, index) => ({
               id: `${key}-${index}`,
+              audience: period.audience,
               start: period.opensAt,
               end: period.closesAt,
             }))
@@ -63,7 +68,8 @@ export function weekAvailabilityToWeeklyHours(
       return {
         dayOfWeek,
         isClosed: false,
-        periods: day.ranges.slice(0, 2).map((range) => ({
+        periods: day.ranges.slice(0, 2).map((range, index) => ({
+          audience: range.audience ?? (index === 0 ? ("men" as const) : ("women" as const)),
           opensAt: range.start,
           closesAt: range.end,
         })),

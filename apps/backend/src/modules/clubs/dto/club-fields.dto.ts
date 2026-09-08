@@ -149,7 +149,11 @@ const weeklyHours = z.object({
   periods: z
     .array(
       z
-        .object({ opensAt: time, closesAt: time })
+        .object({
+          opensAt: time,
+          closesAt: time,
+          audience: z.enum(["men", "women", "mixed"]).optional(),
+        })
         .refine(
           (period) => period.opensAt < period.closesAt,
           "Closing time must be after opening time",

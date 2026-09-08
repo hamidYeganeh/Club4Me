@@ -53,7 +53,7 @@ export function DiscoveryEntityGalleryScreen({
 
   return (
     <main
-      className="flex min-h-dvh flex-col overflow-hidden bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]"
+      className="flex min-h-dvh flex-col overflow-hidden bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       dir="rtl"
     >
       <SecondaryHeader
@@ -72,7 +72,7 @@ export function DiscoveryEntityGalleryScreen({
         }
       />
       {gridVisible ? (
-        <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto py-3">
+        <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto px-3 py-3">
           {slides.map((src, index) => (
             <button
               key={`${src}-${index}`}

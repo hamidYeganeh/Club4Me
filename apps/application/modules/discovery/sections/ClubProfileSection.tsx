@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon, type IconName } from "@theme/icon";
 import { useState } from "react";
 import type { PublicClubDetails } from "@api";
 import Link from "@/components/app-link";
@@ -105,17 +106,57 @@ export function ClubProfileSection({ club }: { club: PublicClubDetails }) {
               return (
                 <div key={dow} className="flex justify-between gap-4 py-3">
                   <dt>{days[dow]}</dt>
-                  <dd>
+                  <dd className="flex flex-col items-end gap-2">
                     {!hours
                       ? "ثبت نشده"
                       : hours.isClosed
                         ? "تعطیل"
-                        : hours.periods
-                            .map(
-                              (period) =>
-                                `${period.opensAt} تا ${period.closesAt}`,
-                            )
-                            .join("، ") || "ثبت نشده"}
+                        : hours.periods.length
+                          ? hours.periods.map((period, index) => {
+                              const audience =
+                                period.audience ??
+                                (club.audience.length === 1 &&
+                                (club.audience[0] === "men" ||
+                                  club.audience[0] === "women")
+                                  ? club.audience[0]
+                                  : hours.periods.length === 2
+                                    ? index === 0
+                                      ? "men"
+                                      : "women"
+                                    : "mixed");
+                              const label =
+                                audience === "men"
+                                  ? "آقایان"
+                                  : audience === "women"
+                                    ? "بانوان"
+                                    : "عمومی";
+                              const icon: IconName =
+                                audience === "men"
+                                  ? "gender-male"
+                                  : audience === "women"
+                                    ? "gender-female"
+                                    : "users-two";
+                              return (
+                                <span
+                                  key={`${period.opensAt}-${index}`}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Icon
+                                    name={icon}
+                                    label={label}
+                                    className="text-accent"
+                                    size={20}
+                                  />
+                                  <span className="text-xs text-muted">
+                                    {label}
+                                  </span>
+                                  <span dir="ltr">
+                                    {period.opensAt} – {period.closesAt}
+                                  </span>
+                                </span>
+                              );
+                            })
+                          : "ثبت نشده"}
                   </dd>
                 </div>
               );

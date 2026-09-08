@@ -5,6 +5,7 @@ import { useDiscoveryFeed, type DiscoverySection } from "@api/discovery";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { DiscoveryDynamicSection } from "@modules/discovery/sections/DiscoveryDynamicSection";
 import { DiscoveryIranMapSection } from "@modules/discovery/sections/DiscoveryIranMapSection";
+import { DiscoveryNearbySection } from "../../sections/DiscoveryNearbySection";
 import { DiscoveryIranMapSkeleton } from "../../components/skeletons/DiscoveryIranMapSkeleton";
 import { RequestFailureState } from "@/components/request-failure-state";
 import { defaultDiscoveryLayouts } from "../../components/discovery-default-layouts";
@@ -77,7 +78,7 @@ export function DiscoveryHomeScreen() {
     : sections;
 
   return (
-    <main className="app-page gap-6 pb-[calc(130px+env(safe-area-inset-bottom))]">
+    <main className="app-page gap-6 pb-[calc(11rem+env(safe-area-inset-bottom))]">
       <SecondaryHeader />
       {failure ? (
         <RequestFailureState
@@ -94,6 +95,7 @@ export function DiscoveryHomeScreen() {
         .slice(0, 3)
         .map((section) => renderFeedSection(section, loading))}
       {loading ? <DiscoveryIranMapSkeleton /> : <DiscoveryIranMapSection />}
+      <DiscoveryNearbySection />
       {mapBanner ? renderFeedSection(mapBanner, loading) : null}
       {contentSections
         .slice(3)
@@ -145,7 +147,7 @@ export function DiscoveryHomeSkeleton() {
   const content = sections.filter((section) => section.id !== mapBanner?.id);
   return (
     <main
-      className="app-page gap-6 pb-[calc(130px+env(safe-area-inset-bottom))]"
+      className="app-page gap-6 pb-[calc(11rem+env(safe-area-inset-bottom))]"
       aria-busy="true"
     >
       <SecondaryHeader />

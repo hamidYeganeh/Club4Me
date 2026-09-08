@@ -38,8 +38,6 @@ export function SortBottomSheet<TValue extends string>({
       snapPoints={[options.length > 2 ? 0.64 : 0.54, 0.9]}
       title={title}
       description={description}
-      className="shadow-[0_-14px_0_-6px_var(--surface-secondary),0_-26px_0_-12px_var(--surface-tertiary)]"
-      contentClassName="overflow-visible"
       headerAction={
         <Button
           isIconOnly

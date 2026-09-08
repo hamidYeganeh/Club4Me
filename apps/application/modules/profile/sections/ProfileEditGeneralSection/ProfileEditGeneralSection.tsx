@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useAccountMe, useAccountProfileChoices } from "@api/account";
 import {
@@ -31,7 +32,20 @@ export function ProfileEditGeneralSection() {
   const t = useTranslations("profile");
   const me = useAccountMe();
   const choices = useAccountProfileChoices();
-  const [activeField, setActiveField] = useState<ProfileEditField | null>(null);
+  const requested = useSearchParams().get("field");
+  const [activeField, setActiveField] = useState<ProfileEditField | null>(
+    () => {
+      const fields: Record<string, ProfileEditField> = {
+        firstName: "name",
+        lastName: "name",
+        birthdate: "birthdate",
+        gender: "gender",
+        activityLevel: "activity-level",
+        idCard: "id-card",
+      };
+      return requested ? (fields[requested] ?? null) : null;
+    },
+  );
 
   const name = getProfileFullName(me.data);
   const birthdate = formatProfileBirthdate(me.data?.birthdate);

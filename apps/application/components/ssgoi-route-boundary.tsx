@@ -22,6 +22,11 @@ export function SsgoiRouteBoundary({ children }: SsgoiRouteBoundaryProps) {
     <div
       key={pathname}
       data-ssgoi-transition={pathname}
+      data-bottom-navigation={
+        ["/athlete", "/coach", "/discovery"].includes(pathname)
+          ? "true"
+          : undefined
+      }
       className="flex h-full min-h-full flex-col bg-background"
     >
       {children}

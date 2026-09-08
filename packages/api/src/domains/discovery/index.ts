@@ -58,5 +58,6 @@ export {
   useCatalogSearch,
   useCatalogClubTypes,
   usePublicCatalogResource,
+  useInfinitePublicCatalogResource,
 } from "./discovery.hooks";
 export { discoveryQueries } from "./discovery.queries";

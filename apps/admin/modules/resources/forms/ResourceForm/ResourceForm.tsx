@@ -31,6 +31,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { z } from "zod";
 
+import { IconPicker } from "@/components/icon-picker";
 import { MediaUploaderField } from "@/components/media-uploader-field";
 
 type FormValue = string | boolean;
@@ -328,6 +329,15 @@ export function ResourceForm({
                   name={field.name}
                   control={control}
                   render={({ field: controlled, fieldState }) => {
+                    if (field.name === "icon")
+                      return (
+                        <IconPicker
+                          value={String(controlled.value ?? "")}
+                          onChange={controlled.onChange}
+                          disabled={mutationPending}
+                        />
+                      );
+
                     if (field.name === "imageUrl")
                       return (
                         <MediaUploaderField

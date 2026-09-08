@@ -108,7 +108,7 @@ export function DetailSocialSection({
           <Icon name="share-2" size={24} />
         </span>
       </div>
-      <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-2 gap-3">
         {links.map(({ platform, href }, index) => (
           <Link
             key={`${platform}-${index}`}
@@ -116,9 +116,12 @@ export function DetailSocialSection({
             target="_blank"
             rel="noopener noreferrer"
             aria-label={labels[platform] ?? platform}
-            className="flex min-h-24 w-full items-center justify-center rounded-[1.75rem] bg-surface-secondary text-foreground no-underline transition-colors hover:bg-accent/12 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
+            className="flex min-h-20 w-full items-center justify-center gap-3 px-3 rounded-[1.75rem] bg-surface-secondary text-foreground no-underline transition-colors hover:bg-accent/12 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
           >
             <SocialIcon platform={platform} />
+            <span className="text-sm font-semibold">
+              {labels[platform] ?? platform}
+            </span>
           </Link>
         ))}
       </div>

@@ -33,6 +33,39 @@ describe("ResourcesService", () => {
     );
   });
 
+  it("counts only discoverable clubs for each public province", async () => {
+    const country = await service.create("location", "country", {
+      name: "ایران",
+      code: "IR",
+    });
+    const province = await service.create("location", "province", {
+      name: "تهران",
+      code: "TEHRAN",
+      countryId: String(country.id),
+    });
+    const base = {
+      geo: { provinceId: new mongoose.Types.ObjectId(String(province.id)) },
+      reviewStatus: "approved",
+      visibility: "public",
+      operationalStatus: "active",
+    };
+    await connection
+      .collection("clubs")
+      .insertMany([
+        base,
+        { ...base, geo: { provinceId: String(province.id) } },
+        { ...base, visibility: "private" },
+        { ...base, reviewStatus: "pending" },
+        { ...base, operationalStatus: "permanently_closed" },
+        { ...base, qualityStatus: "suspended" },
+      ]);
+    const result = await service.listPublic("location", "province", {});
+    expect(result.items[0]).toMatchObject({
+      id: String(province.id),
+      clubsCount: 2,
+    });
+  });
+
   it("supports generic CRUD, filtering, searching, sorting and pagination", async () => {
     const first = await service.create("location", "country", {
       name: "ایران",

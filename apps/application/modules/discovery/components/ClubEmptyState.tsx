@@ -8,7 +8,7 @@ export function ClubEmptyState({
   description: string;
 }) {
   return (
-    <div className="app-surface flex min-h-52 flex-col items-center justify-center rounded-3xl px-5 py-6 text-center">
+    <div className="border-0 bg-transparent shadow-none flex min-h-52 flex-col items-center justify-center rounded-3xl px-5 py-6 text-center">
       <Image
         src="/discovery/no-slots.png"
         alt=""

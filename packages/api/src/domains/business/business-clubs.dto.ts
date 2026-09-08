@@ -103,7 +103,11 @@ export type BusinessClub = {
   cancellationRules: ClubCancellationRule[];
   weeklyHours: Array<{
     dayOfWeek: number;
-    periods: Array<{ opensAt: string; closesAt: string }>;
+    periods: Array<{
+      opensAt: string;
+      closesAt: string;
+      audience?: "men" | "women" | "mixed";
+    }>;
     isClosed: boolean;
   }>;
   closures: Array<{ startsAt: string; endsAt: string; reason: string }>;
@@ -180,7 +184,11 @@ export type CreateBusinessClubPayload = {
   cancellationRules?: ClubCancellationRule[];
   weeklyHours?: Array<{
     dayOfWeek: number;
-    periods: Array<{ opensAt: string; closesAt: string }>;
+    periods: Array<{
+      opensAt: string;
+      closesAt: string;
+      audience?: "men" | "women" | "mixed";
+    }>;
     isClosed: boolean;
   }>;
   closures?: Array<{ startsAt: string; endsAt: string; reason: string }>;

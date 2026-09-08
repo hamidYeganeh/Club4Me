@@ -61,6 +61,49 @@ const SORT_FIELDS = new Set([
 export class ResourcesService {
   constructor(@InjectConnection() private readonly connection: Connection) {}
 
+  async listPublic(category: string, segment: string, query: ListQuery) {
+    const result = await this.list(category, segment, {
+      ...query,
+      isActive: "true",
+    });
+    const locationField = (
+      {
+        province: "provinceId",
+        city: "cityId",
+        district: "districtId",
+        "city-region": "cityRegionIds",
+      } as Record<string, string>
+    )[segment];
+    if (category !== "location" || !locationField || !result.items.length)
+      return result;
+    const ids = result.items.map((item) => new Types.ObjectId(String(item.id)));
+    const path = `geo.${locationField}`;
+    const counts = await this.connection
+      .collection("clubs")
+      .aggregate<{ _id: string; count: number }>([
+        {
+          $match: {
+            reviewStatus: "approved",
+            visibility: "public",
+            operationalStatus: { $ne: "permanently_closed" },
+            qualityStatus: { $ne: "suspended" },
+            [path]: { $in: [...ids, ...ids.map(String)] },
+          },
+        },
+        ...(segment === "city-region" ? [{ $unwind: `$${path}` }] : []),
+        { $group: { _id: { $toString: `$${path}` }, count: { $sum: 1 } } },
+      ])
+      .toArray();
+    const byId = new Map(counts.map((item) => [item._id, item.count]));
+    return {
+      ...result,
+      items: result.items.map((item) => ({
+        ...item,
+        clubsCount: byId.get(String(item.id)) ?? 0,
+      })),
+    };
+  }
+
   async list(category: string, segment: string, query: ListQuery) {
     if (
       Object.values(query).some(

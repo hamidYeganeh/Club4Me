@@ -58,14 +58,6 @@ function getNavConfig(
     return coachNav;
   }
 
-  if (pathname === "/athlete/profile") {
-    return athleteNav;
-  }
-
-  if (pathname === "/coach/profile") {
-    return coachNav;
-  }
-
   if (pathname === "/discovery") {
     return discoveryRole === "coach" ? coachNav : athleteNav;
   }
@@ -115,10 +107,10 @@ export function MainBottomNavigation() {
       aria-label={t("main")}
       className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-xl"
     >
-      <div className="relative h-35">
+      <div className="relative h-[var(--app-bottom-nav-height)]">
         <div className="absolute inset-0 overflow-hidden">
           <ProgressiveBlur
-            direction="top"
+            direction="bottom"
             className="h-full"
             blurLayers={8}
             blurIntensity={1.25}
@@ -128,7 +120,7 @@ export function MainBottomNavigation() {
             className="absolute inset-0 bg-linear-to-t from-background from-40% via-background/75 to-transparent"
           />
         </div>
-        <div className="pointer-events-auto absolute inset-x-0 bottom-0 flex items-end px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-3">
+        <div className="pointer-events-auto absolute inset-x-0 bottom-0 flex items-end px-1 pb-[max(0.4rem,var(--app-safe-bottom))] pt-3">
           {leading.map((item) => (
             <NavLink
               key={item.href}

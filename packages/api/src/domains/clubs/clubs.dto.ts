@@ -47,10 +47,11 @@ export type ClubReview = {
 };
 
 export type ClubReviewsResponse = {
-  criteria?: Array<{ id: string; name: string }>;
+  criteria?: Array<{ id: string; name: string; icon?: string }>;
   criteriaSummary?: Array<{
     id: string;
     name: string;
+    icon?: string;
     averageRating: number;
     reviewsCount: number;
   }>;

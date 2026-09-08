@@ -1,4 +1,5 @@
 "use client";
+import { useSearchParams } from "next/navigation";
 import { DiscoveryImageHero } from "../../components/DiscoveryImageHero";
 
 import { useDiscoveryList } from "../../hooks/use-discovery-list";
@@ -21,10 +22,11 @@ import {
 } from "@/components/loading-skeletons";
 
 export function DiscoveryPeopleScreen() {
+  const sportId = useSearchParams().get("sportId") || undefined;
   const t = useTranslations("discovery.coaches");
   const { query, setQuery, q, page, setPage } = useDiscoveryList();
   const sections = useCoachSections();
-  const result = useCoaches({ q, page, limit: 20 });
+  const result = useCoaches({ q, page, limit: 20, sportId });
   const coaches = result.data?.items ?? [];
 
   return (
@@ -43,6 +45,7 @@ export function DiscoveryPeopleScreen() {
       />
 
       {!q &&
+        !sportId &&
         sections.data?.map((section) => (
           <DiscoveryDynamicSection key={section.id} section={section} />
         ))}

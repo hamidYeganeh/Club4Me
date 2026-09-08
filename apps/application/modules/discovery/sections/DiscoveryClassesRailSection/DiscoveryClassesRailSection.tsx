@@ -1,12 +1,11 @@
 "use client";
 
 import { ClassCardSkeleton } from "../../components/skeletons/ClassCardSkeleton";
-import Link from "@/components/app-link";
-import { ScrollShadow, Typography } from "@heroui/react";
+import { ClassCard } from "../../components/ClassCard";
+import { ScrollShadow } from "@heroui/react";
 import { useTranslations } from "next-intl";
 import { useCatalogClasses, type PublicCatalogClass } from "@api/discovery";
 
-import { FallbackImage } from "@/components/FallbackImage";
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
 import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 
@@ -87,42 +86,19 @@ export function DiscoveryClassesRailSection({
                       : t("modeInPerson");
 
                 return (
-                  <Link
+                  <ClassCard
                     key={item.id}
+                    title={item.title}
+                    description={item.description}
+                    imageUrl={item.imageUrl}
                     href={`/discovery/classes/${item.slug}`}
-                    scroll={false}
-                    className={styles.card()}
-                    aria-label={item.title}
-                  >
-                    <div className={styles.imageWrap()}>
-                      <FallbackImage
-                        src={item.imageUrl}
-                        alt={item.title}
-                        fill
-                        unoptimized
-                        sizes="(max-width: 640px) 72vw, 264px"
-                        className={styles.image()}
-                      />
-                      <span className={styles.badge()}>{modeLabel}</span>
-                      <span className={styles.seats()}>
-                        {t("seatsLeft", {
-                          count: remaining.toLocaleString("fa-IR"),
-                        })}
-                      </span>
-                    </div>
-                    <div className={styles.body()}>
-                      <Typography type="body-xs" className={styles.sport()}>
-                        {item.deliveryMode === "online" ? "آنلاین" : "حضوری"}
-                      </Typography>
-                      <h3 className={styles.name()}>{item.title}</h3>
-                      <p className={styles.description()}>{item.description}</p>
-                      <p className={styles.price()}>
-                        {t("fromPrice", {
-                          price: item.price.amount.toLocaleString("fa-IR"),
-                        })}
-                      </p>
-                    </div>
-                  </Link>
+                    badge={modeLabel}
+                    remaining={remaining}
+                    price={item.price.amount}
+                    currency={item.price.currency}
+                    startAt={item.courseStartAt}
+                    className="w-[min(78vw,19rem)] shrink-0 snap-start"
+                  />
                 );
               })}
         </div>

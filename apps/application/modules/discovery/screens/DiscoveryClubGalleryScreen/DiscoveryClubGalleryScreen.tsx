@@ -22,7 +22,7 @@ function GallerySkeleton() {
     <main
       aria-busy="true"
       aria-label="در حال بارگذاری گالری"
-      className="flex min-h-dvh flex-col overflow-hidden bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]"
+      className="flex min-h-dvh flex-col overflow-hidden bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       dir="rtl"
     >
       <header className="grid h-16 shrink-0 grid-cols-[3rem_1fr_3rem] items-center gap-3">
@@ -79,9 +79,25 @@ export function DiscoveryClubGalleryScreen({
 
   return (
     <main
-      className="flex min-h-dvh flex-col overflow-hidden bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]"
+      className="flex min-h-dvh flex-col overflow-hidden bg-background px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       dir="rtl"
     >
+      <SecondaryHeader
+        title={`گالری (${images.length.toLocaleString("fa-IR")})`}
+        showFilter={false}
+        backHref={`/discovery/clubs/${clubId}`}
+        action={
+          <Button
+            isIconOnly
+            variant={gridVisible ? "primary" : "secondary"}
+            aria-label={gridVisible ? "نمایش اسلایدی" : "نمایش شبکه‌ای"}
+            onPress={() => setGridVisible((v) => !v)}
+          >
+            <Icon name="grid-four" size="xl" />
+          </Button>
+        }
+      />
+
       <label className="mt-3 text-sm">
         دسته عکس
         <select
@@ -114,24 +130,9 @@ export function DiscoveryClubGalleryScreen({
           عکسی در این دسته ثبت نشده است.
         </p>
       )}
-      <SecondaryHeader
-        title={`گالری (${images.length.toLocaleString("fa-IR")})`}
-        showFilter={false}
-        backHref={`/discovery/clubs/${clubId}`}
-        action={
-          <Button
-            isIconOnly
-            variant={gridVisible ? "primary" : "secondary"}
-            aria-label={gridVisible ? "نمایش اسلایدی" : "نمایش شبکه‌ای"}
-            onPress={() => setGridVisible((v) => !v)}
-          >
-            <Icon name="grid-four" size="xl" />
-          </Button>
-        }
-      />
 
       {gridVisible ? (
-        <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto py-3">
+        <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto px-3 py-3">
           {slides.map((src, index) => (
             <button
               key={`${src}-${index}`}

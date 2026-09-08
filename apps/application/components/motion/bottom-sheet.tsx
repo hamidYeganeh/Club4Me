@@ -17,6 +17,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { createPortal } from "react-dom";
+import { Icon } from "@theme/icon";
 import { cn } from "@/lib/cn";
 
 const DRAWER_EASE = [0.32, 0.72, 0, 1] as const;
@@ -63,6 +64,10 @@ export function BottomSheet({
   const titleId = `${uid}-title`;
   const descriptionId = `${uid}-description`;
 
+  const changeRef = useRef(onOpenChange);
+  useEffect(() => {
+    changeRef.current = onOpenChange;
+  }, [onOpenChange]);
   useEffect(() => {
     if (!open) return;
 
@@ -70,20 +75,72 @@ export function BottomSheet({
     const previousOverflow = scrollRoot?.style.overflow;
     scrollRoot?.style.setProperty("overflow", "hidden");
 
+    const previousFocus =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const isTopSheet = () =>
+      Array.from(document.querySelectorAll('[data-bottom-sheet="true"]')).at(
+        -1,
+      ) === sheetRef.current;
+    const frame = requestAnimationFrame(() => sheetRef.current?.focus());
+    const focusable = () =>
+      Array.from(
+        sheetRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
+        ) ?? [],
+      ).filter((node) => node.getClientRects().length > 0);
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isTopSheet()) return;
       if (event.key === "Escape") {
         event.preventDefault();
-        onOpenChange(false);
+        event.stopPropagation();
+        changeRef.current(false);
+      }
+      if (event.key === "Tab") {
+        const items = focusable();
+        const first = items[0];
+        const last = items.at(-1);
+        if (!first || !last) {
+          event.preventDefault();
+          sheetRef.current?.focus();
+          return;
+        }
+        if (
+          event.shiftKey &&
+          (document.activeElement === first ||
+            document.activeElement === sheetRef.current)
+        ) {
+          event.preventDefault();
+          last.focus();
+        } else if (
+          !event.shiftKey &&
+          (document.activeElement === last ||
+            document.activeElement === sheetRef.current)
+        ) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      if (scrollRoot) scrollRoot.style.overflow = previousOverflow ?? "";
+    const keepFocus = (event: FocusEvent) => {
+      if (
+        isTopSheet() &&
+        event.target instanceof Node &&
+        !sheetRef.current?.contains(event.target)
+      )
+        sheetRef.current?.focus();
     };
-  }, [onOpenChange, open]);
+    window.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("focusin", keepFocus);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("focusin", keepFocus);
+      if (scrollRoot) scrollRoot.style.overflow = previousOverflow ?? "";
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [open]);
 
   const handleDragEnd = (_event: unknown, info: PanInfo) => {
     const { y: velocity } = info.velocity;
@@ -118,9 +175,12 @@ export function BottomSheet({
   const snapValue = snapPoints[snap] ?? snapPoints[0] ?? 0.5;
   const heightStyle =
     snapValue === "auto"
-      ? { maxHeight: "min(92dvh, calc(100dvh - var(--keyboard-inset, 0px)))" }
+      ? {
+          maxHeight:
+            "min(92dvh, calc(100dvh - var(--keyboard-inset, 0px) - var(--app-safe-top) - 1rem))",
+        }
       : {
-          height: `min(${snapValue * 100}dvh, calc(100dvh - var(--keyboard-inset, 0px)))`,
+          height: `min(${snapValue * 100}dvh, calc(100dvh - var(--keyboard-inset, 0px) - var(--app-safe-top) - 1rem))`,
         };
 
   if (!mounted) return null;
@@ -132,17 +192,19 @@ export function BottomSheet({
           <motion.button
             key="bottom-sheet-backdrop"
             type="button"
-            aria-label="Close bottom sheet"
+            aria-label="بستن"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.16, ease: "linear" }}
             onClick={() => onOpenChange(false)}
-            className="fixed inset-0 z-[1000] bg-black/50"
+            className="fixed inset-0 z-[1000] bg-background/65 backdrop-blur-sm"
           />
           <motion.div
             key="bottom-sheet"
             ref={sheetRef}
+            tabIndex={-1}
+            data-bottom-sheet="true"
             drag="y"
             dragControls={dragControls}
             dragListener={false}
@@ -160,7 +222,7 @@ export function BottomSheet({
             }
             style={heightStyle}
             className={cn(
-              "fixed inset-x-0 bottom-[var(--keyboard-inset,0px)] z-[1001] mx-auto flex w-full max-w-xl translate-z-0 flex-col contain-paint rounded-t-[2rem] bg-surface text-surface-foreground will-change-transform",
+              "fixed inset-x-0 bottom-[var(--keyboard-inset,0px)] z-[1001] mx-auto flex w-full max-w-xl translate-z-0 flex-col contain-paint rounded-t-[2.25rem] bg-surface text-surface-foreground shadow-[0_-16px_60px_-24px_rgba(0,0,0,0.45)] outline-none will-change-transform",
               className,
             )}
             role="dialog"
@@ -174,7 +236,7 @@ export function BottomSheet({
                 onPointerDown={(event) => dragControls.start(event)}
                 className="flex cursor-grab touch-none items-center justify-center px-8 py-2 active:cursor-grabbing"
               >
-                <div className="h-1.5 w-12 rounded-full bg-foreground/15" />
+                <div className="h-1.5 w-12 rounded-full bg-muted/40" />
               </div>
               {title || description ? (
                 <div className="mt-3 flex w-full items-start gap-3 text-start">
@@ -190,15 +252,24 @@ export function BottomSheet({
                       </p>
                     ) : null}
                   </div>
-                  {headerAction ? (
-                    <div className="shrink-0">{headerAction}</div>
-                  ) : null}
+                  <div className="shrink-0">
+                    {headerAction ?? (
+                      <button
+                        type="button"
+                        aria-label="بستن"
+                        onClick={() => onOpenChange(false)}
+                        className="grid size-10 place-items-center rounded-2xl bg-surface-secondary text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-focus"
+                      >
+                        <Icon name="close-x" size={20} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : null}
             </div>
             <div
               className={cn(
-                "min-h-0 flex-1 scroll-pt-3 overflow-y-auto overscroll-contain px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]",
+                "min-h-0 flex-1 scroll-pt-3 overflow-y-auto overscroll-contain px-5 pb-[calc(1.5rem+var(--app-safe-bottom))]",
                 contentClassName,
               )}
             >

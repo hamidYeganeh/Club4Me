@@ -3,7 +3,7 @@
 import { FormEvent, useId, useState } from "react";
 import { Button, Card, TextArea, toast } from "@heroui/react";
 import { useCreateMedia } from "@api";
-import { Icon } from "@theme/icon";
+import { Icon, iconNames, type IconName } from "@theme/icon";
 
 export function ReviewForm({
   entityName,
@@ -13,7 +13,7 @@ export function ReviewForm({
 }: {
   entityName: string;
   isPending?: boolean;
-  criteria?: Array<{ id: string; name: string }>;
+  criteria?: Array<{ id: string; name: string; icon?: unknown }>;
   onSubmit: (value: {
     rating: number;
     body: string;
@@ -52,7 +52,19 @@ export function ReviewForm({
       <form onSubmit={submit} className="mt-6 space-y-6">
         {criteria.map((criterion) => (
           <label key={criterion.id} className="block text-sm font-bold">
-            {criterion.name}
+            <span className="flex items-center gap-2">
+              <Icon
+                name={
+                  typeof criterion.icon === "string" &&
+                  iconNames.includes(criterion.icon as IconName)
+                    ? (criterion.icon as IconName)
+                    : "star-full"
+                }
+                size={20}
+                className="text-accent"
+              />
+              {criterion.name}
+            </span>
             <select
               disabled={isPending}
               className="mt-2 w-full rounded-xl border border-border bg-surface p-3"

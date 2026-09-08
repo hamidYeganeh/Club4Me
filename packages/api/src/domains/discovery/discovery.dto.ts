@@ -264,6 +264,7 @@ export type PublicCatalogCoach = DiscoveryCoachItem & {
 };
 
 export type PublicCatalogClass = {
+  socialMedia?: Array<{ platform: string; link: string }>;
   id: string;
   slug: string;
   title: string;
@@ -335,7 +336,9 @@ export type PublicCatalogSearchResponse = {
     reason: "outside_selected_radius";
     clubs: PublicCatalogClub[];
     classes: PublicCatalogClass[];
-    businessClasses: NonNullable<PublicCatalogSearchResponse["businessClasses"]>;
+    businessClasses: NonNullable<
+      PublicCatalogSearchResponse["businessClasses"]
+    >;
   };
 };
 

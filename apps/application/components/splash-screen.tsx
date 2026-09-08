@@ -9,57 +9,40 @@ import { splashScreenStyles } from "./splash-screen.styles";
 const SPLASH_VISIBLE_MS = 1600;
 const SPLASH_FADE_MS = 500;
 const SPLASH_SESSION_KEY = "gym4me.splash.shown";
+let shownForEntry = false;
 
 export function SplashScreen() {
   const t = useTranslations("common");
-  const [visible, setVisible] = useState(true);
-  const [exited, setExited] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (window.sessionStorage.getItem(SPLASH_SESSION_KEY) === "1") {
-      const remove = window.setTimeout(() => {
+    let hide: number | undefined;
+    let remove: number | undefined;
+    const show = window.setTimeout(() => {
+      if (shownForEntry) return;
+      shownForEntry = true;
+      try {
+        if (window.sessionStorage.getItem(SPLASH_SESSION_KEY) === "1") return;
+        window.sessionStorage.setItem(SPLASH_SESSION_KEY, "1");
+      } catch {
+        /* The entry animation also works without storage. */
+      }
+      setMounted(true);
+      setVisible(true);
+      hide = window.setTimeout(() => {
         setVisible(false);
-        setExited(true);
-      }, 0);
-      return () => window.clearTimeout(remove);
-    }
-    window.sessionStorage.setItem(SPLASH_SESSION_KEY, "1");
-
-    const hide = window.setTimeout(() => {
-      setVisible(false);
-    }, SPLASH_VISIBLE_MS);
-
-    return () => window.clearTimeout(hide);
+        remove = window.setTimeout(() => setMounted(false), SPLASH_FADE_MS);
+      }, SPLASH_VISIBLE_MS);
+    }, 0);
+    return () => {
+      window.clearTimeout(show);
+      window.clearTimeout(hide);
+      window.clearTimeout(remove);
+    };
   }, []);
 
-  useEffect(() => {
-    if (visible) {
-      return;
-    }
-
-    const remove = window.setTimeout(() => {
-      setExited(true);
-    }, SPLASH_FADE_MS);
-
-    return () => window.clearTimeout(remove);
-  }, [visible]);
-
-  useEffect(() => {
-    if (exited) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [exited]);
-
-  if (exited) {
-    return null;
-  }
+  if (!mounted) return null;
 
   const styles = splashScreenStyles({ visible });
 

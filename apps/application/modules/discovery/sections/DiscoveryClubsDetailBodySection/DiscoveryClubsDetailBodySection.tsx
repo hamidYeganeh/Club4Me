@@ -1,8 +1,9 @@
 "use client";
 
+import { MinimalCarousel } from "@/components/ui/minimal-carousel";
 import { ClubEmptyState } from "@modules/discovery/components/ClubEmptyState";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { useLocale, useTranslations } from "next-intl";
@@ -25,6 +26,14 @@ import type { DiscoveryFacilityItem } from "@modules/discovery/discovery.types";
 import { discoveryClubsDetailBodySectionStyles } from "./DiscoveryClubsDetailBodySection.styles";
 import type { DiscoveryClubsDetailBodySectionProps } from "./DiscoveryClubsDetailBodySection.types";
 
+const statIcons = {
+  clock: ({ size }: { size?: number }) => <Icon name="clock" size={size} />,
+  compass: ({ size }: { size?: number }) => <Icon name="compass" size={size} />,
+  "star-full": ({ size }: { size?: number }) => (
+    <Icon name="star-full" size={size} />
+  ),
+};
+
 type FacilityListKind = "amenities" | "equipment";
 
 export function DiscoveryClubsDetailBodySection({
@@ -42,33 +51,11 @@ export function DiscoveryClubsDetailBodySection({
 }: DiscoveryClubsDetailBodySectionProps) {
   const t = useTranslations("discovery.clubDetail");
   const direction = getLocaleDirection(useLocale());
-  const [expanded, setExpanded] = useState(false);
-  const [canExpand, setCanExpand] = useState(false);
   const [listKind, setListKind] = useState<FacilityListKind | null>(null);
   const [detailItem, setDetailItem] = useState<DiscoveryFacilityItem | null>(
     null,
   );
-  const aboutRef = useRef<HTMLParagraphElement>(null);
-  const styles = discoveryClubsDetailBodySectionStyles({ expanded });
-
-  useEffect(() => {
-    const node = aboutRef.current;
-    if (!node) {
-      return;
-    }
-
-    const measure = () => {
-      if (expanded) {
-        return;
-      }
-      setCanExpand(node.scrollHeight > node.clientHeight + 1);
-    };
-
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [about, expanded]);
+  const styles = discoveryClubsDetailBodySectionStyles();
 
   const listItems =
     listKind === "equipment"
@@ -119,76 +106,32 @@ export function DiscoveryClubsDetailBodySection({
         </div>
       ) : null}
 
-      <div className={styles.stats()}>
-        {stats.map((stat) => (
-          <div key={stat.label} className={styles.stat()}>
-            <span className={styles.statIcon()}>
-              <Icon name={stat.icon} size="sm" />
-            </span>
-            <div className={styles.statText()}>
-              <Typography
-                type="body-sm"
-                weight="semibold"
-                truncate
-                className={styles.statValue()}
-              >
-                {stat.value}
-              </Typography>
-              <Typography
-                type="body-xs"
-                color="muted"
-                truncate
-                className={styles.statLabel()}
-              >
-                {stat.label}
-              </Typography>
-            </div>
-          </div>
-        ))}
-      </div>
+      <MinimalCarousel
+        cards={stats.map((stat) => ({
+          id: stat.label,
+          title: stat.label,
+          value: stat.value,
+          icon: statIcons[stat.icon],
+          description: stat.description,
+        }))}
+      />
 
-      <div className={styles.about()}>
-        <Typography type="h5" className={styles.aboutTitle()}>
-          {t("aboutTitle")}
-        </Typography>
-        {!about.trim() ? (
-          <ClubEmptyState
-            title="هنوز توضیحی درباره باشگاه ثبت نشده است"
-            description="معرفی باشگاه پس از تکمیل اینجا نمایش داده می‌شود."
-          />
-        ) : null}
-        <Typography
-          type="body-sm"
-          color="muted"
-          className={styles.aboutBody()}
-          render={({ children, ref, ...p }) => (
-            <p
-              {...p}
-              ref={(node) => {
-                aboutRef.current = node;
-                if (typeof ref === "function") {
-                  ref(node);
-                } else if (ref) {
-                  ref.current = node;
-                }
-              }}
-            >
-              {children}
-            </p>
-          )}
-        >
-          {about}
-        </Typography>
-        {(canExpand || expanded) && (
-          <Button
-            variant="ghost"
-            size="lg"
-            onPress={() => setExpanded((value) => !value)}
-          >
-            {expanded ? t("seeLess") : t("seeMore")}
-          </Button>
-        )}
-      </div>
+      <details className="group rounded-3xl bg-transparent py-3">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl py-2 focus-visible:outline-2 focus-visible:outline-focus">
+          <span className="text-lg font-bold">{t("aboutTitle")}</span>
+          <span className="flex items-center gap-2 text-sm text-accent">
+            <span className="group-open:hidden">{t("seeMore")}</span>
+            <span className="hidden group-open:inline">{t("seeLess")}</span>
+            <Icon
+              name="chevron-down"
+              className="transition-transform group-open:rotate-180"
+            />
+          </span>
+        </summary>
+        <p className="mt-3 whitespace-pre-line text-sm leading-8 text-muted">
+          {about.trim() || "هنوز توضیحی درباره باشگاه ثبت نشده است"}
+        </p>
+      </details>
 
       {sports.length > 0 ? (
         <div className={styles.sports()}>

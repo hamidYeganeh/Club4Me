@@ -1,5 +1,7 @@
 "use client";
 
+import NumberFlow from "@number-flow/react";
+import { DiscoveryQueryState } from "../../components/DiscoveryQueryState";
 import { DiscoveryIranMapSkeleton } from "../../components/skeletons/DiscoveryIranMapSkeleton";
 import type { CSSProperties, KeyboardEvent } from "react";
 import { useMemo, useState } from "react";
@@ -92,11 +94,10 @@ export function DiscoveryIranMapSection() {
           title="ورزش در سراسر ایران"
           subtitle="استان را روی نقشه انتخاب کن و باشگاه‌های آن منطقه را ببین"
           icon="map-trifold"
-          viewAllLabel="همه شهرها"
-          viewAllUrl="/discovery/cities"
         />
       </div>
 
+      <DiscoveryQueryState query={provinces} />
       <div className={styles.card()}>
         <div className={styles.content()}>
           <div className={styles.mapWrap()}>
@@ -149,9 +150,8 @@ export function DiscoveryIranMapSection() {
               <p className={styles.detailLabel()}>استان انتخاب‌شده</p>
               <h3 className={styles.detailTitle()}>{selectedShape.nameFa}</h3>
               <p className={styles.detailValue()}>
-                {provinces.isPending
-                  ? "در حال دریافت اطلاعات باشگاه‌ها"
-                  : `${selectedCount.toLocaleString("fa-IR")} باشگاه ثبت‌شده`}
+                <NumberFlow value={selectedCount} locales="fa-IR" /> باشگاه
+                ثبت‌شده
               </p>
             </div>
             <Link href={selectedHref} className={styles.action()}>
@@ -159,18 +159,6 @@ export function DiscoveryIranMapSection() {
               <Icon name="chevron-left" size={16} />
             </Link>
           </div>
-        </div>
-
-        <div className={styles.source()}>
-          <span>مرزهای ۳۱ استان ایران</span>
-          <a
-            href="https://www.openstreetmap.org/copyright"
-            target="_blank"
-            rel="noreferrer"
-            className="underline decoration-foreground/25 underline-offset-4 transition-colors hover:text-foreground"
-          >
-            © مشارکت‌کنندگان OpenStreetMap
-          </a>
         </div>
       </div>
     </section>

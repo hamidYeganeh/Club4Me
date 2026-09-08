@@ -1,4 +1,5 @@
 "use client";
+import { ResourceIcon } from "@/components/resource-icon";
 
 import { useClubReviews, usePublicClub, useServiceReviews } from "@api";
 import {
@@ -46,30 +47,28 @@ export function DiscoveryReviewsScreen({
         : (classItem.data?.title ?? "کلاس");
   const sourceReviews =
     type === "club" ? clubReviews.data?.items : serviceReviews.data?.items;
-  const reviews: ReviewCardItem[] = (sourceReviews ?? []).map(
-    (review) => ({
-      id: review.id,
-      author: "کاربر کلاب‌فورمی",
-      rating: review.rating,
-      title: review.title,
-      body: review.body,
-      createdAt: review.createdAt,
-      verified:
-        "isVerifiedAttendance" in review
-          ? review.isVerifiedAttendance === true
-          : review.isVerifiedBooking === true,
-      ownerResponse: review.ownerResponse,
-      mediaUrls: "mediaUrls" in review ? review.mediaUrls : undefined,
-      criteria:
-        "ratings" in review
-          ? Object.entries(review.ratings ?? {}).flatMap(([id, value]) =>
-              review.criterionLabels?.[id]
-                ? [{ name: review.criterionLabels[id]!, value }]
-                : [],
-            )
-          : [],
-    }),
-  );
+  const reviews: ReviewCardItem[] = (sourceReviews ?? []).map((review) => ({
+    id: review.id,
+    author: "کاربر کلاب‌فورمی",
+    rating: review.rating,
+    title: review.title,
+    body: review.body,
+    createdAt: review.createdAt,
+    verified:
+      "isVerifiedAttendance" in review
+        ? review.isVerifiedAttendance === true
+        : review.isVerifiedBooking === true,
+    ownerResponse: review.ownerResponse,
+    mediaUrls: "mediaUrls" in review ? review.mediaUrls : undefined,
+    criteria:
+      "ratings" in review
+        ? Object.entries(review.ratings ?? {}).flatMap(([id, value]) =>
+            review.criterionLabels?.[id]
+              ? [{ name: review.criterionLabels[id]!, value }]
+              : [],
+          )
+        : [],
+  }));
   const average =
     type === "club"
       ? (clubReviews.data?.averageRating ?? 0)
@@ -115,7 +114,7 @@ export function DiscoveryReviewsScreen({
                 key={item.id}
                 className="rounded-xl bg-surface-secondary p-3 text-sm"
               >
-                {item.name}:{" "}
+                <ResourceIcon icon={item.icon} /> {item.name}:{" "}
                 {item.reviewsCount
                   ? `${item.averageRating.toFixed(1)} از ۵ · ${item.reviewsCount} رأی`
                   : "هنوز ارزیابی نشده"}
@@ -129,7 +128,9 @@ export function DiscoveryReviewsScreen({
             تجربه‌های واقعی اعضای کلاب‌فورمی
           </p>
         </div>
-        {(type === "club" ? clubReviews.isPending : serviceReviews.isPending) ? (
+        {(
+          type === "club" ? clubReviews.isPending : serviceReviews.isPending
+        ) ? (
           <ReviewListSkeleton count={3} />
         ) : (
           <div className="space-y-3">

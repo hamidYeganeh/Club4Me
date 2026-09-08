@@ -18,10 +18,23 @@ import { DiscoveryResultCardSkeleton } from "@/components/loading-skeletons";
 export function DiscoveryClassesScreen() {
   const params = useSearchParams();
   const clubId = params.get("clubId") || undefined;
-  return <ClassesResults key={clubId ?? "all"} clubId={clubId} />;
+  const sportId = params.get("sportId") || undefined;
+  return (
+    <ClassesResults
+      key={`${clubId}-${sportId}`}
+      clubId={clubId}
+      sportId={sportId}
+    />
+  );
 }
 
-function ClassesResults({ clubId }: { clubId?: string }) {
+function ClassesResults({
+  clubId,
+  sportId,
+}: {
+  clubId?: string;
+  sportId?: string;
+}) {
   const { query, setQuery, q, page, setPage } = useDiscoveryList();
   const result = useCatalogSearch({
     kind: "class",
@@ -29,6 +42,7 @@ function ClassesResults({ clubId }: { clubId?: string }) {
     page,
     limit: 20,
     clubId,
+    sportId,
   });
   const classes = result.data?.classes ?? [];
   return (

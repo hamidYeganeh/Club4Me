@@ -6,14 +6,23 @@ import {
   type SsgoiConfig,
   type SsgoiTransitionRule,
 } from "@ssgoi/react";
-import { axis, drill, sheet, zoom } from "@ssgoi/react/view-transitions";
+import { axis, drill, sheet } from "@ssgoi/react/view-transitions";
 
 const transitionRules: SsgoiTransitionRule[] = [
   {
-    priority: 20,
-    from: "/discovery",
-    to: "/discovery/clubs/:id",
-    transition: zoom({ type: "blur", variant: "fade" }),
+    priority: 30,
+    on: [
+      "/discovery/clubs/:id",
+      "/discovery/clubs/:id/**",
+      "/discovery/coaches/:id",
+      "/discovery/coaches/:id/**",
+      "/discovery/classes/:id",
+      "/discovery/classes/:id/**",
+      "/discovery/business-class",
+      "/discovery/business-classes/:id",
+    ],
+    transition: drill({ type: "parallax" }),
+    preserveScroll: { from: true, to: false },
   },
   {
     priority: 20,

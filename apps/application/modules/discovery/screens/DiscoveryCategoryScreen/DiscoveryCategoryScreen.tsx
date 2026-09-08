@@ -1,5 +1,6 @@
 "use client";
 
+import { DiscoverySportDetailScreen } from "../DiscoverySportDetailScreen";
 import { DiscoveryQueryPage } from "../../components/DiscoveryQueryPage";
 import { getQueryFailure } from "@/lib/request-failure";
 
@@ -49,6 +50,8 @@ export function DiscoveryCategoryScreen({
     );
   }
 
+  if (type === "sports") return <DiscoverySportDetailScreen sport={item} />;
+
   return (
     <DiscoveryClubsScreen
       key={item.id}
@@ -59,13 +62,7 @@ export function DiscoveryCategoryScreen({
             (typeof item.description === "string" && item.description) ||
             "باشگاه‌ها را مقایسه کن و محل تمرینت را انتخاب کن."
           }
-          icon={
-            type === "sports"
-              ? "soccer"
-              : type === "regions"
-                ? "pin-1"
-                : "building-1"
-          }
+          icon={type === "regions" ? "pin-1" : "building-1"}
         />
       }
       layout="list"
@@ -73,13 +70,7 @@ export function DiscoveryCategoryScreen({
       description={
         typeof item.description === "string" ? item.description : undefined
       }
-      browse={
-        type === "club-types"
-          ? { clubTypeId: item.id }
-          : type === "sports"
-            ? { sportId: item.id }
-            : undefined
-      }
+      browse={type === "club-types" ? { clubTypeId: item.id } : undefined}
       initialFilters={
         type === "regions" ? { cityRegionId: item.id } : undefined
       }
