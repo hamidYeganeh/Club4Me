@@ -205,6 +205,7 @@ services:
       - ./deploy/gateway.nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /opt/gym4me-runtime/acme:/var/www/certbot:ro
+      - /opt/gym4me-runtime/updates:/var/www/updates:ro
     healthcheck:
       test:
         [
