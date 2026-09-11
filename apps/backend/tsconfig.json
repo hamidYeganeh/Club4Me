@@ -16,6 +16,6 @@
     "declarationMap": false,
     "types": ["node", "jest"]
   },
-  "include": ["src", "test"],
+  "include": ["src", "test", "api"],
   "exclude": ["node_modules", "dist"]
 }
