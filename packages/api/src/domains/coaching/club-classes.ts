@@ -13,6 +13,10 @@ export type ClubClassSession = {
 };
 
 export type PublicClubClass = {
+  requiredEquipment?: Array<{ id: string; name: string }>;
+  prerequisites?: string[];
+  minAge?: number | null;
+  maxAge?: number | null;
   socialMedia?: Array<{ platform: string; link: string }>;
   id: string;
   slug: string;
@@ -63,12 +67,14 @@ export type AthleteClubClassEnrollment = {
   agreedPrice: number;
   remainingSessions: number | null;
   enrolledAt: string;
+  waitlistOfferExpiresAt?: string | null;
 };
 
 export type RecommendedClubClass = PublicClubClass & {
   recommendationScore: number;
   distanceKm: number | null;
   reasons: string[];
+  mismatches?: string[];
 };
 
 export type CoachClubClass = Omit<
@@ -86,6 +92,8 @@ export type CoachClubClassEnrollment = {
 };
 
 export type CoachClubClassAttendance = {
+  checkedInAt?: string | null;
+  checkedOutAt?: string | null;
   studentId: string;
   student: { name: string; phone: string };
   status: "unrecorded" | "present" | "absent" | "excused";
@@ -147,13 +155,39 @@ export function useAthleteClubClasses() {
   });
 }
 
+export type RecommendationPreferences = {
+  weekdays: number[];
+  timeFrom: string;
+  timeTo: string;
+  maxPrice: number | null;
+  radiusKm: number | null;
+  level: string;
+  sport: string;
+  availableOnly: boolean;
+};
+export function useSaveRecommendationPreferences() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: RecommendationPreferences) =>
+      http.put<RecommendationPreferences>(
+        "/athlete/club-classes/preferences",
+        body,
+      ),
+    onSuccess: () =>
+      client.invalidateQueries({
+        queryKey: [...athleteKey, "recommendations"],
+      }),
+  });
+}
 export function useAthleteClassRecommendations() {
   return useQuery({
     queryKey: [...athleteKey, "recommendations"],
     queryFn: () =>
-      http.get<{ items: RecommendedClubClass[] }>(
-        "/athlete/club-classes/recommendations",
-      ),
+      http.get<{
+        items: RecommendedClubClass[];
+        alternatives?: RecommendedClubClass[];
+        preferences?: RecommendationPreferences;
+      }>("/athlete/club-classes/recommendations"),
   });
 }
 
@@ -175,6 +209,15 @@ export function useCancelClubClassEnrollment() {
       http.post<AthleteClubClassEnrollment>(
         `/athlete/club-classes/enrollments/${enrollmentId}/cancel`,
       ),
+    onSuccess: () => client.invalidateQueries({ queryKey: athleteKey }),
+  });
+}
+
+export function useRenewClubClassWaitlist() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      http.post(`/athlete/club-classes/enrollments/${id}/waitlist/renew`),
     onSuccess: () => client.invalidateQueries({ queryKey: athleteKey }),
   });
 }
@@ -259,6 +302,7 @@ export function useRecordCoachClubClassAttendance(
         studentId: string;
         status: "present" | "absent" | "excused";
         notes: string;
+        checkedOut?: boolean;
       }>,
     ) =>
       http.put<{ items: CoachClubClassAttendance[] }>(

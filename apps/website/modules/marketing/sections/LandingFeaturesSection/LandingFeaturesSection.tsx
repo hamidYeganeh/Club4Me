@@ -7,13 +7,12 @@ import { Typography } from "@heroui/react/typography";
 import { ArrowRight } from "@modules/marketing/icons/icons/ArrowRight";
 import { Check } from "@modules/marketing/icons/icons/Check";
 import { ClubCard } from "@modules/marketing/components/cards/ClubCard";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LANDING_ASSETS, LANDING_CLUBS } from "../../lib/landing-assets";
+import { LANDING_ASSETS } from "../../lib/landing-assets";
 import { useLandingScroll } from "../../lib/landing-scroll";
 import { landingFeaturesSectionStyles } from "./LandingFeaturesSection.styles";
 import type { LandingFeaturesSectionProps } from "./LandingFeaturesSection.types";
-
-const MOCKUP_CLUB = LANDING_CLUBS[1]!;
 
 function CheckRow({
   label,
@@ -40,6 +39,7 @@ export function LandingFeaturesSection({
   const t = useTranslations("MarketingLanding.landingFeatures");
   const shared = useTranslations("MarketingLanding.shared");
   const slots = landingFeaturesSectionStyles();
+  const router = useRouter();
   const { scrollTo } = useLandingScroll();
   const quoteAuthor = LANDING_ASSETS.coaches[1]!;
   const portrait = LANDING_ASSETS.coaches[0]!;
@@ -70,24 +70,27 @@ export function LandingFeaturesSection({
                 <ClubCard
                   actionLabel={shared("viewAction")}
                   className={slots.mockupClub()}
-                  features={[...MOCKUP_CLUB.features]}
-                  image={MOCKUP_CLUB.image}
-                  imageAlt={MOCKUP_CLUB.title}
-                  onAction={() => scrollTo("#clubs")}
+                  features={[
+                    { label: "ثبت ست و وزنه" },
+                    { label: "تایمر استراحت" },
+                  ]}
+                  image={LANDING_ASSETS.facilities.clay}
+                  imageAlt="معرفی برنامه تمرین"
+                  onAction={() =>
+                    router.push(
+                      `${process.env.NEXT_PUBLIC_APPLICATION_URL ?? "https://app.gym4me.ir"}/athlete/training`,
+                    )
+                  }
                   orientation="vertical"
-                  price={MOCKUP_CLUB.price}
-                  pricePrefix={shared("pricePrefix")}
-                  priceSuffix={shared("priceSuffix")}
-                  rating={MOCKUP_CLUB.rating}
-                  ratingCount={MOCKUP_CLUB.ratingCount}
-                  subtitle={MOCKUP_CLUB.subtitle}
-                  title={MOCKUP_CLUB.title}
+
+                  subtitle="برنامه، جلسه و سابقه تمرین"
+                  title="تمرین‌های من"
                 />
               </div>
             </div>
           </div>
 
-          <blockquote className={slots.quoteCard()}>
+          <div className={slots.quoteCard()}>
             <Typography className={slots.quote()} type="body" weight="medium">
               <TextWithBrand>{t("quote")}</TextWithBrand>
             </Typography>
@@ -110,7 +113,7 @@ export function LandingFeaturesSection({
                 </Typography>
               </div>
             </footer>
-          </blockquote>
+          </div>
 
           <div className={slots.portraitCard()}>
             <CoverImage

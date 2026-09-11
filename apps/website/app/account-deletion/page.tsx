@@ -1,7 +1,11 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { LegalPage } from "@/components/legal-page";
 
-export const metadata: Metadata = { title: "حذف حساب | جیم فور می" };
+export const metadata = pageMetadata(
+  "حذف حساب کاربری",
+  "راهنمای درخواست حذف حساب کاربری و اطلاعات شخصی در Gym4Me.",
+  "/account-deletion",
+);
 
 export default function AccountDeletionPage() {
   return (

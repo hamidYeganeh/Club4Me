@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { tokenStore } from "../../http/token-store";
@@ -75,8 +76,13 @@ export function createPortalAuth(scope: PortalScope) {
   };
 
   function useMe(enabled = true) {
+    const identity = useSyncExternalStore(
+      tokenStore.subscribe,
+      tokenStore.identity,
+      () => "guest",
+    );
     return useQuery({
-      queryKey: queries.me(),
+      queryKey: [...queries.me(), identity],
       queryFn: ({ signal }) => client.me(signal),
       enabled: enabled && Boolean(tokenStore.get()),
     });
@@ -181,7 +187,7 @@ export function createPortalAuth(scope: PortalScope) {
       mutationFn: () => client.logout(),
       onSettled: () => {
         tokenStore.clear();
-        queryClient.removeQueries({ queryKey: queries.all() });
+        queryClient.clear();
       },
     });
   }

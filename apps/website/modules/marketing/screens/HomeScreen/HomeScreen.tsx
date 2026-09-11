@@ -105,6 +105,7 @@ export function HomeScreen() {
         <LandingAboutUsSection />
         <LandingSportsSection />
         <LandingStatsSection />
+
         <LandingClubsSection />
         <LandingClassesSection />
         <LandingTestimonialsSection />

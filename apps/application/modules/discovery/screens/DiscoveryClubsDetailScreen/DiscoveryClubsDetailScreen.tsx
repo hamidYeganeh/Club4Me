@@ -232,7 +232,7 @@ export function DiscoveryClubsDetailScreen({
       <ClubSportsSection sportIds={data.sportIds} />
       <ClubProfileSection club={data} />
 
-      <ClubSlotsSection clubId={club.id} />
+      <ClubSlotsSection club={data} />
 
       <ClubClassesSection clubId={club.id} />
       <ClubCoachesContextSection

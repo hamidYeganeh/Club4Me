@@ -1,5 +1,7 @@
 "use client";
 
+import { ProductLink } from "../../components/ProductLink";
+import { applicationLink } from "../../lib/application-link";
 import { Button } from "@heroui/react/button";
 import { Typography } from "@heroui/react/typography";
 import { useTranslations } from "next-intl";
@@ -61,6 +63,9 @@ export function LandingDownloadSection({
                 {landing("hint")}
               </Typography>
               <InViewRise delayIn={120} fromY={18} className={slots.actions()}>
+                <ProductLink href={applicationLink("/discovery")} size="lg">
+                  باز کردن نسخه وب
+                </ProductLink>
                 <Button
                   isDisabled={!appStoreUrl}
                   size="lg"

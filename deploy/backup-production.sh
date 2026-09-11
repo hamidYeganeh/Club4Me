@@ -37,9 +37,14 @@ trap cleanup EXIT INT TERM
 /usr/bin/docker cp club4me-redis-1:/data/dump.rdb "$TARGET/redis-dump.rdb"
 gzip "$TARGET/redis-dump.rdb"
 
+# The backend's mounted media volume contains uploads and private documents.
+# Keep it in the same protected backup set as the database.
+/usr/bin/docker exec club4me-backend-1 tar -czf - -C /data/media . >"$TARGET/media.tar.gz"
+tar -tzf "$TARGET/media.tar.gz" >/dev/null
+
 gzip -t "$TARGET/mongodb.archive.gz"
 gzip -t "$TARGET/redis-dump.rdb.gz"
-sha256sum "$TARGET/mongodb.archive.gz" "$TARGET/redis-dump.rdb.gz" \
+sha256sum "$TARGET/mongodb.archive.gz" "$TARGET/redis-dump.rdb.gz" "$TARGET/media.tar.gz" \
   >"$TARGET/SHA256SUMS"
 chmod 600 "$TARGET"/*
 touch "$TARGET/COMPLETE"

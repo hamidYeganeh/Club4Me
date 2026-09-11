@@ -11,7 +11,4 @@ export type PanelRailSectionProps = {
   items: PanelRailItem[];
   addHref: string;
   addLabel: string;
-  avatarSrc: string;
-  avatarAlt: string;
-  badge: string;
 };

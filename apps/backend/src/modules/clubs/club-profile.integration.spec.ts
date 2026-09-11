@@ -264,6 +264,25 @@ describe("club profile persistence and trial concurrency", () => {
       isVerifiedBooking: true,
       criterionLabels: { [String(cleanliness.id)]: "نظافت" },
     });
+    const unverifiedUserId = new Types.ObjectId();
+    const unverifiedReview = await service.create(
+      String(unverifiedUserId),
+      String(clubId),
+      {
+        rating: 3,
+        body: "بد نبود",
+        ratings: {},
+        mediaIds: [],
+      },
+    );
+    expect(unverifiedReview).toMatchObject({
+      isVerifiedBooking: false,
+      ratings: {},
+    });
+    const storedUnverifiedReview = await reviewModel.findById(
+      unverifiedReview.id,
+    );
+    expect(storedUnverifiedReview?.reservationId).toBeUndefined();
     const summary = await service.list(String(clubId));
     expect(summary.criteriaSummary).toEqual(
       expect.arrayContaining([

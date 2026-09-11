@@ -30,7 +30,7 @@ describe("media upload and delivery", () => {
   let model: { findOne: jest.Mock; create: jest.Mock };
 
   beforeEach(async () => {
-    directory = await mkdtemp(join(tmpdir(), "club-media-"));
+    directory = await mkdtemp(join(tmpdir(), ".club-media-"));
     records = [];
     model = {
       findOne: jest.fn((filter) => ({
@@ -92,7 +92,7 @@ describe("media upload and delivery", () => {
       .set("Authorization", "Bearer test")
       .attach("file", png, { filename: "photo.png", contentType: "image/png" });
 
-  it("stores bytes outside MongoDB and serves them publicly with range support", async () => {
+  it("serves bytes from a hidden storage root with range support", async () => {
     const result = await upload().expect(201);
     expect(result.body.data.url).toBe(
       `https://api.example.com/media/${records[0]._id}/file`,

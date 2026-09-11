@@ -1,29 +1,45 @@
 # Android APK backed by the VPS
 
-The current application includes server-rendered membership and reservation
-routes that cannot be bundled with Next.js static export. The hosted Android
-configuration loads `https://app.gym4me.ir` inside Capacitor and requires an
-internet connection. It retains the native Android plugins.
+The standard APK loads `https://app.gym4me.ir` directly inside Capacitor while
+retaining native Android plugins. An internet connection is required. Each cold
+launch fetches the current deployed web application; subsequent website changes
+require only a normal deployment, with no APK rebuild or separate OTA package.
+An already open app continues its current session until reloaded or fully closed
+and reopened. Native changes (plugins, permissions, app identity, Android SDK or
+signing) still require a new APK installation.
 
-Build an installable debug APK after deploying the application:
+## Build
+
+Use Java 21 (for example the JBR bundled with Android Studio) and Android SDK 36:
+
+```sh
+npm run cap:apk -w apps/application
+```
+
+`cap:apk` runs `android:hosted`, synchronizes the hosted configuration and verifies
+that the packaged server URL is exactly `https://app.gym4me.ir`, HTTPS is enforced,
+and offline bundle updates are disabled. CI debug builds and the signed Android
+release workflow use the same hosted synchronization.
+
+To set a new Android version explicitly:
 
 ```sh
 npm run cap:sync:hosted -w apps/application
 cd apps/application/android
-./gradlew --no-daemon :app:assembleDebug
+./gradlew --no-daemon :app:assembleDebug \
+  -PGYM4ME_VERSION_CODE=2 -PGYM4ME_VERSION_NAME=1.0.1
 ```
 
-Use Java 21 and an Android SDK with platform 36. The APK is written to
-`apps/application/android/app/build/outputs/apk/debug/app-debug.apk`.
-This artifact uses the local debug signing key and is intended for direct
-installation and testing, not a store release.
+Output: `apps/application/android/app/build/outputs/apk/debug/app-debug.apk`.
+The debug APK uses the existing local debug signing key and is intended for direct
+installation, not a store release. Install it once over a compatible existing
+installation, then web deployments are loaded automatically on cold launch.
 
-To target another HTTPS deployment, run `cap sync android` from the application
-directory with `CAPACITOR_SERVER_URL` set to that origin. HTTP URLs are rejected.
-Without this variable, the existing bundled static-export configuration remains
-available, but its dynamic routes need to be adapted before it can build.
-
-For a signed release APK, configure the existing `GYM4ME_ANDROID_KEYSTORE`,
+For a signed release, configure `GYM4ME_ANDROID_KEYSTORE`,
 `GYM4ME_ANDROID_KEYSTORE_PASSWORD`, `GYM4ME_ANDROID_KEY_ALIAS`, and
-`GYM4ME_ANDROID_KEY_PASSWORD` environment variables and use `:app:assembleRelease`.
-Increment `GYM4ME_VERSION_CODE` when publishing an update.
+`GYM4ME_ANDROID_KEY_PASSWORD`; run hosted sync before `:app:assembleRelease` or
+`:app:bundleRelease`. Increase `GYM4ME_VERSION_CODE` for every new native release.
+
+The separate offline build remains available through `npm run android:demo`.
+It uses local bundles and its own OTA publishing flow; normal website deployment
+does not update an older installed offline APK. Install the hosted APK to switch.

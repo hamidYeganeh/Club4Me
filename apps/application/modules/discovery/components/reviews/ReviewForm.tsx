@@ -1,9 +1,50 @@
 "use client";
 
 import { FormEvent, useId, useState } from "react";
-import { Button, Card, TextArea, toast } from "@heroui/react";
-import { useCreateMedia } from "@api";
+import { Button, Card, TextArea } from "@heroui/react";
 import { Icon, iconNames, type IconName } from "@theme/icon";
+
+function StarRating({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  disabled?: boolean;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="flex justify-between gap-1" dir="ltr">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Button
+          type="button"
+          key={star}
+          isIconOnly
+          variant="ghost"
+          size="lg"
+          isDisabled={disabled}
+          aria-label={`${label}: ${star} ستاره از ۵`}
+          aria-pressed={star <= value}
+          onPress={() => onChange(star)}
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className={`size-8 ${star <= value ? "text-accent" : "text-muted"}`}
+            fill={star <= value ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinejoin="round"
+          >
+            <path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3-4.6-4.5 6.3-.9Z" />
+          </svg>
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 export function ReviewForm({
   entityName,
@@ -25,9 +66,6 @@ export function ReviewForm({
   const [rating, setRating] = useState(0);
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [body, setBody] = useState("");
-  const [mediaIds, setMediaIds] = useState<string[]>([]);
-  const [mediaNames, setMediaNames] = useState<string[]>([]);
-  const upload = useCreateMedia();
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (isPending || !rating || !body.trim()) return;
@@ -39,7 +77,7 @@ export function ReviewForm({
           criteria.some((c) => c.id === id),
         ),
       ),
-      mediaIds,
+      mediaIds: [],
     });
   };
 
@@ -51,8 +89,8 @@ export function ReviewForm({
       </Card.Description>
       <form onSubmit={submit} className="mt-6 space-y-6">
         {criteria.map((criterion) => (
-          <label key={criterion.id} className="block text-sm font-bold">
-            <span className="flex items-center gap-2">
+          <fieldset key={criterion.id} disabled={isPending}>
+            <legend className="flex items-center gap-2 text-sm font-bold">
               <Icon
                 name={
                   typeof criterion.icon === "string" &&
@@ -64,57 +102,31 @@ export function ReviewForm({
                 className="text-accent"
               />
               {criterion.name}
-            </span>
-            <select
-              disabled={isPending}
-              className="mt-2 w-full rounded-xl border border-border bg-surface p-3"
-              value={ratings[criterion.id] ?? ""}
-              onChange={(e) =>
-                setRatings((current) => {
-                  const next = { ...current };
-                  if (e.target.value)
-                    next[criterion.id] = Number(e.target.value);
-                  else delete next[criterion.id];
-                  return next;
-                })
-              }
-            >
-              <option value="">ارزیابی نکرده‌ام</option>
-              {[1, 2, 3, 4, 5].map((score) => (
-                <option key={score} value={score}>
-                  {score} از ۵
-                </option>
-              ))}
-            </select>
-          </label>
+            </legend>
+            <div className="mt-2">
+              <StarRating
+                label={criterion.name}
+                value={ratings[criterion.id] ?? 0}
+                disabled={isPending}
+                onChange={(value) =>
+                  setRatings((current) => ({
+                    ...current,
+                    [criterion.id]: value,
+                  }))
+                }
+              />
+            </div>
+          </fieldset>
         ))}
         <fieldset disabled={isPending}>
           <legend className="text-sm font-bold">امتیاز شما</legend>
-          <div className="mt-3 flex justify-between gap-1" dir="ltr">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Button
-                type="button"
-                key={star}
-                isIconOnly
-                variant="ghost"
-                size="lg"
-                aria-label={`${star} ستاره`}
-                aria-pressed={star <= rating}
-                onPress={() => setRating(star)}
-              >
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className={`size-8 ${star <= rating ? "text-accent" : "text-muted"}`}
-                  fill={star <= rating ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinejoin="round"
-                >
-                  <path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3-4.6-4.5 6.3-.9Z" />
-                </svg>
-              </Button>
-            ))}
+          <div className="mt-3">
+            <StarRating
+              label="امتیاز شما"
+              value={rating}
+              disabled={isPending}
+              onChange={setRating}
+            />
           </div>
         </fieldset>
 
@@ -145,80 +157,13 @@ export function ReviewForm({
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label
-            className="block text-sm font-bold"
-            htmlFor={`${bodyId}-media`}
-          >
-            تصویر تجربه{" "}
-            <span className="font-normal text-muted">
-              (اختیاری، حداکثر ۳ تصویر)
-            </span>
-          </label>
-          <input
-            id={`${bodyId}-media`}
-            className="block w-full rounded-xl border border-border bg-surface-secondary p-3 text-sm"
-            type="file"
-            accept="image/*"
-            multiple
-            disabled={isPending || upload.isPending || mediaIds.length >= 3}
-            onChange={async (event) => {
-              const files = Array.from(event.target.files ?? []).slice(
-                0,
-                3 - mediaIds.length,
-              );
-              if (!files.length) return;
-              try {
-                const uploaded = [] as Array<{ id: string; name: string }>;
-                for (const file of files) {
-                  const item = await upload.mutateAsync(file);
-                  uploaded.push({ id: item.id, name: file.name });
-                }
-                setMediaIds((current) => [
-                  ...current,
-                  ...uploaded.map((item) => item.id),
-                ]);
-                setMediaNames((current) => [
-                  ...current,
-                  ...uploaded.map((item) => item.name),
-                ]);
-              } catch {
-                toast.danger("بارگذاری تصویر انجام نشد");
-              } finally {
-                event.target.value = "";
-              }
-            }}
-          />
-          {mediaNames.length ? (
-            <div className="flex flex-wrap gap-2">
-              {mediaNames.map((name, index) => (
-                <Button
-                  key={`${name}-${index}`}
-                  size="sm"
-                  variant="secondary"
-                  onPress={() => {
-                    setMediaIds((current) =>
-                      current.filter((_, i) => i !== index),
-                    );
-                    setMediaNames((current) =>
-                      current.filter((_, i) => i !== index),
-                    );
-                  }}
-                >
-                  {name} ×
-                </Button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
         <Button
           type="submit"
           variant="primary"
           size="lg"
           className="w-full font-bold"
-          isDisabled={isPending || upload.isPending || !rating || !body.trim()}
-          isPending={isPending || upload.isPending}
+          isDisabled={isPending || !rating || !body.trim()}
+          isPending={isPending}
         >
           ثبت نظر
           <Icon name="arrow-left" size={18} />

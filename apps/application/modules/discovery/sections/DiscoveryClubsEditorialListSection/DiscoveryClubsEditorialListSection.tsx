@@ -22,12 +22,12 @@ export function DiscoveryClubsEditorialListSection({
 }: DiscoveryClubsEditorialListSectionProps) {
   const t = useTranslations("discovery.clubs");
   const styles = discoveryClubsEditorialListSectionStyles();
-  const useMock = Boolean(items);
-  const clubs = useCatalogClubs(params, enabled && !useMock);
+  const hasProvidedItems = Boolean(items);
+  const clubs = useCatalogClubs(params, enabled && !hasProvidedItems);
   const visible: DiscoveryClubsRailClub[] = items ?? clubs.data?.items ?? [];
   const titleId = `discovery-clubs-editorial-list-${id}`;
-  const isPending = !useMock && clubs.isPending;
-  const isError = !useMock && clubs.isError;
+  const isPending = !hasProvidedItems && clubs.isPending;
+  const isError = !hasProvidedItems && clubs.isError;
   const resolvedTitle = title ?? t("editorialListTitle");
   const resolvedSubtitle = subtitle ?? t("editorialListSubtitle");
 

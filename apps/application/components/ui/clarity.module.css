@@ -1,0 +1,90 @@
+.surface {
+  border: 1px solid var(--border);
+  border-radius: var(--app-radius-card);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in oklch, var(--foreground) 3%, transparent),
+      transparent 65%
+    ),
+    var(--surface);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, var(--foreground) 5%, transparent),
+    var(--app-shadow-card);
+}
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--app-radius-card);
+  background: radial-gradient(
+    ellipse at 50% 12%,
+    color-mix(in oklch, var(--accent) 6%, transparent),
+    transparent 65%
+  );
+}
+.orbit {
+  display: grid;
+  place-items: center;
+  width: 6rem;
+  height: 6rem;
+  border: 1px solid color-mix(in oklch, var(--accent) 16%, transparent);
+  border-radius: 50%;
+  margin-bottom: 1.25rem;
+}
+.symbol {
+  display: grid;
+  place-items: center;
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: 1.4rem;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, var(--foreground) 8%, transparent),
+    0 8px 20px color-mix(in oklch, var(--accent) 8%, transparent);
+  transform: rotate(-7deg);
+}
+.emptyTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.8;
+  text-wrap: balance;
+}
+.emptyDescription {
+  max-width: 32ch;
+  margin-top: 0.5rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.9;
+  text-wrap: pretty;
+}
+.emptyAction {
+  margin-top: 1.25rem;
+}
+.progress {
+  height: 0.45rem;
+  overflow: hidden;
+  background: var(--surface-tertiary);
+  border-radius: 1rem;
+}
+.progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transform-origin: right;
+  transition: transform 220ms ease;
+}
+:global([dir="ltr"]) .progress > span {
+  transform-origin: left;
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress > span {
+    transition: none;
+  }
+}

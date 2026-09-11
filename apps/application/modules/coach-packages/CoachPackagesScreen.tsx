@@ -15,6 +15,7 @@ import {
 import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
 import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGateway";
 import { ButtonLink } from "@/components/button-link";
+import { FeatureBadge } from "@/components/ui/feature-cards";
 import { useNow } from "@/lib/use-now";
 
 export function CoachPackagesScreen({ coachSlug }: { coachSlug?: string }) {
@@ -156,7 +157,15 @@ export function CoachPackagesScreen({ coachSlug }: { coachSlug?: string }) {
                       key={item.id}
                       className="app-card space-y-3 p-5 shadow-none"
                     >
-                      <Card.Title>{item.title}</Card.Title>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <FeatureBadge>{item.pricingType === "per_month" ? "ماهانه" : "بسته جلسات"}</FeatureBadge>
+                          <Card.Title className="mt-2 text-base">{item.title}</Card.Title>
+                        </div>
+                        <p className="text-sm font-bold tabular-nums">
+                          {item.price.amount.toLocaleString("fa-IR")} <span className="text-xs font-normal text-muted">ریال</span>
+                        </p>
+                      </div>
                       <p className="text-sm leading-7 text-muted">
                         {item.description}
                       </p>
@@ -168,9 +177,6 @@ export function CoachPackagesScreen({ coachSlug }: { coachSlug?: string }) {
                         {item.sessionCount
                           ? `${item.sessionCount.toLocaleString("fa-IR")} جلسه`
                           : "جلسات نامحدود، با رعایت ظرفیت سانس‌ها"}
-                      </p>
-                      <p className="font-bold text-accent">
-                        {item.price.amount.toLocaleString("fa-IR")} ریال
                       </p>
                       <Button
                         className="w-full"

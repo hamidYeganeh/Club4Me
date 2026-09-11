@@ -1,5 +1,6 @@
 "use client";
 
+import { EntityOptionContent, entityOptionText } from "@repo/ui/entity-option";
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -279,10 +280,12 @@ export function LocationFormScreen({ role, locationId }: Props) {
         </div>
 
         <Checkbox name="isDefault" defaultSelected={existing?.isDefault}>
-          <Checkbox.Control>
-            <Checkbox.Indicator />
-          </Checkbox.Control>
-          <Checkbox.Content>انتخاب به‌عنوان لوکیشن پیش‌فرض</Checkbox.Content>
+          <Checkbox.Content>
+            <Checkbox.Control>
+              <Checkbox.Indicator />
+            </Checkbox.Control>
+            انتخاب به‌عنوان لوکیشن پیش‌فرض
+          </Checkbox.Content>
         </Checkbox>
         {error ? (
           <Typography type="body-sm" className="text-danger">
@@ -451,17 +454,14 @@ function LocationPickerSheet({
         >
           {visibleItems.map((item) => (
             <ListBox.Item
+              dir="rtl"
               key={item.id}
               id={item.id}
-              textValue={item.name}
+              textValue={entityOptionText(item, String(item.name))}
               className="min-h-14 rounded-2xl px-4"
             >
-              <span className="flex-1 font-semibold">{item.name}</span>
-              <ListBox.ItemIndicator>
-                {({ isSelected }) =>
-                  isSelected ? <Icon name="check" size={18} /> : null
-                }
-              </ListBox.ItemIndicator>
+              <EntityOptionContent entity={item} title={String(item.name)} />
+              <ListBox.ItemIndicator />
             </ListBox.Item>
           ))}
         </ListBox>

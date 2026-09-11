@@ -250,4 +250,44 @@ describe("training permissions, immutable snapshots and durable replay", () => {
     expect(result.items).toHaveLength(1);
     expect(String(result.items[0]!.athleteId)).toBe(String(athlete));
   });
+  it("links coach feedback to a completed session, prevents stale overwrite and respects withdrawn consent", async () => {
+    const { assignment } = await assigned();
+    await service.consent(String(athlete), assignment.id, { accepted: true });
+    const clientId = randomUUID();
+    const body = {
+      ...log(assignment.id),
+      status: "completed",
+      finishedAt: new Date().toISOString(),
+      effort: "hard",
+      followUpRequested: true,
+    };
+    await service.saveSession(String(athlete), clientId, body);
+    expect((await service.followUps(String(coachUser))).items[0]?.reason).toBe(
+      "requested",
+    );
+    const result = await service.reviewSession(
+      String(coachUser),
+      assignment.id,
+      clientId,
+      { text: "جلسه بعد را با هم مرور می‌کنیم", expectedRevision: 0 },
+    );
+    expect(result.coachReview?.revision).toBe(1);
+    expect(
+      (await service.listSessions(String(athlete))).items[0]?.coachReview?.text,
+    ).toBe("جلسه بعد را با هم مرور می‌کنیم");
+    await expect(
+      service.reviewSession(String(coachUser), assignment.id, clientId, {
+        text: "نسخه قدیمی",
+        expectedRevision: 0,
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+    await service.consent(String(athlete), assignment.id, { accepted: false });
+    expect((await service.followUps(String(coachUser))).items).toEqual([]);
+    await expect(
+      service.reviewSession(String(coachUser), assignment.id, clientId, {
+        text: "پاسخ تازه",
+        expectedRevision: 1,
+      }),
+    ).rejects.toMatchObject({ status: 403 });
+  });
 });

@@ -52,7 +52,20 @@ test("role header and safe-area clearance; profile checklist opens the matching 
   ).toHaveCount(0);
   await checklist.getByRole("link", { name: /تاریخ تولد/ }).click();
   await expect(page).toHaveURL(/field=birthdate/);
-  await expect(page.getByRole("dialog")).toBeVisible();
+  const birthdateDialog = page.getByRole("dialog");
+  await expect(birthdateDialog).toBeVisible();
+  await expect(
+    birthdateDialog.getByRole("listbox", { name: "روز" }),
+  ).toBeVisible();
+  await expect(
+    birthdateDialog.getByRole("listbox", { name: "ماه" }),
+  ).toBeVisible();
+  await expect(
+    birthdateDialog.getByRole("listbox", { name: "سال" }),
+  ).toBeVisible();
+  await expect(
+    birthdateDialog.getByText("تاریخ تولدت را مطابق کارت ملی وارد کن."),
+  ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });

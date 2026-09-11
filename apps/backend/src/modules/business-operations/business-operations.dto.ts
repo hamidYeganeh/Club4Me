@@ -1,3 +1,4 @@
+import { partialWithoutDefaults } from "../../common/utils/partial-without-defaults";
 import { iranianPhone } from "../../common/utils/phone.util";
 import { Types } from "mongoose";
 import { z } from "zod";
@@ -30,7 +31,9 @@ export class CreateStudentDto {
 }
 
 export class UpdateStudentDto {
-  static schema = CreateStudentDto.schema.partial().strict();
+  static schema = partialWithoutDefaults(
+    CreateStudentDto.schema.shape,
+  ).strict();
   firstName?: string;
   lastName?: string;
   phone?: string;
@@ -66,7 +69,7 @@ export class CreateCoachDto {
 }
 
 export class UpdateCoachDto {
-  static schema = CreateCoachDto.schema.partial().strict();
+  static schema = partialWithoutDefaults(CreateCoachDto.schema.shape).strict();
   firstName?: string;
   lastName?: string;
   phone?: string;
@@ -138,7 +141,7 @@ export class CreateBranchDto {
 }
 
 export class UpdateBranchDto {
-  static schema = CreateBranchDto.schema.partial().strict();
+  static schema = partialWithoutDefaults(CreateBranchDto.schema.shape).strict();
   name?: string;
   address?: string;
   phone?: string;

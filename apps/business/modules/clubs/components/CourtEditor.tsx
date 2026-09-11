@@ -1,5 +1,9 @@
 "use client";
 
+import { Uploader, imageUploaderAccept } from "@repo/ui/uploader";
+import { Checkbox as HeroCheckbox } from "@heroui/react";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
 import { useState, type FormEvent } from "react";
 import Image from "next/image";
 import { Button, toast } from "@heroui/react";
@@ -62,7 +66,7 @@ export function CourtEditor({
     q: search.sport,
     isActive: true,
   });
-  const surfaces = useBusinessCatalog("sports", "surface-type", {
+  const surfaces = useBusinessCatalog("facilities", "court-surface-type", {
     limit: 100,
     q: search.surface,
     isActive: true,
@@ -177,7 +181,7 @@ export function CourtEditor({
         ).map(([key, label, max]) => (
           <label key={key} className="block text-sm">
             {label}
-            <input
+            <HeroInput
               className={field}
               required={key === "name"}
               minLength={key === "name" ? 2 : undefined}
@@ -189,7 +193,7 @@ export function CourtEditor({
         ))}
         <label className="block text-sm">
           توضیحات
-          <textarea
+          <HeroTextArea
             className={field}
             maxLength={2000}
             rows={3}
@@ -206,7 +210,7 @@ export function CourtEditor({
           <div key={key}>
             <label className="block text-sm">
               جستجوی {label}
-              <input
+              <HeroInput
                 className={field}
                 value={search[searchKey]}
                 onChange={(event) =>
@@ -216,22 +220,23 @@ export function CourtEditor({
             </label>
             <label className="mt-2 block text-sm">
               {label}
-              <select
+              <FormSelect
+                aria-label="انتخاب گزینه"
                 className={field}
                 value={draft[key]}
-                onChange={(event) => change(key, event.target.value)}
+                onChange={(event) => change(key, event)}
               >
-                <option value="">مشخص نشده</option>
+                <FormOption value="">مشخص نشده</FormOption>
                 {draft[key] &&
                 !catalog.data?.items.some((item) => item.id === draft[key]) ? (
-                  <option value={draft[key]}>گزینه ثبت‌شده</option>
+                  <FormOption value={draft[key]}>گزینه ثبت‌شده</FormOption>
                 ) : null}
                 {catalog.data?.items.map((item) => (
-                  <option key={item.id} value={item.id}>
+                  <FormOption entity={item} key={item.id} value={item.id}>
                     {item.name}
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
+              </FormSelect>
             </label>
             {catalog.isError ? (
               <button
@@ -246,7 +251,7 @@ export function CourtEditor({
         ))}
         <fieldset className="space-y-2">
           <legend className="text-sm font-bold">رشته‌های قابل استفاده</legend>
-          <input
+          <HeroInput
             aria-label="جستجوی رشته"
             placeholder="جستجوی رشته"
             className={field}
@@ -256,40 +261,50 @@ export function CourtEditor({
             }
           />
           {sports.data?.items.map((sport) => (
-            <label key={sport.id} className="flex gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={draft.sportIds.includes(sport.id)}
-                onChange={(event) =>
-                  change(
-                    "sportIds",
-                    event.target.checked
-                      ? [...draft.sportIds, sport.id]
-                      : draft.sportIds.filter((id) => id !== sport.id),
-                  )
-                }
-              />
-              {sport.name}
-            </label>
+            <HeroCheckbox
+              key={sport.id}
+              className="flex gap-2 text-sm"
+              isSelected={draft.sportIds.includes(sport.id)}
+              onChange={(event) =>
+                change(
+                  "sportIds",
+                  event
+                    ? [...draft.sportIds, sport.id]
+                    : draft.sportIds.filter((id) => id !== sport.id),
+                )
+              }
+            >
+              <HeroCheckbox.Content>
+                <HeroCheckbox.Control>
+                  <HeroCheckbox.Indicator />
+                </HeroCheckbox.Control>
+                {sport.name}
+              </HeroCheckbox.Content>
+            </HeroCheckbox>
           ))}
           {draft.sportIds
             .filter(
               (id) => !sports.data?.items.some((sport) => sport.id === id),
             )
             .map((id) => (
-              <label key={id} className="flex gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked
-                  onChange={() =>
-                    change(
-                      "sportIds",
-                      draft.sportIds.filter((selected) => selected !== id),
-                    )
-                  }
-                />
-                رشته ثبت‌شده ({id.slice(-6)})
-              </label>
+              <HeroCheckbox
+                key={id}
+                className="flex gap-2 text-sm"
+                isSelected
+                onChange={() =>
+                  change(
+                    "sportIds",
+                    draft.sportIds.filter((selected) => selected !== id),
+                  )
+                }
+              >
+                <HeroCheckbox.Content>
+                  <HeroCheckbox.Control>
+                    <HeroCheckbox.Indicator />
+                  </HeroCheckbox.Control>
+                  رشته ثبت‌شده ({id.slice(-6)})
+                </HeroCheckbox.Content>
+              </HeroCheckbox>
             ))}
           {sports.isError ? (
             <button
@@ -303,20 +318,18 @@ export function CourtEditor({
         </fieldset>
         <label className="block text-sm">
           محیط
-          <select
+          <FormSelect
+            aria-label="محیط"
             className={field}
             value={draft.environment}
             onChange={(event) =>
-              change(
-                "environment",
-                event.target.value as ClubCourt["environment"],
-              )
+              change("environment", event as ClubCourt["environment"])
             }
           >
-            <option value="indoor">سرپوشیده</option>
-            <option value="outdoor">روباز</option>
-            <option value="covered">مسقف</option>
-          </select>
+            <FormOption value="indoor">سرپوشیده</FormOption>
+            <FormOption value="outdoor">روباز</FormOption>
+            <FormOption value="covered">مسقف</FormOption>
+          </FormSelect>
         </label>
         <div className="grid grid-cols-2 gap-3">
           {(
@@ -327,7 +340,7 @@ export function CourtEditor({
           ).map(([key, label]) => (
             <label key={key} className="text-sm">
               {label}
-              <input
+              <HeroInput
                 className={field}
                 type="number"
                 step="0.01"
@@ -349,7 +362,7 @@ export function CourtEditor({
         ).map(([key, label, min, max]) => (
           <label key={key} className="block text-sm">
             {label}
-            <input
+            <HeroInput
               required
               className={field}
               type="number"
@@ -365,27 +378,32 @@ export function CourtEditor({
           محدودیت مدت و زمان آماده‌سازی برای ساخت سانس‌های جدید استفاده می‌شود.
           رزروهای موجود با ویرایش زمین تغییر نمی‌کنند.
         </p>
-        <label className="flex gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={draft.isReservable}
-            onChange={(event) => change("isReservable", event.target.checked)}
-          />
-          پذیرش رزرو جدید
-        </label>
+        <HeroCheckbox
+          className="flex gap-2 text-sm"
+          isSelected={draft.isReservable}
+          onChange={(event) => change("isReservable", event)}
+        >
+          <HeroCheckbox.Content>
+            <HeroCheckbox.Control>
+              <HeroCheckbox.Indicator />
+            </HeroCheckbox.Control>
+            پذیرش رزرو جدید
+          </HeroCheckbox.Content>
+        </HeroCheckbox>
         {initial ? (
           <label className="block text-sm">
             وضعیت زمین
-            <select
+            <FormSelect
+              aria-label="وضعیت زمین"
               className={field}
               value={draft.status}
               onChange={(event) =>
-                change("status", event.target.value as ClubCourt["status"])
+                change("status", event as ClubCourt["status"])
               }
             >
-              <option value="active">فعال</option>
-              <option value="inactive">غیرفعال</option>
-            </select>
+              <FormOption value="active">فعال</FormOption>
+              <FormOption value="inactive">غیرفعال</FormOption>
+            </FormSelect>
           </label>
         ) : null}
         <p className="text-xs text-muted">
@@ -396,37 +414,24 @@ export function CourtEditor({
           <legend className="text-sm font-bold">تصاویر زمین</legend>
           <label className="block text-sm">
             افزودن تصویر
-            <input
-              aria-label="افزودن تصویر زمین"
-              className={field}
-              type="file"
-              accept="image/*"
-              multiple
-              disabled={draft.galleryMediaIds.length >= 30}
-              onChange={async (event) => {
-                const files = Array.from(event.target.files ?? []);
-                event.target.value = "";
-                if (!files.length) return;
-                if (draft.galleryMediaIds.length + files.length > 30) {
-                  toast.danger("حداکثر ۳۰ تصویر مجاز است.");
-                  return;
-                }
+            <Uploader
+              multiple={false}
+              accept={imageUploaderAccept}
+              disabled={uploading || draft.galleryMediaIds.length >= 30}
+              labels={{ clickToUpload: "افزودن تصویر زمین" }}
+              onUpload={async (file) => {
+                if (draft.galleryMediaIds.length >= 30)
+                  throw new Error("حداکثر ۳۰ تصویر مجاز است");
                 setUploading(true);
                 try {
-                  for (const file of files) {
-                    const item = await upload.mutateAsync(file);
-                    if (!item.mimeType.startsWith("image/"))
-                      throw new Error("فقط تصویر قابل افزودن است.");
-                    setUploadedUrls((old) => ({ ...old, [item.id]: item.url }));
-                    setDraft((old) => ({
-                      ...old,
-                      galleryMediaIds: [
-                        ...new Set([...old.galleryMediaIds, item.id]),
-                      ],
-                    }));
-                  }
-                } catch {
-                  toast.danger("بارگذاری کامل نشد؛ تصاویر موفق حفظ شدند.");
+                  const item = await upload.mutateAsync(file);
+                  setUploadedUrls((old) => ({ ...old, [item.id]: item.url }));
+                  setDraft((old) => ({
+                    ...old,
+                    galleryMediaIds: [
+                      ...new Set([...old.galleryMediaIds, item.id]),
+                    ],
+                  }));
                 } finally {
                   setUploading(false);
                 }

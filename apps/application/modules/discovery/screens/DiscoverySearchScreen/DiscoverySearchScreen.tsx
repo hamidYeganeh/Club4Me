@@ -1,4 +1,9 @@
 "use client";
+
+import { Checkbox as HeroCheckbox } from "@heroui/react";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
+import { Counter } from "@/components/counter";
 import { SecondaryHeader } from "../../components/SecondaryHeader";
 
 import { useEffect, useRef, useState } from "react";
@@ -245,11 +250,7 @@ export function DiscoverySearchScreen({
         ? "1"
         : "0",
     );
-    if (
-      nearby &&
-      coordinateLatitude != null &&
-      coordinateLongitude != null
-    ) {
+    if (nearby && coordinateLatitude != null && coordinateLongitude != null) {
       url.searchParams.set("latitude", String(coordinateLatitude));
       url.searchParams.set("longitude", String(coordinateLongitude));
     }
@@ -388,20 +389,49 @@ export function DiscoverySearchScreen({
   ];
   const alternatives = [
     ...(result.data?.alternatives?.clubs ?? []).map((item) => ({
-      id: item.id, title: item.name, subtitle: item.address || item.shortDescription,
-      imageUrl: item.imageUrl, badge: "باشگاه خارج از محدوده",
-      meta: clubResultMeta(item.averageRating, item.reviewsCount, item.location, coordinates),
-      href: `/discovery/clubs/${item.slug}`, comparisonKey: `club-${item.id}`,
+      id: item.id,
+      title: item.name,
+      subtitle: item.address || item.shortDescription,
+      imageUrl: item.imageUrl,
+      badge: "باشگاه خارج از محدوده",
+      meta: clubResultMeta(
+        item.averageRating,
+        item.reviewsCount,
+        item.location,
+        coordinates,
+      ),
+      href: `/discovery/clubs/${item.slug}`,
+      comparisonKey: `club-${item.id}`,
     })),
     ...(result.data?.alternatives?.classes ?? []).map((item) => ({
-      id: item.id, title: item.title, subtitle: item.description, imageUrl: item.imageUrl,
-      badge: "کلاس خارج از محدوده", meta: classResultMeta(item.price.amount, item.courseStartAt, item.capacity, item.enrollmentCount),
-      href: `/discovery/classes/${item.slug}`, comparisonKey: `class-${item.id}`,
+      id: item.id,
+      title: item.title,
+      subtitle: item.description,
+      imageUrl: item.imageUrl,
+      badge: "کلاس خارج از محدوده",
+      meta: classResultMeta(
+        item.price.amount,
+        item.courseStartAt,
+        item.capacity,
+        item.enrollmentCount,
+      ),
+      href: `/discovery/classes/${item.slug}`,
+      comparisonKey: `class-${item.id}`,
     })),
     ...(result.data?.alternatives?.businessClasses ?? []).map((item) => ({
-      id: item.id, title: item.title, subtitle: item.description, imageUrl: null,
-      badge: "کلاس باشگاه خارج از محدوده", meta: classResultMeta(item.price.amount, item.startDate, item.capacity, item.enrollmentCount),
-      href: `/discovery/business-class?classId=${item.id}`, comparisonKey: `business-class-${item.id}`,
+      id: item.id,
+      title: item.title,
+      subtitle: item.description,
+      imageUrl: null,
+      badge: "کلاس باشگاه خارج از محدوده",
+      meta: classResultMeta(
+        item.price.amount,
+        item.startDate,
+        item.capacity,
+        item.enrollmentCount,
+      ),
+      href: `/discovery/business-class?classId=${item.id}`,
+      comparisonKey: `business-class-${item.id}`,
     })),
   ];
   const comparisonItems = [...results, ...alternatives].filter((item) =>
@@ -533,8 +563,8 @@ export function DiscoverySearchScreen({
               </p>
               <label className="grid gap-1 text-sm">
                 حداقل بودجه (ریال)
-                <input
-                  type="number"
+                <Counter
+                  aria-label="حداقل بودجه (ریال)"
                   min="0"
                   step="1"
                   value={minPrice}
@@ -544,8 +574,8 @@ export function DiscoverySearchScreen({
               </label>
               <label className="grid gap-1 text-sm">
                 حداکثر بودجه (ریال)
-                <input
-                  type="number"
+                <Counter
+                  aria-label="حداکثر بودجه (ریال)"
                   min="0"
                   step="1"
                   value={maxPrice}
@@ -555,50 +585,55 @@ export function DiscoverySearchScreen({
               </label>
               <label className="grid gap-1 text-sm">
                 شیوه برگزاری
-                <select
+                <FormSelect
+                  aria-label="شیوه برگزاری"
                   value={serviceMode}
-                  onChange={(event) => setServiceMode(event.target.value)}
+                  onChange={(event) => setServiceMode(event)}
                   className="min-h-11 rounded-xl border border-border bg-surface px-3"
                 >
-                  <option value="">همه شیوه‌ها</option>
-                  <option value="club">باشگاه</option>
-                  <option value="online">آنلاین</option>
-                  <option value="home">منزل</option>
-                  <option value="outdoor">فضای باز</option>
-                </select>
+                  <FormOption value="">همه شیوه‌ها</FormOption>
+                  <FormOption value="club">باشگاه</FormOption>
+                  <FormOption value="online">آنلاین</FormOption>
+                  <FormOption value="home">منزل</FormOption>
+                  <FormOption value="outdoor">فضای باز</FormOption>
+                </FormSelect>
               </label>
               <label className="grid gap-1 text-sm">
                 نوع پذیرش
-                <select
+                <FormSelect
+                  aria-label="نوع پذیرش"
                   value={admission}
-                  onChange={(event) => setAdmission(event.target.value)}
+                  onChange={(event) => setAdmission(event)}
                   className="min-h-11 rounded-xl border border-border bg-surface px-3"
                 >
-                  <option value="">همه</option>
-                  <option value="automatic">ثبت‌نام فوری</option>
-                  <option value="requires_approval">نیازمند تأیید</option>
-                </select>
+                  <FormOption value="">همه</FormOption>
+                  <FormOption value="automatic">ثبت‌نام فوری</FormOption>
+                  <FormOption value="requires_approval">
+                    نیازمند تأیید
+                  </FormOption>
+                </FormSelect>
               </label>
               <label className="grid gap-1 text-sm">
                 سطح کلاس
-                <select
+                <FormSelect
+                  aria-label="سطح کلاس"
                   value={skillLevelId}
-                  onChange={(event) => setSkillLevelId(event.target.value)}
+                  onChange={(event) => setSkillLevelId(event)}
                   className="min-h-11 rounded-xl border border-border bg-surface px-3"
                 >
-                  <option value="">همه سطح‌ها</option>
+                  <FormOption value="">همه سطح‌ها</FormOption>
                   {skillLevelId &&
                   !levels.data?.items.some(
                     (item) => item.id === skillLevelId,
                   ) ? (
-                    <option value={skillLevelId}>سطح لینک‌شده</option>
+                    <FormOption value={skillLevelId}>سطح لینک‌شده</FormOption>
                   ) : null}
                   {levels.data?.items.map((item) => (
-                    <option key={item.id} value={item.id}>
+                    <FormOption entity={item} key={item.id} value={item.id}>
                       {item.name}
-                    </option>
+                    </FormOption>
                   ))}
-                </select>
+                </FormSelect>
               </label>
               <label className="grid gap-1 text-sm">
                 شروع از تاریخ
@@ -620,11 +655,22 @@ export function DiscoverySearchScreen({
               <div className="grid grid-cols-2 gap-3">
                 <label className="grid gap-1 text-sm">
                   ساعت شروع از
-                  <input type="time" value={timeFrom} onChange={(event) => setTimeFrom(event.target.value)} className="min-h-11 rounded-xl border border-border bg-surface px-3" />
+                  <HeroInput
+                    type="time"
+                    value={timeFrom}
+                    onChange={(event) => setTimeFrom(event.target.value)}
+                    className="min-h-11 rounded-xl border border-border bg-surface px-3"
+                  />
                 </label>
                 <label className="grid gap-1 text-sm">
                   ساعت شروع تا
-                  <input type="time" value={timeTo} min={timeFrom || undefined} onChange={(event) => setTimeTo(event.target.value)} className="min-h-11 rounded-xl border border-border bg-surface px-3" />
+                  <HeroInput
+                    type="time"
+                    value={timeTo}
+                    min={timeFrom || undefined}
+                    onChange={(event) => setTimeTo(event.target.value)}
+                    className="min-h-11 rounded-xl border border-border bg-surface px-3"
+                  />
                 </label>
               </div>
             </fieldset>
@@ -669,14 +715,18 @@ export function DiscoverySearchScreen({
             </p>
           ) : null}
           {coordinates ? (
-            <label className="flex min-h-11 items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={nearby}
-                onChange={(event) => setNearby(event.target.checked)}
-              />
-              باشگاه‌ها و کلاس باشگاه در شعاع ۲۵ کیلومتر
-            </label>
+            <HeroCheckbox
+              className="flex min-h-11 items-center gap-2 text-sm"
+              isSelected={nearby}
+              onChange={(event) => setNearby(event)}
+            >
+              <HeroCheckbox.Content>
+                <HeroCheckbox.Control>
+                  <HeroCheckbox.Indicator />
+                </HeroCheckbox.Control>
+                باشگاه‌ها و کلاس باشگاه در شعاع ۲۵ کیلومتر
+              </HeroCheckbox.Content>
+            </HeroCheckbox>
           ) : null}
         </div>
       ) : null}
@@ -780,13 +830,27 @@ export function DiscoverySearchScreen({
                   <DiscoveryResultCard {...item} />
                   <Button
                     size="sm"
-                    variant={comparison.includes(item.comparisonKey) ? "primary" : "secondary"}
+                    variant={
+                      comparison.includes(item.comparisonKey)
+                        ? "primary"
+                        : "secondary"
+                    }
                     className="mt-2"
-                    onPress={() => setComparison((current) => current.includes(item.comparisonKey)
-                      ? current.filter((key) => key !== item.comparisonKey)
-                      : current.length < 3 ? [...current, item.comparisonKey] : current)}
+                    onPress={() =>
+                      setComparison((current) =>
+                        current.includes(item.comparisonKey)
+                          ? current.filter((key) => key !== item.comparisonKey)
+                          : current.length < 3
+                            ? [...current, item.comparisonKey]
+                            : current,
+                      )
+                    }
                   >
-                    {comparison.includes(item.comparisonKey) ? "حذف از مقایسه" : comparison.length >= 3 ? "حداکثر ۳ گزینه" : "افزودن به مقایسه"}
+                    {comparison.includes(item.comparisonKey)
+                      ? "حذف از مقایسه"
+                      : comparison.length >= 3
+                        ? "حداکثر ۳ گزینه"
+                        : "افزودن به مقایسه"}
                   </Button>
                 </div>
               ))
@@ -810,8 +874,12 @@ export function DiscoverySearchScreen({
               <p className="mt-3 text-sm text-muted">نتیجه‌ای پیدا نشد.</p>
               {alternatives.length ? (
                 <div className="mt-6 space-y-3 text-start">
-                  <p className="text-sm font-semibold">گزینه‌های مرتبط بیرون از محدوده انتخابی</p>
-                  {alternatives.map((item) => <DiscoveryResultCard key={item.comparisonKey} {...item} />)}
+                  <p className="text-sm font-semibold">
+                    گزینه‌های مرتبط بیرون از محدوده انتخابی
+                  </p>
+                  {alternatives.map((item) => (
+                    <DiscoveryResultCard key={item.comparisonKey} {...item} />
+                  ))}
                 </div>
               ) : null}
             </div>
@@ -838,14 +906,24 @@ export function DiscoverySearchScreen({
         options={searchSortOptions}
       />
       {comparisonItems.length ? (
-        <aside className="sticky bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-30 rounded-2xl border border-accent/30 bg-surface/95 p-4 shadow-xl backdrop-blur" aria-label="مقایسه گزینه‌ها">
+        <aside
+          className="sticky bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-30 rounded-2xl border border-accent/30 bg-surface/95 p-4 shadow-xl backdrop-blur"
+          aria-label="مقایسه گزینه‌ها"
+        >
           <div className="flex items-center justify-between gap-3">
-            <strong>مقایسه {comparisonItems.length.toLocaleString("fa-IR")} گزینه</strong>
-            <Button size="sm" variant="ghost" onPress={() => setComparison([])}>پاک‌کردن</Button>
+            <strong>
+              مقایسه {comparisonItems.length.toLocaleString("fa-IR")} گزینه
+            </strong>
+            <Button size="sm" variant="ghost" onPress={() => setComparison([])}>
+              پاک‌کردن
+            </Button>
           </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
             {comparisonItems.map((item) => (
-              <div key={item.comparisonKey} className="rounded-xl bg-surface-secondary p-3">
+              <div
+                key={item.comparisonKey}
+                className="rounded-xl bg-surface-secondary p-3"
+              >
                 <p className="font-semibold">{item.title}</p>
                 <p className="mt-1 text-xs text-muted">{item.badge}</p>
                 <p className="mt-2 text-sm">{item.meta}</p>

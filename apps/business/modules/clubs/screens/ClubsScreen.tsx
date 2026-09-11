@@ -1,5 +1,7 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
 import { Button, Chip, Spinner } from "@heroui/react";
 import { useBusinessClubs, type BusinessClub } from "@api/business";
 import {
@@ -181,7 +183,7 @@ export function ClubsScreen() {
             <>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
-                <input
+                <HeroInput
                   className={inputClass}
                   value={draftFilters.query}
                   onChange={(event) =>
@@ -195,23 +197,29 @@ export function ClubsScreen() {
               </label>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">وضعیت بررسی</span>
-                <select
+                <FormSelect
+                  aria-label="انتخاب گزینه"
                   className={inputClass}
                   value={draftFilters.reviewStatus}
                   onChange={(event) =>
                     setDraftFilters((current) => ({
                       ...current,
-                      reviewStatus: event.target
-                        .value as ClubFilters["reviewStatus"],
+                      reviewStatus: event as ClubFilters["reviewStatus"],
                     }))
                   }
                 >
-                  <option value="">همه</option>
-                  <option value="draft">{t("statuses.draft")}</option>
-                  <option value="pending">{t("statuses.pending")}</option>
-                  <option value="approved">{t("statuses.approved")}</option>
-                  <option value="rejected">{t("statuses.rejected")}</option>
-                </select>
+                  <FormOption value="">همه</FormOption>
+                  <FormOption value="draft">{t("statuses.draft")}</FormOption>
+                  <FormOption value="pending">
+                    {t("statuses.pending")}
+                  </FormOption>
+                  <FormOption value="approved">
+                    {t("statuses.approved")}
+                  </FormOption>
+                  <FormOption value="rejected">
+                    {t("statuses.rejected")}
+                  </FormOption>
+                </FormSelect>
               </label>
             </>
           }

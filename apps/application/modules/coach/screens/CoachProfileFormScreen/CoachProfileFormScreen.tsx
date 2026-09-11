@@ -1,5 +1,13 @@
 "use client";
-import { FormSectionNavigation, FormSectionHeading } from "@/components/form-section-navigation";
+
+import { Checkbox as HeroCheckbox } from "@heroui/react";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
+import { Counter } from "@/components/counter";
+import {
+  FormSectionNavigation,
+  FormSectionHeading,
+} from "@/components/form-section-navigation";
 
 import { CroppedImageUpload } from "@/components/cropped-image-upload";
 import { type FormEvent, useEffect, useRef, useState } from "react";
@@ -348,7 +356,13 @@ export function CoachProfileFormScreen() {
         title="پروفایل حرفه‌ای"
         description="اطلاعاتی که ورزشکاران در صفحه مربی می‌بینند."
       />
-      <FormSectionNavigation sections={[{"id": "profile-basics", "title": "اطلاعات پایه"}, {"id": "profile-about", "title": "معرفی مربی"}, {"id": "profile-expertise", "title": "تخصص و مدارک"}]} />
+      <FormSectionNavigation
+        sections={[
+          { id: "profile-basics", title: "اطلاعات پایه" },
+          { id: "profile-about", title: "معرفی مربی" },
+          { id: "profile-expertise", title: "تخصص و مدارک" },
+        ]}
+      />
       <Card className="app-card coach-editor p-5 shadow-none">
         <form onSubmit={submit}>
           <fieldset
@@ -365,9 +379,13 @@ export function CoachProfileFormScreen() {
                 ویرایش کنید.
               </p>
             ) : null}
-            <FormSectionHeading id="profile-basics" title="اطلاعات پایه" description="نام و محدوده‌ای که در آن خدمت ارائه می‌کنید." />
-          <Field label="نام نمایشی">
-              <input
+            <FormSectionHeading
+              id="profile-basics"
+              title="اطلاعات پایه"
+              description="نام و محدوده‌ای که در آن خدمت ارائه می‌کنید."
+            />
+            <Field label="نام نمایشی">
+              <HeroInput
                 required
                 minLength={2}
                 value={displayName}
@@ -447,7 +465,7 @@ export function CoachProfileFormScreen() {
                   />
                   <fieldset>
                     <legend className="mb-2 text-sm">محله‌های تحت پوشش</legend>
-                    <input
+                    <HeroInput
                       className={input}
                       aria-label="جستجوی محله"
                       placeholder="جستجوی محله"
@@ -466,27 +484,29 @@ export function CoachProfileFormScreen() {
                           ...(regions.data?.items.map((item) => item.id) ?? []),
                         ]),
                       ].map((id) => (
-                        <label
+                        <HeroCheckbox
                           key={id}
                           className="flex min-h-11 items-center gap-2 text-sm"
+                          isSelected={geo.cityRegionIds.includes(id)}
+                          onChange={(event) =>
+                            changeGeo({
+                              ...geo,
+                              cityRegionIds: event
+                                ? [...geo.cityRegionIds, id]
+                                : geo.cityRegionIds.filter(
+                                    (value) => value !== id,
+                                  ),
+                            })
+                          }
                         >
-                          <input
-                            type="checkbox"
-                            checked={geo.cityRegionIds.includes(id)}
-                            onChange={(event) =>
-                              changeGeo({
-                                ...geo,
-                                cityRegionIds: event.target.checked
-                                  ? [...geo.cityRegionIds, id]
-                                  : geo.cityRegionIds.filter(
-                                      (value) => value !== id,
-                                    ),
-                              })
-                            }
-                          />
-                          {regions.data?.items.find((item) => item.id === id)
-                            ?.name ?? "محله ثبت‌شده"}
-                        </label>
+                          <HeroCheckbox.Content>
+                            <HeroCheckbox.Control>
+                              <HeroCheckbox.Indicator />
+                            </HeroCheckbox.Control>
+                            {regions.data?.items.find((item) => item.id === id)
+                              ?.name ?? "محله ثبت‌شده"}
+                          </HeroCheckbox.Content>
+                        </HeroCheckbox>
                       ))}
                     </div>
                   </fieldset>
@@ -512,8 +532,8 @@ export function CoachProfileFormScreen() {
                 </Button>
               ) : null}
               <Field label="شعاع رفت‌وآمد (کیلومتر)">
-                <input
-                  type="number"
+                <Counter
+                  aria-label="شعاع رفت‌وآمد (کیلومتر)"
                   min={0}
                   max={1000}
                   step={1}
@@ -526,9 +546,13 @@ export function CoachProfileFormScreen() {
                 />
               </Field>
             </fieldset>
-            <FormSectionHeading id="profile-about" title="آشنایی با شما" description="تجربه و روش کارتان را برای ورزشکار توضیح دهید." />
-          <Field label="معرفی کوتاه">
-              <input
+            <FormSectionHeading
+              id="profile-about"
+              title="آشنایی با شما"
+              description="تجربه و روش کارتان را برای ورزشکار توضیح دهید."
+            />
+            <Field label="معرفی کوتاه">
+              <HeroInput
                 required
                 value={shortBio}
                 onChange={(event) => setShortBio(event.target.value)}
@@ -536,7 +560,7 @@ export function CoachProfileFormScreen() {
               />
             </Field>
             <Field label="درباره من">
-              <textarea
+              <HeroTextArea
                 required
                 value={bio}
                 onChange={(event) => setBio(event.target.value)}
@@ -545,8 +569,8 @@ export function CoachProfileFormScreen() {
             </Field>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="سال تجربه">
-                <input
-                  type="number"
+                <Counter
+                  aria-label="سال تجربه"
                   min={0}
                   max={80}
                   value={experienceYears}
@@ -557,7 +581,7 @@ export function CoachProfileFormScreen() {
                 />
               </Field>
               <Field label="تلفن عمومی">
-                <input
+                <HeroInput
                   dir="ltr"
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
@@ -566,15 +590,19 @@ export function CoachProfileFormScreen() {
               </Field>
             </div>
             <Field label="زبان‌ها">
-              <input
+              <HeroInput
                 value={languages}
                 onChange={(event) => setLanguages(event.target.value)}
                 className={input}
                 placeholder="فارسی، انگلیسی"
               />
             </Field>
-            <FormSectionHeading id="profile-expertise" title="تخصص و مدارک" description="رشته‌ها و مستندات حرفه‌ای خود را تکمیل کنید." />
-          <Field label="رشته‌های ورزشی">
+            <FormSectionHeading
+              id="profile-expertise"
+              title="تخصص و مدارک"
+              description="رشته‌ها و مستندات حرفه‌ای خود را تکمیل کنید."
+            />
+            <Field label="رشته‌های ورزشی">
               <div className="flex flex-wrap gap-2">
                 {sportsCatalog.isPending || coachSports.isPending
                   ? Array.from({ length: 5 }, (_, index) => (
@@ -633,7 +661,7 @@ export function CoachProfileFormScreen() {
               </div>
             </Field>
             <Field label="تخصص‌ها و توضیح">
-              <textarea
+              <HeroTextArea
                 value={specialties}
                 onChange={(event) => setSpecialties(event.target.value)}
                 className={`${input} min-h-28 py-3`}
@@ -641,7 +669,7 @@ export function CoachProfileFormScreen() {
               />
             </Field>
             <Field label="سبک‌های تمرینی">
-              <textarea
+              <HeroTextArea
                 value={trainingStyles}
                 onChange={(event) => setTrainingStyles(event.target.value)}
                 className={`${input} min-h-32 py-3`}
@@ -759,13 +787,13 @@ export function CoachProfileFormScreen() {
               </div>
             </div>
             <Field label="سوابق حرفه‌ای">
-              <textarea
+              <HeroTextArea
                 value={experienceSummary}
                 onChange={(event) => setExperienceSummary(event.target.value)}
                 className={`${input} mb-3 min-h-24 py-3`}
                 placeholder="خلاصه‌ای از سال‌ها و زمینه تجربه حرفه‌ای شما"
               />
-              <textarea
+              <HeroTextArea
                 value={experience}
                 onChange={(event) => setExperience(event.target.value)}
                 className={`${input} min-h-28 py-3`}
@@ -780,10 +808,12 @@ export function CoachProfileFormScreen() {
               onMinAge={setMinAge}
               onMaxAge={setMaxAge}
               uploading={createPrivateMedia.isPending}
-              upload={async (file) => (await createPrivateMedia.mutateAsync(file)).id}
+              upload={async (file) =>
+                (await createPrivateMedia.mutateAsync(file)).id
+              }
             />
             <Field label="سوالات متداول">
-              <textarea
+              <HeroTextArea
                 value={faqs}
                 onChange={(event) => setFaqs(event.target.value)}
                 className={`${input} min-h-28 py-3`}
@@ -861,7 +891,7 @@ function GeoSelect({
 }) {
   return (
     <div className="space-y-2">
-      <input
+      <HeroInput
         className={input}
         aria-label={`جستجوی ${label}`}
         placeholder={`جستجوی ${label}`}
@@ -869,21 +899,22 @@ function GeoSelect({
         onChange={(event) => onSearch(event.target.value)}
       />
       <Field label={label}>
-        <select
+        <FormSelect
+          aria-label="انتخاب گزینه"
           value={value ?? ""}
           className={input}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => onChange(event)}
         >
-          <option value="">انتخاب {label}</option>
+          <FormOption value="">انتخاب {label}</FormOption>
           {value && !items?.some((item) => item.id === value) ? (
-            <option value={value}>{label} ثبت‌شده</option>
+            <FormOption value={value}>{label} ثبت‌شده</FormOption>
           ) : null}
           {items?.map((item) => (
-            <option key={item.id} value={item.id}>
+            <FormOption entity={item} key={item.id} value={item.id}>
               {item.name}
-            </option>
+            </FormOption>
           ))}
-        </select>
+        </FormSelect>
       </Field>
     </div>
   );

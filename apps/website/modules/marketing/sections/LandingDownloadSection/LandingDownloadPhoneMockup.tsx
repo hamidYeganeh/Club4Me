@@ -44,7 +44,7 @@ export function LandingDownloadPhoneMockup({
   const stats = useTranslations("MarketingLanding.landingStats");
   const slots = landingDownloadSectionStyles();
 
-  const profileName = app("profileName");
+  const profileName = "نمونه نمایشی اپ";
   const weekdayLabels = stats.raw("weekdaysShort") as string[];
   const setupItems: TodoCardItem[] = [
     {
@@ -111,7 +111,11 @@ export function LandingDownloadPhoneMockup({
           sizes="(min-width: 1024px) 320px, 248px"
           src={LANDING_ASSETS.phone.frameDark}
         />
-        <div className={slots.screen()}>
+        <div
+          className={slots.screen()}
+          inert
+          aria-label="نمونه نمایشی رابط اپ؛ اعداد نمونه‌اند"
+        >
           <div ref={viewportRef} className={slots.phoneViewport()}>
             <div ref={scrollRef} className={slots.phoneScroll()}>
               <div className={slots.phoneHeader()}>

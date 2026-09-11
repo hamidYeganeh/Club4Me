@@ -1,4 +1,8 @@
 "use client";
+
+import { Checkbox as HeroCheckbox } from "@heroui/react";
+import { TextArea as HeroTextArea } from "@heroui/react";
+import { Counter } from "@/components/counter";
 import { useEffect, useState } from "react";
 import { Button, Card } from "@heroui/react";
 import {
@@ -18,6 +22,12 @@ import {
   useTrainingData,
   weekdays,
 } from "./shared";
+import {
+  ExerciseRow,
+  FeatureBadge,
+  featureCardStyles,
+} from "@/components/ui/feature-cards";
+import { Play } from "lucide-react";
 import { useWorkouts } from "./useWorkouts";
 
 export function AthleteTraining() {
@@ -191,10 +201,10 @@ function AthleteTrainingSession() {
                         </span>
                         <label className="text-xs">
                           تکرار
-                          <input
+                          <Counter
                             aria-label={`تکرار حرکت ${index + 1} ست ${set.setIndex + 1}`}
                             className={fieldClass}
-                            type="number"
+
                             min={0}
                             max={100}
                             disabled={logs.busy || !!set.done}
@@ -228,10 +238,10 @@ function AthleteTrainingSession() {
                         </label>
                         <label className="text-xs">
                           کیلوگرم
-                          <input
+                          <Counter
                             aria-label={`وزنه حرکت ${index + 1} ست ${set.setIndex + 1}`}
                             className={fieldClass}
-                            type="number"
+
                             min={0}
                             max={1000}
                             step={0.5}
@@ -293,9 +303,67 @@ function AthleteTrainingSession() {
                 </Card.Content>
               </Card>
             ))}
+          <fieldset
+            disabled={logs.busy}
+            className="space-y-3 rounded-2xl border border-border p-4"
+          >
+            <legend className="px-2 text-sm font-semibold">
+              بازخورد برای مربی · اختیاری
+            </legend>
+            <p className="text-sm text-muted">تمرین امروز چطور بود؟</p>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  ["easy", "آسان"],
+                  ["balanced", "متعادل"],
+                  ["hard", "سخت"],
+                ] as const
+              ).map(([value, label]) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={
+                    active.session.effort === value ? "primary" : "secondary"
+                  }
+                  aria-pressed={active.session.effort === value}
+                  onPress={() =>
+                    void logs.update(
+                      active.session.clientId,
+                      (current) => ({
+                        ...current,
+                        effort: current.effort === value ? null : value,
+                      }),
+                      active.restUntil,
+                    )
+                  }
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+            <HeroCheckbox
+              className="flex min-h-11 items-center gap-3 text-sm"
+              isSelected={active.session.followUpRequested ?? false}
+              onChange={(e) => {
+                const checked = e;
+                void logs.update(
+                  active.session.clientId,
+                  (current) => ({ ...current, followUpRequested: checked }),
+                  active.restUntil,
+                );
+              }}
+            >
+              <HeroCheckbox.Content>
+                <HeroCheckbox.Control>
+                  <HeroCheckbox.Indicator />
+                </HeroCheckbox.Control>
+                می‌خواهم مربی این تمرین را پیگیری کند
+              </HeroCheckbox.Content>
+            </HeroCheckbox>
+          </fieldset>
           <label>
             یادداشت جلسه
-            <textarea
+            <HeroTextArea
               className={fieldClass}
               maxLength={2000}
               key={`note:${active.session.clientId}:${active.session.revision}`}
@@ -322,7 +390,9 @@ function AthleteTrainingSession() {
                   }))
                   .then((ok) => {
                     if (ok) {
-                      setMessage("جلسه کامل شد و روی دستگاه ذخیره شد.");
+                      setMessage(
+                        "جلسه روی دستگاه ذخیره شد؛ پس از همگام‌سازی، بازخورد مربی در روند پیشرفت نمایش داده می‌شود.",
+                      );
                       void logs.sync();
                     }
                   })
@@ -405,21 +475,19 @@ function AthleteTrainingSession() {
               </Button>
             )}
             {a.snapshot.days.map((day) => (
-              <div
-                key={day.id}
-                className="rounded-xl border border-border p-4 space-y-3"
-              >
+              <div key={day.id} className={featureCardStyles.day}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h3 className="font-semibold">
-                      {weekdays[day.weekday]} · {day.title}
+                      <FeatureBadge>{weekdays[day.weekday]}</FeatureBadge>
+                      <span className="mt-2 block">{day.title}</span>
                     </h3>
                     <p className="text-xs text-muted">
                       {number(day.exercises.length)} حرکت
                     </p>
                   </div>
                   <Button
-                    variant="secondary"
+                    variant="primary"
                     isDisabled={
                       !logs.ready ||
                       logs.busy ||
@@ -432,16 +500,22 @@ function AthleteTrainingSession() {
                     }
                     onPress={() => void start(a, day.id)}
                   >
+                    <Play size={16} fill="currentColor" aria-hidden="true" />
                     شروع تمرین
                   </Button>
                 </div>
                 <ul className="space-y-2 text-sm text-muted">
                   {day.exercises.map((e, i) => (
                     <li key={i}>
-                      {exercises.data?.items.find((x) => x.id === e.exerciseId)
-                        ?.name ?? e.exerciseId}{" "}
-                      · {number(e.sets)} × {number(e.reps)} · {number(e.weight)}{" "}
-                      کیلوگرم
+                      <ExerciseRow
+                        index={i + 1}
+                        title={
+                          exercises.data?.items.find(
+                            (x) => x.id === e.exerciseId,
+                          )?.name ?? e.exerciseId
+                        }
+                        detail={`${number(e.sets)} × ${number(e.reps)} · ${number(e.weight)} کیلوگرم`}
+                      />
                     </li>
                   ))}
                 </ul>

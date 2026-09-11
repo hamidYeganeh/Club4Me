@@ -1,7 +1,10 @@
 "use client";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
 import { useState } from "react";
 import { Card } from "@heroui/react";
 import { trainingApi } from "@api/domains/training";
+import { FeatureBadge, featureCardStyles } from "@/components/ui/feature-cards";
 import { ExerciseAnimation } from "./ExerciseAnimation";
 import {
   fieldClass,
@@ -34,7 +37,7 @@ export function ExerciseLibrary({ coach = false }: { coach?: boolean }) {
       <div className="grid gap-3 sm:grid-cols-3">
         <label>
           جست‌وجوی حرکت
-          <input
+          <HeroInput
             className={fieldClass}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -43,29 +46,31 @@ export function ExerciseLibrary({ coach = false }: { coach?: boolean }) {
         </label>
         <label>
           عضله
-          <select
+          <FormSelect
+            aria-label="عضله"
             className={fieldClass}
             value={muscle}
-            onChange={(e) => setMuscle(e.target.value)}
+            onChange={(e) => setMuscle(e)}
           >
-            <option value="">همه عضلات</option>
+            <FormOption value="">همه عضلات</FormOption>
             {[...new Set(all.map((e) => e.muscle))].map((x) => (
-              <option key={x}>{x}</option>
+              <FormOption key={x}>{x}</FormOption>
             ))}
-          </select>
+          </FormSelect>
         </label>
         <label>
           تجهیزات
-          <select
+          <FormSelect
+            aria-label="تجهیزات"
             className={fieldClass}
             value={equipment}
-            onChange={(e) => setEquipment(e.target.value)}
+            onChange={(e) => setEquipment(e)}
           >
-            <option value="">همه تجهیزات</option>
+            <FormOption value="">همه تجهیزات</FormOption>
             {[...new Set(all.map((e) => e.equipment))].map((x) => (
-              <option key={x}>{x}</option>
+              <FormOption key={x}>{x}</FormOption>
             ))}
-          </select>
+          </FormSelect>
         </label>
       </div>
       <LoadState {...library} />
@@ -75,11 +80,14 @@ export function ExerciseLibrary({ coach = false }: { coach?: boolean }) {
       )}
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((e) => (
-          <Card key={e.id} className="p-5">
+          <Card key={e.id} className={featureCardStyles.library}>
             <Card.Header>
-              <p className="text-xs text-muted">
-                {e.muscle} · {e.equipment}
-              </p>
+              <div className="mb-3 flex flex-wrap gap-2">
+                <FeatureBadge>{e.muscle}</FeatureBadge>
+                <span className="text-xs leading-6 text-muted">
+                  {e.equipment}
+                </span>
+              </div>
               <Card.Title>{e.name}</Card.Title>
             </Card.Header>
             <Card.Content>

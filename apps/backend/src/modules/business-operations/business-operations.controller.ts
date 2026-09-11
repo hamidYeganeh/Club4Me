@@ -48,6 +48,26 @@ export class BusinessOperationsController {
     private readonly billing: ClassBillingService,
   ) {}
 
+  @Get("capacity") capacity(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+  ) {
+    return this.service.capacityOverview(user.sub, clubId);
+  }
+  @Get("follow-ups") followUps(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+  ) {
+    return this.service.memberFollowUps(user.sub, clubId);
+  }
+  @Post("follow-ups/:studentId") saveFollowUp(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("studentId") studentId: string,
+    @Body() body: unknown,
+  ) {
+    return this.service.saveMemberFollowUp(user.sub, clubId, studentId, body);
+  }
   @Get("reception") reception(
     @CurrentUser() user: AuthTokenPayload,
     @Param("clubId") clubId: string,

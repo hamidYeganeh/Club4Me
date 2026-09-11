@@ -10,6 +10,7 @@ import { SectionHeading } from "@ui/section-heading";
 import { ButtonLink } from "@/components/button-link";
 import { DiscoveryImageHero } from "./DiscoveryImageHero";
 import { DiscoveryPageHeader } from "./DiscoveryPageHeader";
+import { MinimalCarousel } from "@/components/ui/minimal-carousel";
 
 const dateLabel = (value: string) =>
   new Date(value).toLocaleDateString("fa-IR", {
@@ -28,6 +29,8 @@ export function ClassDetailLayout({
   onAction,
   actionDisabled,
   actionPending,
+  averageRating,
+  reviewsCount,
   children,
 }: {
   item: PublicCatalogClass;
@@ -38,6 +41,8 @@ export function ClassDetailLayout({
   onAction?: () => void;
   actionDisabled?: boolean;
   actionPending?: boolean;
+  averageRating: number;
+  reviewsCount: number;
   children: ReactNode;
 }) {
   const filled =
@@ -45,6 +50,49 @@ export function ClassDetailLayout({
       ? Math.min(100, Math.max(0, (item.enrollmentCount / item.capacity) * 100))
       : 0;
   const currency = item.price.currency === "IRR" ? "ریال" : item.price.currency;
+  const courseDays = Math.max(
+    1,
+    Math.ceil(
+      (new Date(item.courseEndAt).getTime() -
+        new Date(item.courseStartAt).getTime()) /
+        86_400_000,
+    ),
+  );
+  const classStats = [
+    {
+      id: "working-days",
+      title: "روزهای کاری",
+      value: `${courseDays.toLocaleString("fa-IR")} روز`,
+      icon: ({ size }: { size?: number }) => <Icon name="clock" size={size} />,
+      description: `دوره از ${dateLabel(item.courseStartAt)} تا ${dateLabel(item.courseEndAt)} برگزار می‌شود.`,
+    },
+    {
+      id: "status",
+      title: "وضعیت",
+      value: registrationOpen ? "ثبت‌نام باز" : "ثبت‌نام بسته",
+      icon: ({ size }: { size?: number }) => (
+        <Icon name="compass" size={size} />
+      ),
+      description: registrationOpen
+        ? `${remaining.toLocaleString("fa-IR")} جای خالی برای ثبت‌نام باقی مانده است.`
+        : remaining === 0
+          ? "ظرفیت این کلاس تکمیل شده است."
+          : "ثبت‌نام این کلاس در حال حاضر بسته است.",
+    },
+    {
+      id: "rating",
+      title: "امتیاز",
+      value: reviewsCount
+        ? averageRating.toLocaleString("fa-IR", {
+            maximumFractionDigits: 1,
+          })
+        : "جدید",
+      icon: ({ size }: { size?: number }) => (
+        <Icon name="star-full" size={size} />
+      ),
+      description: `${reviewsCount.toLocaleString("fa-IR")} نظر ثبت‌شده توسط شرکت‌کنندگان`,
+    },
+  ];
   return (
     <main className="class-detail min-h-dvh w-full min-w-0 pb-[calc(9rem+env(safe-area-inset-bottom))]">
       <DiscoveryPageHeader title="جزئیات کلاس" />
@@ -100,6 +148,8 @@ export function ClassDetailLayout({
             </div>
           </div>
         </section>
+
+        <MinimalCarousel cards={classStats} />
 
         <section aria-label="مشخصات دوره" className="grid grid-cols-2 gap-3">
           <ClassFact

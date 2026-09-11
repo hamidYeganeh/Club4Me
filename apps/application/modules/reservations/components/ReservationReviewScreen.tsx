@@ -1,5 +1,5 @@
 "use client";
-import { TaskStatusIntro } from "@/components/task-status-intro";
+import { ClubCard } from "@ui/club-card";
 
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import type { ReactNode } from "react";
@@ -73,7 +73,7 @@ export function ReservationReviewScreen({
           backLabel="بازگشت به انتخاب سانس"
         />
 
-        <div className="mb-5"><TaskStatusIntro title="یک بررسی کوتاه پیش از رزرو">زمان، محل و مبلغ نهایی را بررسی کنید و سپس ادامه دهید.</TaskStatusIntro></div>
+        <p className="mb-5 text-sm leading-6 text-muted">جزئیات رزرو را بررسی کنید و برای تأیید ادامه دهید.</p>
         <ol className="mb-8 grid grid-cols-3" aria-label="مراحل رزرو">
           {["انتخاب", "زمان", "تأیید و پرداخت"].map((label, index) => (
             <li
@@ -95,8 +95,17 @@ export function ReservationReviewScreen({
           ))}
         </ol>
 
-        <Card className="app-card overflow-hidden shadow-none">
-          <Card.Content className="flex items-center gap-4 p-4">
+        {entity.kind === "club" ? (
+          <ClubCard
+            title={entity.title}
+            imageUrl={entity.imageUrl ?? undefined}
+            rating={entity.rating}
+            reviewsCount={entity.reviewsCount}
+            className="!w-full !aspect-[16/8]"
+          />
+        ) : (
+        <Card className="rounded-[var(--app-radius-feature,24px)] border border-border bg-surface shadow-none">
+          <Card.Content className="!flex !flex-row items-center gap-4 p-4">
             <div className="relative size-20 shrink-0 overflow-hidden rounded-2xl bg-surface-secondary">
               <FallbackImage
                 src={entity.imageUrl}
@@ -112,7 +121,7 @@ export function ReservationReviewScreen({
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-black">{entity.title}</p>
-              <p className="mt-1 truncate text-sm text-muted">
+              <p className="mt-1 line-clamp-2 text-sm text-muted">
                 {entity.subtitle}
               </p>
               {entity.rating !== undefined ? (
@@ -130,8 +139,10 @@ export function ReservationReviewScreen({
           </Card.Content>
         </Card>
 
+        )}
+
         <ReviewSection icon="calendar-check" title="جزئیات سانس">
-          <Card className="app-card shadow-none">
+          <Card className="rounded-[var(--app-radius-feature,24px)] border border-border bg-surface shadow-none">
             <Card.Content className="grid gap-4 p-5">
               <SummaryRow label="سانس" value={session.title} />
               <SummaryRow
@@ -162,8 +173,8 @@ export function ReservationReviewScreen({
         </ReviewSection>
 
         <ReviewSection icon="credit-card" title="روش پرداخت">
-          <Card className="app-card shadow-none">
-            <Card.Content className="flex items-center gap-4 p-5">
+          <Card className="rounded-[var(--app-radius-feature,24px)] border border-border bg-surface shadow-none">
+            <Card.Content className="!flex !flex-row items-center gap-3 p-4">
               <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-accent/12 text-accent">
                 <Icon name={coveredAmount ? "ticket" : "wallet"} size={24} />
               </span>
@@ -186,7 +197,7 @@ export function ReservationReviewScreen({
         </ReviewSection>
 
         <ReviewSection icon="bill" title="خلاصه پرداخت">
-          <Card className="app-card overflow-hidden shadow-none">
+          <Card className="rounded-[var(--app-radius-feature,24px)] border border-border bg-surface shadow-none">
             <Card.Content className="divide-y divide-foreground/8 p-0">
               <PriceRow
                 label={
@@ -257,7 +268,7 @@ function ReviewSection({
   children: ReactNode;
 }) {
   return (
-    <section className="mt-8">
+    <section className="mt-5">
       <h2 className="mb-3 flex items-center gap-2 text-base font-black">
         <Icon name={icon} size={21} className="text-muted" />
         {title}
@@ -269,9 +280,9 @@ function ReviewSection({
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-5 text-sm">
+    <div className="flex items-start justify-between gap-3 text-sm">
       <span className="shrink-0 text-muted">{label}</span>
-      <strong className="text-end leading-6 text-foreground">{value}</strong>
+      <strong className="min-w-0 break-words text-end leading-6 text-foreground">{value}</strong>
     </div>
   );
 }
@@ -292,7 +303,7 @@ function PriceRow({
       className={`flex items-center justify-between gap-4 px-5 py-4 ${accent ? "bg-success/10 text-success" : ""}`}
     >
       <span className={strong ? "font-black" : "text-sm"}>{label}</span>
-      <strong className={strong ? "text-lg font-black text-accent" : "text-sm"}>
+      <strong className={strong ? "shrink-0 text-base font-black text-accent" : "shrink-0 text-sm"}>
         {value}
       </strong>
     </div>

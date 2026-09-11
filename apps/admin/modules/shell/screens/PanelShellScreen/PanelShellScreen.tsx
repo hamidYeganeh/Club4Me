@@ -17,10 +17,7 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
       className="admin-panel"
       rail={
         <PanelRailSection
-          addHref="/"
-          addLabel={t("panel.add")}
           avatarAlt={t("adminDashboard.profileName")}
-          badge="2"
           items={[
             {
               href: "/",
@@ -86,7 +83,7 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
             {
               href: "/coach",
               icon: "chat",
-              label: t("panel.coach"),
+              label: "مدیریت مربیان",
             },
             {
               href: "/classes",

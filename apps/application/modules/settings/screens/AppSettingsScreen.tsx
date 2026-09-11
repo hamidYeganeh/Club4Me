@@ -74,6 +74,7 @@ export function AppSettingsScreen({ role }: Props) {
   const updatePreferences = useUpdateNotificationPreferences();
   const deleteAccount = useDeleteAccount();
   const privacy = useAccountPrivacy();
+  const privacyFailure = getQueryFailure(privacy.error, privacy.fetchStatus);
   const updateConsent = useUpdateAccountConsent();
   const logout = useLogout();
   const [pushState, setPushState] = useState<
@@ -244,7 +245,16 @@ export function AppSettingsScreen({ role }: Props) {
       </SettingsSection>
 
       <SettingsSection title="حریم خصوصی و پشتیبانی">
-        {privacy.data?.purposes.map((purpose) => {
+        {privacyFailure ? (
+          <RequestFailureState
+            compact
+            error={privacyFailure}
+            onRetry={() => void privacy.refetch()}
+          />
+        ) : privacy.isPending ? (
+          <Skeleton className="m-4 h-16 rounded-xl" aria-label="در حال بارگذاری تنظیمات حریم خصوصی" />
+        ) : null}
+        {privacy.data?.purposes?.map((purpose) => {
           const decision = privacy.data.items.find((item) => item.purpose === purpose.id);
           return <SettingRow key={purpose.id} title={purpose.label} description={`رضایت نسخه ${privacy.data.policyVersion}؛ قابل تغییر در هر زمان`}>
             <Switch aria-label={purpose.label} isSelected={decision?.granted ?? false} isDisabled={purpose.required || updateConsent.isPending} onChange={(granted) => void updateConsent.mutateAsync({ purpose: purpose.id, granted, version: privacy.data!.policyVersion }).catch(() => toast.danger("ذخیره رضایت انجام نشد"))}>

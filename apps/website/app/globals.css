@@ -4,6 +4,7 @@
 @import "@repo/theme/fonts.css";
 @import "@repo/theme/icons.css";
 @import "@repo/theme/theme-transition.css";
+@import "@repo/theme/sandow.css";
 
 @source "../../../packages/ui/src";
 

@@ -4,7 +4,7 @@ import { Avatar } from "@heroui/react/avatar";
 import { Button } from "@heroui/react/button";
 import { Typography } from "@heroui/react/typography";
 import { useTranslations } from "next-intl";
-import { LANDING_ASSETS, LANDING_CLUBS } from "../../lib/landing-assets";
+import { LANDING_ASSETS } from "../../lib/landing-assets";
 import { useLandingScroll } from "../../lib/landing-scroll";
 import { landingBookingSectionStyles } from "./LandingBookingSection.styles";
 import type {
@@ -52,39 +52,39 @@ export function LandingBookingSection({
       fallback: LANDING_ASSETS.coaches[2].name.slice(0, 1),
     },
     {
-      src: LANDING_CLUBS[0].image,
-      alt: LANDING_CLUBS[0].title,
-      fallback: LANDING_CLUBS[0].title.slice(0, 1),
+      src: "/assets/images/landing/mock/club-1.png",
+      alt: "تصویر معرفی فضای تمرین",
+      fallback: "ب",
     },
     {
-      src: LANDING_CLUBS[1].image,
-      alt: LANDING_CLUBS[1].title,
-      fallback: LANDING_CLUBS[1].title.slice(0, 1),
+      src: "/assets/images/landing/mock/club-2.png",
+      alt: "تصویر معرفی فضای تمرین",
+      fallback: "ب",
     },
     {
-      src: LANDING_CLUBS[2].image,
-      alt: LANDING_CLUBS[2].title,
-      fallback: LANDING_CLUBS[2].title.slice(0, 1),
+      src: "/assets/images/landing/mock/club-3.png",
+      alt: "تصویر معرفی فضای تمرین",
+      fallback: "ب",
     },
     {
-      src: LANDING_CLUBS[3].image,
-      alt: LANDING_CLUBS[3].title,
-      fallback: LANDING_CLUBS[3].title.slice(0, 1),
+      src: "/assets/images/landing/mock/club-4.png",
+      alt: "تصویر معرفی فضای تمرین",
+      fallback: "ب",
     },
     {
-      src: LANDING_CLUBS[4].image,
-      alt: LANDING_CLUBS[4].title,
-      fallback: LANDING_CLUBS[4].title.slice(0, 1),
+      src: "/assets/images/landing/mock/club-5.png",
+      alt: "تصویر معرفی فضای تمرین",
+      fallback: "ب",
     },
     {
-      src: LANDING_CLUBS[5].image,
-      alt: LANDING_CLUBS[5].title,
-      fallback: LANDING_CLUBS[5].title.slice(0, 1),
+      src: "/assets/images/landing/mock/club-6.png",
+      alt: "تصویر معرفی فضای تمرین",
+      fallback: "ب",
     },
     {
-      src: LANDING_CLUBS[6].image,
-      alt: LANDING_CLUBS[6].title,
-      fallback: LANDING_CLUBS[6].title.slice(0, 1),
+      src: "/assets/images/landing/mock/club-7.png",
+      alt: "تصویر معرفی فضای تمرین",
+      fallback: "ب",
     },
     {
       src: LANDING_ASSETS.facilities.clay,

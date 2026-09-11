@@ -1,10 +1,14 @@
 "use client";
+
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
+import { useSearchParams } from "next/navigation";
+import { useSelectedClub, SelectedClubScope } from "@/lib/use-selected-club";
 import { StudentAccounts } from "@/components/student-accounts";
 import { IranDateInput } from "@repo/ui/iran-date-input";
 import { tehranLocalValue } from "@repo/ui/iran-date";
 
 import {
-  useBusinessClubs,
   useClubAttendance,
   useClubBranches,
   useClubCoachProfiles,
@@ -40,7 +44,14 @@ import {
 import { Button, Card, Chip, toast } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { EntityDetailsModal } from "@ui/entity-details-modal";
-import { FormEvent, ReactNode, useCallback, useMemo, useState } from "react";
+import {
+  FormEvent,
+  ReactNode,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { PanelNumberField } from "@/components/form/PanelNumberField";
 
 const inputClass =
@@ -58,13 +69,6 @@ const formatDate = (value: string | null) =>
     : "ثبت نشده";
 const formatMoney = (value: number) =>
   new Intl.NumberFormat("fa-IR").format(value);
-
-function useSelectedClub() {
-  const clubs = useBusinessClubs();
-  const [selectedClubId, setClubId] = useState("");
-  const clubId = selectedClubId || clubs.data?.items[0]?.id || "";
-  return { clubs, clubId, setClubId };
-}
 
 function Page({
   title,
@@ -102,20 +106,23 @@ function ClubSelect({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const scoped = useContext(SelectedClubScope);
+  if (scoped) return null;
   return (
     <label className="grid gap-1 text-xs text-muted">
       باشگاه
-      <select
+      <FormSelect
+        aria-label="باشگاه"
         className={`${inputClass} min-w-52 text-foreground`}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => onChange(event)}
       >
         {clubs.map((club) => (
-          <option key={club.id} value={club.id}>
+          <FormOption entity={club} key={club.id} value={club.id}>
             {club.name}
-          </option>
+          </FormOption>
         ))}
-      </select>
+      </FormSelect>
     </label>
   );
 }
@@ -190,17 +197,18 @@ const attendanceStatusLabels = {
 
 export function StudentsScreen() {
   const { clubs, clubId, setClubId } = useSelectedClub();
+  const params = useSearchParams();
   const students = useClubStudents(clubId);
   const create = useCreateClubStudent(clubId);
   const update = useUpdateClubStudent(clubId);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<ClubStudent | null>(null);
   const [draftFilters, setDraftFilters] = useState({
-    query: "",
+    query: params.get("query") ?? "",
     status: "" as "" | "active" | "inactive",
   });
   const [filters, setFilters] = useState({
-    query: "",
+    query: params.get("query") ?? "",
     status: "" as "" | "active" | "inactive",
   });
 
@@ -360,7 +368,7 @@ export function StudentsScreen() {
             className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
           >
             <Field label="نام">
-              <input
+              <HeroInput
                 required
                 minLength={2}
                 name="firstName"
@@ -368,7 +376,7 @@ export function StudentsScreen() {
               />
             </Field>
             <Field label="نام خانوادگی">
-              <input
+              <HeroInput
                 required
                 minLength={2}
                 name="lastName"
@@ -376,7 +384,7 @@ export function StudentsScreen() {
               />
             </Field>
             <Field label="شماره تماس">
-              <input
+              <HeroInput
                 required
                 name="phone"
                 type="tel"
@@ -390,10 +398,10 @@ export function StudentsScreen() {
               />
             </Field>
             <Field label="رشته ورزشی">
-              <input name="sport" className={inputClass} />
+              <HeroInput name="sport" className={inputClass} />
             </Field>
             <Field label="عنوان عضویت">
-              <input
+              <HeroInput
                 name="membershipTitle"
                 placeholder="مثلاً بدنسازی ماهانه"
                 className={inputClass}
@@ -408,7 +416,7 @@ export function StudentsScreen() {
             </Field>
             <div className="md:col-span-2 lg:col-span-3">
               <Field label="یادداشت">
-                <textarea name="notes" className={textareaClass} />
+                <HeroTextArea name="notes" className={textareaClass} />
               </Field>
             </div>
             <div className="flex gap-2 md:col-span-2 lg:col-span-3">
@@ -450,7 +458,7 @@ export function StudentsScreen() {
             <>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
-                <input
+                <HeroInput
                   className={inputClass}
                   value={draftFilters.query}
                   onChange={(event) =>
@@ -464,20 +472,21 @@ export function StudentsScreen() {
               </label>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">وضعیت</span>
-                <select
+                <FormSelect
+                  aria-label="انتخاب گزینه"
                   className={inputClass}
                   value={draftFilters.status}
                   onChange={(event) =>
                     setDraftFilters((current) => ({
                       ...current,
-                      status: event.target.value as "" | "active" | "inactive",
+                      status: event as "" | "active" | "inactive",
                     }))
                   }
                 >
-                  <option value="">همه</option>
-                  <option value="active">فعال</option>
-                  <option value="inactive">غیرفعال</option>
-                </select>
+                  <FormOption value="">همه</FormOption>
+                  <FormOption value="active">فعال</FormOption>
+                  <FormOption value="inactive">غیرفعال</FormOption>
+                </FormSelect>
               </label>
             </>
           }
@@ -721,7 +730,7 @@ export function CoachesScreen() {
             className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
           >
             <Field label="نام">
-              <input
+              <HeroInput
                 required
                 name="firstName"
                 minLength={2}
@@ -729,7 +738,7 @@ export function CoachesScreen() {
               />
             </Field>
             <Field label="نام خانوادگی">
-              <input
+              <HeroInput
                 required
                 name="lastName"
                 minLength={2}
@@ -737,7 +746,7 @@ export function CoachesScreen() {
               />
             </Field>
             <Field label="شماره تماس">
-              <input
+              <HeroInput
                 required
                 name="phone"
                 type="tel"
@@ -751,21 +760,21 @@ export function CoachesScreen() {
               />
             </Field>
             <Field label="تخصص‌ها">
-              <input
+              <HeroInput
                 name="specialties"
                 placeholder="بدنسازی، تی‌آر‌ایکس"
                 className={inputClass}
               />
             </Field>
             <Field label="نوع همکاری">
-              <input
+              <HeroInput
                 name="employmentType"
                 placeholder="تمام‌وقت، درصدی و ..."
                 className={inputClass}
               />
             </Field>
             <Field label="یادداشت">
-              <input name="notes" className={inputClass} />
+              <HeroInput name="notes" className={inputClass} />
             </Field>
             <div className="flex gap-2 md:col-span-2 lg:col-span-3">
               <Button
@@ -806,7 +815,7 @@ export function CoachesScreen() {
             <>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
-                <input
+                <HeroInput
                   className={inputClass}
                   value={draftFilters.query}
                   onChange={(event) =>
@@ -820,20 +829,21 @@ export function CoachesScreen() {
               </label>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">وضعیت</span>
-                <select
+                <FormSelect
+                  aria-label="انتخاب گزینه"
                   className={inputClass}
                   value={draftFilters.status}
                   onChange={(event) =>
                     setDraftFilters((current) => ({
                       ...current,
-                      status: event.target.value as "" | "active" | "inactive",
+                      status: event as "" | "active" | "inactive",
                     }))
                   }
                 >
-                  <option value="">همه</option>
-                  <option value="active">فعال</option>
-                  <option value="inactive">غیرفعال</option>
-                </select>
+                  <FormOption value="">همه</FormOption>
+                  <FormOption value="active">فعال</FormOption>
+                  <FormOption value="inactive">غیرفعال</FormOption>
+                </FormSelect>
               </label>
             </>
           }
@@ -1185,7 +1195,7 @@ export function PaymentsScreen() {
               />
             </Field>
             <Field label="شماره شبا">
-              <input
+              <HeroInput
                 required
                 name="iban"
                 dir="ltr"
@@ -1215,24 +1225,33 @@ export function PaymentsScreen() {
             className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
           >
             <Field label="شاگرد">
-              <select required name="studentId" className={inputClass}>
-                <option value="">انتخاب کنید</option>
+              <FormSelect
+                aria-label="studentId"
+                required
+                name="studentId"
+                className={inputClass}
+              >
+                <FormOption value="">انتخاب کنید</FormOption>
                 {students.data?.items.map((student) => (
-                  <option key={student.id} value={student.id}>
+                  <FormOption
+                    entity={student}
+                    key={student.id}
+                    value={student.id}
+                  >
                     {student.firstName} {student.lastName}
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
+              </FormSelect>
             </Field>
             <Field label="نوع پرداخت">
-              <select name="type" className={inputClass}>
-                <option value="tuition">شهریه</option>
-                <option value="session">هزینه سانس</option>
-                <option value="other">سایر</option>
-              </select>
+              <FormSelect aria-label="type" name="type" className={inputClass}>
+                <FormOption value="tuition">شهریه</FormOption>
+                <FormOption value="session">هزینه سانس</FormOption>
+                <FormOption value="other">سایر</FormOption>
+              </FormSelect>
             </Field>
             <Field label="عنوان">
-              <input
+              <HeroInput
                 required
                 name="title"
                 placeholder="شهریه شهریور"
@@ -1258,16 +1277,20 @@ export function PaymentsScreen() {
               />
             </Field>
             <Field label="روش پرداخت">
-              <select name="method" className={inputClass}>
-                <option value="card">کارتخوان</option>
-                <option value="cash">نقدی</option>
-                <option value="transfer">کارت‌به‌کارت</option>
-                <option value="other">سایر</option>
-              </select>
+              <FormSelect
+                aria-label="method"
+                name="method"
+                className={inputClass}
+              >
+                <FormOption value="card">کارتخوان</FormOption>
+                <FormOption value="cash">نقدی</FormOption>
+                <FormOption value="transfer">کارت‌به‌کارت</FormOption>
+                <FormOption value="other">سایر</FormOption>
+              </FormSelect>
             </Field>
             <div className="md:col-span-2 lg:col-span-3">
               <Field label="یادداشت">
-                <textarea name="notes" className={textareaClass} />
+                <HeroTextArea name="notes" className={textareaClass} />
               </Field>
             </div>
             <div className="flex gap-2 md:col-span-2 lg:col-span-3">
@@ -1309,7 +1332,7 @@ export function PaymentsScreen() {
             <>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
-                <input
+                <HeroInput
                   className={inputClass}
                   value={draftFilters.query}
                   onChange={(event) =>
@@ -1323,22 +1346,22 @@ export function PaymentsScreen() {
               </label>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">نوع پرداخت</span>
-                <select
+                <FormSelect
+                  aria-label="انتخاب گزینه"
                   className={inputClass}
                   value={draftFilters.type}
                   onChange={(event) =>
                     setDraftFilters((current) => ({
                       ...current,
-                      type: event.target.value as
-                        "" | ClubManualPayment["type"],
+                      type: event as "" | ClubManualPayment["type"],
                     }))
                   }
                 >
-                  <option value="">همه</option>
-                  <option value="tuition">شهریه</option>
-                  <option value="session">هزینه سانس</option>
-                  <option value="other">سایر</option>
-                </select>
+                  <FormOption value="">همه</FormOption>
+                  <FormOption value="tuition">شهریه</FormOption>
+                  <FormOption value="session">هزینه سانس</FormOption>
+                  <FormOption value="other">سایر</FormOption>
+                </FormSelect>
               </label>
             </>
           }
@@ -1675,7 +1698,7 @@ export function AttendanceScreen() {
             />
           </Field>
           <Field label="عنوان سانس">
-            <input
+            <HeroInput
               required
               minLength={2}
               maxLength={120}
@@ -1710,7 +1733,7 @@ export function AttendanceScreen() {
           filterContent={
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted">جست‌وجو</span>
-              <input
+              <HeroInput
                 className={inputClass}
                 value={draftFilters.query}
                 onChange={(event) =>
@@ -1929,7 +1952,7 @@ export function BranchesScreen() {
         <Card className="mt-5 app-card shadow-none active:scale-100 p-5">
           <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
             <Field label="نام شعبه">
-              <input
+              <HeroInput
                 required
                 minLength={2}
                 name="name"
@@ -1938,7 +1961,7 @@ export function BranchesScreen() {
               />
             </Field>
             <Field label="شماره تماس">
-              <input
+              <HeroInput
                 name="phone"
                 type="tel"
                 inputMode="tel"
@@ -1952,7 +1975,7 @@ export function BranchesScreen() {
             </Field>
             <div className="md:col-span-2">
               <Field label="نشانی">
-                <textarea
+                <HeroTextArea
                   required
                   minLength={5}
                   name="address"
@@ -1999,7 +2022,7 @@ export function BranchesScreen() {
             <>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
-                <input
+                <HeroInput
                   className={inputClass}
                   value={draftFilters.query}
                   onChange={(event) =>
@@ -2013,20 +2036,21 @@ export function BranchesScreen() {
               </label>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">وضعیت</span>
-                <select
+                <FormSelect
+                  aria-label="انتخاب گزینه"
                   className={inputClass}
                   value={draftFilters.status}
                   onChange={(event) =>
                     setDraftFilters((current) => ({
                       ...current,
-                      status: event.target.value as "" | "active" | "inactive",
+                      status: event as "" | "active" | "inactive",
                     }))
                   }
                 >
-                  <option value="">همه</option>
-                  <option value="active">فعال</option>
-                  <option value="inactive">غیرفعال</option>
-                </select>
+                  <FormOption value="">همه</FormOption>
+                  <FormOption value="active">فعال</FormOption>
+                  <FormOption value="inactive">غیرفعال</FormOption>
+                </FormSelect>
               </label>
             </>
           }

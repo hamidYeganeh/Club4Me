@@ -1,0 +1,39 @@
+/* Same timing as lib/ease.ts. These defaults also reach portaled HeroUI controls. */
+@theme {
+  --default-transition-duration: 240ms;
+  --default-transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+:root {
+  --app-motion-fast: 160ms;
+  --app-motion-control: 240ms;
+  --app-motion-reveal: 320ms;
+  --app-motion-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+:is(
+  .button,
+  .toggle-button,
+  .app-card,
+  .app-icon-button,
+  .app-field,
+  .app-notification,
+  .app-settings-row,
+  .workspace-navigation button,
+  .form-section-navigation a
+) {
+  transition-duration: var(--app-motion-control);
+  transition-timing-function: var(--app-motion-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

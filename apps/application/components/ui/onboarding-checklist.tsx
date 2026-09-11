@@ -9,6 +9,12 @@ import {
 } from "motion/react";
 import Link from "@/components/app-link";
 import { Icon } from "@theme/icon";
+import {
+  CONTROL_TRANSITION,
+  FADE_TRANSITION,
+  REDUCED_TRANSITION,
+  MOTION_STAGGER,
+} from "@/lib/ease";
 
 export type ChecklistStep = {
   id: string;
@@ -28,14 +34,11 @@ export function OnboardingChecklist({
   const reduced = useReducedMotion();
   const completed = steps.filter((step) => step.isCompleted).length;
   const remaining = steps.filter((step) => !step.isCompleted);
-  const transition = {
-    duration: reduced ? 0 : 0.35,
-    ease: [0.32, 0.72, 0, 1] as const,
-  };
+  const transition = reduced ? REDUCED_TRANSITION : CONTROL_TRANSITION;
   return (
     <LayoutGroup id={uid}>
       <motion.section
-        layout
+        layout={!reduced}
         transition={transition}
         className="overflow-hidden rounded-3xl bg-surface"
         aria-label="تکمیل پروفایل"
@@ -69,21 +72,53 @@ export function OnboardingChecklist({
             </span>
           </span>
           <motion.span
-            layout
-            className="mt-5 flex gap-2"
+            layout={!reduced}
+            className={`mt-5 flex items-center gap-2 ${expanded ? "justify-between" : ""}`}
             role="progressbar"
             aria-label="میزان تکمیل پروفایل"
             aria-valuemin={0}
             aria-valuemax={steps.length}
             aria-valuenow={completed}
           >
-            {steps.map((step) => (
+            {steps.map((step, index) => (
               <motion.span
-                layout
-                transition={transition}
+                layout={!reduced}
+                transition={{
+                  ...transition,
+                  delay: reduced ? 0 : Math.min(index, 5) * MOTION_STAGGER,
+                }}
                 key={step.id}
-                className={`h-1.5 flex-1 rounded-full ${step.isCompleted ? "bg-accent" : "bg-surface-tertiary"}`}
-              />
+                className={`grid place-items-center rounded-full ${
+                  expanded ? "size-7 flex-none" : "h-1.5 flex-1"
+                } ${
+                  step.isCompleted
+                    ? "bg-accent text-accent-foreground"
+                    : expanded
+                      ? "bg-surface-tertiary text-foreground"
+                      : "bg-surface-tertiary"
+                }`}
+              >
+                <AnimatePresence initial={false}>
+                  {expanded ? (
+                    <motion.span
+                      key="step-number"
+                      initial={reduced ? false : { opacity: 0, scale: 0.55 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.55 }}
+                      transition={{
+                        ...(reduced ? REDUCED_TRANSITION : FADE_TRANSITION),
+                        delay: reduced
+                          ? 0
+                          : 0.12 + Math.min(index, 5) * MOTION_STAGGER,
+                      }}
+                      className="text-[11px] font-bold leading-none"
+                      aria-hidden="true"
+                    >
+                      {(index + 1).toLocaleString("fa-IR")}
+                    </motion.span>
+                  ) : null}
+                </AnimatePresence>
+              </motion.span>
             ))}
           </motion.span>
         </button>
@@ -105,7 +140,7 @@ export function OnboardingChecklist({
                     animate={{ opacity: 1, x: 0 }}
                     transition={{
                       ...transition,
-                      delay: reduced ? 0 : index * 0.04,
+                      delay: reduced ? 0 : Math.min(index, 5) * MOTION_STAGGER,
                     }}
                   >
                     <Link

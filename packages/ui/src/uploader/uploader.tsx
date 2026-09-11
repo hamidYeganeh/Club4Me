@@ -89,6 +89,7 @@ export function Uploader({
   const isControlled = files !== undefined;
   const [internalFiles, setInternalFiles] = useState<UploaderFile[]>([]);
   const items = files ?? internalFiles;
+  const [rejectionMessage, setRejectionMessage] = useState("");
 
   const patchFile = useCallback((id: string, next: Partial<UploaderFile>) => {
     setInternalFiles((current) =>
@@ -98,6 +99,7 @@ export function Uploader({
 
   const handleAccepted = useCallback(
     async (accepted: File[]) => {
+      setRejectionMessage("");
       onDrop?.(accepted);
 
       if (isControlled) {
@@ -124,12 +126,15 @@ export function Uploader({
 
   const handleRejected = useCallback(
     (rejections: FileRejection[]) => {
+      setRejectionMessage(
+        "فایل پذیرفته نشد؛ نوع فایل و حداکثر حجم مجاز را بررسی کنید.",
+      );
       if (isControlled) {
         return;
       }
 
       const rejectedItems = rejections.map((rejection) =>
-        toUploaderFile(rejection.file, "error", 72),
+        toUploaderFile(rejection.file, "error", 0),
       );
       setInternalFiles((current) => [...current, ...rejectedItems]);
     },
@@ -155,7 +160,7 @@ export function Uploader({
 
       const item = internalFiles.find((entry) => entry.id === id);
       if (!item?.file || !onUpload) {
-        patchFile(id, { status: "uploading", progress: 8, loaded: 0 });
+        setRejectionMessage("فایل را دوباره با نوع و حجم مجاز انتخاب کنید.");
         return;
       }
 
@@ -164,21 +169,25 @@ export function Uploader({
     [internalFiles, isControlled, onRetry, onUpload, patchFile],
   );
 
-  const { getRootProps, getInputProps, isDragActive, isFocused, open } = useDropzone({
-    onDropAccepted: (accepted) => {
-      void handleAccepted(accepted);
-    },
-    onDropRejected: handleRejected,
-    accept,
-    maxSize,
-    multiple,
-    disabled,
-    noClick: Boolean(onBrowseRequest),
-    noKeyboard: Boolean(onBrowseRequest),
-  });
+  const { getRootProps, getInputProps, isDragActive, isFocused, open } =
+    useDropzone({
+      onDropAccepted: (accepted) => {
+        void handleAccepted(accepted);
+      },
+      onDropRejected: handleRejected,
+      accept,
+      maxSize,
+      multiple,
+      disabled,
+      noClick: Boolean(onBrowseRequest),
+      noKeyboard: Boolean(onBrowseRequest),
+    });
 
   return (
-    <div dir="rtl" className={cn("flex w-full min-w-0 max-w-full flex-col gap-3", className)}>
+    <div
+      dir="rtl"
+      className={cn("flex w-full min-w-0 max-w-full flex-col gap-3", className)}
+    >
       <motion.div
         {...getRootProps({
           onClick: onBrowseRequest ? () => onBrowseRequest(open) : undefined,
@@ -220,11 +229,11 @@ export function Uploader({
           }
           transition={{ duration: 0.18, ease: "easeOut" }}
           className={cn(
-            "mb-3 grid size-11 place-items-center rounded-2xl bg-default text-foreground transition-colors duration-200",
+            "mb-4 grid size-16 place-items-center rounded-[1.35rem] border border-accent/20 bg-accent/10 text-accent shadow-[inset_0_1px_0_color-mix(in_oklch,var(--foreground)_6%,transparent)] transition-colors duration-200",
             isDragActive && "bg-accent text-accent-foreground",
           )}
         >
-          <UploadCloud className="size-[18px]" />
+          <UploadCloud className="size-7" />
         </motion.span>
         <p className="px-2 text-sm font-semibold tracking-[-0.01em] text-foreground">
           {labels.clickToUpload}
@@ -234,8 +243,16 @@ export function Uploader({
         </p>
       </motion.div>
 
+      {rejectionMessage ? (
+        <p role="alert" className="text-sm text-danger">
+          {rejectionMessage}
+        </p>
+      ) : null}
       {items.length > 0 ? (
-        <ul className="flex w-full min-w-0 max-w-full flex-col gap-3" aria-live="polite">
+        <ul
+          className="flex w-full min-w-0 max-w-full flex-col gap-3"
+          aria-live="polite"
+        >
           {items.map((item) => (
             <li key={item.id} className="min-w-0 max-w-full">
               <UploaderFileItem

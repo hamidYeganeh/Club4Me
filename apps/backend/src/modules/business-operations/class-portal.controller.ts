@@ -66,6 +66,47 @@ export class AthleteBusinessClassesController {
     return this.service.listForAthlete(user.sub);
   }
 
+  @Get(":classId/groups") groups(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("classId") classId: string,
+  ) {
+    return this.service.trainingGroups.list(user.sub, classId);
+  }
+  @Post(":classId/groups") createGroup(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("classId") classId: string,
+    @Body() body: unknown,
+  ) {
+    return this.service.trainingGroups.create(user.sub, classId, body);
+  }
+  @Post(":classId/groups/join") joinGroup(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("classId") classId: string,
+    @Body() body: unknown,
+  ) {
+    return this.service.trainingGroups.join(user.sub, classId, body);
+  }
+  @Post("groups/:groupId/invite") groupInvite(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("groupId") groupId: string,
+  ) {
+    return this.service.trainingGroups.invite(user.sub, groupId);
+  }
+  @Delete("groups/:groupId") leaveGroup(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("groupId") groupId: string,
+  ) {
+    return this.service.trainingGroups.leave(user.sub, groupId);
+  }
+  @Get("preferences") preferences(@CurrentUser() user: AuthTokenPayload) {
+    return this.service.recommendationPreferences(user.sub);
+  }
+  @Put("preferences") savePreferences(
+    @CurrentUser() user: AuthTokenPayload,
+    @Body() body: unknown,
+  ) {
+    return this.service.saveRecommendationPreferences(user.sub, body);
+  }
   @Get("recommendations")
   recommendations(@CurrentUser() user: AuthTokenPayload) {
     return this.service.recommendationsForAthlete(user.sub);
@@ -100,6 +141,12 @@ export class AthleteBusinessClassesController {
     return this.service.cancelEnrollment(user.sub, enrollmentId);
   }
 
+  @Post("enrollments/:enrollmentId/waitlist/renew") renewWaitlist(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("enrollmentId") enrollmentId: string,
+  ) {
+    return this.service.renewWaitlist(user.sub, enrollmentId);
+  }
   @Post("enrollments/:enrollmentId/waitlist/claim")
   claimWaitlist(
     @CurrentUser() user: AuthTokenPayload,

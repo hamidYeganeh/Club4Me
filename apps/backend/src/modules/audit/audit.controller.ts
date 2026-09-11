@@ -1,3 +1,4 @@
+import { withReferenceSummaries } from "../../common/utils/reference-summaries";
 import { Controller, Get, Query, UseGuards } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
@@ -24,7 +25,7 @@ export class AuditController {
       .limit(limit)
       .lean();
     return {
-      items: items.map((item) => ({
+      items: await withReferenceSummaries(this.logs.db, items.map((item) => ({
         id: String(item._id),
         actorId: String(item.actorId),
         action: item.action,
@@ -34,7 +35,7 @@ export class AuditController {
         metadata: item.metadata,
         ip: item.ip ?? null,
         createdAt: item.createdAt.toISOString(),
-      })),
+      })), [{field: "actorId", as: "actor", collection: "users", fields: ["firstName", "lastName", "phone"]}]),
     };
   }
 }

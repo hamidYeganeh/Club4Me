@@ -105,6 +105,7 @@ export type BusinessClassAttendance = Base & {
   recordedBy: string;
   checkInMethod?: "manual" | "qr" | "code";
   checkedInAt?: string | null;
+  checkedOutAt?: string | null;
 };
 
 export type BusinessClassCheckInCredential = {
@@ -362,6 +363,7 @@ export function useRecordBusinessClassAttendance(
         studentId: string;
         status: "present" | "absent" | "excused";
         notes: string;
+        checkedOut?: boolean;
       }>,
     ) =>
       http.put<{ items: BusinessClassAttendance[] }>(

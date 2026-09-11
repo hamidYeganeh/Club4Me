@@ -1,5 +1,6 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { useDeferredValue, useMemo, useState } from "react";
 import { Button, Card, Chip, Input, Spinner, Table } from "@heroui/react";
 import { type AdminAuditLog, useAdminAuditLogs } from "@api/admin";
@@ -40,6 +41,7 @@ export function ActivityLogScreen() {
           item.action,
           item.path,
           item.actorId,
+          item.actor?.firstName, item.actor?.lastName, item.actor?.phone,
           JSON.stringify(item.metadata),
         ]
           .join(" ")
@@ -71,18 +73,19 @@ export function ActivityLogScreen() {
           <label className="sr-only" htmlFor="activity-method">
             نوع عملیات
           </label>
-          <select
+          <FormSelect
+            aria-label="انتخاب گزینه"
             id="activity-method"
             value={method}
-            onChange={(event) => setMethod(event.target.value)}
+            onChange={(event) => setMethod(event)}
             className="h-11 rounded-xl border border-border bg-surface px-3 text-sm outline-none focus:border-primary"
           >
-            <option value="">همه عملیات</option>
-            <option value="POST">ایجاد</option>
-            <option value="PATCH">ویرایش</option>
-            <option value="PUT">جایگزینی</option>
-            <option value="DELETE">حذف</option>
-          </select>
+            <FormOption value="">همه عملیات</FormOption>
+            <FormOption value="POST">ایجاد</FormOption>
+            <FormOption value="PATCH">ویرایش</FormOption>
+            <FormOption value="PUT">جایگزینی</FormOption>
+            <FormOption value="DELETE">حذف</FormOption>
+          </FormSelect>
         </div>
         <Card
           variant="transparent"
@@ -143,7 +146,7 @@ export function ActivityLogScreen() {
                           </Chip>
                         </Table.Cell>
                         <Table.Cell className="max-w-40 truncate" dir="ltr">
-                          {item.actorId}
+                          {[item.actor?.firstName, item.actor?.lastName].filter(Boolean).join(" ") || item.actor?.phone || "کاربر در دسترس نیست"}
                         </Table.Cell>
                         <Table.Cell>
                           <Button

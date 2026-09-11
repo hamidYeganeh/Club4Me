@@ -1,7 +1,11 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { LegalPage } from "@/components/legal-page";
 
-export const metadata: Metadata = { title: "قوانین استفاده | جیم فور می" };
+export const metadata = pageMetadata(
+  "شرایط استفاده",
+  "شرایط استفاده از Gym4Me، رزرو خدمات و مسئولیت کاربران.",
+  "/terms",
+);
 
 export default function TermsPage() {
   return (

@@ -1,6 +1,5 @@
 "use client";
 import { usePathname } from "next/navigation";
-import Image from "next/image";
 
 const pages: Record<string, [string, string, string]> = {
   "/": [
@@ -86,59 +85,7 @@ export function businessPageTitle(path: string) {
 }
 export function BusinessPageIntro() {
   const path = usePathname();
-  const [label, title, description] = (pages[path.split("/")[1] || "/"] ??
-    pages["/"])!;
-  // Operations and forms have a compact introduction; photo heroes belong to overview pages.
-  if (
-    path.split("/").filter(Boolean).length > 1 ||
-    [
-      "settings",
-      "data",
-      "coach",
-      "attendance",
-      "calendar",
-      "check-in",
-      "reception",
-    ].includes(path.slice(1))
-  )
-    return null;
-  return (
-    <section className="business-photo-hero" aria-label={title}>
-      <Image
-        src="/design/cover.jpg"
-        alt=""
-        fill
-        priority
-        sizes="(max-width: 768px) 100vw, 1200px"
-        className="object-cover"
-      />
-      <div className="business-hero-scrim" aria-hidden>
-        {[false, true].map((top) => (
-          <div
-            key={String(top)}
-            className={`business-blur-edge ${top ? "is-top" : ""}`}
-          >
-            {[2, 4, 8, 16].map((blur, i) => (
-              <span
-                key={blur}
-                style={{
-                  backdropFilter: `blur(${blur}px)`,
-                  height: `${100 - i * 20}%`,
-                }}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-      <div className="relative z-10 mt-auto p-5 sm:p-7">
-        <span className="inline-flex rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground">
-          {label}
-        </span>
-        <h2 className="mt-3 text-2xl font-extrabold leading-10 text-white">
-          {title}
-        </h2>
-        <p className="mt-2 text-sm leading-7 text-white/90">{description}</p>
-      </div>
-    </section>
-  );
+  const [, , description] = (pages[path.split("/")[1] || "/"] ?? pages["/"])!;
+  if (path.split("/").filter(Boolean).length > 1) return null;
+  return <p className="px-5 py-2 text-sm text-muted">{description}</p>;
 }

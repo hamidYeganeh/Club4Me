@@ -1,3 +1,4 @@
+import { withReferenceSummaries } from "../../common/utils/reference-summaries";
 import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
 import {
@@ -104,6 +105,36 @@ export class ResourcesService {
     };
   }
 
+  private present(
+    definition: ServerResourceDefinition,
+    rows: Record<string, unknown>[],
+  ) {
+    return withReferenceSummaries(
+      this.connection,
+      rows,
+      definition.fields.flatMap((field) => {
+        if (!field.target) return [];
+        const target = this.requireDefinition(
+          field.target.category,
+          field.target.resource,
+        );
+        const as = field.name.endsWith("Ids")
+          ? field.name.slice(0, -3) + "s"
+          : field.name.endsWith("Id")
+            ? field.name.slice(0, -2)
+            : field.name + "Details";
+        return [
+          {
+            field: field.name,
+            as,
+            collection: target.collection,
+            fields: ["name", "slug", "code", target.primaryField],
+          },
+        ];
+      }),
+    );
+  }
+
   async list(category: string, segment: string, query: ListQuery) {
     if (
       Object.values(query).some(
@@ -180,7 +211,7 @@ export class ResourcesService {
     ]);
 
     return {
-      items: documents.map(toPublicResource),
+      items: await this.present(definition, documents.map(toPublicResource)),
       page,
       limit,
       total,
@@ -193,7 +224,7 @@ export class ResourcesService {
     const document = await this.findById(this.getModel(definition), id);
     if (!document)
       throw new AppError(404, "RESOURCE_NOT_FOUND", "Resource not found");
-    return toPublicResource(document);
+    return (await this.present(definition, [toPublicResource(document)]))[0]!;
   }
 
   async requireActive(
@@ -274,19 +305,10 @@ export class ResourcesService {
     return { success: true as const };
   }
 
-  async seed(
-    category: string,
-    segment: string,
-    options: { includeSampleArticles?: boolean } = {},
-  ): Promise<SeedResult> {
+  async seed(category: string, segment: string): Promise<SeedResult> {
     const definition = this.requireDefinition(category, segment);
     const result = await this.seedDefinition(definition, new Set());
-    const articlesCreated =
-      definition.key === "article_categories" &&
-      options.includeSampleArticles !== false
-        ? await this.seedSampleArticles()
-        : 0;
-    return { ...result, articlesCreated };
+    return { ...result, articlesCreated: 0 };
   }
 
   async seedAll() {
@@ -445,69 +467,6 @@ export class ResourcesService {
         field.kind === "relation-list" ? ids : (ids[0] ?? "");
     }
     return resolved;
-  }
-
-  private async seedSampleArticles(): Promise<number> {
-    const categoryDefinition = this.requireDefinition(
-      "content",
-      "article-category",
-    );
-    const categoryModel = this.getModel(categoryDefinition);
-    const samples = [
-      {
-        title: "راهنمای شروع بدنسازی برای مبتدی‌ها",
-        slug: "bodybuilding-guide-for-beginners",
-        categoryCode: "TRAINING",
-        excerpt: "چطور تمرین بدنسازی را ایمن و اصولی شروع کنیم.",
-        bodyHtml:
-          "<p>برای شروع، سه جلسه تمرین سبک در هفته کافی است. فرم صحیح حرکات را در اولویت قرار دهید و به بدن فرصت بازیابی بدهید.</p>",
-      },
-      {
-        title: "تغذیه مناسب قبل و بعد از تمرین",
-        slug: "nutrition-before-and-after-workout",
-        categoryCode: "NUTRITION",
-        excerpt: "چند انتخاب ساده برای انرژی بهتر و ریکاوری سریع‌تر.",
-        bodyHtml:
-          "<p>پیش از تمرین یک وعده سبک حاوی کربوهیدرات و پس از تمرین ترکیبی از پروتئین، آب و کربوهیدرات مصرف کنید.</p>",
-      },
-      {
-        title: "چرا گرم‌کردن قبل از ورزش مهم است؟",
-        slug: "why-warm-up-matters",
-        categoryCode: "HEALTH",
-        excerpt:
-          "گرم‌کردن مناسب کیفیت تمرین را بالا می‌برد و ریسک آسیب را کاهش می‌دهد.",
-        bodyHtml:
-          "<p>پنج تا ده دقیقه فعالیت هوازی سبک و حرکات پویا، بدن را برای بخش اصلی تمرین آماده می‌کند.</p>",
-      },
-    ] as const;
-    let created = 0;
-    for (const sample of samples) {
-      const category = await categoryModel
-        .findOne({ code: sample.categoryCode, isActive: true })
-        .lean()
-        .exec();
-      if (!category) continue;
-      const result = await this.connection.collection("articles").updateOne(
-        { slug: sample.slug },
-        {
-          $setOnInsert: {
-            title: sample.title,
-            slug: sample.slug,
-            authorName: "تیم محتوای Gym4Me",
-            categoryId: category._id,
-            excerpt: sample.excerpt,
-            bodyHtml: sample.bodyHtml,
-            status: "published",
-            publishedAt: new Date(),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        },
-        { upsert: true },
-      );
-      if (result.upsertedCount) created += 1;
-    }
-    return created;
   }
 
   private requireDefinition(

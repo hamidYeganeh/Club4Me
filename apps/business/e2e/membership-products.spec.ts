@@ -8,6 +8,11 @@ test("owner creates a membership with an explicit pause policy and sees the pers
   page,
 }) => {
   const club = publicClubFixture();
+  const secondClub = {
+    ...club,
+    id: "66d400000000000000000099",
+    name: "باشگاه دوم",
+  };
   let saved: Record<string, unknown> | null = null;
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -23,7 +28,8 @@ test("owner creates a membership with an explicit pause policy and sees the pers
         hasPassword: true,
         status: "active",
       };
-    else if (path === "/api/v1/business/clubs") data = { items: [club] };
+    else if (path === "/api/v1/business/clubs")
+      data = { items: [club, secondClub] };
     else if (path.endsWith("/benefit-products")) {
       if (r.request().method() === "POST") {
         const body = r.request().postDataJSON();
@@ -34,6 +40,7 @@ test("owner creates a membership with an explicit pause policy and sees the pers
           price: 100000,
           sessionCount: 5,
           type: "session_pack",
+          accessClubIds: [secondClub.id],
         });
         saved = { ...body, id: "product", clubId: club.id, status: "active" };
         data = saved;
@@ -51,6 +58,10 @@ test("owner creates a membership with an explicit pause policy and sees the pers
       exact: true,
     })
     .fill("7");
+  await page
+    .getByRole("group", { name: "باشگاه‌های مجاز برای مصرف این بسته" })
+    .getByText("باشگاه دوم", { exact: true })
+    .click();
   await page.getByRole("button", { name: "ذخیره", exact: true }).click();
   await expect.poll(() => saved?.maxPauseDays).toBe(7);
   await expect(

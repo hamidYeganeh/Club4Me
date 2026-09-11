@@ -456,7 +456,9 @@ export class SessionAttendance {
   @Prop({ type: Types.ObjectId, required: true }) sourceId: Types.ObjectId;
   @Prop({ type: String, enum: ATTENDANCE_STATUSES, required: true })
   status: AttendanceStatus;
-  @Prop({ type: Date }) checkedInAt?: Date;
+  @Prop({ type: Date }) checkedInAt?: Date | null;
+  @Prop({ type: Date }) checkedOutAt?: Date | null;
+  @Prop({ type: [Object], default: [] }) changes: Array<{actorId: string; at: Date; before: string; after: string}>;
   @Prop({ type: String, trim: true, maxlength: 1000 }) note?: string;
   @Prop({ type: Types.ObjectId, ref: "User", required: true })
   recordedBy: Types.ObjectId;

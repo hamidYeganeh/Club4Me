@@ -17,9 +17,11 @@ export function CapacitorNative() {
 
     void StatusBar.setOverlaysWebView({ overlay: true });
     void StatusBar.setStyle({ style: Style.Dark });
-    void Keyboard.setResizeMode({ mode: KeyboardResize.Native });
-    void Keyboard.setStyle({ style: KeyboardStyle.Dark });
-    void Keyboard.setScroll({ isDisabled: false });
+    if (Capacitor.getPlatform() === "ios") {
+      void Keyboard.setResizeMode({ mode: KeyboardResize.Native });
+      void Keyboard.setStyle({ style: KeyboardStyle.Dark });
+      void Keyboard.setScroll({ isDisabled: false });
+    }
     void SplashScreen.hide();
 
     const listener = App.addListener("backButton", ({ canGoBack }) => {

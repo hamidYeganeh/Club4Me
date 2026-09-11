@@ -169,6 +169,12 @@ export interface HeatmapCellsProps {
   interactive?: boolean;
   /** Hide out-of-range bins (GitHub-style ghost cells). Default: true */
   hideGhostCells?: boolean;
+  /** Optional text rendered in the center of each cell. */
+  formatCellLabel?: (bin: HeatmapBin) => string;
+  /** Optional fill override for an individual cell. */
+  getCellColor?: (bin: HeatmapBin) => string | undefined;
+  /** Optional text-color override for an individual cell label. */
+  getCellLabelColor?: (bin: HeatmapBin) => string | undefined;
 }
 
 interface HeatmapCellRectProps {
@@ -190,6 +196,9 @@ interface HeatmapCellRectProps {
   activeScale: number;
   rowOpacity: number | readonly number[] | undefined;
   hoverState: { isHighlighted: boolean; isDimmed: boolean };
+  label?: string;
+  labelColor?: string;
+  customFill?: string;
   onEnter: (
     column: number,
     row: number,
@@ -211,6 +220,9 @@ const HeatmapMotionCell = memo(function HeatmapMotionCell({
   activeScale,
   rowOpacity,
   hoverState,
+  label,
+  labelColor,
+  customFill,
   onEnter,
   onLeave,
 }: HeatmapCellRectProps & {
@@ -234,7 +246,7 @@ const HeatmapMotionCell = memo(function HeatmapMotionCell({
 
   const levelStyle =
     levelStyles[getHeatmapContributionLevel(bin.count ?? 0)] ?? levelStyles[0];
-  const targetFill = fillScale(bin.count);
+  const targetFill = customFill ?? fillScale(bin.count);
   const emptyFill = fillScale(0);
   const patternFillOpacity = heatmapLevelCellFillOpacity(levelStyle);
   const dataOpacity = useMotionValue(0);
@@ -414,6 +426,21 @@ const HeatmapMotionCell = memo(function HeatmapMotionCell({
           opacity: dataOpacity,
         }}
       />
+      {label ? (
+        <motion.text
+          dominantBaseline="central"
+          fill={labelColor ?? "var(--foreground)"}
+          fontSize={Math.min(14, cell.height * 0.36)}
+          fontWeight={600}
+          pointerEvents="none"
+          style={{ opacity: dataOpacity }}
+          textAnchor="middle"
+          x={cell.x + cell.width / 2}
+          y={cell.y + cell.height / 2}
+        >
+          {label}
+        </motion.text>
+      ) : null}
       <motion.rect
         {...cellProps}
         fill={emptyFill}
@@ -435,6 +462,9 @@ export const HeatmapCells = memo(function HeatmapCells({
   rowOpacity,
   interactive = true,
   hideGhostCells = true,
+  formatCellLabel,
+  getCellColor,
+  getCellLabelColor,
 }: HeatmapCellsProps) {
   const {
     data,
@@ -554,12 +584,15 @@ export const HeatmapCells = memo(function HeatmapCells({
                   bin={bin}
                   cell={cell}
                   cornerRadius={cornerRadius}
+                  customFill={getCellColor?.(bin)}
                   fillScale={fillScale}
                   hoverState={hoverState}
                   inactiveOpacity={inactiveOpacity}
                   inactiveScale={inactiveScale}
                   interactive={cellsInteractive}
                   key={`heatmap-cell-${cell.column}-${cell.row}`}
+                  label={formatCellLabel?.(bin)}
+                  labelColor={getCellLabelColor?.(bin)}
                   onEnter={handleCellEnter}
                   onLeave={handleCellLeave}
                   rowOpacity={rowOpacity}

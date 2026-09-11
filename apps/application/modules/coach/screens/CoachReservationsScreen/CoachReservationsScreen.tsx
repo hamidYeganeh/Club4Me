@@ -1,5 +1,7 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
 import { IranDateInput } from "@repo/ui/iran-date-input";
 import {
   tehranLocalDate,
@@ -30,10 +32,7 @@ import {
 } from "@api";
 
 import { AthleteScreenHeaderSection } from "@modules/athlete/sections/AthleteScreenHeaderSection";
-import {
-  CompactCardListSkeleton,
-  DashboardPageSkeleton,
-} from "@/components/loading-skeletons";
+import { CompactCardListSkeleton } from "@/components/loading-skeletons";
 
 const inputClass =
   "h-11 w-full rounded-xl border border-white/10 bg-surface-secondary px-3 text-sm outline-none focus:border-accent";
@@ -107,8 +106,7 @@ export function CoachReservationsScreen() {
   const publishedOfferings = useMemo(
     () =>
       (offerings.data?.items ?? []).filter(
-        (item) =>
-          item.status === "published",
+        (item) => item.status === "published",
       ),
     [offerings.data?.items],
   );
@@ -161,7 +159,7 @@ export function CoachReservationsScreen() {
     bookings.isPending ||
     coachClasses.isPending
   ) {
-    return <DashboardPageSkeleton />;
+    return null;
   }
 
   return (
@@ -261,34 +259,33 @@ export function CoachReservationsScreen() {
           ساخت سانس آزاد
         </Typography>
         <form className="mt-4 grid gap-3" onSubmit={addSession}>
-          <select
+          <FormSelect
             required
             className={inputClass}
             aria-label="خدمت مربوط به سانس"
             value={offeringId}
-            onChange={(event) => setOfferingId(event.target.value)}
+            onChange={(event) => setOfferingId(event)}
           >
-            <option value="">انتخاب خدمت منتشرشده</option>
+            <FormOption value="">انتخاب خدمت منتشرشده</FormOption>
             {publishedOfferings.map((item) => (
-              <option key={item.id} value={item.id}>
+              <FormOption entity={item} key={item.id} value={item.id}>
                 {item.title}
-              </option>
+              </FormOption>
             ))}
-          </select>
+          </FormSelect>
           {selectedOffering ? (
             <label className="grid gap-2 text-sm">
               شیوه برگزاری سانس
-              <select
+              <FormSelect
+                aria-label="شیوه برگزاری سانس"
                 className={inputClass}
                 value={selectedDeliveryMode}
                 onChange={(event) =>
-                  setSessionMode(
-                    event.target.value as CoachSession["deliveryMode"],
-                  )
+                  setSessionMode(event as CoachSession["deliveryMode"])
                 }
               >
                 {selectedOffering.deliveryModes.map((mode) => (
-                  <option key={mode} value={mode}>
+                  <FormOption key={mode} value={mode}>
                     {
                       {
                         club: "باشگاه",
@@ -297,12 +294,12 @@ export function CoachReservationsScreen() {
                         outdoor: "فضای باز",
                       }[mode]
                     }
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
+              </FormSelect>
             </label>
           ) : null}
-          <input
+          <HeroInput
             className={inputClass}
             aria-label="عنوان سانس (اختیاری)"
             value={sessionTitle}
@@ -318,7 +315,7 @@ export function CoachReservationsScreen() {
             onValueChange={(dateValue) => setStartsAt(dateValue)}
           />
           {selectedDeliveryMode === "online" ? (
-            <input
+            <HeroInput
               required
               type="url"
               className={inputClass}
@@ -327,7 +324,7 @@ export function CoachReservationsScreen() {
               placeholder="لینک جلسه آنلاین (پس از رزرو نمایش داده می‌شود)"
             />
           ) : (
-            <input
+            <HeroInput
               required={
                 selectedDeliveryMode === "club" ||
                 selectedDeliveryMode === "outdoor"
@@ -445,18 +442,19 @@ export function CoachReservationsScreen() {
         </Typography>
         <label className="mt-4 grid gap-2 text-sm text-muted">
           انتخاب کلاس
-          <select
+          <FormSelect
+            aria-label="انتخاب کلاس"
             className={inputClass}
             value={activeClassId}
-            onChange={(event) => setSelectedClassId(event.target.value)}
+            onChange={(event) => setSelectedClassId(event)}
           >
-            <option value="">یک کلاس را انتخاب کنید</option>
+            <FormOption value="">یک کلاس را انتخاب کنید</FormOption>
             {(coachClasses.data?.items ?? []).map((item) => (
-              <option key={item.id} value={item.id}>
+              <FormOption entity={item} key={item.id} value={item.id}>
                 {item.title}
-              </option>
+              </FormOption>
             ))}
-          </select>
+          </FormSelect>
         </label>
         {classEnrollments.isPending && activeClassId ? (
           <div className="mt-4">
@@ -490,7 +488,7 @@ export function CoachReservationsScreen() {
                         {athleteName || "ورزشکار Gym4Me"}
                       </p>
                       <p className="mt-1 text-xs text-muted" dir="ltr">
-                        {item.athlete?.phone ?? item.athleteId}
+                        {item.athlete?.phone ?? "شماره ثبت نشده"}
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-2">
@@ -585,25 +583,26 @@ export function CoachReservationsScreen() {
         </Typography>
         <label className="mt-4 grid gap-2 text-sm text-muted">
           انتخاب جلسه
-          <select
+          <FormSelect
+            aria-label="انتخاب جلسه"
             className={inputClass}
             value={activeAttendanceSessionId}
             onChange={(event) => {
-              setAttendanceSessionId(event.target.value);
+              setAttendanceSessionId(event);
               setAttendanceDraft({});
               setAttendanceNotes({});
             }}
           >
-            <option value="">یک جلسه را انتخاب کنید</option>
+            <FormOption value="">یک جلسه را انتخاب کنید</FormOption>
             {(calendar.data?.items ?? []).map((item) => (
-              <option key={item.id} value={item.id}>
+              <FormOption entity={item} key={item.id} value={item.id}>
                 {item.title}،{" "}
                 {new Date(item.startAt).toLocaleString("fa-IR", {
                   timeZone: "Asia/Tehran",
                 })}
-              </option>
+              </FormOption>
             ))}
-          </select>
+          </FormSelect>
         </label>
         {attendance.isPending && activeAttendanceSessionId ? (
           <div className="mt-4">
@@ -639,7 +638,7 @@ export function CoachReservationsScreen() {
                         {athleteName || "ورزشکار Gym4Me"}
                       </p>
                       <p className="mt-1 text-xs text-muted" dir="ltr">
-                        {item.athlete?.phone ?? item.athleteId}
+                        {item.athlete?.phone ?? "شماره ثبت نشده"}
                       </p>
                     </div>
                     <Chip size="sm">
@@ -667,9 +666,38 @@ export function CoachReservationsScreen() {
                       ),
                     )}
                   </div>
+                  {item.checkedInAt &&
+                  (item.status === "present" || item.status === "late") ? (
+                    <Button
+                      className="mt-3"
+                      size="sm"
+                      variant="secondary"
+                      isDisabled={
+                        recordAttendance.isPending || Boolean(item.checkedOutAt)
+                      }
+                      onPress={async () => {
+                        try {
+                          await recordAttendance.mutateAsync([
+                            {
+                              athleteId: item.athleteId,
+                              status:
+                                item.status === "late" ? "late" : "present",
+                              note: item.note ?? undefined,
+                              checkedOut: true,
+                            },
+                          ]);
+                          toast.success("خروج ثبت شد");
+                        } catch {
+                          toast.danger("ثبت خروج انجام نشد");
+                        }
+                      }}
+                    >
+                      {item.checkedOutAt ? "خروج ثبت شده" : "ثبت خروج"}
+                    </Button>
+                  ) : null}
                   <label className="mt-3 grid gap-2 text-xs text-muted">
                     یادداشت (اختیاری)
-                    <input
+                    <HeroInput
                       className={inputClass}
                       value={attendanceNotes[item.athleteId] ?? item.note ?? ""}
                       onChange={(event) =>

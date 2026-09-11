@@ -7,6 +7,7 @@ import { http } from "../../http/client";
 export type AdminAuditLog = {
   id: string;
   actorId: string;
+  actor?: {id: string; firstName?: string; lastName?: string; phone?: string} | null;
   action: string;
   method: string;
   path: string;

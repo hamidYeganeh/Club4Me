@@ -2,82 +2,50 @@ import { tv } from "tailwind-variants";
 
 export const discoveryClubSlotsScreenStyles = tv({
   slots: {
-    root: "relative isolate flex min-h-dvh w-full max-w-full flex-col overflow-x-hidden bg-background px-3 pb-[max(0.875rem,env(safe-area-inset-bottom))]",
-    hero: "relative z-10 min-h-[50dvh] shrink-0",
-    coverWrap: "pointer-events-none absolute inset-0 z-0 overflow-hidden",
-    cover:
-      "absolute inset-0 h-full w-full bg-cover bg-center bg-fixed will-change-transform",
-    coverFallback:
-      "absolute inset-0 grid place-items-center bg-linear-to-t from-surface-secondary to-background text-accent/70",
-    overlay: "pointer-events-none absolute inset-0 z-[1]",
-    grain:
-      "pointer-events-none absolute inset-0 z-[2] opacity-[0.14] mix-blend-overlay [background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22 opacity=%220.55%22/%3E%3C/svg%3E')]",
-    accentOrb:
-      "pointer-events-none absolute inset-x-0 bottom-0 z-[3] mx-auto h-48 max-w-lg rounded-full bg-accent/18 blur-3xl",
-    topBar:
-      "absolute inset-x-0 top-0 z-20 flex items-center justify-between px-2 pt-[max(1rem,env(safe-area-inset-top))]",
-    backButton:
-      "size-11 rounded-full border border-white/18 bg-black/30 text-white backdrop-blur-xl transition-transform duration-300 data-[pressed=true]:scale-95",
-    themeButton:
-      "size-11 border-transparent bg-accent text-accent-foreground hover:bg-accent/90 [&_.icon]:text-[17px]",
-    heroCopy:
-      "absolute inset-x-0 top-[30%] z-10 flex w-full flex-col items-center px-6 text-center",
-    heroEyebrow: "text-[0.7rem] font-extrabold tracking-[0.22em] text-white/82",
-    heroTitle:
-      "mt-1.5 w-full text-[clamp(3.35rem,15vw,5rem)] leading-[0.88] font-black tracking-[-0.065em] text-balance text-white",
-    heroSubtitle:
-      "mt-2 max-w-[24ch] truncate text-[0.72rem] font-bold tracking-[0.16em] text-white/78",
-    chipRow: "absolute inset-x-0 bottom-4 z-20 px-2",
+    root: "relative isolate mx-auto w-full max-w-xl overflow-x-clip bg-background pb-[max(1rem,env(safe-area-inset-bottom))]",
+    hero: "relative isolate mx-3 h-[20rem] overflow-hidden rounded-t-[var(--app-radius-feature,24px)] sm:mx-4 sm:h-[23rem]",
+    coverWrap: "pointer-events-none absolute inset-0 overflow-hidden",
+    cover: "size-full object-cover",
+    overlay: "pointer-events-none absolute inset-0 bg-linear-to-t from-background/90 via-background/40 to-background/10",
+    heroCopy: "relative z-10 flex h-full flex-col items-center justify-center gap-2 px-5 pb-20 text-center text-foreground",
+    heroEyebrow: "text-xs font-semibold",
+    heroTitle: "text-4xl font-black leading-tight sm:text-5xl",
+    heroSubtitle: "max-w-full text-balance text-sm font-semibold leading-6",
+    chipRow: "absolute inset-x-0 bottom-10 z-20 px-4",
     chipScroller: "w-full pb-1",
-    chipContent: "flex w-max gap-2 pe-2",
-    chipButton:
-      "shrink-0 font-semibold outline-none transition-transform duration-300 data-[pressed=true]:scale-95",
-    chipActive: "border-transparent bg-accent text-accent-foreground",
-    chipIdle: "border border-white/12 bg-black/40 text-white/92",
-    panel:
-      "fixed inset-x-0 bottom-0 z-30 flex min-h-[50dvh] max-h-[50dvh] w-screen max-w-none flex-col rounded-t-4xl bg-surface px-6 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] backdrop-blur-2xl",
-    panelBody: "flex min-h-0 flex-1 flex-col",
-    panelContent: "min-h-0 flex-1 space-y-7 overflow-y-auto pb-5",
+    chipContent: "flex w-max gap-2",
+    chipButton: "shrink-0 rounded-full text-xs font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-focus",
+    chipActive: "border border-accent bg-accent text-accent-foreground",
+    chipIdle: "border border-border/60 bg-surface/85 text-foreground backdrop-blur-md",
+    panel: "relative z-30 mx-3 -mt-6 rounded-[var(--app-radius-feature,24px)] border border-border/60 bg-surface p-4 shadow-sm sm:mx-4 sm:p-5",
+    panelBody: "space-y-5",
+    panelContent: "space-y-5",
     section: "space-y-3",
-    sectionLabel:
-      "flex items-center gap-2 text-lg font-semibold text-foreground/80",
-    sectionIcon:
-      "grid size-6 place-items-center rounded-full bg-accent/15 text-accent",
+    sectionLabel: "flex items-center gap-2 text-sm font-semibold text-foreground",
+    sectionIcon: "grid size-5 shrink-0 place-items-center text-muted",
     radioRow: "w-full pb-1",
-    radioGroup: "flex w-max gap-2",
     dateTabs: "w-max",
     dateTabsListContainer: "rounded-none bg-transparent p-0",
     dateTabsList: "flex w-max gap-2 rounded-none border-0 bg-transparent p-0",
-    dateTab:
-      "group flex min-h-[4.55rem] min-w-[4.15rem] flex-col items-center justify-center gap-1 rounded-[1.15rem] border border-transparent bg-surface-tertiary px-3 py-2.5 text-foreground opacity-100 transition-[transform,background-color,color] duration-300 ease-out data-[hovered=true]:scale-[1.03] data-[selected=true]:border-transparent data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground",
+    dateTab: "group flex min-h-20 min-w-[4.25rem] shrink-0 flex-col items-center justify-center gap-2 rounded-[var(--app-radius-control,16px)] border border-transparent !bg-surface-secondary px-3 py-3 !text-foreground opacity-100 transition-colors data-[selected=true]:border-foreground data-[selected=true]:!bg-surface data-[selected=true]:!text-foreground focus-visible:outline-2 focus-visible:outline-focus",
     dateTabIndicator: "hidden",
-    dateRadio: "group",
-    dateContent:
-      "flex min-h-[4.55rem] w-full min-w-[4.15rem] flex-col items-center justify-center gap-1 rounded-[1.15rem] border border-transparent bg-surface-tertiary px-3 py-2.5 text-foreground transition-[transform,border-color,background-color,color] duration-300 ease-out group-data-[hovered=true]:scale-[1.03]",
-    dateContentSelected: "border-foreground/80 bg-surface text-foreground",
-    dateDay: "text-2xl font-black tabular-nums leading-none tracking-tight",
-    dateWeekday:
-      "text-base font-medium text-muted transition-colors group-data-[selected=true]:text-accent-foreground/80",
-    timeRadio: "group",
-    timeArea: "min-h-36",
+    dateDay: "text-2xl font-semibold tabular-nums leading-none",
+    dateWeekday: "text-xs font-medium text-muted group-data-[selected=true]:text-foreground",
+    timeRadio: "group min-w-0 w-full data-[disabled=true]:opacity-40",
+    timeArea: "min-w-0",
     timeScroller: "w-full pb-1",
-    timeEmpty:
-      "flex min-h-36 w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-foreground/20 bg-surface-tertiary/50 px-4 py-5 text-center text-sm text-muted",
-    timeEmptyImage: "size-16 object-cover",
-    timeContent:
-      "w-full rounded-2xl border border-transparent bg-surface-tertiary px-4 py-3 text-center text-base font-semibold tracking-tight text-foreground/55 transition-[transform,border-color,background-color,color] duration-300 ease-out group-data-[hovered=true]:scale-[1.02]",
-    timeContentSelected: "border-transparent bg-accent text-accent-foreground",
-    footer: "mt-auto flex items-end justify-between gap-4 pt-4",
-    footerSticky:
-      "sticky bottom-0 border-t border-foreground/10 bg-surface backdrop-blur-2xl",
-    priceLabel: "text-[0.7rem] font-medium tracking-wide text-muted",
-    priceValue:
-      "mt-1 text-[1.65rem] font-black tracking-tight text-foreground tabular-nums",
-    bookButton: "h-14 w-1/2",
-    disclaimer: "mt-3 px-3 text-center text-[0.64rem] leading-5 text-muted/90",
-    empty:
-      "flex flex-1 flex-col items-center justify-center gap-4 py-8 text-center",
-    emptyImage: "size-36 object-cover drop-shadow-lg sm:size-40",
+    timeGroup: "grid w-full grid-cols-2 gap-2",
+    timeEmpty: "flex min-h-28 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-surface-secondary px-4 py-4 text-center text-sm text-muted",
+    timeEmptyImage: "size-12 object-cover",
+    timeContent: "flex min-h-12 w-full items-center justify-center rounded-[var(--app-radius-control,16px)] border border-transparent !bg-surface-secondary px-2 py-3 text-center text-sm font-semibold tabular-nums !text-foreground transition-colors group-data-[focus-visible=true]:outline-2 group-data-[focus-visible=true]:outline-focus",
+    timeContentSelected: "border-accent !bg-accent/10 !text-foreground",
+    footer: "flex flex-wrap items-center justify-between gap-4 pt-4",
+    footerSticky: "border-t border-border bg-surface",
+    priceLabel: "text-xs font-medium text-muted",
+    priceValue: "mt-1 text-xl font-bold text-foreground tabular-nums",
+    bookButton: "min-w-36 flex-1 sm:max-w-60",
+    empty: "flex flex-col items-center justify-center gap-4 py-8 text-center",
+    emptyImage: "size-28 object-cover",
     emptyText: "max-w-[28ch] text-sm leading-6 text-muted",
     controlHidden: "sr-only",
   },

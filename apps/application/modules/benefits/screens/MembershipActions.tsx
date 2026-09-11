@@ -1,5 +1,7 @@
 "use client";
 
+import { Counter } from "@/components/counter";
+
 import { useState } from "react";
 import { Button, toast } from "@heroui/react";
 import {
@@ -19,8 +21,8 @@ export function MembershipActions({ item }: { item: UserEntitlement }) {
   const now = useNow();
   const paused = Boolean(
     now !== null &&
-      item.pauseUntil &&
-      new Date(item.pauseUntil).getTime() > now,
+    item.pauseUntil &&
+    new Date(item.pauseUntil).getTime() > now,
   );
   const availableDays = Math.floor(item.remainingPauseDays ?? 0);
   const canPause =
@@ -86,9 +88,12 @@ export function MembershipActions({ item }: { item: UserEntitlement }) {
           </p>
           <label className="grid gap-2 text-sm">
             مدت توقف (روز)
-            <input
+            <Counter
+              aria-label="مدت توقف (روز)"
               className="min-h-11 rounded-xl border border-border bg-surface px-3"
-              inputMode="numeric"
+              min={1}
+              max={availableDays}
+              disabled={pause.isPending}
               value={days}
               onChange={(e) => setDays(e.target.value)}
             />

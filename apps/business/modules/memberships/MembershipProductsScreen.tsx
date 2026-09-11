@@ -1,5 +1,10 @@
 "use client";
 
+import { Checkbox as HeroCheckbox } from "@heroui/react";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
+import { useSelectedClub } from "@/lib/use-selected-club";
+
 import {
   type BenefitProduct,
   useBusinessBenefitProducts,
@@ -8,7 +13,6 @@ import {
 } from "@api";
 import {
   useBusinessClubMemberships,
-  useBusinessClubs,
   useInviteBusinessClubMember,
   useRevokeBusinessClubMember,
 } from "@api/business";
@@ -28,9 +32,7 @@ const input =
 const productColumnHelper = createListColumnHelper<BenefitProduct>();
 
 export function MembershipProductsScreen() {
-  const clubs = useBusinessClubs();
-  const [picked, setPicked] = useState("");
-  const clubId = picked || clubs.data?.items[0]?.id || "";
+  const { clubs, clubId, setClubId: setPicked } = useSelectedClub();
   const products = useBusinessBenefitProducts(clubId);
   const create = useCreateBenefitProduct(clubId);
   const update = useUpdateBenefitProduct(clubId);
@@ -159,6 +161,7 @@ export function MembershipProductsScreen() {
     const data = new FormData(form);
     try {
       await create.mutateAsync({
+        accessClubIds: data.getAll("accessClubIds").map(String),
         title: String(data.get("title")),
         description: String(data.get("description") ?? ""),
         type,
@@ -212,17 +215,18 @@ export function MembershipProductsScreen() {
           <div className="flex items-end gap-2">
             <label className="grid gap-1 text-xs text-muted">
               باشگاه
-              <select
+              <FormSelect
+                aria-label="باشگاه"
                 className={input}
                 value={clubId}
-                onChange={(e) => setPicked(e.target.value)}
+                onChange={(e) => setPicked(e)}
               >
                 {clubs.data?.items.map((club) => (
-                  <option key={club.id} value={club.id}>
+                  <FormOption entity={club} key={club.id} value={club.id}>
                     {club.name}
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
+              </FormSelect>
             </label>
             <Button variant="primary" onPress={() => setOpen(!open)}>
               محصول جدید
@@ -234,20 +238,24 @@ export function MembershipProductsScreen() {
             <form className="grid gap-4 md:grid-cols-2" onSubmit={submit}>
               <label className="grid gap-1 text-sm text-muted">
                 عنوان
-                <input required name="title" minLength={3} className={input} />
+                <HeroInput
+                  required
+                  name="title"
+                  minLength={3}
+                  className={input}
+                />
               </label>
               <label className="grid gap-1 text-sm text-muted">
                 نوع
-                <select
+                <FormSelect
+                  aria-label="نوع"
                   className={input}
                   value={type}
-                  onChange={(e) =>
-                    setType(e.target.value as BenefitProduct["type"])
-                  }
+                  onChange={(e) => setType(e as BenefitProduct["type"])}
                 >
-                  <option value="session_pack">بسته تعدادجلسه</option>
-                  <option value="time_membership">عضویت زمانی</option>
-                </select>
+                  <FormOption value="session_pack">بسته تعدادجلسه</FormOption>
+                  <FormOption value="time_membership">عضویت زمانی</FormOption>
+                </FormSelect>
               </label>
               <PanelNumberField
                 label="قیمت (ریال)"
@@ -288,21 +296,64 @@ export function MembershipProductsScreen() {
                     ["class", "کلاس"],
                     ["coached_session", "جلسه مربی"],
                   ].map(([value, label]) => (
-                    <label key={value} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        name="sessionTypes"
-                        value={value}
-                        defaultChecked
-                      />
-                      {label}
-                    </label>
+                    <HeroCheckbox
+                      key={value}
+                      className="flex items-center gap-2"
+                      name="sessionTypes"
+                      value={value}
+                      defaultSelected
+                    >
+                      <HeroCheckbox.Content>
+                        <HeroCheckbox.Control>
+                          <HeroCheckbox.Indicator />
+                        </HeroCheckbox.Control>
+                        {label}
+                      </HeroCheckbox.Content>
+                    </HeroCheckbox>
                   ))}
                 </div>
               </label>
+              <fieldset
+                key={clubId}
+                className="space-y-3 md:col-span-2 rounded-2xl border border-border p-4"
+              >
+                <legend className="px-2 text-sm font-semibold">
+                  باشگاه‌های مجاز برای مصرف این بسته
+                </legend>
+                <p className="text-xs leading-6 text-muted">
+                  باشگاه فعلی همیشه مجاز است. برای اشتراک چندباشگاهی، فقط
+                  باشگاه‌های متعلق به خودتان را انتخاب کنید. اعتبار و سقف هفتگی
+                  بین همه باشگاه‌ها مشترک است و فروش به نام باشگاه فعلی ثبت
+                  می‌شود.
+                </p>
+                {(clubs.data?.items ?? [])
+                  .filter((c) => c.id !== clubId)
+                  .map((c) => (
+                    <label
+                      key={c.id}
+                      className="flex min-h-11 items-center gap-3 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        name="accessClubIds"
+                        value={c.id}
+                      />
+                      {c.name}
+                    </label>
+                  ))}
+                {(clubs.data?.items.length ?? 0) < 2 && (
+                  <p className="text-xs text-muted">
+                    با اضافه‌کردن باشگاه دوم، امکان ساخت بسته مشترک فراهم
+                    می‌شود.
+                  </p>
+                )}
+              </fieldset>
               <label className="grid gap-1 text-sm text-muted md:col-span-2">
                 توضیح
-                <textarea name="description" className={`${input} h-24 py-3`} />
+                <HeroTextArea
+                  name="description"
+                  className={`${input} h-24 py-3`}
+                />
               </label>
               <div className="flex gap-2 md:col-span-2">
                 <Button
@@ -329,7 +380,7 @@ export function MembershipProductsScreen() {
             className="mt-4 grid gap-3 md:grid-cols-[1fr_12rem_auto]"
             onSubmit={invite}
           >
-            <input
+            <HeroInput
               required
               name="phone"
               inputMode="tel"
@@ -338,12 +389,17 @@ export function MembershipProductsScreen() {
               placeholder="۰۹۱۲۱۲۳۴۵۶۷"
               dir="ltr"
             />
-            <select name="role" className={input} defaultValue="manager">
-              <option value="manager">مدیر</option>
-              <option value="receptionist">پذیرش</option>
-              <option value="finance">مالی</option>
-              <option value="coach">مربی</option>
-            </select>
+            <FormSelect
+              aria-label="role"
+              name="role"
+              className={input}
+              defaultValue="manager"
+            >
+              <FormOption value="manager">مدیر</FormOption>
+              <FormOption value="receptionist">پذیرش</FormOption>
+              <FormOption value="finance">مالی</FormOption>
+              <FormOption value="coach">مربی</FormOption>
+            </FormSelect>
             <Button
               type="submit"
               variant="secondary"
@@ -455,7 +511,7 @@ export function MembershipProductsScreen() {
             <>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
-                <input
+                <HeroInput
                   className={input}
                   value={draftFilters.query}
                   onChange={(event) =>
@@ -469,38 +525,39 @@ export function MembershipProductsScreen() {
               </label>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">نوع</span>
-                <select
+                <FormSelect
+                  aria-label="انتخاب گزینه"
                   className={input}
                   value={draftFilters.type}
                   onChange={(event) =>
                     setDraftFilters((current) => ({
                       ...current,
-                      type: event.target.value as "" | BenefitProduct["type"],
+                      type: event as "" | BenefitProduct["type"],
                     }))
                   }
                 >
-                  <option value="">همه</option>
-                  <option value="session_pack">بسته جلسه</option>
-                  <option value="time_membership">عضویت زمانی</option>
-                </select>
+                  <FormOption value="">همه</FormOption>
+                  <FormOption value="session_pack">بسته جلسه</FormOption>
+                  <FormOption value="time_membership">عضویت زمانی</FormOption>
+                </FormSelect>
               </label>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">وضعیت</span>
-                <select
+                <FormSelect
+                  aria-label="انتخاب گزینه"
                   className={input}
                   value={draftFilters.status}
                   onChange={(event) =>
                     setDraftFilters((current) => ({
                       ...current,
-                      status: event.target.value as
-                        "" | BenefitProduct["status"],
+                      status: event as "" | BenefitProduct["status"],
                     }))
                   }
                 >
-                  <option value="">همه</option>
-                  <option value="active">فعال</option>
-                  <option value="inactive">غیرفعال</option>
-                </select>
+                  <FormOption value="">همه</FormOption>
+                  <FormOption value="active">فعال</FormOption>
+                  <FormOption value="inactive">غیرفعال</FormOption>
+                </FormSelect>
               </label>
             </>
           }

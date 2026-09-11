@@ -5,9 +5,12 @@ import { Button } from "@heroui/react/button";
 import { Typography } from "@heroui/react/typography";
 import { ClubClassCard } from "@modules/marketing/components/cards/ClubClassCard";
 import { useTranslations } from "next-intl";
-import { LANDING_CLASSES } from "../../lib/landing-assets";
+import { useCatalogClasses } from "@api/discovery";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { CatalogStatus } from "../../components/CatalogStatus";
 import { ClipReveal, InViewRise } from "../../lib/landing-reveal";
-import { useLandingScroll } from "../../lib/landing-scroll";
+
 import { landingClassesSectionStyles } from "./LandingClassesSection.styles";
 import type { LandingClassesSectionProps } from "./LandingClassesSection.types";
 
@@ -16,7 +19,8 @@ export function LandingClassesSection({
 }: LandingClassesSectionProps) {
   const t = useTranslations("MarketingLanding.landingClasses");
   const slots = landingClassesSectionStyles();
-  const { scrollTo } = useLandingScroll();
+  const router = useRouter();
+  const query = useCatalogClasses({ limit: 4 });
 
   return (
     <section
@@ -37,21 +41,45 @@ export function LandingClassesSection({
         </Typography>
       </header>
 
+      <CatalogStatus
+        pending={query.isPending}
+        error={query.isError}
+        empty={!query.data?.items.length}
+        retry={() => {
+          void query.refetch();
+        }}
+      />
       <div className={slots.rail()}>
-        {LANDING_CLASSES.map((item, index) => (
+        {(query.data?.items ?? []).map((item, index) => (
           <InViewRise delayIn={index * 90} fromY={28} key={item.id}>
             <ClubClassCard
               actionLabel={t("actionLabel")}
-              author={item.author}
-              backgroundImage={item.backgroundImage}
+              author={item.deliveryMode === "online" ? "آنلاین" : "حضوری"}
+              backgroundImage={item.imageUrl ?? undefined}
               backgroundImageAlt={item.title}
-              category={item.category}
+              category="کلاس ورزشی"
               className={slots.card()}
-              date={item.date}
-              duration={item.duration}
-              onAction={() => scrollTo("#download")}
+              date={
+                item.courseStartAt
+                  ? new Date(item.courseStartAt).toLocaleDateString("fa-IR", {
+                      timeZone: "Asia/Tehran",
+                    })
+                  : ""
+              }
+              duration={`${item.capacity.toLocaleString("fa-IR")} نفر ظرفیت`}
+              onAction={() =>
+                router.push(
+                  `/discovery/classes/${encodeURIComponent(item.slug)}`,
+                )
+              }
               size="md"
-              title={item.title}
+              title={
+                <Link
+                  href={`/discovery/classes/${encodeURIComponent(item.slug)}`}
+                >
+                  {item.title}
+                </Link>
+              }
             />
           </InViewRise>
         ))}
@@ -61,7 +89,7 @@ export function LandingClassesSection({
         <Button
           className={slots.cta()}
           size="lg"
-          onPress={() => scrollTo("#download")}
+          onPress={() => router.push("/discovery/classes")}
         >
           {t("cta")}
         </Button>

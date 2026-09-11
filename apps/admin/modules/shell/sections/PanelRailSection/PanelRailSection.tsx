@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, Badge, Button } from "@heroui/react";
+import { Avatar } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { cn } from "@theme/cn";
 import { usePathname } from "next/navigation";
@@ -18,29 +18,20 @@ function isActive(pathname: string, href: string, exact?: boolean): boolean {
 
 export function PanelRailSection({
   items,
-  addHref,
-  addLabel,
   avatarSrc,
   avatarAlt,
-  badge,
 }: PanelRailSectionProps) {
   const pathname = usePathname();
   const styles = panelRailSectionStyles();
   const me = useAdminMe();
-  const accountName = [me.data?.firstName, me.data?.lastName].filter(Boolean).join(" ") || me.data?.phone || avatarAlt;
+  const accountName =
+    [me.data?.firstName, me.data?.lastName].filter(Boolean).join(" ") ||
+    me.data?.phone ||
+    avatarAlt;
 
   return (
     <aside className={styles.root()}>
-      <ButtonLink
-        href={addHref}
-        isIconOnly
-        aria-label={addLabel}
-        className={styles.add()}
-        variant="primary"
-      >
-        <Icon name="plus-fat" size="lg" />
-      </ButtonLink>
-      <nav className={styles.nav()} aria-label={addLabel}>
+      <nav className={styles.nav()} aria-label="بخش‌های مدیریت">
         {items.map((item) => {
           const active = isActive(pathname, item.href, item.exact);
           return (
@@ -58,22 +49,20 @@ export function PanelRailSection({
         })}
       </nav>
       <div className={styles.avatarWrap()}>
-        <Badge.Anchor>
-          <Button
-            isIconOnly
-            variant="tertiary"
-            aria-label={accountName}
-            className="rounded-full p-0"
-          >
-            <Avatar className="size-10">
-              {avatarSrc ? <Avatar.Image alt={accountName} src={avatarSrc} /> : null}
-              <Avatar.Fallback>{accountName.slice(0, 1)}</Avatar.Fallback>
-            </Avatar>
-          </Button>
-          <Badge color="danger" size="sm">
-            {badge}
-          </Badge>
-        </Badge.Anchor>
+        <ButtonLink
+          href="/settings"
+          isIconOnly
+          variant="tertiary"
+          aria-label={accountName}
+          className="rounded-full p-0"
+        >
+          <Avatar className="size-10">
+            {avatarSrc ? (
+              <Avatar.Image alt={accountName} src={avatarSrc} />
+            ) : null}
+            <Avatar.Fallback>{accountName.slice(0, 1)}</Avatar.Fallback>
+          </Avatar>
+        </ButtonLink>
       </div>
     </aside>
   );

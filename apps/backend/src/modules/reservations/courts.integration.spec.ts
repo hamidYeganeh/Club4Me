@@ -101,6 +101,25 @@ describe("court editing and sales availability", () => {
       },
     });
 
+  it("uses the shared facilities surface catalog for both court creation and editing", async () => {
+    const surface = String(new Types.ObjectId());
+    const court = await create({ surfaceTypeId: surface });
+    expect(resources.requireActive).toHaveBeenCalledWith(
+      "facilities",
+      "court-surface-type",
+      surface,
+    );
+    resources.requireActive.mockClear();
+    await service.updateCourt(owner, clubId, court.id, {
+      surfaceTypeId: surface,
+    });
+    expect(resources.requireActive).toHaveBeenCalledWith(
+      "facilities",
+      "court-surface-type",
+      surface,
+    );
+  });
+
   it("does not apply creation defaults on a partial edit and preserves gallery, dimensions and sports", async () => {
     expect(UpdateCourtDto.schema.parse({ name: "نام جدید" })).toEqual({
       name: "نام جدید",

@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Button, toast } from "@heroui/react";
+import { useState } from "react";
+import { Uploader, imageUploaderAccept } from "@ui/uploader";
 import { ImageCropper } from "./image-cropper";
 
 export function CroppedImageUpload({
@@ -15,44 +15,20 @@ export function CroppedImageUpload({
   aspectRatio?: number;
   disabled?: boolean;
 }) {
-  const input = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [pending, setPending] = useState(false);
   return (
     <div>
-      <input
-        ref={input}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="hidden"
+      <Uploader
+        files={[]}
+        multiple={false}
+        accept={imageUploaderAccept}
         disabled={pending || disabled}
-        onChange={(event) => {
-          const selected = event.target.files?.[0];
-          event.target.value = "";
-          if (!selected) return;
-          if (
-            !["image/jpeg", "image/png", "image/webp"].includes(
-              selected.type,
-            ) ||
-            selected.size > 10 * 1024 * 1024
-          ) {
-            toast.danger(
-              "تصویر JPG، PNG یا WebP با حجم حداکثر ۱۰ مگابایت انتخاب کنید.",
-            );
-            return;
-          }
-          setFile(selected);
+        labels={{ clickToUpload: label }}
+        onDrop={([selected]) => {
+          if (selected) setFile(selected);
         }}
       />
-      <Button
-        type="button"
-        variant="secondary"
-        isPending={pending}
-        isDisabled={disabled}
-        onPress={() => input.current?.click()}
-      >
-        {label}
-      </Button>
       {file ? (
         <ImageCropper
           file={file}

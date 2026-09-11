@@ -1,5 +1,6 @@
 "use client";
 
+import { Input as HeroInput } from "@heroui/react";
 import { Card, Spinner } from "@heroui/react";
 import {
   resourceGroups,
@@ -49,7 +50,7 @@ export function ResourcesDashboardScreen() {
         <p className="mt-1 text-sm text-muted">{t("dashboardDescription")}</p>
       </div>
       <div className="mt-4 space-y-3">
-        <input
+        <HeroInput
           aria-label="جست‌وجوی فهرست‌های پایه"
           placeholder="جست‌وجوی عنوان یا مسیر API"
           value={search}

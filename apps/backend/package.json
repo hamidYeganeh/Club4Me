@@ -16,7 +16,6 @@
     "seed:article-categories": "ts-node src/migrations/seed-article-categories.ts",
     "seed:club-tags": "ts-node src/migrations/seed-club-tags.ts",
     "seed:discovery": "ts-node src/migrations/seed-discovery-sections.ts",
-    "seed:demo": "npm run seed:club-tags && ts-node src/migrations/seed-demo.ts",
     "migrate:club-v2": "ts-node src/migrations/migrate-club-model-v2.ts"
   },
   "dependencies": {

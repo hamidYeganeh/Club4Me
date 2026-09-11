@@ -27,8 +27,9 @@ export function attendanceAudit(
   next: AttendanceStatus,
   beforeCredits: number | null,
   afterCredits: number | null,
+  event?: "checked_out",
 ) {
-  return previous === next
+  return previous === next && !event
     ? {}
     : {
         $push: {
@@ -36,10 +37,47 @@ export function attendanceAudit(
             actorId,
             at: new Date(),
             before: previous ?? "unrecorded",
-            after: next,
+            after: event ?? next,
             beforeCredits,
             afterCredits,
           },
         },
       };
+}
+
+/** Repeated marks preserve arrival/departure times; departure requires a recorded arrival. */
+export function attendanceTimes(
+  previous: {
+    status: string;
+    checkedInAt?: Date | null;
+    checkedOutAt?: Date | null;
+    checkInMethod?: string;
+  } | null,
+  status: AttendanceStatus,
+  checkedOut = false,
+  now = new Date(),
+) {
+  if (
+    checkedOut &&
+    (status !== "present" ||
+      previous?.status !== "present" ||
+      !previous.checkedInAt)
+  ) {
+    throw new AppError(
+      409,
+      "ATTENDANCE_CHECKOUT_REQUIRES_CHECKIN",
+      "Record arrival before departure",
+    );
+  }
+  return {
+    checkedInAt: status === "present" ? (previous?.checkedInAt ?? now) : null,
+    checkedOutAt:
+      status === "present"
+        ? (previous?.checkedOutAt ?? (checkedOut ? now : null))
+        : null,
+    checkInMethod:
+      status === "present" && previous?.status === "present"
+        ? (previous.checkInMethod ?? "manual")
+        : "manual",
+  };
 }

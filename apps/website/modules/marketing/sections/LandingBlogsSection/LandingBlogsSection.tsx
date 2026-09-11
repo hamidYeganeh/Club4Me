@@ -8,7 +8,8 @@ import { motion, useReducedMotion } from "@ui/landing-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { LANDING_ARTICLES } from "../../lib/landing-assets";
+import { useCatalogArticles } from "@api/discovery";
+import { CatalogStatus } from "../../components/CatalogStatus";
 import { landingReveal } from "../../lib/landing-motion";
 import { landingBlogsSectionStyles } from "./LandingBlogsSection.styles";
 import type { LandingBlogsSectionProps } from "./LandingBlogsSection.types";
@@ -40,6 +41,7 @@ function Reveal({
 export function LandingBlogsSection({ className }: LandingBlogsSectionProps) {
   const slots = landingBlogsSectionStyles();
   const router = useRouter();
+  const query = useCatalogArticles({ limit: 4 });
 
   return (
     <section
@@ -51,7 +53,7 @@ export function LandingBlogsSection({ className }: LandingBlogsSectionProps) {
       <div className={slots.inner()}>
         <header className={slots.header()}>
           <Reveal delay={0.1}>
-            <Typography className={slots.heading()} type="h3" weight="medium">
+            <Typography className={slots.heading()} type="h2" weight="medium">
               راهنماهایی که در اپ هم می‌خوانی
             </Typography>
           </Reveal>
@@ -64,37 +66,59 @@ export function LandingBlogsSection({ className }: LandingBlogsSectionProps) {
             </Typography>
           </Reveal>
           <Reveal delay={0.3}>
-            <Link
-              className={slots.cta()}
-              href={`${process.env.NEXT_PUBLIC_APPLICATION_URL ?? "https://app.gym4me.ir"}/discovery/articles`}
-            >
+            <Link className={slots.cta()} href="/discovery/articles">
               مشاهده همه مقالات
               <ArrowUpRight aria-hidden size={16} />
             </Link>
           </Reveal>
         </header>
 
+        <CatalogStatus
+          pending={query.isPending}
+          error={query.isError}
+          empty={!query.data?.items.length}
+          retry={() => {
+            void query.refetch();
+          }}
+        />
         <div className={slots.rail()}>
-          {LANDING_ARTICLES.map((article, index) => (
+          {(query.data?.items ?? []).map((article, index) => (
             <Reveal delay={0.2 + index * 0.08} key={article.id}>
               <ArticleCard
                 actionLabel="ادامه مطلب"
                 author={{ name: article.authorName }}
-                category={article.category}
+                category="مقاله ورزشی"
                 className={slots.card()}
-                coverSrc={article.coverSrc}
+                coverSrc={article.coverImageUrl ?? undefined}
                 excerpt={article.excerpt}
-                likesLabel={article.likesLabel}
+
                 orientation="vertical"
-                publishedAtLabel={article.publishedAtLabel}
-                readingTimeLabel={`${article.readingTimeMinutes} دقیقه مطالعه`}
-                tags={article.tags.map((tag) => ({ key: tag, label: tag }))}
-                title={article.title}
+                publishedAtLabel={
+                  article.publishedAt
+                    ? new Date(article.publishedAt).toLocaleDateString(
+                        "fa-IR",
+                        { timeZone: "Asia/Tehran" },
+                      )
+                    : undefined
+                }
+                readingTimeLabel={
+                  article.readTimeMinutes
+                    ? `${article.readTimeMinutes} دقیقه مطالعه`
+                    : undefined
+                }
+
+                title={
+                  <Link
+                    href={`/discovery/articles/${encodeURIComponent(article.slug)}`}
+                  >
+                    {article.title}
+                  </Link>
+                }
                 type="cover"
-                viewsLabel={article.viewsLabel}
+
                 onPress={() =>
                   router.push(
-                    `${process.env.NEXT_PUBLIC_APPLICATION_URL ?? "https://app.gym4me.ir"}/discovery/articles`,
+                    `/discovery/articles/${encodeURIComponent(article.slug)}`,
                   )
                 }
               />

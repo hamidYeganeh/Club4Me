@@ -75,7 +75,7 @@ export function UploaderFileItem({
       className="relative w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-border bg-surface p-3"
     >
       <div className="flex min-w-0 items-start gap-3">
-        <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-default text-muted">
+        <div className="grid size-11 shrink-0 place-items-center rounded-xl border border-accent/15 bg-accent/10 text-accent">
           {renderFileIcon(item)}
         </div>
         <div className="min-w-0 flex-1 overflow-hidden">
@@ -128,7 +128,7 @@ export function UploaderFileItem({
               {item.status === "error" ? (
                 <button
                   type="button"
-                  className="grid size-7 place-items-center rounded-full text-muted transition-colors hover:bg-default hover:text-foreground active:scale-95"
+                  className="grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-default hover:text-foreground active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   onClick={() => onRetry?.(item.id)}
                   aria-label={labels.retry}
                 >
@@ -137,7 +137,7 @@ export function UploaderFileItem({
               ) : null}
               <button
                 type="button"
-                className="grid size-7 place-items-center rounded-full text-muted transition-colors hover:bg-default hover:text-foreground active:scale-95"
+                className="grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-default hover:text-foreground active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 onClick={() => onRemove?.(item.id)}
                 aria-label={labels.remove}
               >
@@ -157,7 +157,7 @@ export function UploaderFileItem({
               <motion.div
                 className={cn(
                   "h-full origin-right rounded-full",
-                  item.status === "uploading" ? "bg-foreground" : "bg-success",
+                  item.status === "uploading" ? "bg-accent" : "bg-success",
                 )}
                 initial={false}
                 animate={{ scaleX: progressRatio }}

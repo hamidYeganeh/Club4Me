@@ -565,4 +565,71 @@ describe("EntitlementsService integration", () => {
     await worker().run();
     expect(notifications.notifyMembershipExpiring).toHaveBeenCalledTimes(3);
   });
+  it("shares one snapshotted balance across clubs of the same owner and rejects other owners", async () => {
+    const ownerId = new Types.ObjectId(),
+      first = new Types.ObjectId(),
+      second = new Types.ObjectId(),
+      unrelated = new Types.ObjectId();
+    await products.db.collection("clubs").insertMany([
+      { _id: first, ownerId, name: "باشگاه اول" },
+      { _id: second, ownerId, name: "باشگاه دوم" },
+      { _id: unrelated, ownerId: new Types.ObjectId(), name: "باشگاه مستقل" },
+    ]);
+    const input = {
+      title: "بسته مشترک",
+      description: "",
+      type: "session_pack" as const,
+      price: 100000,
+      sessionCount: 1,
+      validityDays: 30,
+      weeklyLimit: null,
+      sessionTypes: ["class" as const],
+      accessClubIds: [String(second)],
+    };
+    await expect(
+      service.createProduct(String(ownerId), String(first), {
+        ...input,
+        accessClubIds: [String(unrelated)],
+      }),
+    ).rejects.toMatchObject({ status: 403 });
+    const product = await service.createProduct(
+      String(ownerId),
+      String(first),
+      input,
+    );
+    expect(product.accessClubs).toHaveLength(2);
+    const userId = String(new Types.ObjectId());
+    const purchase = await service.createPurchase(userId, product.id);
+    await products.updateOne(
+      { _id: new Types.ObjectId(product.id) },
+      { $set: { accessClubs: [] } },
+    );
+    const entitlement = await service.finalizePurchase(
+      new Types.ObjectId(purchase.id),
+      true,
+    );
+    expect(entitlement!.accessClubs).toHaveLength(2);
+    const common = {
+      entitlementId: String(entitlement!._id),
+      userId,
+      sessionType: "class" as const,
+      sessionStartsAt: new Date(Date.now() + 86400000),
+    };
+    await expect(
+      service.assertEligibleForReservation({ ...common, clubId: unrelated }),
+    ).rejects.toMatchObject({ status: 409 });
+    const results = await Promise.allSettled(
+      [first, second].map((clubId) =>
+        service.reserveForReservation({
+          ...common,
+          clubId,
+          reservationId: new Types.ObjectId(),
+        }),
+      ),
+    );
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect((await service.listMine(userId)).items[0]!.remainingSessions).toBe(
+      0,
+    );
+  });
 });

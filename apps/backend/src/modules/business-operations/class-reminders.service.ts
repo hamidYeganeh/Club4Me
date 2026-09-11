@@ -1,8 +1,10 @@
+import { BusinessClassPortalService } from "./class-portal.service";
 import {
   Injectable,
   Logger,
   OnModuleDestroy,
   OnModuleInit,
+  Optional,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
@@ -47,6 +49,7 @@ export class ClassRemindersService implements OnModuleInit, OnModuleDestroy {
     private readonly notifications: NotificationsService,
     private readonly redis: RedisService,
     private readonly config: AppConfigService,
+    @Optional() private readonly portal?: BusinessClassPortalService,
   ) {}
 
   onModuleInit() {
@@ -68,6 +71,7 @@ export class ClassRemindersService implements OnModuleInit, OnModuleDestroy {
       55_000,
     );
     if (Number(acquired) !== 1) return { skipped: true, sent: 0 };
+    await this.portal?.refreshWaitlistOffers();
     const now = Date.now();
     const sent24h = await this.sendWindow(
       new Date(now + 23 * 60 * 60_000),

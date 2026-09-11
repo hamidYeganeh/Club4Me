@@ -48,10 +48,10 @@ export function useInfiniteClubs(
   });
 }
 
-export function useDiscoveryFeed() {
+export function useDiscoveryFeed(placement = "discovery") {
   return useQuery({
-    queryKey: discoveryQueries.feed(),
-    queryFn: ({ signal }) => discoveryClient.getFeed(signal),
+    queryKey: [...discoveryQueries.feed(), placement],
+    queryFn: ({ signal }) => discoveryClient.getFeed(signal, placement),
   });
 }
 

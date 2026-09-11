@@ -83,8 +83,8 @@ export class ReservationsService {
     );
     if (input.surfaceTypeId) {
       await this.resources.requireActive(
-        "sports",
-        "surface-type",
+        "facilities",
+        "court-surface-type",
         input.surfaceTypeId,
       );
     }
@@ -165,8 +165,8 @@ export class ReservationsService {
       ...(input.surfaceTypeId
         ? [
             this.resources.requireActive(
-              "sports",
-              "surface-type",
+              "facilities",
+              "court-surface-type",
               input.surfaceTypeId,
             ),
           ]

@@ -19,6 +19,10 @@ import { Icon } from "@theme/icon";
 import { RequestFailureState } from "@/components/request-failure-state";
 import { DiscoveryResultCardSkeleton } from "@/components/loading-skeletons";
 import { getQueryFailure } from "@/lib/request-failure";
+import {
+  ActiveIndicator,
+  ActiveIndicatorGroup,
+} from "@/components/motion/active-indicator";
 
 const categories = {
   all: "همه",
@@ -49,22 +53,34 @@ export function AthleteFavoritesScreen({
         showFilter={false}
         backHref={`/${role}/profile`}
       />
-      <div className="flex flex-wrap gap-2" aria-label="نوع ذخیره‌شده‌ها">
-        {(Object.keys(categories) as (keyof typeof categories)[]).map((key) => (
-          <Button
-            key={key}
-            size="sm"
-            variant={category === key ? "primary" : "secondary"}
-            aria-pressed={category === key}
-            onPress={() => setCategory(key)}
-          >
-            {categories[key]}
-            {favorites.data
-              ? ` (${allItems.filter((item) => key === "all" || item.entityType === key).length.toLocaleString("fa-IR")})`
-              : ""}
-          </Button>
-        ))}
-      </div>
+      <ActiveIndicatorGroup>
+        <div
+          className="flex flex-wrap gap-2"
+          role="group"
+          aria-label="نوع ذخیره‌شده‌ها"
+        >
+          {(Object.keys(categories) as (keyof typeof categories)[]).map(
+            (key) => (
+              <Button
+                key={key}
+                size="sm"
+                variant="secondary"
+                className={`relative isolate overflow-hidden ${category === key ? "text-accent-foreground" : ""}`}
+                aria-pressed={category === key}
+                onPress={() => setCategory(key)}
+              >
+                {category === key ? <ActiveIndicator /> : null}
+                <span className="relative">
+                  {categories[key]}
+                  {favorites.data
+                    ? ` (${allItems.filter((item) => key === "all" || item.entityType === key).length.toLocaleString("fa-IR")})`
+                    : ""}
+                </span>
+              </Button>
+            ),
+          )}
+        </div>
+      </ActiveIndicatorGroup>
       {favorites.isLoading && !failure ? (
         <DiscoveryResultCardSkeleton count={4} />
       ) : null}

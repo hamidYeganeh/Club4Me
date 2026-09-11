@@ -1,5 +1,6 @@
 "use client";
 
+import { EntityOptionContent, entityOptionText } from "@repo/ui/entity-option";
 import {
   Button,
   Card,
@@ -97,6 +98,7 @@ function ParentFilter({
       <Select.Popover>
         <ListBox>
           <ListBox.Item
+            dir="rtl"
             id=""
             textValue={t("allParents", { parent: definition.label })}
           >
@@ -105,11 +107,15 @@ function ParentFilter({
           </ListBox.Item>
           {(options.data?.items ?? []).map((item) => (
             <ListBox.Item
+              dir="rtl"
               key={item.id}
               id={item.id}
-              textValue={displayName(item)}
+              textValue={entityOptionText(item, String(displayName(item)))}
             >
-              {displayName(item)}
+              <EntityOptionContent
+                entity={item}
+                title={String(displayName(item))}
+              />
               <ListBox.ItemIndicator />
             </ListBox.Item>
           ))}
@@ -276,15 +282,15 @@ export function ResourceListScreen({
             </Select.Trigger>
             <Select.Popover>
               <ListBox>
-                <ListBox.Item id="all" textValue={t("all")}>
+                <ListBox.Item dir="rtl" id="all" textValue={t("all")}>
                   {t("all")}
                   <ListBox.ItemIndicator />
                 </ListBox.Item>
-                <ListBox.Item id="active" textValue={t("active")}>
+                <ListBox.Item dir="rtl" id="active" textValue={t("active")}>
                   {t("active")}
                   <ListBox.ItemIndicator />
                 </ListBox.Item>
-                <ListBox.Item id="inactive" textValue={t("inactive")}>
+                <ListBox.Item dir="rtl" id="inactive" textValue={t("inactive")}>
                   {t("inactive")}
                   <ListBox.ItemIndicator />
                 </ListBox.Item>
@@ -322,19 +328,27 @@ export function ResourceListScreen({
             </Select.Trigger>
             <Select.Popover>
               <ListBox>
-                <ListBox.Item id="sortOrder" textValue={t("sortOrder")}>
+                <ListBox.Item
+                  dir="rtl"
+                  id="sortOrder"
+                  textValue={t("sortOrder")}
+                >
                   {t("sortOrder")}
                   <ListBox.ItemIndicator />
                 </ListBox.Item>
-                <ListBox.Item id="name" textValue={t("name")}>
+                <ListBox.Item dir="rtl" id="name" textValue={t("name")}>
                   {t("name")}
                   <ListBox.ItemIndicator />
                 </ListBox.Item>
-                <ListBox.Item id="code" textValue={t("code")}>
+                <ListBox.Item dir="rtl" id="code" textValue={t("code")}>
                   {t("code")}
                   <ListBox.ItemIndicator />
                 </ListBox.Item>
-                <ListBox.Item id="createdAt" textValue={t("createdAt")}>
+                <ListBox.Item
+                  dir="rtl"
+                  id="createdAt"
+                  textValue={t("createdAt")}
+                >
                   {t("createdAt")}
                   <ListBox.ItemIndicator />
                 </ListBox.Item>

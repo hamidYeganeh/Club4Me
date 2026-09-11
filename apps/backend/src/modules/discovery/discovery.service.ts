@@ -1,4 +1,7 @@
-import { classDecisionFilters, classTimeFilter } from "./class-decision-filters";
+import {
+  classDecisionFilters,
+  classTimeFilter,
+} from "./class-decision-filters";
 import { businessClassCatalogQuery } from "./business-class-catalog-query";
 import {
   BusinessTrainingClass,
@@ -284,17 +287,25 @@ export class DiscoveryFeedService {
     };
     const time = classTimeFilter(query);
     if (time) {
-      const localTime = { $dateToString: { format: "%H:%M", date: "$startAt", timezone: "Asia/Tehran" } };
-      const sessionIds = await this.classes.db.collection("class_sessions").distinct("classId", {
-        status: { $nin: ["cancelled", "rescheduled"] },
-        startAt: { $gte: new Date() },
-        $expr: {
-          $and: [
-            ...(time.$gte ? [{ $gte: [localTime, time.$gte] }] : []),
-            ...(time.$lte ? [{ $lte: [localTime, time.$lte] }] : []),
-          ],
+      const localTime = {
+        $dateToString: {
+          format: "%H:%M",
+          date: "$startAt",
+          timezone: "Asia/Tehran",
         },
-      });
+      };
+      const sessionIds = await this.classes.db
+        .collection("class_sessions")
+        .distinct("classId", {
+          status: { $nin: ["cancelled", "rescheduled"] },
+          startAt: { $gte: new Date() },
+          $expr: {
+            $and: [
+              ...(time.$gte ? [{ $gte: [localTime, time.$gte] }] : []),
+              ...(time.$lte ? [{ $lte: [localTime, time.$lte] }] : []),
+            ],
+          },
+        });
       filter._id = { $in: sessionIds };
     }
     addIdFilter(filter, "sportId", query.sportId);
@@ -477,14 +488,25 @@ export class DiscoveryFeedService {
         ) / limit,
       ),
     };
-    const hasGeo = query.latitude !== undefined && query.longitude !== undefined;
+    const hasGeo =
+      query.latitude !== undefined && query.longitude !== undefined;
     if (response.total > 0 || !hasGeo) return response;
-    const wider = { ...scoped, latitude: undefined, longitude: undefined, radiusKm: undefined, page: "1", limit: "3" };
-    const [nearbyClubs, nearbyClasses, nearbyBusinessClasses] = await Promise.all([
-      kind && kind !== "club" ? emptyPage() : this.listPublicClubs(wider),
-      kind && kind !== "class" ? emptyPage() : this.listPublicClasses(wider),
-      kind && kind !== "class" ? emptyPage() : this.listPublicBusinessClasses(wider),
-    ]);
+    const wider = {
+      ...scoped,
+      latitude: undefined,
+      longitude: undefined,
+      radiusKm: undefined,
+      page: "1",
+      limit: "3",
+    };
+    const [nearbyClubs, nearbyClasses, nearbyBusinessClasses] =
+      await Promise.all([
+        kind && kind !== "club" ? emptyPage() : this.listPublicClubs(wider),
+        kind && kind !== "class" ? emptyPage() : this.listPublicClasses(wider),
+        kind && kind !== "class"
+          ? emptyPage()
+          : this.listPublicBusinessClasses(wider),
+      ]);
     return {
       ...response,
       alternatives: {
@@ -550,9 +572,26 @@ export class DiscoveryFeedService {
     });
   }
 
-  async getFeed(): Promise<Record<string, unknown>[]> {
+  async getFeed(placement = "discovery"): Promise<Record<string, unknown>[]> {
+    if (
+      !["discovery", "athlete-home", "coach-home", "reservations"].includes(
+        placement,
+      )
+    ) {
+      throw new AppError(400, "INVALID_PLACEMENT", "Unknown banner placement");
+    }
     const sections = await this.sections
-      .find({ enabled: true })
+      .find({
+        enabled: true,
+        ...(placement === "discovery"
+          ? {
+              $or: [
+                { placement: "discovery" },
+                { placement: { $exists: false } },
+              ],
+            }
+          : { placement, type: "banners" }),
+      })
       .sort({ position: 1, _id: 1 })
       .exec();
     return Promise.all(sections.map((section) => this.resolveSection(section)));
@@ -560,7 +599,11 @@ export class DiscoveryFeedService {
 
   async getCoachSections(): Promise<Record<string, unknown>[]> {
     const sections = await this.sections
-      .find({ enabled: true, key: /^coaches-/ })
+      .find({
+        enabled: true,
+        key: /^coaches-/,
+        $or: [{ placement: "discovery" }, { placement: { $exists: false } }],
+      })
       .sort({ position: 1, _id: 1 })
       .exec();
     return Promise.all(sections.map((section) => this.resolveSection(section)));
@@ -1194,6 +1237,7 @@ function serializeConfiguration(item: Record<string, any>) {
   return {
     id: String(item._id),
     key: item.key,
+    placement: item.placement ?? "discovery",
     type: item.type,
     title: item.title,
     subtitle: item.subtitle ?? "",

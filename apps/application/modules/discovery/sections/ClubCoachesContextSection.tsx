@@ -1,9 +1,9 @@
 "use client";
 
 import { usePublicClubClasses } from "@api";
-import Link from "@/components/app-link";
 import { useState } from "react";
 import { DiscoveryPagination } from "@modules/discovery/components/DiscoveryPagination";
+import { CoachCard } from "@ui/coach-card";
 
 export function ClubCoachesContextSection({
   clubId,
@@ -39,78 +39,56 @@ export function ClubCoachesContextSection({
     );
   if (!coaches.length && !classes.data?.total) return null;
   return (
-    <section className="mx-auto w-full max-w-4xl space-y-3 px-5 pb-8">
+    <section className="mx-auto w-full max-w-4xl space-y-3 overflow-hidden px-5 pb-8">
       <h2 className="text-xl font-bold">مربی‌ها در این باشگاه</h2>
       <p className="text-xs text-muted">
         بر اساس کلاس‌های این صفحه و جلسات منتشرشده این باشگاه
       </p>
-      {coaches.map((coach) => {
-        const teaching = items.filter((item) => item.coach?.id === coach.id);
-        return (
-          <article
-            key={coach.id}
-            className="space-y-3 rounded-2xl bg-surface-secondary p-4"
-          >
-            <h3 className="font-bold">{coach.name}</h3>
-            {Boolean(coach.verifiedCredentialsCount) && (
-              <p className="text-xs text-success">
-                {coach.verifiedCredentialsCount} رشته با مدارک بررسی‌شده در
-                پروفایل مربی
-              </p>
-            )}
-            {coach.profileSlug && (
-              <Link
-                className="text-sm text-accent"
-                href={`/discovery/coaches/${coach.profileSlug}`}
-              >
-                مشاهده پروفایل مربی
-              </Link>
-            )}
-            {teaching.map((item) => {
-              const days = [
-                ...new Set(
-                  item.sessions.map((session) =>
-                    new Intl.DateTimeFormat("fa-IR", {
-                      weekday: "long",
-                      timeZone: timezone,
-                    }).format(new Date(session.startsAt)),
-                  ),
-                ),
-              ];
-              return (
-                <div
-                  key={item.id}
-                  className="border-t border-border pt-3 text-sm"
-                >
-                  <p>
-                    {item.sport || item.title} · سطح:{" "}
-                    {item.level || "اعلام نشده"} ·{" "}
-                    {item.model === "private"
-                      ? "خصوصی"
-                      : item.model === "group"
-                        ? "گروهی"
-                        : item.model === "course"
-                          ? "دوره آموزشی"
-                          : item.model === "single"
-                            ? "تک‌جلسه"
-                            : "تمرین آزاد"}
-                  </p>
-                  <p className="mt-1 text-xs text-muted">
-                    روزهای جلسات پیش رو:{" "}
-                    {days.length ? days.join("، ") : "هنوز اعلام نشده"}
-                  </p>
-                  <Link
-                    href={`/discovery/business-class?classId=${item.id}`}
-                    className="mt-2 inline-block text-accent"
-                  >
-                    مشاهده زمان‌ها و ثبت‌نام {item.title}
-                  </Link>
-                </div>
-              );
-            })}
-          </article>
-        );
-      })}
+      <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {coaches.map((coach) => {
+          const teaching = items.filter((item) => item.coach?.id === coach.id);
+          const nextSession = teaching
+            .flatMap((item) => item.sessions)
+            .filter((session) => Date.parse(session.startsAt) > Date.now())
+            .sort(
+              (first, second) =>
+                Date.parse(first.startsAt) - Date.parse(second.startsAt),
+            )[0];
+          const dayLabel = nextSession
+            ? new Intl.DateTimeFormat("fa-IR", {
+                weekday: "long",
+                timeZone: timezone,
+              }).format(new Date(nextSession.startsAt))
+            : "";
+
+          return (
+            <CoachCard
+              key={coach.id}
+              type="normal"
+              title={coach.name}
+              badge="مربی باشگاه"
+              href={
+                coach.profileSlug
+                  ? `/discovery/coaches/${coach.profileSlug}`
+                  : undefined
+              }
+              supportingText={
+                teaching.map((item) => item.sport).filter(Boolean).join("، ") ||
+                "مربی فعال باشگاه"
+              }
+              stats={[
+                {
+                  id: "classes",
+                  icon: "academic-cap",
+                  label: `${teaching.length.toLocaleString("fa-IR")} کلاس`,
+                },
+                { id: "next-session", icon: "calendar-1", label: dayLabel },
+              ]}
+              className="w-[min(78vw,276px)] snap-start rounded-[2rem]"
+            />
+          );
+        })}
+      </div>
       <DiscoveryPagination
         page={page}
         total={classes.data?.total ?? 0}

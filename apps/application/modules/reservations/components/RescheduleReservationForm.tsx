@@ -1,5 +1,8 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Counter } from "@/components/counter";
+
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, toast } from "@heroui/react";
@@ -92,16 +95,17 @@ export function RescheduleReservationForm({
         <>
           <label className="grid gap-2 text-sm">
             زمان جدید
-            <select
+            <FormSelect
+              aria-label="زمان جدید"
               className="app-field min-h-12 w-full"
               value={target}
               onChange={(e) => {
-                setTarget(e.target.value);
+                setTarget(e);
                 setOptions({});
                 setError("");
               }}
             >
-              <option value="">انتخاب کنید</option>
+              <FormOption value="">انتخاب کنید</FormOption>
               {sessions.data?.items
                 .filter(
                   (s) =>
@@ -111,20 +115,20 @@ export function RescheduleReservationForm({
                     new Date(s.startsAt).getTime() > now,
                 )
                 .map((s) => (
-                  <option key={s.id} value={s.id}>
+                  <FormOption entity={s} key={s.id} value={s.id}>
                     {s.title} · {date(s.startsAt)} ·{" "}
                     {(s.capacity - s.reservedCount).toLocaleString("fa-IR")} جای
                     خالی
-                  </option>
+                  </FormOption>
                 ))}
-            </select>
+            </FormSelect>
           </label>
           {selected?.options.map((option) => (
             <label key={option.id} className="grid gap-2 text-sm">
               {option.title ?? "خدمت جانبی"} · {money(option.unitPrice)}
-              <input
+              <Counter
                 aria-label={option.title ?? "تعداد خدمت جانبی"}
-                type="number"
+
                 min={0}
                 max={Math.min(
                   option.maxPerReservation,

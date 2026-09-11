@@ -1,5 +1,7 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
 import { useDeferredValue, useState } from "react";
 import { useInfiniteBusinessCatalog } from "@api/business";
 
@@ -30,30 +32,31 @@ export function ClubResourceField({
     <div className="space-y-2">
       <label className="block text-sm">
         {label}
-        <select
+        <FormSelect
+          aria-label="انتخاب گزینه"
           className="mt-1 w-full rounded-xl border border-border bg-surface p-3 text-sm"
           value={value ?? ""}
           onChange={(event) =>
             onChange(
-              event.target.value || undefined,
-              options.find((option) => option.id === event.target.value)?.name,
+              event || undefined,
+              options.find((option) => option.id === event)?.name,
             )
           }
         >
-          <option value="">انتخاب نشده</option>
+          <FormOption value="">انتخاب نشده</FormOption>
           {value && !options.some((option) => option.id === value) && (
-            <option value={value}>
+            <FormOption value={value}>
               {selectedLabel ?? "گزینه ثبت‌شده (در فهرست فعلی نیست)"}
-            </option>
+            </FormOption>
           )}
           {options.map((option) => (
-            <option key={option.id} value={option.id}>
+            <FormOption entity={option} key={option.id} value={option.id}>
               {option.name}
-            </option>
+            </FormOption>
           ))}
-        </select>
+        </FormSelect>
       </label>
-      <input
+      <HeroInput
         aria-label={`جست‌وجوی ${label}`}
         placeholder={`جست‌وجوی ${label}`}
         maxLength={200}

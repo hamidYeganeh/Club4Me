@@ -1,7 +1,11 @@
 "use client";
 
+import { TrainingFollowUps } from "@modules/training/TrainingFollowUps";
+import { ManagedBanners } from "@/components/managed-banners";
+
 import Link from "@/components/app-link";
-import { ButtonLink } from "@/components/button-link";
+import { CoachToday } from "@modules/today/CoachToday";
+import { CompactCardListSkeleton } from "@/components/loading-skeletons";
 import { Button, Card, Chip, toast, Typography } from "@heroui/react";
 import {
   useCoachClasses,
@@ -12,7 +16,6 @@ import {
 
 import { AthleteScreenHeaderSection } from "@modules/athlete/sections/AthleteScreenHeaderSection";
 import { CoachClubClassesSection } from "@modules/coach/sections/CoachClubClassesSection";
-import { DashboardPageSkeleton } from "@/components/loading-skeletons";
 import { CoachAnalyticsSection } from "@modules/coach/sections/CoachAnalyticsSection/CoachAnalyticsSection";
 
 const statusLabel: Record<string, string> = {
@@ -53,13 +56,44 @@ export function CoachHomeScreen() {
   };
 
   if (profile.isLoading || classes.isLoading) {
-    return <DashboardPageSkeleton />;
+    return (
+      <main className="app-page gap-6">
+        <AthleteScreenHeaderSection title="پنل مربی" />
+        <div role="status" aria-label="دریافت میز کار مربی">
+          <CompactCardListSkeleton count={3} />
+        </div>
+      </main>
+    );
+  }
+
+  if (profile.isError || classes.isError) {
+    return (
+      <main className="app-page gap-6">
+        <AthleteScreenHeaderSection title="پنل مربی" />
+        <Card className="p-5">
+          <h1 className="text-lg font-bold">دریافت میز کار انجام نشد</h1>
+          <p role="alert" className="mt-2 text-sm leading-7 text-muted">
+            اطلاعات قبلی شما محفوظ است. اتصال را بررسی و دوباره تلاش کنید.
+          </p>
+          <Button
+            className="mt-4"
+            onPress={() => {
+              void profile.refetch();
+              void classes.refetch();
+            }}
+          >
+            تلاش دوباره
+          </Button>
+        </Card>
+      </main>
+    );
   }
 
   return (
     <main className="app-page gap-8">
       <AthleteScreenHeaderSection title="پنل مربی" />
-      <ButtonLink href="/coach/training" variant="secondary">برنامه تمرینی شاگردان</ButtonLink>
+      <CoachToday />
+      {profile.data?.reviewStatus === "approved" && <TrainingFollowUps />}
       <Card className="rounded-3xl bg-surface p-5 shadow-none">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -100,7 +134,6 @@ export function CoachHomeScreen() {
           </Button>
         ) : null}
       </Card>
-      <CoachAnalyticsSection />
       <CoachClubClassesSection />
       <section>
         <div className="mb-3 flex items-center justify-between">
@@ -150,10 +183,23 @@ export function CoachHomeScreen() {
           {!classes.data?.items.length ? (
             <p className="py-10 text-center text-sm text-muted">
               هنوز کلاسی ساخته نشده است.
+              <Link
+                href="/coach/classes/new"
+                className="mt-3 block font-semibold text-accent"
+              >
+                ساخت اولین کلاس
+              </Link>
             </p>
           ) : null}
         </div>
       </section>
+      <details className="app-card p-4">
+        <summary className="cursor-pointer font-semibold">
+          گزارش عملکرد و درآمد
+        </summary>
+        <CoachAnalyticsSection />
+      </details>
+      <ManagedBanners placement="coach-home" />
     </main>
   );
 }

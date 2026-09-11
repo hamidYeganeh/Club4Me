@@ -73,6 +73,8 @@
 	</dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>برای اسکن کد حضور کلاس، Gym4Me به دوربین شما نیاز دارد.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>برای نمایش باشگاه‌های نزدیک، Gym4Me به موقعیت مکانی شما نیاز دارد.</string>
 </dict>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { siteUrl } from "@/lib/seo";
 import { ApiProvider } from "@api/provider";
 import { ThemeProvider } from "@theme/provider";
 import { NextIntlClientProvider } from "next-intl";
@@ -7,9 +8,13 @@ import { getLocale, getMessages, getTimeZone } from "next-intl/server";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "جیم فور می | کشف باشگاه، مربی و کلاس",
+  metadataBase: siteUrl,
+  title: {
+    default: "Gym4Me | رزرو، برنامه تمرین و پیشرفت",
+    template: "%s | Gym4Me",
+  },
   description:
-    "باشگاه و مربی نزدیک خود را پیدا کنید؛ کلاس رزرو کنید و عضویت باشگاه را در جیم فور می تمدید کنید.",
+    "باشگاه و مربی پیدا کنید، جلسه رزرو کنید و برنامه تمرین، پیشرفت و اعتبار عضویت خود را در جیم فور می دنبال کنید.",
 };
 
 export default async function RootLayout({

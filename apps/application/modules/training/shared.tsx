@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { Card, Button } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { tokenStore } from "@api/http/token-store";
 import { createOfflineStorage } from "@api/offline/storage";
 import { ButtonLink } from "@/components/button-link";
+import { Activity, Dumbbell, Trophy } from "lucide-react";
+import progressStyles from "./progress.module.css";
 import type { SessionRecord } from "@api/domains/training";
 
 export const weekdays = [
@@ -185,26 +187,24 @@ export function TrainingSummary({ sessions }: { sessions: SessionRecord[] }) {
   const complete = sessions.filter((s) => s.status === "completed");
   const sets = complete.flatMap((s) => s.sets.filter((x) => x.done));
   const metrics = [
-    ["جلسه کامل‌شده", complete.length],
-    ["ست انجام‌شده", sets.length],
+    ["جلسه کامل‌شده", complete.length, Trophy],
+    ["ست انجام‌شده", sets.length, Activity],
     [
       "حجم ثبت‌شده · کیلوگرم",
       sets.reduce((total, s) => total + s.reps * s.weight, 0),
+      Dumbbell,
     ],
   ] as const;
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      {metrics.map(([label, value]) => (
-        <Card key={label} className="p-5">
-          <Card.Header>
-            <Card.Title className="text-sm text-muted">{label}</Card.Title>
-          </Card.Header>
-          <Card.Content>
-            <p className="text-3xl font-semibold tabular-nums">
-              {number(value)}
-            </p>
-          </Card.Content>
-        </Card>
+    <div className={progressStyles.summary}>
+      {metrics.map(([label, value, Icon]) => (
+        <div key={label} className={progressStyles.stat}>
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="text-sm font-semibold leading-6">{label}</h3>
+            <Icon size={22} className="shrink-0" aria-hidden="true" />
+          </div>
+          <p className={progressStyles.statValue}>{number(value)}</p>
+        </div>
       ))}
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { Input as HeroInput } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@theme/icon";
 
@@ -25,7 +26,7 @@ export function DiscoverySearchField({
       }}
     >
       <Icon name="magnifying-glass" size={20} />
-      <input
+      <HeroInput
         type="search"
         maxLength={200}
         value={value}

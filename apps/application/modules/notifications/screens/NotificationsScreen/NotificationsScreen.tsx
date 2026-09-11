@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import Link from "@/components/app-link";
+import { VisualEmptyState } from "@/components/ui/clarity";
 import { toast } from "@heroui/react";
 import { useMarkNotificationRead, useNotifications } from "@api";
 import { Icon, type IconName } from "@theme/icon";
@@ -24,6 +26,18 @@ const iconByType: Record<string, IconName> = {
   support_ticket_updated: "ticket",
   support_sla_escalated: "info-circle",
   waitlist_seat_available: "user-check",
+};
+
+const toneByType: Record<string, string> = {
+  booking_confirmed: "success",
+  booking_cancelled: "danger",
+  payment_failed: "danger",
+  support_sla_escalated: "danger",
+  booking_reminder: "activity",
+  booking_rescheduled: "activity",
+  class_published: "accent",
+  waitlist_seat_available: "success",
+  club_owner_approved: "success",
 };
 
 function startOfDay(value: Date) {
@@ -110,12 +124,22 @@ export function NotificationsScreen() {
               key={value}
               type="button"
               aria-pressed={filter === value}
+              aria-label={label}
               className={`min-h-12 rounded-[1.1rem] px-3 text-sm font-bold transition-all ${
                 filter === value ? "bg-surface text-foreground" : "text-muted"
               }`}
               onClick={() => setFilter(value)}
             >
               {label}
+              {notifications.data ? (
+                <span className="ms-2 inline-flex min-w-5 items-center justify-center rounded-full bg-background px-1.5 text-xs tabular-nums">
+                  {notifications.data.items
+                    .filter((item) =>
+                      value === "read" ? Boolean(item.readAt) : !item.readAt,
+                    )
+                    .length.toLocaleString("fa-IR")}
+                </span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -160,7 +184,11 @@ export function NotificationsScreen() {
                           if (item.href) router.push(item.href);
                         }}
                       >
-                        <span className="app-notification-icon" aria-hidden>
+                        <span
+                          className="app-notification-icon"
+                          data-tone={toneByType[item.type] ?? "accent"}
+                          aria-hidden
+                        >
                           <Icon
                             name={iconByType[item.type] ?? "bell-ringing"}
                             size={22}
@@ -195,19 +223,27 @@ export function NotificationsScreen() {
               ))}
 
               {!groups.length ? (
-                <div className="py-16 text-center">
-                  <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-surface-secondary text-muted">
-                    <Icon
-                      name={filter === "read" ? "checks-1" : "bell-1"}
-                      size={25}
-                    />
-                  </span>
-                  <p className="mt-4 text-sm font-bold text-foreground">
-                    {filter === "read"
+                <VisualEmptyState
+                  icon={filter === "read" ? "checks-1" : "bell-1"}
+                  title={
+                    filter === "read"
                       ? "اعلان خوانده‌شده‌ای نداری"
-                      : "اعلان جدیدی نداری"}
-                  </p>
-                </div>
+                      : "اعلان جدیدی نداری"
+                  }
+                  description={
+                    filter === "read"
+                      ? "اعلان‌هایی که باز می‌کنی، برای مرور دوباره اینجا می‌مانند."
+                      : "همه‌چیز به‌روز است. خبر رزروها و تغییر برنامه‌ها را اینجا می‌بینی."
+                  }
+                  action={
+                    <Link
+                      href={`/${role}/reservations`}
+                      className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
+                    >
+                      مشاهده برنامه من <Icon name="arrow-left" size={18} />
+                    </Link>
+                  }
+                />
               ) : null}
             </div>
           ) : null}

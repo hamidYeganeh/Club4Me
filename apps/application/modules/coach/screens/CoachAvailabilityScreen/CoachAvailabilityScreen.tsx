@@ -1,5 +1,8 @@
 "use client";
 
+import { Checkbox as HeroCheckbox } from "@heroui/react";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
 import { IranDateInput } from "@repo/ui/iran-date-input";
 
 import { useEffect, useRef, useState } from "react";
@@ -128,59 +131,66 @@ export function CoachAvailabilityScreen() {
                           </p>
                           <div className="flex flex-wrap gap-4">
                             {AVAILABILITY_MODES.map((mode) => (
-                              <label
+                              <HeroCheckbox
                                 key={mode.value}
                                 className="flex min-h-11 items-center gap-2 text-sm"
+                                isSelected={detail.deliveryModes.includes(
+                                  mode.value,
+                                )}
+                                onChange={(event) =>
+                                  updateDetails(detailKey, {
+                                    ...detail,
+                                    deliveryModes: event
+                                      ? [...detail.deliveryModes, mode.value]
+                                      : detail.deliveryModes.filter(
+                                          (value) => value !== mode.value,
+                                        ),
+                                  })
+                                }
                               >
-                                <input
-                                  type="checkbox"
-                                  checked={detail.deliveryModes.includes(
-                                    mode.value,
-                                  )}
-                                  onChange={(event) =>
-                                    updateDetails(detailKey, {
-                                      ...detail,
-                                      deliveryModes: event.target.checked
-                                        ? [...detail.deliveryModes, mode.value]
-                                        : detail.deliveryModes.filter(
-                                            (value) => value !== mode.value,
-                                          ),
-                                    })
-                                  }
-                                />
-                                {mode.label}
-                              </label>
+                                <HeroCheckbox.Content>
+                                  <HeroCheckbox.Control>
+                                    <HeroCheckbox.Indicator />
+                                  </HeroCheckbox.Control>
+                                  {mode.label}
+                                </HeroCheckbox.Content>
+                              </HeroCheckbox>
                             ))}
                           </div>
                           {detail.deliveryModes.includes("club") ||
                           detail.clubId ? (
                             <label className="block text-sm">
                               باشگاه (اختیاری)
-                              <select
+                              <FormSelect
+                                aria-label="باشگاه (اختیاری)"
                                 className="mt-1 w-full rounded-xl border border-border bg-surface p-3"
                                 value={detail.clubId ?? ""}
                                 onChange={(event) =>
                                   updateDetails(detailKey, {
                                     ...detail,
-                                    clubId: event.target.value || null,
+                                    clubId: event || null,
                                   })
                                 }
                               >
-                                <option value="">همه باشگاه‌ها</option>
+                                <FormOption value="">همه باشگاه‌ها</FormOption>
                                 {detail.clubId &&
                                 !clubs.data?.items.some(
                                   (club) => club.id === detail.clubId,
                                 ) ? (
-                                  <option value={detail.clubId}>
+                                  <FormOption value={detail.clubId}>
                                     باشگاه ذخیره‌شده
-                                  </option>
+                                  </FormOption>
                                 ) : null}
                                 {clubs.data?.items.map((club) => (
-                                  <option key={club.id} value={club.id}>
+                                  <FormOption
+                                    entity={club}
+                                    key={club.id}
+                                    value={club.id}
+                                  >
                                     {club.name}
-                                  </option>
+                                  </FormOption>
                                 ))}
-                              </select>
+                              </FormSelect>
                             </label>
                           ) : null}
                           <div className="grid grid-cols-2 gap-3">
@@ -236,7 +246,7 @@ export function CoachAvailabilityScreen() {
                 onValueChange={(dateValue) => setExceptionDate(dateValue)}
                 className="h-12 rounded-xl border border-border bg-surface-secondary px-3"
               />
-              <input
+              <HeroInput
                 value={exceptionReason}
                 onChange={(event) => setExceptionReason(event.target.value)}
                 placeholder="دلیل (اختیاری)"

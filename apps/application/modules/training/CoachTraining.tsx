@@ -1,5 +1,10 @@
 "use client";
-import { useRef, useState } from "react";
+
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
+import { Counter } from "@/components/counter";
+import { SessionReview, TrainingFollowUps } from "./TrainingFollowUps";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Button, Card } from "@heroui/react";
 import { IranDateInput } from "@repo/ui/iran-date-input";
 import { tehranLocalDate } from "@repo/ui/iran-date";
@@ -74,6 +79,7 @@ function CoachTrainingSession() {
   const [ends, setEnds] = useState("");
   const [results, setResults] = useState<{
     title: string;
+    assignmentId: string;
     sessions: SessionRecord[];
   } | null>(null);
   const planMutation = useRef<string | null>(null);
@@ -82,16 +88,25 @@ function CoachTrainingSession() {
     setDraft(value);
     planMutation.current = null;
   };
-  const open = (record?: PlanRecord) => {
+  const open = (record?: PlanRecord, copy = false) => {
     if (draft && !window.confirm("ویرایش ذخیره‌نشده کنار گذاشته شود؟")) return;
     setSelected(
-      record
+      record && !copy
         ? { id: record.id, version: record.version }
         : { id: newId(), version: 0 },
     );
     setDraft(
       record
-        ? structuredClone(record.versions[record.versions.length - 1]!.plan)
+        ? {
+            ...structuredClone(
+              record.versions[record.versions.length - 1]!.plan,
+            ),
+            ...(copy
+              ? {
+                  title: `${record.versions.at(-1)!.plan.title} — نسخه شخصی‌سازی`,
+                }
+              : {}),
+          }
         : emptyPlan(),
     );
     planMutation.current = null;
@@ -154,6 +169,42 @@ function CoachTrainingSession() {
       setBusy(false);
     }
   };
+  const openResults = async (assignmentId: string) => {
+    setBusy(true);
+    setResults(null);
+    setMessage("");
+    try {
+      const r = await trainingApi.coachSessions(assignmentId);
+      setResults({ title: "شاگرد", assignmentId, sessions: r.items });
+      requestAnimationFrame(() =>
+        document
+          .getElementById("training-results")
+          ?.scrollIntoView({ block: "start" }),
+      );
+    } catch (e) {
+      setMessage(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const openedLink = useRef(false);
+  const openLinkedTraining = useEffectEvent(() => {
+    if (openedLink.current) return;
+    openedLink.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const assignmentId = params.get("assignment");
+    const athleteId = params.get("athlete");
+    if (assignmentId && /^[a-f0-9]{24}$/i.test(assignmentId))
+      void openResults(assignmentId);
+    if (athleteId && /^[a-f0-9]{24}$/i.test(athleteId)) {
+      setRecipient(`athlete:${athleteId}`);
+      document.getElementById("assign-plan")?.scrollIntoView();
+    }
+  });
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => openLinkedTraining());
+    return () => cancelAnimationFrame(frame);
+  }, []);
   const currentPlan = plans.data?.items.find((p) => p.id === assignmentPlan);
   return (
     <TrainingFrame title="برنامه‌های شاگردان" coach>
@@ -166,9 +217,21 @@ function CoachTrainingSession() {
         </Button>
       </div>
       {message && <Notice>{message}</Notice>}
+      <TrainingFollowUps
+        onSelect={(item) => {
+          if (item.assignmentId) void openResults(item.assignmentId);
+          else {
+            setRecipient(`athlete:${item.athleteId}`);
+            document
+              .getElementById("assign-plan")
+              ?.scrollIntoView({ block: "start" });
+          }
+        }}
+      />
       <LoadState {...plans} />
       {draft && selected && (
         <form
+          id="plan-editor"
           onSubmit={(e) => {
             e.preventDefault();
             void save();
@@ -186,7 +249,7 @@ function CoachTrainingSession() {
           <fieldset disabled={busy} className="space-y-4">
             <label className="block">
               نام برنامه
-              <input
+              <HeroInput
                 required
                 maxLength={140}
                 className={fieldClass}
@@ -196,7 +259,7 @@ function CoachTrainingSession() {
             </label>
             <label className="block">
               توضیحات
-              <textarea
+              <HeroTextArea
                 maxLength={2000}
                 className={fieldClass}
                 value={draft.description}
@@ -213,7 +276,7 @@ function CoachTrainingSession() {
                 <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
                   <label>
                     نام جلسه
-                    <input
+                    <HeroInput
                       required
                       maxLength={100}
                       className={fieldClass}
@@ -232,22 +295,21 @@ function CoachTrainingSession() {
                   </label>
                   <label>
                     روز هفته
-                    <select
+                    <FormSelect
+                      aria-label="روز هفته"
                       className={fieldClass}
                       value={day.weekday}
                       onChange={(e) =>
                         edit({
                           ...draft,
                           days: draft.days.map((d, i) =>
-                            i === dayIndex
-                              ? { ...d, weekday: Number(e.target.value) }
-                              : d,
+                            i === dayIndex ? { ...d, weekday: Number(e) } : d,
                           ),
                         })
                       }
                     >
                       {weekdays.map((w, i) => (
-                        <option
+                        <FormOption
                           key={w}
                           value={i}
                           disabled={draft.days.some(
@@ -255,9 +317,9 @@ function CoachTrainingSession() {
                           )}
                         >
                           {w}
-                        </option>
+                        </FormOption>
                       ))}
-                    </select>
+                    </FormSelect>
                   </label>
                   <Button
                     className="self-end"
@@ -296,19 +358,18 @@ function CoachTrainingSession() {
                       <div className="flex items-center gap-2">
                         <label className="flex-1">
                           حرکت {number(exerciseIndex + 1)}
-                          <select
+                          <FormSelect
+                            aria-label="حرکت"
                             className={fieldClass}
                             value={exercise.exerciseId}
-                            onChange={(e) =>
-                              change({ exerciseId: e.target.value })
-                            }
+                            onChange={(e) => change({ exerciseId: e })}
                           >
                             {exercises.data?.items.map((e) => (
-                              <option key={e.id} value={e.id}>
+                              <FormOption entity={e} key={e.id} value={e.id}>
                                 {e.name} · {e.equipment}
-                              </option>
+                              </FormOption>
                             ))}
-                          </select>
+                          </FormSelect>
                         </label>
                         <Button
                           variant="tertiary"
@@ -344,9 +405,10 @@ function CoachTrainingSession() {
                         ).map(([key, label, min, max]) => (
                           <label key={key} className="text-sm">
                             {label}
-                            <input
+                            <Counter
+                              aria-label={label}
                               className={fieldClass}
-                              type="number"
+
                               required
                               min={min}
                               max={max}
@@ -361,7 +423,7 @@ function CoachTrainingSession() {
                       </div>
                       <label className="block text-sm">
                         نکته مربی
-                        <input
+                        <HeroInput
                           maxLength={1000}
                           className={fieldClass}
                           value={exercise.note}
@@ -479,7 +541,14 @@ function CoachTrainingSession() {
                 </ul>
               </details>
             </Card.Content>
-            <Card.Footer>
+            <Card.Footer className="flex flex-wrap gap-2">
+              <Button
+                variant="ghost"
+                isDisabled={busy}
+                onPress={() => open(p, true)}
+              >
+                کپی و شخصی‌سازی
+              </Button>
               <Button
                 variant="secondary"
                 isDisabled={busy}
@@ -508,7 +577,7 @@ function CoachTrainingSession() {
       )}
       <Card className="p-5">
         <Card.Header>
-          <Card.Title>ارسال برنامه</Card.Title>
+          <Card.Title id="assign-plan">ارسال برنامه</Card.Title>
           <Card.Description>
             فقط شاگردان و کلاس‌های دارای خدمت فعال نمایش داده می‌شوند.
           </Card.Description>
@@ -528,64 +597,70 @@ function CoachTrainingSession() {
             <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">
               <label>
                 برنامه
-                <select
+                <FormSelect
+                  aria-label="برنامه"
                   required
                   className={fieldClass}
                   value={assignmentPlan}
                   onChange={(e) => {
-                    setAssignmentPlan(e.target.value);
+                    setAssignmentPlan(e);
                     setVersion(
-                      plans.data?.items.find((p) => p.id === e.target.value)
-                        ?.version ?? 1,
+                      plans.data?.items.find((p) => p.id === e)?.version ?? 1,
                     );
                   }}
                 >
-                  <option value="">انتخاب برنامه</option>
+                  <FormOption value="">انتخاب برنامه</FormOption>
                   {plans.data?.items.map((p) => (
-                    <option key={p.id} value={p.id}>
+                    <FormOption entity={p} key={p.id} value={p.id}>
                       {p.versions.at(-1)!.plan.title}
-                    </option>
+                    </FormOption>
                   ))}
-                </select>
+                </FormSelect>
               </label>
               <label>
                 نسخه
-                <select
+                <FormSelect
+                  aria-label="نسخه"
                   className={fieldClass}
                   value={version}
-                  onChange={(e) => setVersion(Number(e.target.value))}
+                  onChange={(e) => setVersion(Number(e))}
                 >
                   {currentPlan?.versions.map((v) => (
-                    <option key={v.version} value={v.version}>
+                    <FormOption entity={v} key={v.version} value={v.version}>
                       نسخه {number(v.version)}
-                    </option>
+                    </FormOption>
                   ))}
-                </select>
+                </FormSelect>
               </label>
               <label className="sm:col-span-2">
                 دریافت‌کننده
-                <select
+                <FormSelect
+                  aria-label="دریافت‌کننده"
                   required
                   className={fieldClass}
                   value={recipient}
-                  onChange={(e) => setRecipient(e.target.value)}
+                  onChange={(e) => setRecipient(e)}
                 >
-                  <option value="">انتخاب شاگرد یا کلاس</option>
+                  <FormOption value="">انتخاب شاگرد یا کلاس</FormOption>
                   <optgroup label="شاگردان">
                     {clients.data?.items.map((c) => (
-                      <option key={c.id} value={`athlete:${c.id}`}>
+                      <FormOption
+                        entity={c}
+                        key={c.id}
+                        value={`athlete:${c.id}`}
+                      >
                         {c.name}
-                      </option>
+                      </FormOption>
                     ))}
                   </optgroup>
                   <optgroup label="کلاس‌ها">
                     {clients.data?.classes.map((c) => (
-                      <option key={c.id} value={`class:${c.id}`}>
+                      <FormOption entity={c} key={c.id} value={`class:${c.id}`}>
                         {c.title}
-                      </option>
+                      </FormOption>
                     ))}
                   </optgroup>
-                </select>
+                </FormSelect>
               </label>
               <label>
                 شروع اعتبار
@@ -644,7 +719,11 @@ function CoachTrainingSession() {
                 void trainingApi
                   .coachSessions(a.id)
                   .then((r) =>
-                    setResults({ title: a.snapshot.title, sessions: r.items }),
+                    setResults({
+                      title: a.snapshot.title,
+                      assignmentId: a.id,
+                      sessions: r.items,
+                    }),
                   )
                   .catch((e) => setMessage(errorText(e)))
                   .finally(() => setBusy(false));
@@ -677,8 +756,35 @@ function CoachTrainingSession() {
         </Card>
       ))}
       {results && (
-        <section className="space-y-4">
+        <section id="training-results" className="scroll-mt-24 space-y-4">
           <h2 className="text-lg font-semibold">نتایج {results.title}</h2>
+          <Button
+            variant="secondary"
+            onPress={() => {
+              const assignment = assignments.data?.items.find(
+                (a) => a.id === results.assignmentId,
+              );
+              if (!assignment) {
+                setMessage(
+                  "برای اصلاح برنامه، ابتدا برنامه‌های ارسال‌شده را به‌روزرسانی کن.",
+                );
+                assignments.reload();
+                return;
+              }
+              const source = plans.data?.items.find(
+                (p) => p.id === assignment.planId,
+              );
+              setRecipient(`athlete:${assignment.athleteId}`);
+              open(source, true);
+              requestAnimationFrame(() =>
+                document
+                  .getElementById("plan-editor")
+                  ?.scrollIntoView({ block: "start" }),
+              );
+            }}
+          >
+            آماده‌کردن نسخه بعدی برنامه
+          </Button>
           <TrainingSummary sessions={results.sessions} />
           {results.sessions.map((s) => (
             <Card key={s.clientId} className="p-4">
@@ -692,6 +798,11 @@ function CoachTrainingSession() {
                 · {number(s.sets.filter((x) => x.done).length)} ست
               </p>
               {s.note && <p className="mt-2 text-muted">{s.note}</p>}
+              <SessionReview
+                key={`${s.clientId}:${s.coachReview?.revision ?? 0}`}
+                session={s}
+                assignmentId={results.assignmentId}
+              />
             </Card>
           ))}
         </section>

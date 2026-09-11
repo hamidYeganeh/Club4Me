@@ -70,10 +70,16 @@ test("a permanently rejected workout does not block another and only conflicts a
 });
 test("restart preserves pending mutation and retries the identical payload after a lost response", async () => {
   const storage = memoryStorage(),
-    original = session();
+    original = {
+      ...session(),
+      effort: "hard" as const,
+      followUpRequested: true,
+    };
   let first: SessionWrite | undefined;
   const store = new TrainingStore(storage, "alice", async (_, body) => {
     first = structuredClone(body);
+    assert.equal(body.effort, "hard");
+    assert.equal(body.followUpRequested, true);
     throw new Error("lost response");
   });
   await store.save(original, 999);

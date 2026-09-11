@@ -1,16 +1,6 @@
 "use client";
-
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./primitives/select";
+import { Select, ListBox } from "@heroui/react";
 import type { TimeOption } from "./types";
-
-// Time field: the library Select, with the option list capped so the panel
-// measures a small height and scrolls instead of unfolding all 48 options.
 export function TimeSelect({
   value,
   onChange,
@@ -26,24 +16,31 @@ export function TimeSelect({
 }) {
   return (
     <Select
+      aria-label="زمان"
       value={value}
-      onValueChange={onChange}
-      open={open}
+      onChange={(key) => onChange(String(key))}
+      isOpen={open}
       onOpenChange={onOpenChange}
       className="w-full"
     >
-      <SelectTrigger className="tabular-nums">
-        <SelectValue className="whitespace-nowrap" />
-      </SelectTrigger>
-      <SelectContent>
-        <div className="max-h-56 overflow-y-auto overscroll-contain">
-          {options.map((o) => (
-            <SelectItem key={o.value} value={o.value} className="tabular-nums">
-              {o.label}
-            </SelectItem>
+      <Select.Trigger className="tabular-nums">
+        <Select.Value />
+        <Select.Indicator />
+      </Select.Trigger>
+      <Select.Popover>
+        <ListBox className="max-h-56">
+          {options.map((option) => (
+            <ListBox.Item
+              id={option.value}
+              key={option.value}
+              textValue={option.label}
+            >
+              {option.label}
+              <ListBox.ItemIndicator />
+            </ListBox.Item>
           ))}
-        </div>
-      </SelectContent>
+        </ListBox>
+      </Select.Popover>
     </Select>
   );
 }

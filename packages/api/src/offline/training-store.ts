@@ -105,6 +105,8 @@ export class TrainingStore {
               status: s.status,
               sets: s.sets,
               note: s.note,
+              effort: s.effort,
+              followUpRequested: s.followUpRequested,
               mutationId: crypto.randomUUID(),
               expectedRevision: s.revision,
             };

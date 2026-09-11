@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Query, Res } from "@nestjs/common";
+import { basename, dirname } from "node:path";
 import type { Response } from "express";
 import { MediaService } from "./media.service";
 
@@ -25,6 +26,8 @@ export class MediaFileController {
         : "public, max-age=0, must-revalidate",
     );
     if (file.isPrivate) response.setHeader("Referrer-Policy", "no-referrer");
-    response.sendFile(file.path);
+    // The trusted storage root may be hidden (the default is .artifacts/media).
+    // Only the validated generated filename is subject to dotfile filtering.
+    response.sendFile(basename(file.path), { root: dirname(file.path) });
   }
 }

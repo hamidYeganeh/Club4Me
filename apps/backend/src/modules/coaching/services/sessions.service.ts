@@ -1,3 +1,4 @@
+import { withReferenceSummaries, classDisplayReferences } from "../../../common/utils/reference-summaries";
 import { Atomic } from "../../../infrastructure/database/atomic-operation";
 import { CoachPackagePurchase } from "../schemas/coach-purchase.schema";
 import { Injectable } from "@nestjs/common";
@@ -173,7 +174,7 @@ export class SessionsService {
       .find({ classId: objectId(classId), ownerCoachId: coach._id })
       .sort({ startAt: 1 })
       .exec();
-    return { items: items.map(toPublicDocument) };
+    return { items: await withReferenceSummaries(this.sessions.db, items.map(toPublicDocument), [...classDisplayReferences, {field: "classId", as: "trainingClass", collection: "classes", fields: ["title", "slug"]}]) };
   }
 
   async createStandalone(userId: string, input: SessionInput) {

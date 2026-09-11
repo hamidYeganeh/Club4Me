@@ -1,3 +1,8 @@
+import { withMediaReferences } from "../../media/media-references";
+import {
+  withReferenceSummaries,
+  classDisplayReferences,
+} from "../../../common/utils/reference-summaries";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
@@ -55,13 +60,24 @@ export class TrainingClassesService {
     private readonly notifications: NotificationsService,
   ) {}
 
+  private async present(rows: Record<string, unknown>[]) {
+    return withMediaReferences(
+      this.media,
+      await withReferenceSummaries(
+        this.classes.db,
+        rows,
+        classDisplayReferences,
+      ),
+    );
+  }
+
   async list(userId: string) {
     const coach = await this.coaches.requireOwnedCoach(userId);
     const items = await this.classes
       .find({ "coachAssignments.coachId": coach._id })
       .sort({ updatedAt: -1 })
       .exec();
-    return { items: items.map(toPublicDocument) };
+    return { items: await this.present(items.map(toPublicDocument)) };
   }
 
   async listForAdmin(query?: string, status?: string) {
@@ -83,7 +99,7 @@ export class TrainingClassesService {
       .sort({ updatedAt: -1 })
       .limit(500)
       .exec();
-    return { items: items.map(toPublicDocument) };
+    return { items: await this.present(items.map(toPublicDocument)) };
   }
 
   async disableForAdmin(classId: string) {
@@ -129,7 +145,11 @@ export class TrainingClassesService {
   }
 
   async get(userId: string, classId: string) {
-    return toPublicDocument(await this.requireOwnedDocument(userId, classId));
+    return (
+      await this.present([
+        toPublicDocument(await this.requireOwnedDocument(userId, classId)),
+      ])
+    )[0]!;
   }
 
   async update(userId: string, classId: string, input: Partial<ClassInput>) {
@@ -335,7 +355,7 @@ export class TrainingClassesService {
       .sort({ courseStartAt: 1 })
       .limit(100)
       .exec();
-    return { items: items.map(toPublicDocument) };
+    return { items: await this.present(items.map(toPublicDocument)) };
   }
 
   async listPublicCoachIdsByClub(clubId: string): Promise<string[]> {
@@ -353,7 +373,7 @@ export class TrainingClassesService {
       .find({ clubId: objectId(clubId, "CLUB_NOT_FOUND") })
       .sort({ updatedAt: -1 })
       .exec();
-    return { items: items.map(toPublicDocument) };
+    return { items: await this.present(items.map(toPublicDocument)) };
   }
 
   async reviewForClubOwner(
@@ -409,10 +429,10 @@ export class TrainingClassesService {
       )
       .sort({ startAt: 1 })
       .exec();
-    return {
-      ...(toPublicDocument(trainingClass) as object),
+    return (await this.present([{
+      ...toPublicDocument(trainingClass),
       sessions: sessions.map(toPublicDocument),
-    };
+    }]))[0]!;
   }
 
   async requireOwnedDocument(

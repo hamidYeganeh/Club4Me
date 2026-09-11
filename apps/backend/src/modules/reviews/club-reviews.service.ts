@@ -107,13 +107,6 @@ export class ClubReviewsService {
       })
       .sort({ sessionStartsAt: -1 })
       .exec();
-    if (!reservation) {
-      throw new AppError(
-        403,
-        "COMPLETED_RESERVATION_REQUIRED",
-        "A completed reservation is required to review this club",
-      );
-    }
     await this.media.assertOwnedReady(userId, input.mediaIds);
     const criterionLabels: Record<string, string> = {};
     for (const id of Object.keys(input.ratings ?? {})) {
@@ -128,14 +121,14 @@ export class ClubReviewsService {
       const review = await this.reviews.create({
         clubId: objectId(clubId, "CLUB_NOT_FOUND"),
         userId: objectId(userId, "USER_NOT_FOUND"),
-        reservationId: reservation._id,
+        reservationId: reservation?._id,
         rating: input.rating,
         title: input.title?.trim(),
         body: input.body.trim(),
         ratings: input.ratings ?? {},
         criterionLabels,
         mediaIds: input.mediaIds.map((id) => objectId(id, "MEDIA_NOT_FOUND")),
-        isVerifiedBooking: true,
+        isVerifiedBooking: Boolean(reservation),
       });
       await this.refreshClubRating(clubId);
       return toPublic(review);

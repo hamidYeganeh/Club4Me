@@ -1,3 +1,4 @@
+import { withReferenceSummaries } from "../../common/utils/reference-summaries";
 import { ClubAccessService } from "./club-access.service";
 import type { ClubPermission } from "./club-permissions";
 import { Injectable } from "@nestjs/common";
@@ -49,7 +50,7 @@ export class ClubsRepository {
 
   async listForAdmin(): Promise<PublicClub[]> {
     const items = await this.model.find().sort({ updatedAt: -1 }).exec();
-    return items.map(toPublicClub);
+    return withReferenceSummaries(this.model.db, items.map(toPublicClub), [{field: "ownerId", as: "owner", collection: "users", fields: ["firstName", "lastName", "phone"]}]);
   }
 
   async findById(clubId: string): Promise<PublicClub> {

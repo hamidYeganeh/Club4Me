@@ -7,7 +7,6 @@ import {
 } from "react";
 import { useLocation } from "./navigation";
 import { matchRoute, routePath, routeSpecificity } from "./route-matcher";
-import { RouteLoadingSkeleton } from "@/components/loading-skeletons";
 import { startLiveUpdates } from "@/lib/live-updates";
 
 type PageProps = {
@@ -68,7 +67,7 @@ export function NativeRoutes() {
     );
   const { Page } = route;
   return (
-    <Suspense fallback={<RouteLoadingSkeleton />}>
+    <Suspense fallback={null}>
       <Page
         key={location.pathname}
         params={matchRoute(route.path, location.pathname)!}

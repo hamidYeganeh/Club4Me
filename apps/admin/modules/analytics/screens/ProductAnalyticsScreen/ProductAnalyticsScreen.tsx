@@ -1,5 +1,6 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { useProductAnalytics } from "@api/admin";
 import { Card, Chip, Spinner } from "@heroui/react";
 import { useState } from "react";
@@ -22,15 +23,16 @@ export function ProductAnalyticsScreen() {
               کاربران یکتا از کشف باشگاه تا پرداخت و بازگشت هفتگی رزروکنندگان
             </p>
           </div>
-          <select
+          <FormSelect
+            aria-label="انتخاب گزینه"
             className="h-11 rounded-xl border border-border bg-surface px-3 text-sm"
             value={days}
-            onChange={(event) => setDays(Number(event.target.value))}
+            onChange={(event) => setDays(Number(event))}
           >
-            <option value={30}>۳۰ روز</option>
-            <option value={90}>۹۰ روز</option>
-            <option value={180}>۱۸۰ روز</option>
-          </select>
+            <FormOption value={30}>۳۰ روز</FormOption>
+            <FormOption value={90}>۹۰ روز</FormOption>
+            <FormOption value={180}>۱۸۰ روز</FormOption>
+          </FormSelect>
         </div>
 
         {analytics.isPending ? (
@@ -102,27 +104,51 @@ export function ProductAnalyticsScreen() {
               ) : null}
             </Card>
             <section className="mt-5 grid gap-4 md:grid-cols-3">
-              {([
-                ["کانال جذب", analytics.data?.breakdowns.acquisitionChannel],
-                ["رشته", analytics.data?.breakdowns.sport],
-                ["نوع خدمت", analytics.data?.breakdowns.serviceType],
-              ] as const).map(([title, rows]) => (
-                <Card key={title} className="rounded-[1.5rem] border border-border bg-surface p-5">
+              {(
+                [
+                  ["کانال جذب", analytics.data?.breakdowns.acquisitionChannel],
+                  ["رشته", analytics.data?.breakdowns.sport],
+                  ["نوع خدمت", analytics.data?.breakdowns.serviceType],
+                ] as const
+              ).map(([title, rows]) => (
+                <Card
+                  key={title}
+                  className="rounded-[1.5rem] border border-border bg-surface p-5"
+                >
                   <h2 className="font-semibold">{title}</h2>
                   <div className="mt-3 space-y-2">
-                    {rows?.length ? rows.map((row) => (
-                      <div key={row.key} className="flex justify-between gap-3 rounded-xl bg-surface-secondary px-3 py-2 text-sm">
-                        <span className="truncate">{row.key}</span><strong>{number.format(row.count)}</strong>
-                      </div>
-                    )) : <p className="text-sm text-muted">هنوز داده‌ای ثبت نشده است.</p>}
+                    {rows?.length ? (
+                      rows.map((row) => (
+                        <div
+                          key={row.key}
+                          className="flex justify-between gap-3 rounded-xl bg-surface-secondary px-3 py-2 text-sm"
+                        >
+                          <span className="truncate">{row.key}</span>
+                          <strong>{number.format(row.count)}</strong>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted">
+                        هنوز داده‌ای ثبت نشده است.
+                      </p>
+                    )}
                   </div>
                 </Card>
               ))}
             </section>
             <Card className="mt-5 rounded-[1.5rem] border border-border bg-surface p-5">
-              <h2 className="font-semibold">تعریف سنجه‌ها و حذف دوباره‌شماری</h2>
+              <h2 className="font-semibold">
+                تعریف سنجه‌ها و حذف دوباره‌شماری
+              </h2>
               <dl className="mt-3 grid gap-3 text-sm md:grid-cols-3">
-                {Object.entries(analytics.data?.definitions ?? {}).map(([key, value]) => <div key={key}><dt className="font-medium">{key}</dt><dd className="mt-1 leading-6 text-muted">{value}</dd></div>)}
+                {Object.entries(analytics.data?.definitions ?? {}).map(
+                  ([key, value]) => (
+                    <div key={key}>
+                      <dt className="font-medium">{key}</dt>
+                      <dd className="mt-1 leading-6 text-muted">{value}</dd>
+                    </div>
+                  ),
+                )}
               </dl>
             </Card>
           </>

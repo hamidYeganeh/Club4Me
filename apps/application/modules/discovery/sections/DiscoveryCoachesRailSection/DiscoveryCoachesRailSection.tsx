@@ -16,6 +16,13 @@ import type { DiscoveryCoachesRailSectionProps } from "./DiscoveryCoachesRailSec
 import "swiper/css";
 import "swiper/css/free-mode";
 
+const SERVICE_MODE_LABELS: Record<string, string> = {
+  club: "در باشگاه",
+  online: "آنلاین",
+  home: "در منزل",
+  outdoor: "فضای باز",
+};
+
 export function DiscoveryCoachesRailSection({
   id,
   title,
@@ -98,7 +105,14 @@ export function DiscoveryCoachesRailSection({
                         ]
                       : undefined
                   }
-                  meta={cardType === "compact" ? coach.serviceModes : undefined}
+                  meta={
+                    cardType === "compact"
+                      ? coach.serviceModes.flatMap((mode) => {
+                          const label = SERVICE_MODE_LABELS[mode];
+                          return label ? [label] : [];
+                        })
+                      : undefined
+                  }
                   href={`/discovery/coaches/${coach.slug}`}
                 />
               </SwiperSlide>

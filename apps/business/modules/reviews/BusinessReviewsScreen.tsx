@@ -1,7 +1,10 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
+import { useSelectedClub } from "@/lib/use-selected-club";
+
 import { Button, Chip, toast } from "@heroui/react";
-import { useBusinessClubs } from "@api/business";
 import { type ClubReview, useClubReviews, useRespondToClubReview } from "@api";
 import Image from "next/image";
 import { useMemo, useState } from "react";
@@ -18,9 +21,7 @@ const input =
 const reviewColumnHelper = createListColumnHelper<ClubReview>();
 
 export function BusinessReviewsScreen() {
-  const clubs = useBusinessClubs();
-  const [picked, setPicked] = useState("");
-  const clubId = picked || clubs.data?.items[0]?.id || "";
+  const { clubs, clubId, setClubId: setPicked } = useSelectedClub();
   const reviews = useClubReviews(clubId);
   const respond = useRespondToClubReview(clubId);
   const [draftFilters, setDraftFilters] = useState({
@@ -135,17 +136,18 @@ export function BusinessReviewsScreen() {
               مشاهده بازخورد ورزشکاران و پاسخ رسمی باشگاه
             </p>
           </div>
-          <select
+          <FormSelect
+            aria-label="انتخاب گزینه"
             className="h-11 rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm"
             value={clubId}
-            onChange={(event) => setPicked(event.target.value)}
+            onChange={(event) => setPicked(event)}
           >
             {clubs.data?.items.map((club) => (
-              <option key={club.id} value={club.id}>
+              <FormOption entity={club} key={club.id} value={club.id}>
                 {club.name}
-              </option>
+              </FormOption>
             ))}
-          </select>
+          </FormSelect>
         </div>
         <ListPagePanel
           title="فهرست نظرها"
@@ -162,7 +164,7 @@ export function BusinessReviewsScreen() {
             <>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
-                <input
+                <HeroInput
                   className={input}
                   value={draftFilters.query}
                   onChange={(event) =>
@@ -176,20 +178,21 @@ export function BusinessReviewsScreen() {
               </label>
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">وضعیت پاسخ</span>
-                <select
+                <FormSelect
+                  aria-label="انتخاب گزینه"
                   className={input}
                   value={draftFilters.hasResponse}
                   onChange={(event) =>
                     setDraftFilters((current) => ({
                       ...current,
-                      hasResponse: event.target.value as "" | "yes" | "no",
+                      hasResponse: event as "" | "yes" | "no",
                     }))
                   }
                 >
-                  <option value="">همه</option>
-                  <option value="yes">پاسخ داده شده</option>
-                  <option value="no">بدون پاسخ</option>
-                </select>
+                  <FormOption value="">همه</FormOption>
+                  <FormOption value="yes">پاسخ داده شده</FormOption>
+                  <FormOption value="no">بدون پاسخ</FormOption>
+                </FormSelect>
               </label>
             </>
           }

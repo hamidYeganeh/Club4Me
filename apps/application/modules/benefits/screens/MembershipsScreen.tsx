@@ -150,9 +150,30 @@ export function MembershipsScreen({
                   .join("، ")}
               />
             </dl>
+
+            {!!item.accessClubs?.length && (
+              <div className="rounded-xl bg-surface-secondary p-3 text-xs leading-6">
+                <p className="font-semibold">
+                  اعتبار مشترک در{" "}
+                  {item.accessClubs.length.toLocaleString("fa-IR")} باشگاه
+                </p>
+                <p>تعداد جلسات و سقف هفتگی بین همه باشگاه‌های زیر مشترک است.</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {item.accessClubs.map((club) => (
+                    <Link
+                      key={club.id}
+                      className="inline-flex min-h-11 items-center rounded-xl border border-border px-3 text-accent"
+                      href={`/discovery/clubs/${club.id}/slots?entitlement=${item.id}`}
+                    >
+                      {club.name} ←
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
             <MembershipActions item={item} />
             <Link
-              href={`/discovery/clubs/${item.clubId}/slots`}
+              href={`/discovery/clubs/${item.clubId}/slots?entitlement=${item.id}`}
               className="inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-4 text-accent-foreground"
             >
               {active(item) ? "رزرو با این عضویت" : "مشاهده سانس‌های باشگاه"}

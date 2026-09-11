@@ -3,5 +3,5 @@ export type ProfileImageHeroSectionProps = {
   avatarAlt: string;
   avatarSrc: string | null;
   isUploading?: boolean;
-  onFile: (file: File) => void;
+  onFile: (file: File) => Promise<void>;
 };

@@ -20,8 +20,11 @@ import { createPortal } from "react-dom";
 import { Icon } from "@theme/icon";
 import { cn } from "@/lib/cn";
 
-const DRAWER_EASE = [0.32, 0.72, 0, 1] as const;
-const DRAWER_TRANSITION = { duration: 0.24, ease: DRAWER_EASE } as const;
+import {
+  CONTROL_TRANSITION,
+  FADE_TRANSITION,
+  REDUCED_TRANSITION,
+} from "@/lib/ease";
 const subscribeToMount = () => () => undefined;
 
 export interface BottomSheetProps {
@@ -196,7 +199,7 @@ export function BottomSheet({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.16, ease: "linear" }}
+            transition={reduceMotion ? REDUCED_TRANSITION : FADE_TRANSITION}
             onClick={() => onOpenChange(false)}
             className="fixed inset-0 z-[1000] bg-background/65 backdrop-blur-sm"
           />
@@ -215,11 +218,7 @@ export function BottomSheet({
             initial={reduceMotion ? { opacity: 0 } : { y: "100%" }}
             animate={reduceMotion ? { opacity: 1 } : { y: 0 }}
             exit={reduceMotion ? { opacity: 0 } : { y: "100%" }}
-            transition={
-              reduceMotion
-                ? { duration: 0.12, ease: DRAWER_EASE }
-                : DRAWER_TRANSITION
-            }
+            transition={reduceMotion ? REDUCED_TRANSITION : CONTROL_TRANSITION}
             style={heightStyle}
             className={cn(
               "fixed inset-x-0 bottom-[var(--keyboard-inset,0px)] z-[1001] mx-auto flex w-full max-w-xl translate-z-0 flex-col contain-paint rounded-t-[2.25rem] bg-surface text-surface-foreground shadow-[0_-16px_60px_-24px_rgba(0,0,0,0.45)] outline-none will-change-transform",

@@ -1,5 +1,6 @@
 "use client";
 
+import { EntityOptionContent, entityOptionText } from "@repo/ui/entity-option";
 import {
   Button,
   Checkbox,
@@ -216,8 +217,13 @@ function RelationInput({
                     item.id,
                 );
                 return (
-                  <ListBox.Item key={item.id} id={item.id} textValue={text}>
-                    {text}
+                  <ListBox.Item
+                    dir="rtl"
+                    key={item.id}
+                    id={item.id}
+                    textValue={entityOptionText(item, String(text))}
+                  >
+                    <EntityOptionContent entity={item} title={String(text)} />
                     <ListBox.ItemIndicator />
                   </ListBox.Item>
                 );
@@ -405,6 +411,7 @@ export function ResourceForm({
                               <ListBox>
                                 {field.options?.map((option) => (
                                   <ListBox.Item
+                                    dir="rtl"
                                     key={option}
                                     id={option}
                                     textValue={option}

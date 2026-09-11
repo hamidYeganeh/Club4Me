@@ -5,6 +5,7 @@ import { http } from "../../http/client";
 import type { PaymentIntent } from "./commerce";
 
 export type BenefitProduct = {
+  accessClubs?: Array<{ id: string; name: string }>;
   id: string;
   clubId: string;
   title: string;
@@ -20,6 +21,7 @@ export type BenefitProduct = {
   status: "active" | "inactive";
 };
 export type UserEntitlement = {
+  accessClubs?: Array<{ id: string; name: string }>;
   id: string;
   productId: string;
   clubId: string;
@@ -70,8 +72,8 @@ export function useEntitlementUsage(entitlementId: string, page = 1) {
 }
 export type BenefitProductPayload = Omit<
   BenefitProduct,
-  "id" | "clubId" | "status" | "weekCalendar"
->;
+  "id" | "clubId" | "status" | "weekCalendar" | "accessClubs"
+> & { accessClubIds?: string[] };
 
 export function useBusinessBenefitProducts(clubId: string) {
   return useQuery({

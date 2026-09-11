@@ -101,7 +101,7 @@ for (const theme of ["light", "dark"] as const) {
       await page
         .getByRole("link", { name: /ورزش مناسب خودت را پیدا کن/ })
         .click();
-      await expect(page).toHaveURL(/\/discovery\/search$/);
+      await expect(page).toHaveURL((url) => url.pathname === "/discovery/search");
 
       await page.goto("/athlete/settings");
       await expect(

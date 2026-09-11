@@ -14,6 +14,8 @@ import { cn } from "./cn";
 import { Icon } from "./icon";
 
 export type TransitionVariant =
+  | "circle-blur"
+  | "blinds"
   | "circle"
   | "square"
   | "triangle"
@@ -22,8 +24,27 @@ export type TransitionVariant =
   | "rectangle"
   | "star";
 
+export type RectStart =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right"
+  | "center"
+  | "bottom-up";
+
+const RECT_FROM: Record<RectStart, string> = {
+  "top-left": "inset(0 100% 100% 0)",
+  "top-right": "inset(0 0 100% 100%)",
+  "bottom-left": "inset(100% 100% 0 0)",
+  "bottom-right": "inset(100% 0 0 100%)",
+  center: "inset(50% 50% 50% 50%)",
+  "bottom-up": "inset(100% 0 0 0)",
+};
+
 export interface AnimatedThemeTogglerProps extends ComponentPropsWithoutRef<"button"> {
   duration?: number;
+  start?: RectStart;
+  iconClassName?: string;
   variant?: TransitionVariant;
   /** When true, the transition expands from the viewport center. */
   fromCenter?: boolean;
@@ -38,7 +59,7 @@ function polygonCollapsed(point: string, vertexCount: number): string {
 }
 
 function getThemeTransitionClipPaths(
-  variant: TransitionVariant,
+  variant: Exclude<TransitionVariant, "circle-blur" | "blinds">,
   cx: number,
   cy: number,
   maxRadius: number,
@@ -147,8 +168,10 @@ function getThemeTransitionClipPaths(
 
 export function AnimatedThemeToggler({
   className,
-  duration = 400,
-  variant = "circle",
+  duration,
+  variant = "rectangle",
+  start = "bottom-up",
+  iconClassName,
   fromCenter = false,
   theme,
   onThemeChange,
@@ -159,35 +182,13 @@ export function AnimatedThemeToggler({
   const [internalIsDark, setInternalIsDark] = useState(false);
   const isDark = isControlled ? theme === "dark" : internalIsDark;
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const isTransitioningRef = useRef(false);
-  const activeAnimationRef = useRef<Animation | null>(null);
-
-  const cancelAnimation = useCallback(() => {
-    activeAnimationRef.current?.cancel();
-    activeAnimationRef.current = null;
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      cancelAnimation();
-      const root = document.documentElement;
-      if (root.dataset.magicuiThemeVt !== "active") return;
-      delete root.dataset.magicuiThemeVt;
-      root.style.removeProperty("--magicui-theme-toggle-vt-duration");
-      root.style.removeProperty("--magicui-theme-vt-clip-from");
-      root.style.removeProperty("--magicui-theme-vt-clip-to");
-      root.style.removeProperty("--magicui-theme-vt-easing");
-    };
-  }, [cancelAnimation]);
 
   useEffect(() => {
     if (isControlled) return;
-
     const updateTheme = () => {
       setInternalIsDark(document.documentElement.classList.contains("dark"));
     };
     updateTheme();
-
     const observer = new MutationObserver(updateTheme);
     observer.observe(document.documentElement, {
       attributes: true,
@@ -197,170 +198,135 @@ export function AnimatedThemeToggler({
   }, [isControlled]);
 
   const toggleTheme = useCallback(() => {
-    const button = buttonRef.current;
     const root = document.documentElement;
-    if (
-      !button ||
-      isTransitioningRef.current ||
-      root.dataset.magicuiThemeVt === "active"
-    ) {
-      return;
-    }
-
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const bounds = button.getBoundingClientRect();
-    const x = fromCenter ? viewportWidth / 2 : bounds.left + bounds.width / 2;
-    const y = fromCenter ? viewportHeight / 2 : bounds.top + bounds.height / 2;
-    const maxRadius = Math.hypot(
-      Math.max(x, viewportWidth - x),
-      Math.max(y, viewportHeight - y),
-    );
+    // One viewport transition at a time, including across multiple toggles.
+    if (root.dataset.themeVt) return;
     const nextIsDark = !isDark;
     const nextTheme = nextIsDark ? "dark" : "light";
-
     const applyTheme = () => {
+      // Commit the DOM inside the snapshot callback. next-themes also owns
+      // persistence and context, but its effect alone can miss the snapshot.
       root.classList.toggle("dark", nextIsDark);
       root.classList.toggle("light", !nextIsDark);
+      root.style.colorScheme = nextTheme;
       if (isControlled) {
         onThemeChange?.(nextTheme);
       } else {
         setInternalIsDark(nextIsDark);
-        localStorage.setItem("theme", nextTheme);
+        try {
+          localStorage.setItem("theme", nextTheme);
+        } catch {
+          /* Storage may be unavailable. */
+        }
       }
     };
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      typeof document.startViewTransition !== "function"
+    ) {
       applyTheme();
       return;
     }
 
-    const clipPath = getThemeTransitionClipPaths(
-      variant,
-      x,
-      y,
-      maxRadius,
-      viewportWidth,
-      viewportHeight,
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const origin = fromCenter ? "center" : start;
+    const x = origin.endsWith("left")
+      ? 0
+      : origin.endsWith("right")
+        ? width
+        : width / 2;
+    const y = origin.startsWith("top")
+      ? 0
+      : origin === "center"
+        ? height / 2
+        : height;
+    const radius = Math.hypot(Math.max(x, width - x), Math.max(y, height - y));
+    const bounds = buttonRef.current?.getBoundingClientRect();
+    const legacyX =
+      fromCenter || !bounds ? width / 2 : bounds.left + bounds.width / 2;
+    const legacyY =
+      fromCenter || !bounds ? height / 2 : bounds.top + bounds.height / 2;
+    const legacyRadius = Math.hypot(
+      Math.max(legacyX, width - legacyX),
+      Math.max(legacyY, height - legacyY),
     );
+    const clipPaths =
+      variant === "rectangle"
+        ? [RECT_FROM[origin], "inset(0 0 0 0)"]
+        : variant === "circle" ||
+            variant === "circle-blur" ||
+            variant === "blinds"
+          ? getThemeTransitionClipPaths("circle", x, y, radius, width, height)
+          : getThemeTransitionClipPaths(
+              variant,
+              legacyX,
+              legacyY,
+              legacyRadius,
+              width,
+              height,
+            );
 
+    root.dataset.themeVt = variant;
+    root.style.setProperty("--theme-vt-from", clipPaths[0]!);
+    root.style.setProperty("--theme-vt-to", clipPaths[1]!);
+    root.style.setProperty(
+      "--theme-vt-duration",
+      `${duration ?? (variant === "rectangle" ? 400 : 700)}ms`,
+    );
+    root.style.setProperty(
+      "--theme-vt-ease",
+      variant === "rectangle" ? "ease-out" : "cubic-bezier(0.4, 0, 0.2, 1)",
+    );
     const cleanup = () => {
-      isTransitioningRef.current = false;
-      delete root.dataset.magicuiThemeVt;
-      root.style.removeProperty("--magicui-theme-toggle-vt-duration");
-      root.style.removeProperty("--magicui-theme-vt-clip-from");
-      root.style.removeProperty("--magicui-theme-vt-clip-to");
-      root.style.removeProperty("--magicui-theme-vt-easing");
-      cancelAnimation();
+      delete root.dataset.themeVt;
+      for (const property of ["from", "to", "duration", "ease"]) {
+        root.style.removeProperty(`--theme-vt-${property}`);
+      }
     };
-
-    const runFallbackTransition = () => {
-      const body = document.body;
-      const previousRootBackground = root.style.backgroundColor;
-      const previousBodyClipPath = body.style.clipPath;
-      const previousBodyTransition = body.style.transition;
-      const previousBodyWillChange = body.style.willChange;
-      const oldBackground = getComputedStyle(body).backgroundColor;
-      const pageY = y + window.scrollY;
-      const clipFrom = `circle(0px at ${x}px ${pageY}px)`;
-      const clipTo = `circle(${Math.ceil(maxRadius)}px at ${x}px ${pageY}px)`;
-
-      isTransitioningRef.current = true;
-      root.style.backgroundColor = oldBackground;
-      body.style.clipPath = clipFrom;
-      body.style.transition = "none";
-      body.style.willChange = "clip-path";
-      body.getBoundingClientRect();
-      flushSync(applyTheme);
-
-      let finished = false;
-      let timeoutId = 0;
-      const finish = () => {
-        if (finished) return;
-        finished = true;
-        window.clearTimeout(timeoutId);
-        body.removeEventListener("transitionend", handleTransitionEnd);
-        body.style.clipPath = previousBodyClipPath;
-        body.style.transition = previousBodyTransition;
-        body.style.willChange = previousBodyWillChange;
-        if (previousRootBackground) {
-          root.style.backgroundColor = previousRootBackground;
-        } else {
-          root.style.removeProperty("background-color");
-        }
-        cleanup();
-      };
-      const handleTransitionEnd = (event: TransitionEvent) => {
-        if (event.target === body && event.propertyName === "clip-path") {
-          finish();
-        }
-      };
-
-      body.addEventListener("transitionend", handleTransitionEnd);
-      requestAnimationFrame(() => {
-        body.style.transition = `clip-path ${duration}ms ${
-          variant === "star" ? "linear" : "ease-in-out"
-        }`;
-        body.style.clipPath = clipTo;
-        timeoutId = window.setTimeout(finish, duration + 150);
-      });
-    };
-
-    if (typeof document.startViewTransition !== "function") {
-      runFallbackTransition();
-      return;
-    }
-
-    root.dataset.magicuiThemeVt = "active";
-    root.style.setProperty(
-      "--magicui-theme-toggle-vt-duration",
-      `${duration}ms`,
-    );
-    root.style.setProperty("--magicui-theme-vt-clip-from", clipPath[0]);
-    root.style.setProperty("--magicui-theme-vt-clip-to", clipPath[1]);
-    root.style.setProperty(
-      "--magicui-theme-vt-easing",
-      variant === "star" ? "linear" : "ease-in-out",
-    );
-    isTransitioningRef.current = true;
-
     try {
-      const transition = document.startViewTransition(() => {
-        flushSync(applyTheme);
-      });
-      transition.finished.finally(cleanup).catch(() => undefined);
+      const transition = document.startViewTransition(() =>
+        flushSync(applyTheme),
+      );
+      // A skipped transition must still switch themes and release the lock.
+      void transition.ready.catch(() => undefined);
+      void transition.finished.then(cleanup, cleanup);
     } catch {
       cleanup();
-      runFallbackTransition();
+      applyTheme();
     }
   }, [
-    cancelAnimation,
     duration,
     fromCenter,
     isControlled,
     isDark,
     onThemeChange,
+    start,
     variant,
   ]);
 
-  const handleClick = useCallback(
-    (event: MouseEvent<HTMLButtonElement>) => {
-      onClick?.(event);
-      if (!event.defaultPrevented) toggleTheme();
-    },
-    [onClick, toggleTheme],
-  );
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    onClick?.(event);
+    if (!event.defaultPrevented) toggleTheme();
+  };
 
   return (
     <button
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       {...props}
       type="button"
       ref={buttonRef}
       onClick={handleClick}
       className={cn(className)}
     >
-      {isDark ? <Icon name="sun" /> : <Icon name="moon" />}
-      <span className="sr-only">Toggle theme</span>
+      <span
+        key={String(isDark)}
+        className={cn("theme-toggle-icon", iconClassName)}
+        aria-hidden="true"
+      >
+        <Icon name={isDark ? "sun" : "moon"} />
+      </span>
     </button>
   );
 }

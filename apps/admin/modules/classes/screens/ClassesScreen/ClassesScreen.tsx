@@ -195,18 +195,18 @@ export function ClassesScreen() {
                   items: [
                     { label: "شناسه کلاس", value: selected.id, dir: "ltr" },
                     {
-                      label: "شناسه مربی مالک",
-                      value: selected.ownerCoachId,
+                      label: "مربی مالک",
+                      value: selected.ownerCoach?.displayName ?? "در دسترس نیست",
                       dir: "ltr",
                     },
                     {
-                      label: "شناسه باشگاه",
-                      value: selected.clubId,
+                      label: "باشگاه",
+                      value: selected.club?.name ?? "بدون باشگاه",
                       dir: "ltr",
                     },
                     {
-                      label: "شناسه رشته",
-                      value: selected.sportId,
+                      label: "رشته",
+                      value: selected.sport?.name ?? "در دسترس نیست",
                       dir: "ltr",
                     },
                     { label: "نامک", value: selected.slug, dir: "ltr" },
@@ -245,7 +245,7 @@ export function ClassesScreen() {
                     {
                       label: "مربی‌ها",
                       value: selected.coachAssignments
-                        .map((item) => `${item.coachId} (${item.role})`)
+                        .map((item) => `${item.coach?.displayName || "مربی در دسترس نیست"} (${item.role === "primary" ? "اصلی" : "دستیار"})`)
                         .join("، "),
                       wide: true,
                     },

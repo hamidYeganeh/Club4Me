@@ -1,6 +1,5 @@
 "use client";
 
-import { SearchField } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { ThemeToggle } from "@theme/theme-toggle";
 
@@ -10,7 +9,6 @@ import { panelHeaderSectionStyles } from "./PanelHeaderSection.styles";
 import type { PanelHeaderSectionProps } from "./PanelHeaderSection.types";
 
 export function PanelHeaderSection({
-  searchPlaceholder,
   settingsHref,
   settingsLabel,
 }: PanelHeaderSectionProps) {
@@ -18,20 +16,7 @@ export function PanelHeaderSection({
 
   return (
     <header className={styles.root()}>
-      <SearchField
-        name="panel-search"
-        variant="secondary"
-        className={styles.search()}
-      >
-        <SearchField.Group className="w-full rounded-full">
-          <SearchField.SearchIcon />
-          <SearchField.Input
-            aria-label={searchPlaceholder}
-            placeholder={searchPlaceholder}
-          />
-          <Icon name="funnel-1" className="ms-1 text-muted" />
-        </SearchField.Group>
-      </SearchField>
+      <p className="text-sm font-semibold">مدیریت جیم‌فورمی</p>
       <div className={styles.actions()}>
         <ThemeToggle className={styles.iconBtn()} />
         <ButtonLink

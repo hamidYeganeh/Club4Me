@@ -6,7 +6,7 @@ import { Button } from "@heroui/react/button";
 import { Typography } from "@heroui/react/typography";
 import { ArrowRight } from "@modules/marketing/icons/icons/ArrowRight";
 import { BarbellHorizontal } from "@modules/marketing/icons/icons/BarbellHorizontal";
-import { StarFull } from "@modules/marketing/icons/icons/StarFull";
+import { Check } from "@modules/marketing/icons/icons/Check";
 import { motion, useReducedMotion } from "@ui/landing-motion";
 import { useTranslations } from "next-intl";
 import { LANDING_ASSETS } from "../../lib/landing-assets";
@@ -167,8 +167,8 @@ export function LandingAboutUsSection({
                     className={slots.stars()}
                     role="img"
                   >
-                    {Array.from({ length: 5 }, (_, index) => (
-                      <StarFull aria-hidden key={index} size={15} />
+                    {Array.from({ length: 3 }, (_, index) => (
+                      <Check aria-hidden key={index} size={15} />
                     ))}
                   </span>
                   <Typography className={slots.reviewCount()} type="body-xs">

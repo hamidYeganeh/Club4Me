@@ -1,5 +1,6 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import { Button, Card, Typography } from "@heroui/react";
@@ -101,16 +102,16 @@ export function CoachAnalyticsSection() {
         </div>
         <label className="flex items-center gap-2 text-xs text-muted">
           بازه گزارش
-          <select
+          <FormSelect
             aria-label="بازه گزارش"
             className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-foreground"
             value={days}
-            onChange={(event) => setDays(Number(event.target.value))}
+            onChange={(event) => setDays(Number(event))}
           >
-            <option value={7}>۷ روز اخیر</option>
-            <option value={30}>۳۰ روز اخیر</option>
-            <option value={90}>۹۰ روز اخیر</option>
-          </select>
+            <FormOption value={7}>۷ روز اخیر</FormOption>
+            <FormOption value={30}>۳۰ روز اخیر</FormOption>
+            <FormOption value={90}>۹۰ روز اخیر</FormOption>
+          </FormSelect>
         </label>
       </div>
       {isError ? (
@@ -228,18 +229,18 @@ export function CoachAnalyticsSection() {
             {currencies.length > 1 && (
               <label className="flex items-center gap-2 text-sm">
                 واحد پول
-                <select
+                <FormSelect
                   aria-label="واحد پول درآمد"
                   className="rounded-lg border border-border bg-surface p-2"
                   value={currency}
-                  onChange={(event) => setSelectedCurrency(event.target.value)}
+                  onChange={(event) => setSelectedCurrency(event)}
                 >
                   {currencies.map((value) => (
-                    <option key={value} value={value}>
+                    <FormOption key={value} value={value}>
                       {currencyLabel(value)}
-                    </option>
+                    </FormOption>
                   ))}
-                </select>
+                </FormSelect>
               </label>
             )}
             <DashboardChart

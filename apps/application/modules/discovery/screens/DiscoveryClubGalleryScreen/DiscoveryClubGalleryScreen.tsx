@@ -1,4 +1,5 @@
 "use client";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
 import { useState } from "react";
@@ -100,22 +101,23 @@ export function DiscoveryClubGalleryScreen({
 
       <label className="mt-3 text-sm">
         دسته عکس
-        <select
+        <FormSelect
+          aria-label="دسته عکس"
           className="ms-3 rounded-xl border border-border bg-surface p-2"
           value={category}
           onChange={(e) => {
-            setCategory(e.target.value);
+            setCategory(e);
             setActiveIndex(0);
             swiper?.slideTo(0);
           }}
         >
-          <option value="">همه عکس‌ها</option>
-          <option value="training">فضای تمرین</option>
-          <option value="equipment">تجهیزات</option>
-          <option value="changing_room">رختکن</option>
-          <option value="entrance">نمای ورودی</option>
-          <option value="other">سایر</option>
-        </select>
+          <FormOption value="">همه عکس‌ها</FormOption>
+          <FormOption value="training">فضای تمرین</FormOption>
+          <FormOption value="equipment">تجهیزات</FormOption>
+          <FormOption value="changing_room">رختکن</FormOption>
+          <FormOption value="entrance">نمای ورودی</FormOption>
+          <FormOption value="other">سایر</FormOption>
+        </FormSelect>
       </label>
       {gallery[activeIndex]?.takenOn && (
         <p className="mt-2 text-xs text-muted">

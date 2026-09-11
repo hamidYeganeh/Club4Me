@@ -12,10 +12,8 @@ export class ClubReview {
   @Prop({
     type: Types.ObjectId,
     ref: "Reservation",
-    required: true,
-    unique: true,
   })
-  reservationId: Types.ObjectId;
+  reservationId?: Types.ObjectId;
 
   @Prop({ type: Number, min: 1, max: 5, required: true })
   rating: number;
@@ -33,7 +31,7 @@ export class ClubReview {
   @Prop({ type: [Types.ObjectId], ref: "Media", default: [] })
   mediaIds: Types.ObjectId[];
 
-  @Prop({ type: Boolean, default: true }) isVerifiedBooking: boolean;
+  @Prop({ type: Boolean, default: false }) isVerifiedBooking: boolean;
 
   @Prop({ type: Object, default: null })
   ownerResponse: {
@@ -56,4 +54,11 @@ export class ClubReview {
 export type ClubReviewDocument = HydratedDocument<ClubReview>;
 export const ClubReviewSchema = SchemaFactory.createForClass(ClubReview);
 ClubReviewSchema.index({ clubId: 1, userId: 1 }, { unique: true });
+ClubReviewSchema.index(
+  { reservationId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { reservationId: { $type: "objectId" } },
+  },
+);
 ClubReviewSchema.index({ clubId: 1, status: 1, createdAt: -1 });

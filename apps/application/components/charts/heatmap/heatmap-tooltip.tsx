@@ -13,6 +13,10 @@ import { useDelayedTooltipData } from "./use-delayed-tooltip-data";
 export interface HeatmapTooltipProps {
   /** Custom contribution line (bottom section). Default: `N contribution(s)`. */
   formatLabel?: (count: number, date: Date) => string;
+  /** Custom tooltip header date. */
+  formatDate?: (date: Date) => string;
+  /** Custom tooltip weekday line. */
+  formatWeekday?: (date: Date) => string;
   /** Custom class name */
   className?: string;
   /** Inline styles for the tooltip panel (background, blur, etc.). */
@@ -40,6 +44,8 @@ export interface HeatmapTooltipProps {
 
 export const HeatmapTooltip = memo(function HeatmapTooltip({
   formatLabel = formatHeatmapContributionLabel,
+  formatDate = formatHeatmapTooltipDate,
+  formatWeekday = formatHeatmapTooltipWeekday,
   className = "",
   panelStyle,
   backgroundColor,
@@ -74,10 +80,10 @@ export const HeatmapTooltip = memo(function HeatmapTooltip({
       <div className="overflow-hidden">
         <div className="px-3 py-2.5 text-left">
           <div className="font-medium text-chart-tooltip-foreground text-xs">
-            {formatHeatmapTooltipDate(date)}
+            {formatDate(date)}
           </div>
           <div className="mt-0.5 text-chart-tooltip-muted text-xs">
-            {formatHeatmapTooltipWeekday(date)}
+            {formatWeekday(date)}
           </div>
           <div className="my-2 border-chart-tooltip-muted/30 border-t" />
           <div className="text-chart-tooltip-foreground text-sm">

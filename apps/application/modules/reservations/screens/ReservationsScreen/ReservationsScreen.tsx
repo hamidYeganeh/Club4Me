@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { useNow } from "@/lib/use-now";
+import { ManagedBanners } from "@/components/managed-banners";
+import {
+  filterReservationList,
+  type ReservationListMode,
+} from "@/lib/reservation-list";
 import { useRouter } from "next/navigation";
-import { toast } from "@heroui/react";
+import { Button, toast } from "@heroui/react";
 import {
   useCancelCoachBooking,
   useCancelClassEnrollment,
@@ -26,7 +32,6 @@ import {
   buildDateStrip,
   buildMonthDates,
   toDateKey,
-  toReservationDateKey,
 } from "../../reservations.utils";
 import { ReservationsHeaderSection } from "../../sections/ReservationsHeaderSection";
 import { ReservationsTimelineSection } from "../../sections/ReservationsTimelineSection";
@@ -40,6 +45,7 @@ import {
 
 export function ReservationsScreen({ role }: ReservationsScreenProps) {
   const router = useRouter();
+  const now = useNow();
   const t = useTranslations("athleteReservations");
   const common = useTranslations("common");
   const reservations = useMyReservations();
@@ -61,37 +67,16 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
     toDateKey(new Date()),
   );
   const [monthExpanded, setMonthExpanded] = useState(false);
-  const pageRef = useRef<HTMLElement>(null);
-  const pullStart = useRef<{ x: number; y: number } | null>(null);
   const monthDates = useMemo(
     () => buildMonthDates(new Date(`${selectedDateKey}T12:00:00`)),
     [selectedDateKey],
   );
-  const [sortNewestFirst, setSortNewestFirst] = useState(true);
-  const [showAllHistory, setShowAllHistory] = useState(false);
+  const [sortNewestFirst, setSortNewestFirst] = useState(false);
+  const [listMode, setListMode] = useState<ReservationListMode>("upcoming");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [actionReservationId, setActionReservationId] = useState<string | null>(
     null,
   );
-
-  useEffect(() => {
-    const page = pageRef.current;
-    if (!page || monthExpanded) return;
-    const onMove = (event: TouchEvent) => {
-      const start = pullStart.current;
-      const touch = event.touches[0];
-      if (!start || !touch) return;
-      const dy = touch.clientY - start.y;
-      if (
-        dy > 8 &&
-        dy > Math.abs(touch.clientX - start.x) * 1.5 &&
-        event.cancelable
-      )
-        event.preventDefault();
-    };
-    page.addEventListener("touchmove", onMove, { passive: false });
-    return () => page.removeEventListener("touchmove", onMove);
-  }, [monthExpanded, actionReservationId]);
 
   const items = useMemo<TimelineReservation[]>(() => {
     if (
@@ -167,24 +152,24 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
   );
 
   const visibleItems = useMemo(() => {
-    const relevantItems = showAllHistory
-      ? items
-      : items.filter(
-          (item) =>
-            toReservationDateKey(item.sessionStartsAt) === selectedDateKey,
-        );
+    const relevantItems = filterReservationList(
+      items,
+      listMode,
+      selectedDateKey,
+      now ?? Number.POSITIVE_INFINITY,
+    );
     return [...relevantItems].sort((left, right) => {
       const delta =
         new Date(right.sessionStartsAt).getTime() -
         new Date(left.sessionStartsAt).getTime();
       return sortNewestFirst ? delta : -delta;
     });
-  }, [items, selectedDateKey, showAllHistory, sortNewestFirst]);
+  }, [items, selectedDateKey, listMode, sortNewestFirst, now]);
 
   const activeSelectedId =
     selectedId && visibleItems.some((item) => item.id === selectedId)
       ? selectedId
-      : (visibleItems[1]?.id ?? visibleItems[0]?.id ?? null);
+      : (visibleItems[0]?.id ?? null);
 
   const pendingPayment = items.find(
     (item) => item.paymentStatus === "pending" && item.sourceId,
@@ -284,60 +269,58 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
   }
 
   return (
-    <main
-      ref={pageRef}
-      className="flex min-h-0 flex-1 flex-col bg-background overscroll-y-contain"
-      onTouchStart={(event) => {
-        const touch = event.touches[0];
-        let element = event.target as HTMLElement | null;
-        while (element && element.scrollTop <= 0)
-          element = element.parentElement;
-        pullStart.current =
-          touch && !element && window.scrollY <= 0
-            ? { x: touch.clientX, y: touch.clientY }
-            : null;
-      }}
-      onTouchEnd={(event) => {
-        const start = pullStart.current;
-        const touch = event.changedTouches[0];
-        pullStart.current = null;
-        if (
-          start &&
-          touch &&
-          touch.clientY - start.y > 60 &&
-          touch.clientY - start.y > Math.abs(touch.clientX - start.x) * 1.5
-        )
-          setMonthExpanded(true);
-      }}
-      onTouchCancel={() => {
-        pullStart.current = null;
-      }}
-    >
+    <main className="flex min-h-0 flex-1 flex-col bg-background overscroll-y-contain">
       <ReservationsHeaderSection
         title={t("title")}
         backLabel={common("back")}
         backHref={`/${role}`}
         datesLabel={t("datesLabel")}
         historyLabel={t("historyLabel")}
-        historyActive={showAllHistory}
-        onShowHistory={() => setShowAllHistory(true)}
+        historyActive={listMode === "history"}
+        onShowHistory={() => setListMode("history")}
         dates={monthExpanded ? monthDates : dates}
         monthExpanded={monthExpanded}
         onToggleMonth={() => setMonthExpanded((value) => !value)}
         selectedDateKey={selectedDateKey}
         onSelectDate={(key) => {
           setSelectedDateKey(key);
-          setShowAllHistory(false);
+          setListMode("date");
         }}
       />
+      <div
+        className="flex flex-wrap gap-2 px-4 py-3"
+        role="group"
+        aria-label="نمایش رزروها"
+      >
+        {(
+          [
+            ["upcoming", "پیش‌رو"],
+            ["date", "روز انتخاب‌شده"],
+            ["history", "همه رزروها"],
+          ] as const
+        ).map(([mode, label]) => (
+          <Button
+            key={mode}
+            size="sm"
+            variant={listMode === mode ? "primary" : "secondary"}
+            aria-pressed={listMode === mode}
+            onPress={() => {
+              setListMode(mode);
+              setSortNewestFirst(mode === "history");
+            }}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
       <ReservationsTimelineSection
-        title={t("all")}
+        title={listMode === "upcoming" ? "رزروهای پیش‌رو" : t("all")}
         newestFirstLabel={t("newestFirst")}
         oldestFirstLabel={t("oldestFirst")}
         sortNewestFirst={sortNewestFirst}
         onToggleSort={() => setSortNewestFirst((value) => !value)}
         items={visibleItems}
-        historyMode={showAllHistory}
+        historyMode={listMode !== "date"}
         isPending={
           !loadFailure &&
           (reservations.isPending ||
@@ -350,7 +333,13 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
           void coachBookings.refetch();
           void classEnrollments.refetch();
         }}
-        emptyTitle={items.length === 0 ? t("empty") : t("emptyDay")}
+        emptyTitle={
+          listMode === "upcoming"
+            ? "رزرو پیش‌رو ندارید"
+            : items.length === 0
+              ? t("empty")
+              : t("emptyDay")
+        }
         emptyDescription={t("emptyDescription")}
         exploreLabel={t("explore")}
         exploreHref="/discovery"
@@ -363,7 +352,7 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
             `/athlete/reservations/${encodeURIComponent(item.sourceId ?? item.id)}?source=${item.source ?? "club"}`,
           );
         }}
-        renewLabel={t("renew")}
+        renewLabel="رزرو دوباره"
         onRenew={(item) => router.push(item.changeTimeHref ?? "/discovery")}
         onCancel={setActionReservationId}
         cancelPending={
@@ -378,9 +367,18 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
         statusLabel={(status) => t(status)}
         cancelLabel={t("cancel")}
       />
+      <ManagedBanners placement="reservations" />
       {pendingPayment ? (
         <MockPaymentGateway
-          reference={{ referenceType: pendingPayment.source === "coach" ? "coach_booking" : pendingPayment.source === "class" ? "coach_class_enrollment" : "reservation", referenceId: pendingPayment.sourceId! }}
+          reference={{
+            referenceType:
+              pendingPayment.source === "coach"
+                ? "coach_booking"
+                : pendingPayment.source === "class"
+                  ? "coach_class_enrollment"
+                  : "reservation",
+            referenceId: pendingPayment.sourceId!,
+          }}
           title={pendingPayment.sessionTitle}
           amount={pendingPayment.totalPrice}
           expiresAt={pendingPayment.paymentExpiresAt}

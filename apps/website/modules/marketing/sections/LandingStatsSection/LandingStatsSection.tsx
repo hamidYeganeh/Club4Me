@@ -3,13 +3,50 @@
 import { TextWithBrand } from "@modules/marketing/components/kit/LineShadowText";
 import { Typography } from "@heroui/react/typography";
 import { Fire1 } from "@modules/marketing/icons/icons/Fire1";
-import { FootSteps } from "@modules/marketing/icons/icons/FootSteps";
-import { Heart } from "@modules/marketing/icons/icons/Heart";
-import { SleepZzz } from "@modules/marketing/icons/icons/SleepZzz";
+import { Calendar1 } from "@modules/marketing/icons/icons/Calendar1";
+import { BarbellHorizontal } from "@modules/marketing/icons/icons/BarbellHorizontal";
+import { Check } from "@modules/marketing/icons/icons/Check";
 import { MetricCard } from "@modules/marketing/components/cards/MetricCard";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
-import { LANDING_METRICS } from "../../lib/landing-assets";
+const LANDING_METRICS = [
+  {
+    key: "steps",
+    title: "جلسه‌های تمرین",
+    value: "۱۲",
+    unit: "جلسه",
+    status: "جلسه‌های کامل‌شده",
+    color: "var(--accent)",
+    chart: { type: "bars", series: [1, 0, 2, 1, 0, 2, 1] },
+  },
+  {
+    key: "active",
+    title: "وزنه ثبت‌شده",
+    value: "۴۰",
+    unit: "کیلوگرم",
+    status: "رکورد یک حرکت",
+    color: "var(--stats-orange)",
+    chart: { type: "line", series: [20, 20, 25, 30, 30, 35, 40] },
+  },
+  {
+    key: "heart",
+    title: "روزهای فعالیت",
+    value: "۴",
+    unit: "روز",
+    status: "مرور تقویم تمرین",
+    color: "var(--stats-blue)",
+    chart: { type: "dots", series: [1, 0, 1, 0, 1, 1, 0] },
+  },
+  {
+    key: "sleep",
+    title: "ست‌های ثبت‌شده",
+    value: "۱۸",
+    unit: "ست",
+    status: "جزئیات هر جلسه",
+    color: "var(--accent)",
+    chart: { type: "bars", series: [3, 3, 4, 2, 3, 3, 0] },
+  },
+] as const;
 import { LandingEyebrow } from "../../lib/landing-ui";
 import { ClipReveal, InViewRise } from "../../lib/landing-reveal";
 import { landingStatsSectionStyles } from "./LandingStatsSection.styles";
@@ -17,10 +54,10 @@ import type { LandingStatsSectionProps } from "./LandingStatsSection.types";
 
 const METRIC_ICONS: Record<(typeof LANDING_METRICS)[number]["key"], ReactNode> =
   {
-    steps: <FootSteps size={18} />,
+    steps: <Calendar1 size={18} />,
     active: <Fire1 size={18} />,
-    heart: <Heart size={18} />,
-    sleep: <SleepZzz size={18} />,
+    heart: <BarbellHorizontal size={18} />,
+    sleep: <Check size={18} />,
   };
 
 export function LandingStatsSection({ className }: LandingStatsSectionProps) {
@@ -29,7 +66,7 @@ export function LandingStatsSection({ className }: LandingStatsSectionProps) {
   const weekdayLabels = t.raw("weekdaysShort") as string[];
 
   return (
-    <section className={slots.root({ className })}>
+    <section id="progress" className={slots.root({ className })}>
       <div className={slots.layout()}>
         <div className={slots.copy()}>
           <LandingEyebrow tone="light">{t("eyebrow")}</LandingEyebrow>
@@ -45,7 +82,10 @@ export function LandingStatsSection({ className }: LandingStatsSectionProps) {
           </Typography>
         </div>
 
-        <div className={slots.stack()}>
+        <div
+          className={slots.stack()}
+          aria-label="نمونه نمایشی گزارش تمرین؛ اعداد مربوط به حساب واقعی نیستند"
+        >
           {LANDING_METRICS.map((metric, i) => (
             <InViewRise
               className={slots.item()}
@@ -59,7 +99,7 @@ export function LandingStatsSection({ className }: LandingStatsSectionProps) {
                 color={metric.color}
                 dayLabels={weekdayLabels}
                 icon={METRIC_ICONS[metric.key]}
-                periodLabel={t("today")}
+                periodLabel="نمونه نمایشی"
                 status={metric.status}
                 title={metric.title}
                 unit={metric.unit}

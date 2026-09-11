@@ -1,7 +1,7 @@
 "use client";
 
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import { configureApi } from "../http/client";
 import { tokenStore } from "../http/token-store";
@@ -33,6 +33,19 @@ export function ApiProvider({
   onUnauthorized = () => tokenStore.clear(),
 }: ApiProviderProps) {
   const [queryClient] = useState(() => createQueryClient());
+
+  const activeClient = suppliedClient ?? queryClient;
+  useEffect(() => {
+    // A supplied client is owned by its caller (the app already recreates it per account).
+    if (suppliedClient) return;
+    let identity = tokenStore.identity();
+    return tokenStore.subscribe(() => {
+      const next = tokenStore.identity();
+      if (next === identity) return; // Token refresh for the same account preserves its cache.
+      identity = next;
+      activeClient.clear();
+    });
+  }, [activeClient, suppliedClient]);
 
   configureApi({
     baseURL,

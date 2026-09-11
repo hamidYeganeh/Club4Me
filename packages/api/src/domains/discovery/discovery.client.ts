@@ -28,8 +28,12 @@ import type {
 import { discoveryEndpoints } from "./discovery.endpoints";
 
 export const discoveryClient = {
-  getFeed: (signal?: AbortSignal) =>
-    http.get<DiscoverySection[]>(discoveryEndpoints.feed, undefined, signal),
+  getFeed: (signal?: AbortSignal, placement = "discovery") =>
+    http.get<DiscoverySection[]>(
+      discoveryEndpoints.feed,
+      { placement },
+      signal,
+    ),
   getCoachSections: (signal?: AbortSignal) =>
     http.get<DiscoverySection[]>(
       discoveryEndpoints.coachSections,

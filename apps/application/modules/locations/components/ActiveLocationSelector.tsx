@@ -3,7 +3,7 @@
 import Link from "@/components/app-link";
 import { useState } from "react";
 import { useUserLocations } from "@api/locations";
-import { Typography } from "@heroui/react";
+import { Typography, RadioGroup, Radio } from "@heroui/react";
 import { Icon } from "@theme/icon";
 
 import { BottomSheet } from "@/components/motion/bottom-sheet";
@@ -89,8 +89,7 @@ export function ActiveLocationSelector({
           <Icon name="close-x" size={24} />
         </button>
 
-        <div
-          role="radiogroup"
+        <RadioGroup value={effectiveSelectedId ?? ""} onChange={setSelectedId}
           aria-label="انتخاب لوکیشن"
           className="flex flex-col gap-3 pt-4"
         >
@@ -115,12 +114,8 @@ export function ActiveLocationSelector({
             items.map((location) => {
               const isSelected = location.id === effectiveSelectedId;
               return (
-                <button
-                  key={location.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={isSelected}
-                  onClick={() => setSelectedId(location.id)}
+                <Radio key={location.id} value={location.id} aria-label={`${location.title}، ${location.address}`}>
+                  <Radio.Content
                   className={`flex min-h-28 items-center gap-4 rounded-[1.5rem] border p-4 text-start transition-[border-color,background-color,transform,box-shadow] active:scale-[0.99] ${
                     isSelected
                       ? "border-accent bg-accent/7"
@@ -140,17 +135,13 @@ export function ActiveLocationSelector({
                       {location.address}
                     </span>
                   </span>
-                  <span
-                    aria-hidden
-                    className={`flex size-7 shrink-0 items-center justify-center rounded-lg border ${isSelected ? "border-accent bg-accent text-accent-foreground" : "border-border bg-surface"}`}
-                  >
-                    {isSelected ? <Icon name="check" size={16} /> : null}
-                  </span>
-                </button>
+                  <Radio.Control><Radio.Indicator /></Radio.Control>
+                  </Radio.Content>
+                </Radio>
               );
             })
           )}
-        </div>
+        </RadioGroup>
 
         {items.length < 5 ? (
           <Link

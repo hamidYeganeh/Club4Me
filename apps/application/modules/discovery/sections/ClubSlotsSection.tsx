@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Typography } from "@heroui/react";
 import { useReservableSessions } from "@api";
+import type { PublicClubDetails } from "@api";
 import { useTranslations } from "next-intl";
 import { Icon } from "@theme/icon";
 import {
@@ -33,6 +34,25 @@ const persianMonthKeyFormatter = new Intl.DateTimeFormat("fa-IR", {
   month: "numeric",
 });
 
+const persianTooltipDateFormatter = new Intl.DateTimeFormat(
+  "fa-IR-u-ca-persian-nu-persian",
+  {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }
+);
+
+const persianTooltipWeekdayFormatter = new Intl.DateTimeFormat(
+  "fa-IR-u-ca-persian-nu-persian",
+  { weekday: "long" }
+);
+
+const persianCellDayFormatter = new Intl.DateTimeFormat(
+  "fa-IR-u-ca-persian-nu-persian",
+  { day: "numeric" }
+);
+
 function getPersianMonthKey(date: Date) {
   return persianMonthKeyFormatter
     .formatToParts(date)
@@ -41,10 +61,39 @@ function getPersianMonthKey(date: Date) {
     .join("-");
 }
 
-export function ClubSlotsSection({ clubId }: { clubId: string }) {
+type ClubSchedule = Pick<
+  PublicClubDetails,
+  "id" | "weeklyHours" | "closures" | "operationalStatus"
+>;
+
+function isClubClosedOnDate(club: ClubSchedule, date: Date): boolean {
+  if (club.operationalStatus !== "active") {
+    return true;
+  }
+
+  if (
+    club.weeklyHours.find((hours) => hours.dayOfWeek === date.getDay())
+      ?.isClosed
+  ) {
+    return true;
+  }
+
+  const dayStart = new Date(date);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(date);
+  dayEnd.setHours(23, 59, 59, 999);
+
+  return club.closures.some(
+    (closure) =>
+      new Date(closure.startsAt) <= dayEnd &&
+      new Date(closure.endsAt) >= dayStart
+  );
+}
+
+export function ClubSlotsSection({ club }: { club: ClubSchedule }) {
   const router = useRouter();
   const t = useTranslations("discovery.clubDetail");
-  const sessions = useReservableSessions(clubId);
+  const sessions = useReservableSessions(club.id);
 
   const { chartData, calendarDates, monthLabel, totalAvailable } =
     useMemo(() => {
@@ -145,7 +194,7 @@ export function ClubSlotsSection({ clubId }: { clubId: string }) {
           variant="ghost"
           size="sm"
           className="font-bold text-accent"
-          onPress={() => router.push(`/discovery/clubs/${clubId}/slots`)}
+          onPress={() => router.push(`/discovery/clubs/${club.id}/slots`)}
         >
           {t("slotsSeeAll")}
         </Button>
@@ -201,8 +250,27 @@ export function ClubSlotsSection({ clubId }: { clubId: string }) {
                       cornerRadius={11}
                       inactiveOpacity={0.4}
                       activeScale={1.06}
+                      formatCellLabel={(bin) =>
+                        persianCellDayFormatter.format(bin.date)
+                      }
+                      getCellColor={(bin) =>
+                        isClubClosedOnDate(club, bin.date)
+                          ? "var(--danger)"
+                          : undefined
+                      }
+                      getCellLabelColor={(bin) =>
+                        isClubClosedOnDate(club, bin.date)
+                          ? "var(--danger-foreground)"
+                          : undefined
+                      }
                     />
                     <HeatmapTooltip
+                      formatDate={(date) =>
+                        persianTooltipDateFormatter.format(date)
+                      }
+                      formatWeekday={(date) =>
+                        persianTooltipWeekdayFormatter.format(date)
+                      }
                       formatLabel={(count) =>
                         count > 0
                           ? t("slotsHeatmapCount", { count })
@@ -226,7 +294,7 @@ export function ClubSlotsSection({ clubId }: { clubId: string }) {
           <Button
             variant="primary"
             className="mt-6 w-full"
-            onPress={() => router.push(`/discovery/clubs/${clubId}/slots`)}
+            onPress={() => router.push(`/discovery/clubs/${club.id}/slots`)}
           >
             {t("bookNow")}
           </Button>

@@ -1,6 +1,8 @@
 "use client";
+
+import { Counter } from "@/components/counter";
 import { SecondaryHeader } from "../../components/SecondaryHeader";
-import { DiscoveryHeroScrim } from "../../components/DiscoveryImageHero";
+import { FallbackImage } from "@/components/FallbackImage";
 
 import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
@@ -13,7 +15,9 @@ import {
   Radio,
   RadioGroup,
   ScrollShadow,
+  Switch,
   Tabs,
+  Tooltip,
   Typography,
 } from "@heroui/react";
 import {
@@ -70,96 +74,6 @@ function formatTimeRange(startsAt: string, endsAt: string) {
   return `${formatter.format(new Date(startsAt))} - ${formatter.format(new Date(endsAt))}`;
 }
 
-type HeatmapDay = {
-  id: string;
-  day: string;
-  weekday: string;
-  slotCount: number;
-  availableCount: number;
-};
-
-function AvailabilityHeatmap({
-  days,
-  selectedKey,
-  onSelect,
-}: {
-  days: HeatmapDay[];
-  selectedKey: string;
-  onSelect: (key: string) => void;
-}) {
-  return (
-    <div className="rounded-2xl border border-foreground/8 bg-surface-secondary/55 p-3">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold text-foreground">نمای دو هفته</p>
-          <p className="mt-1 text-[0.65rem] text-muted">
-            برای دیدن سانس‌ها یک روز را لمس کنید
-          </p>
-        </div>
-        <div
-          className="flex items-center gap-1 text-[0.6rem] text-muted"
-          aria-label="راهنمای میزان ظرفیت"
-        >
-          <span>کم</span>
-          {["bg-foreground/8", "bg-accent/25", "bg-accent/55", "bg-accent"].map(
-            (className) => (
-              <span
-                key={className}
-                className={cn("size-2.5 rounded-[0.2rem]", className)}
-              />
-            ),
-          )}
-          <span>زیاد</span>
-        </div>
-      </div>
-      <div
-        className="grid grid-cols-7 gap-1.5"
-        role="grid"
-        aria-label="ظرفیت سانس‌های چهارده روز آینده"
-      >
-        {days.map((date) => {
-          const intensity =
-            date.availableCount === 0
-              ? "bg-foreground/7 text-muted"
-              : date.availableCount >= 6
-                ? "bg-accent text-accent-foreground"
-                : date.availableCount >= 3
-                  ? "bg-accent/55 text-foreground"
-                  : "bg-accent/25 text-foreground";
-          return (
-            <button
-              key={date.id}
-              type="button"
-              role="gridcell"
-              aria-selected={selectedKey === date.id}
-              aria-label={`${date.weekday} ${date.day}، ${date.availableCount.toLocaleString("fa-IR")} سانس قابل رزرو`}
-              onClick={() => onSelect(date.id)}
-              className={cn(
-                "flex aspect-square min-w-0 flex-col items-center justify-center rounded-lg text-center transition-[transform,box-shadow] active:scale-95",
-                intensity,
-                selectedKey === date.id &&
-                  "ring-2 ring-foreground ring-offset-2 ring-offset-surface",
-              )}
-            >
-              <span className="text-[0.58rem] font-medium opacity-75">
-                {date.weekday}
-              </span>
-              <span className="mt-0.5 text-sm font-black tabular-nums">
-                {date.day}
-              </span>
-              <span className="mt-0.5 text-[0.55rem] font-bold opacity-75">
-                {date.availableCount
-                  ? date.availableCount.toLocaleString("fa-IR")
-                  : "—"}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 export function DiscoveryClubSlotsScreen({
   clubId,
 }: DiscoveryClubSlotsScreenProps) {
@@ -185,7 +99,9 @@ export function DiscoveryClubSlotsScreen({
   const [sessionId, setSessionId] = useState<string>(
     params.get("session") ?? "",
   );
-  const [entitlementId, setEntitlementId] = useState("");
+  const [entitlementId, setEntitlementId] = useState(
+    params.get("entitlement") ?? "",
+  );
   const [isTrial, setIsTrial] = useState(false);
   const [bookingError, setBookingError] = useState<string>();
   const [entitlementSheetOpen, setEntitlementSheetOpen] = useState(false);
@@ -323,7 +239,8 @@ export function DiscoveryClubSlotsScreen({
         : "coached_session";
     return (entitlements.data?.items ?? []).filter(
       (item) =>
-        item.clubId === persistedId &&
+        (item.clubId === persistedId ||
+          item.accessClubs?.some((club) => club.id === persistedId)) &&
         item.status === "active" &&
         item.sessionTypes.includes(sessionType),
     );
@@ -349,7 +266,6 @@ export function DiscoveryClubSlotsScreen({
     router.push("/auth");
   };
   const reserveButtonSize = "lg" as const;
-  const isReserveButtonLarge = reserveButtonSize === "lg";
 
   const coverUrl = useMemo(() => {
     const gallery = publicClub.data?.gallery ?? [];
@@ -656,7 +572,10 @@ export function DiscoveryClubSlotsScreen({
     <main ref={rootRef} className={styles.root()}>
       {pendingPayment ? (
         <MockPaymentGateway
-          reference={{ referenceType: "reservation", referenceId: pendingPayment.id }}
+          reference={{
+            referenceType: "reservation",
+            referenceId: pendingPayment.id,
+          }}
           title={pendingPayment.title}
           amount={pendingPayment.amount}
           expiresAt={pendingPayment.expiresAt}
@@ -673,8 +592,12 @@ export function DiscoveryClubSlotsScreen({
         description="پرداخت عادی یا یکی از بسته‌ها و عضویت‌های فعال را انتخاب کنید."
         className="max-h-[86dvh]"
       >
-        <div
-          role="radiogroup"
+        <RadioGroup
+          value={selectedEntitlement?.id ?? "regular"}
+          onChange={(value) => {
+            setEntitlementId(value === "regular" ? "" : value);
+            setEntitlementSheetOpen(false);
+          }}
           aria-label="انتخاب بسته یا عضویت"
           className="flex flex-col gap-3 pt-2"
         >
@@ -682,10 +605,7 @@ export function DiscoveryClubSlotsScreen({
             title="پرداخت عادی"
             description="هزینه این رزرو را جداگانه پرداخت می‌کنید."
             selected={!selectedEntitlement}
-            onSelect={() => {
-              setEntitlementId("");
-              setEntitlementSheetOpen(false);
-            }}
+            value="regular"
           />
           {eligibleEntitlements.map((item) => (
             <EntitlementOption
@@ -697,36 +617,27 @@ export function DiscoveryClubSlotsScreen({
                   : `${Math.max(0, (item.weeklyLimit ?? 0) - item.weeklyUsed).toLocaleString("fa-IR")} استفاده این هفته`
               }
               selected={selectedEntitlement?.id === item.id}
-              onSelect={() => {
-                setEntitlementId(item.id);
-                setEntitlementSheetOpen(false);
-              }}
+              value={item.id}
             />
           ))}
-        </div>
+        </RadioGroup>
       </BottomSheet>
 
       <SecondaryHeader title={t("title")} showFilter={false} />
-      <div className={styles.coverWrap()}>
-        {coverUrl ? (
-          <div
-            data-slots-cover
-            className={styles.cover()}
-            style={{ backgroundImage: `url(${coverUrl})` }}
-          />
-        ) : (
-          <div data-slots-cover className={styles.coverFallback()}>
-            <Icon name="tennis" size={56} />
-          </div>
-        )}
-      </div>
-      <div aria-hidden className={styles.overlay()}>
-        <DiscoveryHeroScrim />
-      </div>
-      <div aria-hidden className={styles.grain()} />
-      <div aria-hidden className={styles.accentOrb()} />
 
       <section className={styles.hero()} aria-labelledby="club-slots-title">
+        <div className={styles.coverWrap()} data-slots-cover>
+          <FallbackImage
+            src={coverUrl ?? catalogClub.data?.imageUrl}
+            alt={clubName}
+            fill
+            unoptimized
+            priority
+            sizes="(max-width: 576px) 100vw, 576px"
+            className={styles.cover()}
+          />
+        </div>
+        <div aria-hidden className={styles.overlay()} />
         <div data-slots-title className={styles.heroCopy()}>
           <p className={styles.heroEyebrow()}>{t("eyebrow")}</p>
           <h1 id="club-slots-title" className={styles.heroTitle()}>
@@ -750,7 +661,7 @@ export function DiscoveryClubSlotsScreen({
                       key={court.id}
                       data-slots-chip
                       variant={selected ? "primary" : "secondary"}
-                      size="md"
+                      size="sm"
                       className={cn(
                         styles.chipButton(),
                         selected ? styles.chipActive() : styles.chipIdle(),
@@ -814,15 +725,6 @@ export function DiscoveryClubSlotsScreen({
                     </Checkbox.Content>
                   </Checkbox>
                 </div>
-                <AvailabilityHeatmap
-                  days={dates}
-                  selectedKey={selectedDateKey}
-                  onSelect={(key) => {
-                    setOnlyAvailableDates(false);
-                    setDateKey(key);
-                    setSessionId("");
-                  }}
-                />
                 <ScrollShadow
                   orientation="horizontal"
                   hideScrollBar
@@ -900,7 +802,7 @@ export function DiscoveryClubSlotsScreen({
                         orientation="horizontal"
                         value={selectedSessionId}
                         onChange={setSessionId}
-                        className={styles.radioGroup()}
+                        className={styles.timeGroup()}
                       >
                         {timeSlots.map((slot) => (
                           <Radio
@@ -935,26 +837,47 @@ export function DiscoveryClubSlotsScreen({
             </div>
 
             {publicClub.data?.trialBookingEnabled && (
-              <label className="flex items-start gap-3 rounded-2xl bg-surface-secondary p-4 text-sm">
-                <input
-                  type="checkbox"
-                  checked={isTrial}
-                  disabled={
+              <div className="flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-surface-secondary p-4 text-sm">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="font-semibold text-foreground">
+                    رزرو جلسه آزمایشی رایگان
+                  </span>
+                  <Tooltip delay={0} closeDelay={100}>
+                    <Tooltip.Trigger
+                      aria-label="توضیحات جلسه آزمایشی"
+                      className="grid size-6 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-foreground/8 hover:text-foreground"
+                    >
+                      <Icon name="question-mark-circle" size={18} />
+                    </Tooltip.Trigger>
+                    <Tooltip.Content
+                      showArrow
+                      placement="top"
+                      className="max-w-64 text-right leading-6"
+                    >
+                      یک بار برای هر کاربر در این باشگاه، برای یک نفر و بدون
+                      خدمات جانبی. لغو جلسه امکان رزرو مجدد می‌دهد.
+                      <Tooltip.Arrow />
+                    </Tooltip.Content>
+                  </Tooltip>
+                </div>
+                <Switch
+                  aria-label="رزرو جلسه آزمایشی رایگان"
+                  isSelected={isTrial}
+                  isDisabled={
                     participantCount !== 1 || selectedOptions.length > 0
                   }
-                  onChange={(e) => {
-                    setIsTrial(e.target.checked);
-                    if (e.target.checked) setEntitlementId("");
+                  onChange={(selected) => {
+                    setIsTrial(selected);
+                    if (selected) setEntitlementId("");
                   }}
-                />
-                <span>
-                  رزرو جلسه آزمایشی رایگان
-                  <small className="mt-1 block text-muted">
-                    یک بار برای هر کاربر در این باشگاه، برای یک نفر و بدون خدمات
-                    جانبی. لغو جلسه امکان رزرو مجدد می‌دهد.
-                  </small>
-                </span>
-              </label>
+                >
+                  <Switch.Content aria-label="رزرو جلسه آزمایشی رایگان">
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                  </Switch.Content>
+                </Switch>
+              </div>
             )}
             {selectedSession && !isTrial ? (
               <div data-slots-section className={styles.section()}>
@@ -980,12 +903,12 @@ export function DiscoveryClubSlotsScreen({
             ) : null}
 
             {selectedSession && !isTrial ? (
-              <div className="space-y-4 rounded-2xl border border-border p-4">
+              <div className="space-y-3 border-t border-border pt-4">
                 <label className="block text-sm font-bold">
                   تعداد نفرات
-                  <input
+                  <Counter
                     aria-label="تعداد نفرات رزرو"
-                    type="number"
+
                     min={1}
                     max={Math.min(
                       100,
@@ -1019,10 +942,10 @@ export function DiscoveryClubSlotsScreen({
                         ? "تجهیزات"
                         : "خدمت جانبی")}{" "}
                     · {option.unitPrice.toLocaleString("fa-IR")} ریال
-                    <input
+                    <Counter
                       aria-label={`تعداد ${option.title || "خدمت جانبی"}`}
                       className="mt-2 h-11 w-full rounded-xl border border-border bg-surface px-3"
-                      type="number"
+
                       min={0}
                       max={Math.max(
                         0,
@@ -1053,10 +976,7 @@ export function DiscoveryClubSlotsScreen({
 
             <div
               data-slots-section
-              className={cn(
-                styles.footer(),
-                isReserveButtonLarge && styles.footerSticky(),
-              )}
+              className={cn(styles.footer(), styles.footerSticky())}
             >
               <div>
                 <p className={styles.priceLabel()}>{t("price")}</p>
@@ -1079,7 +999,7 @@ export function DiscoveryClubSlotsScreen({
                       </span>
                     </>
                   ) : (
-                    "—"
+                    "-"
                   )}
                 </p>
               </div>
@@ -1127,42 +1047,43 @@ function EntitlementOption({
   title,
   description,
   selected,
-  onSelect,
+  value,
 }: {
   title: string;
   description: string;
   selected: boolean;
-  onSelect: () => void;
+  value: string;
 }) {
   return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={selected}
-      onClick={onSelect}
-      className={cn(
-        "flex min-h-20 items-center gap-4 rounded-2xl border p-4 text-start transition-[border-color,background-color,transform] active:scale-[0.99]",
-        selected
-          ? "border-accent bg-accent/8"
-          : "border-border bg-surface-secondary/60",
-      )}
-    >
-      <span
+    <Radio value={value} aria-label={title}>
+      <Radio.Content
         className={cn(
-          "grid size-11 shrink-0 place-items-center rounded-xl",
+          "flex min-h-20 items-center gap-4 rounded-2xl border p-4 text-start transition-[border-color,background-color,transform] active:scale-[0.99]",
           selected
-            ? "bg-accent text-accent-foreground"
-            : "bg-surface text-muted",
+            ? "border-accent bg-accent/8"
+            : "border-border bg-surface-secondary/60",
         )}
       >
-        <Icon name={selected ? "check" : "ticket"} size={20} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate font-bold">{title}</span>
-        <span className="mt-1 block text-xs leading-5 text-muted">
-          {description}
+        <span
+          className={cn(
+            "grid size-11 shrink-0 place-items-center rounded-xl",
+            selected
+              ? "bg-accent text-accent-foreground"
+              : "bg-surface text-muted",
+          )}
+        >
+          <Icon name={selected ? "check" : "ticket"} size={20} />
         </span>
-      </span>
-    </button>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-bold">{title}</span>
+          <span className="mt-1 block text-xs leading-5 text-muted">
+            {description}
+          </span>
+        </span>
+        <Radio.Control>
+          <Radio.Indicator />
+        </Radio.Control>
+      </Radio.Content>
+    </Radio>
   );
 }

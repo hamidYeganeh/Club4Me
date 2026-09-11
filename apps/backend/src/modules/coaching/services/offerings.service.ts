@@ -1,3 +1,8 @@
+import { withMediaReferences } from "../../media/media-references";
+import {
+  withReferenceSummaries,
+  classDisplayReferences,
+} from "../../../common/utils/reference-summaries";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
@@ -28,13 +33,24 @@ export class OfferingsService {
     private readonly media: MediaService,
   ) {}
 
+  private async present(rows: Record<string, unknown>[]) {
+    return withMediaReferences(
+      this.media,
+      await withReferenceSummaries(
+        this.offerings.db,
+        rows,
+        classDisplayReferences,
+      ),
+    );
+  }
+
   async list(userId: string) {
     const coach = await this.coaches.requireOwnedCoach(userId);
     const items = await this.offerings
       .find({ coachId: coach._id })
       .sort({ updatedAt: -1 })
       .exec();
-    return { items: items.map(toPublicDocument) };
+    return { items: await this.present(items.map(toPublicDocument)) };
   }
 
   async create(userId: string, input: OfferingInput) {
@@ -48,9 +64,11 @@ export class OfferingsService {
   }
 
   async get(userId: string, offeringId: string) {
-    return toPublicDocument(
-      await this.requireOwnedDocument(userId, offeringId),
-    );
+    return (
+      await this.present([
+        toPublicDocument(await this.requireOwnedDocument(userId, offeringId)),
+      ])
+    )[0]!;
   }
 
   async update(
@@ -121,7 +139,7 @@ export class OfferingsService {
       .find({ coachId: objectId(String(coach.id)), status: "published" })
       .sort({ updatedAt: -1 })
       .exec();
-    return { items: items.map(toPublicDocument) };
+    return { items: await this.present(items.map(toPublicDocument)) };
   }
 
   async requireOwnedDocument(

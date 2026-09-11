@@ -1,5 +1,6 @@
 "use client";
 
+import { Input } from "@heroui/react";
 import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import { iranDateInputValue, parseIranDateInput } from "./iran-date";
 
@@ -58,7 +59,7 @@ export function IranDateInput({
   }, [invalid]);
   return (
     <>
-      <input
+      <Input
         {...props}
         ref={input}
         type="text"

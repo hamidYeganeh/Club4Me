@@ -4,6 +4,10 @@ const objectId = z.string().length(24);
 export class CreateBenefitProductDto {
   static schema = z
     .object({
+      accessClubIds: z
+        .array(z.string().regex(/^[a-f\d]{24}$/i))
+        .max(20)
+        .default([]),
       title: z.string().trim().min(3).max(120),
       description: z.string().trim().max(1000).default(""),
       type: z.enum(["session_pack", "time_membership"]),
@@ -31,6 +35,7 @@ export class CreateBenefitProductDto {
           message: "Weekly limit is required",
         });
     });
+  accessClubIds?: string[];
   title: string;
   description: string;
   type: "session_pack" | "time_membership";

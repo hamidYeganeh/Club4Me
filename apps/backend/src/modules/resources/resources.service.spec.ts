@@ -314,12 +314,12 @@ describe("ResourcesService", () => {
     expect(second.existing).toBe(cancellationReasonCount);
   });
 
-  it("creates sample published articles when article categories are seeded", async () => {
+  it("seeds article categories without creating sample articles", async () => {
     const first = await service.seed("content", "article-category");
     const second = await service.seed("content", "article-category");
 
-    expect(first.articlesCreated).toBe(3);
+    expect(first.articlesCreated).toBe(0);
     expect(second.articlesCreated).toBe(0);
-    expect(await connection.collection("articles").countDocuments()).toBe(3);
+    expect(await connection.collection("articles").countDocuments()).toBe(0);
   });
 });

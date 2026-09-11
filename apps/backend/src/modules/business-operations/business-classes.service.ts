@@ -1,5 +1,17 @@
+import { MediaService } from "../media/media.service";
+import { withMediaReferences } from "../media/media-references";
+import {
+  withReferenceSummaries,
+  classDisplayReferences,
+  studentDisplayReference,
+} from "../../common/utils/reference-summaries";
+import { coachClassScope, assertCoachClassScope } from "./coach-class-scope";
 import { ClassBillingService } from "./class-billing.service";
-import { attendanceCredit, attendanceAudit } from "./attendance-credit";
+import {
+  attendanceCredit,
+  attendanceAudit,
+  attendanceTimes,
+} from "./attendance-credit";
 import type { ClubPermission } from "../clubs/club-permissions";
 import { Injectable, Optional } from "@nestjs/common";
 import { ModuleRef } from "@nestjs/core";
@@ -55,7 +67,16 @@ export class BusinessClassesService {
     private billing: ClassBillingService,
     @Optional() private moduleRef?: ModuleRef,
     @InjectConnection() private readonly connection?: Connection,
+    @Optional() private readonly media?: MediaService,
   ) {}
+
+  private async present<T extends Record<string, unknown>>(rows: T[]) {
+    const items = await withReferenceSummaries(this.classes.db, rows, [
+      ...classDisplayReferences.filter(ref => ref.field !== "sportId"),
+      {field: "classId", as: "trainingClass", collection: "business_training_classes", fields: ["title"]},
+    ]);
+    return this.media ? withMediaReferences(this.media, items) : items;
+  }
 
   private async club(
     ownerId: string,
@@ -85,7 +106,10 @@ export class BusinessClassesService {
   async list(ownerId: string, clubId: string) {
     const id = await this.club(ownerId, clubId, "classes.read");
     const items = await this.classes
-      .find({ clubId: id })
+      .find({
+        clubId: id,
+        ...(await coachClassScope(this.classes.db, ownerId, clubId)),
+      })
       .sort({ startDate: -1, createdAt: -1 });
     const counts = await this.enrollments.aggregate<{
       _id: Types.ObjectId;
@@ -98,29 +122,42 @@ export class BusinessClassesService {
       counts.map((item) => [String(item._id), item.count]),
     );
     return {
-      items: items.map((item) => ({
-        ...classDto(item),
-        enrollmentCount: countMap.get(String(item._id)) ?? 0,
-      })),
+      items: await this.present(
+        items.map((item) => ({
+          ...classDto(item),
+          enrollmentCount: countMap.get(String(item._id)) ?? 0,
+        })),
+      ),
     };
   }
 
   async get(ownerId: string, clubId: string, classId: string) {
     const id = await this.club(ownerId, clubId, "classes.read");
+    await assertCoachClassScope(this.classes.db, ownerId, clubId, classId);
     const item = await this.classDocument(id, classId);
     const [enrollmentCount, sessionCount] = await Promise.all([
       this.enrollments.countDocuments({ classId: item._id, status: "active" }),
       this.sessions.countDocuments({ classId: item._id }),
     ]);
-    return { ...classDto(item), enrollmentCount, sessionCount };
+    return (
+      await this.present([{ ...classDto(item), enrollmentCount, sessionCount }])
+    )[0]!;
   }
 
   async create(ownerId: string, clubId: string, input: CreateBusinessClassDto) {
     const id = await this.club(ownerId, clubId, "classes.write");
     await this.assertRelations(id, input.coachProfileId, input.branchId);
     const item = await this.classes.create(toClassPersistence(id, input));
-    try { await this.syncFutureSessions(item); }
-    catch (error) { item.status = "draft"; item.scheduleError = error instanceof Error ? error.message.slice(0, 1000) : "SESSION_GENERATION_FAILED"; await item.save(); }
+    try {
+      await this.syncFutureSessions(item);
+    } catch (error) {
+      item.status = "draft";
+      item.scheduleError =
+        error instanceof Error
+          ? error.message.slice(0, 1000)
+          : "SESSION_GENERATION_FAILED";
+      await item.save();
+    }
     return {
       ...classDto(item),
       enrollmentCount: 0,
@@ -164,8 +201,18 @@ export class BusinessClassesService {
         (key) => key in input,
       )
     )
-      try { await this.syncFutureSessions(item); item.scheduleError = null; await item.save(); }
-      catch (error) { item.status = "draft"; item.scheduleError = error instanceof Error ? error.message.slice(0, 1000) : "SESSION_GENERATION_FAILED"; await item.save(); }
+      try {
+        await this.syncFutureSessions(item);
+        item.scheduleError = null;
+        await item.save();
+      } catch (error) {
+        item.status = "draft";
+        item.scheduleError =
+          error instanceof Error
+            ? error.message.slice(0, 1000)
+            : "SESSION_GENERATION_FAILED";
+        await item.save();
+      }
     return this.get(ownerId, clubId, classId);
   }
 
@@ -178,11 +225,12 @@ export class BusinessClassesService {
 
   async listSessions(ownerId: string, clubId: string, classId: string) {
     const id = await this.club(ownerId, clubId, "classes.read");
+    await assertCoachClassScope(this.classes.db, ownerId, clubId, classId);
     const item = await this.classDocument(id, classId);
     const items = await this.sessions
       .find({ classId: item._id })
       .sort({ startsAt: 1 });
-    return { items: items.map(sessionDto) };
+    return { items: await this.present(items.map(sessionDto)) };
   }
 
   async listCalendarSessions(
@@ -212,9 +260,16 @@ export class BusinessClassesService {
     )
       throw invalid("CALENDAR_RANGE_INVALID");
 
+    const visibleClasses = await this.classes
+      .find({
+        clubId: id,
+        ...(await coachClassScope(this.classes.db, ownerId, clubId)),
+      })
+      .select({ _id: 1 });
     const items = await this.sessions
       .find({
         clubId: id,
+        classId: { $in: visibleClasses.map((item) => item._id) },
         ...(Object.keys(startsAt).length ? { startsAt } : {}),
       })
       .sort({ startsAt: 1 })
@@ -250,18 +305,32 @@ export class BusinessClassesService {
     if (!item) throw notFound("CLASS_SESSION_NOT_FOUND");
     const preview = await this.buildSessionChangePreview(id, item, input);
     if (preview.conflicts.length)
-      throw new AppError(409, "CLASS_SESSION_CONFLICT", "زمان انتخاب‌شده با برنامه دیگری تداخل دارد", preview);
+      throw new AppError(
+        409,
+        "CLASS_SESSION_CONFLICT",
+        "زمان انتخاب‌شده با برنامه دیگری تداخل دارد",
+        preview,
+      );
     if ((input.scope ?? "single") === "future") {
       const deltaStart = preview.startsAt.getTime() - item.startsAt.getTime();
       const deltaEnd = preview.endsAt.getTime() - item.endsAt.getTime();
-      const future = await this.sessions.find({ classId: item.classId, startsAt: { $gte: item.startsAt }, status: "scheduled" }).sort({ startsAt: 1 });
+      const future = await this.sessions
+        .find({
+          classId: item.classId,
+          startsAt: { $gte: item.startsAt },
+          status: "scheduled",
+        })
+        .sort({ startsAt: 1 });
       for (const session of future) {
         session.startsAt = new Date(session.startsAt.getTime() + deltaStart);
         session.endsAt = new Date(session.endsAt.getTime() + deltaEnd);
         if (input.status) session.status = input.status;
         await session.save();
       }
-      return { ...sessionDto((await this.sessions.findById(item._id))!), affectedCount: future.length };
+      return {
+        ...sessionDto((await this.sessions.findById(item._id))!),
+        affectedCount: future.length,
+      };
     }
     item.startsAt = preview.startsAt;
     item.endsAt = preview.endsAt;
@@ -270,38 +339,93 @@ export class BusinessClassesService {
     return { ...sessionDto(item), affectedCount: 1 };
   }
 
-  async previewSessionChange(ownerId: string, clubId: string, classId: string, sessionId: string, input: UpdateClassSessionDto) {
+  async previewSessionChange(
+    ownerId: string,
+    clubId: string,
+    classId: string,
+    sessionId: string,
+    input: UpdateClassSessionDto,
+  ) {
     const id = await this.club(ownerId, clubId, "classes.write");
     await this.classDocument(id, classId);
-    const item = await this.sessions.findOne({ _id: oid(sessionId), classId: oid(classId), clubId: id });
+    const item = await this.sessions.findOne({
+      _id: oid(sessionId),
+      classId: oid(classId),
+      clubId: id,
+    });
     if (!item) throw notFound("CLASS_SESSION_NOT_FOUND");
     const preview = await this.buildSessionChangePreview(id, item, input);
-    const affectedCount = (input.scope ?? "single") === "future"
-      ? await this.sessions.countDocuments({ classId: item.classId, startsAt: { $gte: item.startsAt }, status: "scheduled" })
-      : 1;
-    return { startsAt: preview.startsAt.toISOString(), endsAt: preview.endsAt.toISOString(), affectedCount, conflicts: preview.conflicts };
+    const affectedCount =
+      (input.scope ?? "single") === "future"
+        ? await this.sessions.countDocuments({
+            classId: item.classId,
+            startsAt: { $gte: item.startsAt },
+            status: "scheduled",
+          })
+        : 1;
+    return {
+      startsAt: preview.startsAt.toISOString(),
+      endsAt: preview.endsAt.toISOString(),
+      affectedCount,
+      conflicts: preview.conflicts,
+    };
   }
 
-  private async buildSessionChangePreview(clubId: Types.ObjectId, item: BusinessClassSessionDocument, input: UpdateClassSessionDto) {
+  private async buildSessionChangePreview(
+    clubId: Types.ObjectId,
+    item: BusinessClassSessionDocument,
+    input: UpdateClassSessionDto,
+  ) {
     const startsAt = input.startsAt ? new Date(input.startsAt) : item.startsAt;
     const endsAt = input.endsAt ? new Date(input.endsAt) : item.endsAt;
     if (startsAt >= endsAt) throw invalid("CLASS_SESSION_TIME_INVALID");
     const [classConflicts, reservableConflicts] = await Promise.all([
-      this.sessions.find({ _id: { $ne: item._id }, clubId, status: "scheduled", startsAt: { $lt: endsAt }, endsAt: { $gt: startsAt } }).select("classId startsAt endsAt").lean(),
-      this.connection!.collection("reservable_sessions").find({ clubId, status: "active", startsAt: { $lt: endsAt }, endsAt: { $gt: startsAt } }).project({ title: 1, startsAt: 1, endsAt: 1 }).limit(20).toArray(),
+      this.sessions
+        .find({
+          _id: { $ne: item._id },
+          clubId,
+          status: "scheduled",
+          startsAt: { $lt: endsAt },
+          endsAt: { $gt: startsAt },
+        })
+        .select("classId startsAt endsAt")
+        .lean(),
+      this.connection!.collection("reservable_sessions")
+        .find({
+          clubId,
+          status: "active",
+          startsAt: { $lt: endsAt },
+          endsAt: { $gt: startsAt },
+        })
+        .project({ title: 1, startsAt: 1, endsAt: 1 })
+        .limit(20)
+        .toArray(),
     ]);
     return {
       startsAt,
       endsAt,
       conflicts: [
-        ...classConflicts.map((value) => ({ source: "class" as const, id: String(value._id), title: "جلسه کلاس", startsAt: value.startsAt.toISOString(), endsAt: value.endsAt.toISOString() })),
-        ...reservableConflicts.map((value) => ({ source: "reservable" as const, id: String(value._id), title: String(value.title ?? "سانس رزروپذیر"), startsAt: new Date(value.startsAt as Date).toISOString(), endsAt: new Date(value.endsAt as Date).toISOString() })),
+        ...classConflicts.map((value) => ({
+          source: "class" as const,
+          id: String(value._id),
+          title: "جلسه کلاس",
+          startsAt: value.startsAt.toISOString(),
+          endsAt: value.endsAt.toISOString(),
+        })),
+        ...reservableConflicts.map((value) => ({
+          source: "reservable" as const,
+          id: String(value._id),
+          title: String(value.title ?? "سانس رزروپذیر"),
+          startsAt: new Date(value.startsAt as Date).toISOString(),
+          endsAt: new Date(value.endsAt as Date).toISOString(),
+        })),
       ],
     };
   }
 
   async listEnrollments(ownerId: string, clubId: string, classId: string) {
     const id = await this.club(ownerId, clubId, "enrollments.read");
+    await assertCoachClassScope(this.classes.db, ownerId, clubId, classId);
     await this.classDocument(id, classId);
     const items = await this.enrollments
       .find({ classId: oid(classId) })
@@ -325,6 +449,14 @@ export class BusinessClassesService {
         ...enrollmentDto(item),
         agreedPrice: canReadAmounts ? item.agreedPrice : null,
         studentName: names.get(String(item.studentId)) ?? "",
+        student:
+          students
+            .filter((student) => String(student._id) === String(item.studentId))
+            .map((student) => ({
+              id: String(student._id),
+              firstName: student.firstName,
+              lastName: student.lastName,
+            }))[0] ?? null,
       })),
     };
   }
@@ -596,9 +728,23 @@ export class BusinessClassesService {
     sessionId: string,
   ) {
     const id = await this.club(ownerId, clubId, "attendance.read");
+    await assertCoachClassScope(this.classes.db, ownerId, clubId, classId);
     await this.assertSession(id, classId, sessionId);
     const items = await this.attendance.find({ sessionId: oid(sessionId) });
-    return { items: items.map(attendanceDto) };
+    return {
+      items: await withReferenceSummaries(this.classes.db,
+        items.map(attendanceDto),
+        [
+          studentDisplayReference,
+          {
+            field: "recordedBy",
+            as: "recorder",
+            collection: "users",
+            fields: ["firstName", "lastName"],
+          },
+        ],
+      ),
+    };
   }
 
   @Atomic("enrollments")
@@ -611,7 +757,10 @@ export class BusinessClassesService {
     input: RecordClassAttendanceDto,
   ) {
     const id = await this.club(ownerId, clubId, "attendance.write");
+    await assertCoachClassScope(this.classes.db, ownerId, clubId, classId);
     const session = await this.assertSession(id, classId, sessionId);
+    if (session.status === "cancelled")
+      throw invalid("CLASS_SESSION_CANCELLED");
     const activeEnrollments = await this.enrollments.find({
       classId: oid(classId),
       studentId: { $in: input.items.map((item) => oid(item.studentId)) },
@@ -644,6 +793,9 @@ export class BusinessClassesService {
             record.status,
             enrollment.remainingSessions,
             remaining,
+            record.checkedOut && !previous?.checkedOutAt
+              ? "checked_out"
+              : undefined,
           ),
           $set: {
             clubId: id,
@@ -651,8 +803,7 @@ export class BusinessClassesService {
             status: record.status,
             notes: record.notes,
             recordedBy: oid(userId),
-            checkInMethod: "manual",
-            checkedInAt: record.status === "present" ? new Date() : null,
+            ...attendanceTimes(previous, record.status, record.checkedOut),
           },
         },
         { upsert: true, new: true },
@@ -793,8 +944,12 @@ function toClassPersistence(
     galleryMediaIds: (input.galleryMediaIds ?? []).map(oid),
     requiredEquipmentIds: (input.requiredEquipmentIds ?? []).map(oid),
     amenityIds: (input.amenityIds ?? []).map(oid),
-    registrationStartAt: input.registrationStartAt ? new Date(input.registrationStartAt) : null,
-    registrationEndAt: input.registrationEndAt ? new Date(input.registrationEndAt) : null,
+    registrationStartAt: input.registrationStartAt
+      ? new Date(input.registrationStartAt)
+      : null,
+    registrationEndAt: input.registrationEndAt
+      ? new Date(input.registrationEndAt)
+      : null,
     startDate: new Date(`${input.startDate}T00:00:00.000Z`),
     endDate: new Date(`${input.endDate}T00:00:00.000Z`),
   };
@@ -814,12 +969,30 @@ function toClassUpdate(input: UpdateBusinessClassDto) {
     ...(input.branchId !== undefined
       ? { branchId: input.branchId ? oid(input.branchId) : null }
       : {}),
-    ...(input.coverMediaId !== undefined ? { coverMediaId: input.coverMediaId ? oid(input.coverMediaId) : null } : {}),
-    ...(input.galleryMediaIds ? { galleryMediaIds: input.galleryMediaIds.map(oid) } : {}),
-    ...(input.requiredEquipmentIds ? { requiredEquipmentIds: input.requiredEquipmentIds.map(oid) } : {}),
+    ...(input.coverMediaId !== undefined
+      ? { coverMediaId: input.coverMediaId ? oid(input.coverMediaId) : null }
+      : {}),
+    ...(input.galleryMediaIds
+      ? { galleryMediaIds: input.galleryMediaIds.map(oid) }
+      : {}),
+    ...(input.requiredEquipmentIds
+      ? { requiredEquipmentIds: input.requiredEquipmentIds.map(oid) }
+      : {}),
     ...(input.amenityIds ? { amenityIds: input.amenityIds.map(oid) } : {}),
-    ...(input.registrationStartAt !== undefined ? { registrationStartAt: input.registrationStartAt ? new Date(input.registrationStartAt) : null } : {}),
-    ...(input.registrationEndAt !== undefined ? { registrationEndAt: input.registrationEndAt ? new Date(input.registrationEndAt) : null } : {}),
+    ...(input.registrationStartAt !== undefined
+      ? {
+          registrationStartAt: input.registrationStartAt
+            ? new Date(input.registrationStartAt)
+            : null,
+        }
+      : {}),
+    ...(input.registrationEndAt !== undefined
+      ? {
+          registrationEndAt: input.registrationEndAt
+            ? new Date(input.registrationEndAt)
+            : null,
+        }
+      : {}),
     ...(input.startDate
       ? { startDate: new Date(`${input.startDate}T00:00:00.000Z`) }
       : {}),
@@ -878,7 +1051,10 @@ function classDto(item: BusinessTrainingClassDocument) {
     registrationStartAt: item.registrationStartAt?.toISOString() ?? null,
     registrationEndAt: item.registrationEndAt?.toISOString() ?? null,
     scheduleError: item.scheduleError ?? null,
-    readiness: { ready: classReadinessIssues(item).length === 0, missing: classReadinessIssues(item) },
+    readiness: {
+      ready: classReadinessIssues(item).length === 0,
+      missing: classReadinessIssues(item),
+    },
     startDate: item.startDate.toISOString().slice(0, 10),
     endDate: item.endDate.toISOString().slice(0, 10),
     schedule: item.schedule,
@@ -887,7 +1063,17 @@ function classDto(item: BusinessTrainingClassDocument) {
     status: item.status,
   };
 }
-function classReadinessIssues(value: { title?: string; description?: string; skillLevelId?: unknown; minAge?: number | null; maxAge?: number | null; branchId?: unknown; coverMediaId?: unknown; galleryMediaIds?: unknown[]; schedule?: unknown[] }) {
+function classReadinessIssues(value: {
+  title?: string;
+  description?: string;
+  skillLevelId?: unknown;
+  minAge?: number | null;
+  maxAge?: number | null;
+  branchId?: unknown;
+  coverMediaId?: unknown;
+  galleryMediaIds?: unknown[];
+  schedule?: unknown[];
+}) {
   return [
     !value.title?.trim() && "title",
     !value.description?.trim() && "description",
@@ -895,7 +1081,7 @@ function classReadinessIssues(value: { title?: string; description?: string; ski
     value.minAge == null && "minAge",
     value.maxAge == null && "maxAge",
     !value.branchId && "branchId",
-    !value.coverMediaId && !(value.galleryMediaIds?.length) && "media",
+    !value.coverMediaId && !value.galleryMediaIds?.length && "media",
     !value.schedule?.length && "schedule",
   ].filter((item): item is string => Boolean(item));
 }
@@ -932,5 +1118,8 @@ function attendanceDto(item: BusinessClassAttendanceDocument) {
     changes: item.changes ?? [],
     notes: item.notes,
     recordedBy: String(item.recordedBy),
+    checkInMethod: item.checkInMethod,
+    checkedInAt: item.checkedInAt?.toISOString() ?? null,
+    checkedOutAt: item.checkedOutAt?.toISOString() ?? null,
   };
 }

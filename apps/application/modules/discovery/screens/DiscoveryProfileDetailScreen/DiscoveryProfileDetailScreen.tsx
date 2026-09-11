@@ -24,6 +24,7 @@ import {
   useResolveMockClassPayment,
   useResolveMockCoachPayment,
   useReserveSession,
+  useServiceReviews,
 } from "@api";
 
 import { ClassDetailLayout } from "../../components/ClassDetailLayout";
@@ -478,6 +479,7 @@ function CoachDetails({ id }: { id: string }) {
 
 function ClassDetails({ id }: { id: string }) {
   const query = useCatalogClass(id);
+  const reviews = useServiceReviews("class", id);
   const enrollments = useMyClassEnrollments();
   const enroll = useEnrollClass();
   const cancelEnrollment = useCancelClassEnrollment();
@@ -592,6 +594,8 @@ function ClassDetails({ id }: { id: string }) {
       }
       actionPending={enroll.isPending || enrollments.isPending}
       galleryHref={`/discovery/classes/${id}/gallery`}
+      averageRating={reviews.data?.averageRating ?? 0}
+      reviewsCount={reviews.data?.reviewsCount ?? 0}
     >
       <DiscoveryQueryState query={enrollments} />
       <Card className="app-card app-stack-card p-5 shadow-none">
@@ -639,11 +643,23 @@ function ClassDetails({ id }: { id: string }) {
       </Card>
       <DetailFaqSection items={item.faqs} />
       <section className="space-y-3">
-        <ReviewSummary type="class" average={0} count={0} />
-        <ReviewEmptyState
-          title="هنوز نظری برای این کلاس ثبت نشده"
-          description="اولین نفری باشید که تجربه شرکت در این کلاس را با دیگران به اشتراک می‌گذارد."
+        <ReviewSummary
+          type="class"
+          average={reviews.data?.averageRating ?? 0}
+          count={reviews.data?.reviewsCount ?? 0}
+          distribution={[5, 4, 3, 2, 1].map(
+            (rating) =>
+              reviews.data?.items.filter(
+                (review) => Math.round(review.rating) === rating,
+              ).length ?? 0,
+          )}
         />
+        {!reviews.isPending && !reviews.data?.reviewsCount ? (
+          <ReviewEmptyState
+            title="هنوز نظری برای این کلاس ثبت نشده"
+            description="اولین نفری باشید که تجربه شرکت در این کلاس را با دیگران به اشتراک می‌گذارد."
+          />
+        ) : null}
         <ButtonLink
           href={`/discovery/classes/${id}/reviews`}
           variant="secondary"

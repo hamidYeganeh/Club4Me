@@ -49,9 +49,36 @@ export class EntitlementsService {
     input: CreateBenefitProductDto,
   ) {
     await this.clubs.get(userId, clubId, "memberships.write");
+    const accessIds = [...new Set([clubId, ...(input.accessClubIds ?? [])])];
+    let accessClubs: Array<{ id: string; name: string }> = [];
+    if (accessIds.length > 1) {
+      const clubs = await this.products.db
+        .collection("clubs")
+        .find({ _id: { $in: accessIds.map(oid) } })
+        .project({ ownerId: 1, name: 1 })
+        .toArray();
+      const source = clubs.find((c) => String(c._id) === clubId);
+      if (
+        !source ||
+        clubs.length !== accessIds.length ||
+        clubs.some((c) => String(c.ownerId) !== String(source.ownerId)) ||
+        String(source.ownerId) !== userId
+      )
+        throw new AppError(
+          403,
+          "SHARED_MEMBERSHIP_OWNER_REQUIRED",
+          "اشتراک مشترک فقط توسط مالک و بین باشگاه‌های خودش قابل تعریف است",
+        );
+      accessClubs = accessIds.map((id) => ({
+        id,
+        name: String(clubs.find((c) => String(c._id) === id)!.name),
+      }));
+    }
+    const { accessClubIds: _accessIds, ...productInput } = input;
     return productDto(
       await this.products.create({
-        ...input,
+        ...productInput,
+        accessClubs,
         clubId: oid(clubId),
         status: "active",
         weekCalendar: "iran_saturday",
@@ -78,7 +105,10 @@ export class EntitlementsService {
   async listPublic(clubId: string) {
     await this.clubs.getPublic(clubId);
     const items = await this.products
-      .find({ clubId: oid(clubId), status: "active" })
+      .find({
+        $or: [{ clubId: oid(clubId) }, { "accessClubs.id": clubId }],
+        status: "active",
+      })
       .sort({ price: 1 });
     return { items: items.map(productDto) };
   }
@@ -188,6 +218,7 @@ export class EntitlementsService {
           productId: purchase.productId,
           purchaseId: purchase._id,
           clubId: product.clubId,
+          accessClubs: product.accessClubs ?? [],
           userId: purchase.userId,
           title: product.title,
           type: product.type,
@@ -416,7 +447,14 @@ export class EntitlementsService {
     const item = await this.entitlements.findOne({
       _id: oid(input.entitlementId),
       userId: oid(input.userId),
-      clubId: input.clubId,
+      $and: [
+        {
+          $or: [
+            { clubId: input.clubId },
+            { "accessClubs.id": String(input.clubId) },
+          ],
+        },
+      ],
       status: "active",
       $or: [
         { pauseUntil: null },
@@ -459,7 +497,14 @@ export class EntitlementsService {
     const base = {
       _id: oid(input.entitlementId),
       userId: oid(input.userId),
-      clubId: input.clubId,
+      $and: [
+        {
+          $or: [
+            { clubId: input.clubId },
+            { "accessClubs.id": String(input.clubId) },
+          ],
+        },
+      ],
       status: "active",
       $or: [
         { pauseUntil: null },
@@ -631,6 +676,7 @@ function productDto(item: BenefitProductDocument) {
     clubId: String(item.clubId),
     title: item.title,
     description: item.description,
+    accessClubs: item.accessClubs ?? [],
     type: item.type,
     price: item.price,
     sessionCount: item.sessionCount,
@@ -658,6 +704,7 @@ function entitlementDto(item: UserEntitlementDocument) {
     productId: String(item.productId),
     clubId: String(item.clubId),
     title: item.title,
+    accessClubs: item.accessClubs ?? [],
     type: item.type,
     maxPauseDays: item.maxPauseDays ?? 0,
     remainingPauseDays: Math.max(

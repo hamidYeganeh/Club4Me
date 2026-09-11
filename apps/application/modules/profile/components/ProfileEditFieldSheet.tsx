@@ -3,14 +3,12 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   Button,
-  Calendar,
   InputGroup,
   Label,
   Skeleton,
   TextField,
   toast,
 } from "@heroui/react";
-import { parseDate } from "@internationalized/date";
 import NumberFlow from "@number-flow/react";
 import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
 import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
@@ -39,6 +37,7 @@ import { useSmsOtp } from "@/hooks/use-sms-otp";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-inset";
 
 import type { ProfileEditField } from "../profile.types";
+import { BirthdateWheelPicker } from "./BirthdateWheelPicker";
 
 const GENDER_ICONS: Record<AccountGender, IconName> = {
   female: "gender-female",
@@ -510,29 +509,11 @@ export function ProfileEditFieldSheet({
         ) : null}
 
         {field === "birthdate" ? (
-          <div className="flex justify-center">
-            <Calendar
-              aria-label={t("editBirthdate")}
-              isDisabled={updateMe.isPending}
-              value={birthdate ? parseDate(birthdate) : null}
-              onChange={(date) => setBirthdate(date?.toString() ?? "")}
-              className="w-full max-w-sm"
-            >
-              <Calendar.Header>
-                <Calendar.NavButton slot="previous" />
-                <Calendar.Heading />
-                <Calendar.NavButton slot="next" />
-              </Calendar.Header>
-              <Calendar.Grid>
-                <Calendar.GridHeader>
-                  {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-                </Calendar.GridHeader>
-                <Calendar.GridBody>
-                  {(date) => <Calendar.Cell date={date} />}
-                </Calendar.GridBody>
-              </Calendar.Grid>
-            </Calendar>
-          </div>
+          <BirthdateWheelPicker
+            value={birthdate}
+            disabled={updateMe.isPending}
+            onValueChange={setBirthdate}
+          />
         ) : null}
 
         <Button

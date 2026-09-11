@@ -1,15 +1,16 @@
 import type { Transition } from "motion/react";
+import { EASE_OUT, MOTION_DURATION } from "@/lib/ease";
 
 /** Default clip-reveal easing for cartesian charts. */
-export const DEFAULT_ANIMATION_EASING = "cubic-bezier(0.85, 0, 0.15, 1)";
+export const DEFAULT_ANIMATION_EASING = `cubic-bezier(${EASE_OUT.join(", ")})`;
 
-export const DEFAULT_ANIMATION_DURATION_MS = 1100;
+export const DEFAULT_ANIMATION_DURATION_MS = MOTION_DURATION.chart * 1000;
 
-/** Default enter transition — matches the original line chart reveal. */
+/** Default enter transition — uses the application easing with extra time to read the data. */
 export const DEFAULT_CHART_ENTER_TRANSITION: Transition = {
   type: "tween",
   duration: DEFAULT_ANIMATION_DURATION_MS / 1000,
-  ease: [0.85, 0, 0.15, 1],
+  ease: EASE_OUT,
 };
 
 /**

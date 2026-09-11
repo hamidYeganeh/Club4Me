@@ -73,7 +73,7 @@ export function ClubsScreen() {
                         {club.name}
                       </Table.Cell>
                       <Table.Cell className="text-muted" dir="ltr">
-                        {club.ownerId}
+                        {[club.owner?.firstName, club.owner?.lastName].filter(Boolean).join(" ") || club.owner?.phone || "مالک در دسترس نیست"}
                       </Table.Cell>
                       <Table.Cell>
                         <Chip

@@ -59,6 +59,9 @@ export type CoachProfile = {
 export type CoachMedia = Media;
 
 export type CoachClass = {
+  ownerCoach?: {id: string; displayName: string; slug: string} | null;
+  club?: {id: string; name: string; slug: string} | null;
+  sport?: {id: string; name: string} | null;
   id: string;
   ownerCoachId: string;
   offeringId?: string;
@@ -70,6 +73,7 @@ export type CoachClass = {
   sportId: string;
   coachAssignments: Array<{
     coachId: string;
+    coach?: {id: string; displayName: string; slug: string} | null;
     role: "primary" | "assistant";
   }>;
   deliveryMode: "club" | "online" | "home" | "outdoor";
@@ -303,6 +307,7 @@ export type CoachAttendanceItem = {
   status: AttendanceStatus;
   note: string | null;
   checkedInAt: string | null;
+  checkedOutAt?: string | null;
 };
 
 export type CreateCoachClassPayload = {
@@ -470,6 +475,7 @@ const client = {
       athleteId: string;
       status: Exclude<AttendanceStatus, "unrecorded">;
       note?: string;
+      checkedOut?: boolean;
     }>,
   ) =>
     http.put<{
@@ -799,6 +805,7 @@ export function useRecordCoachSessionAttendance(sessionId: string) {
         athleteId: string;
         status: Exclude<AttendanceStatus, "unrecorded">;
         note?: string;
+        checkedOut?: boolean;
       }>,
     ) => client.recordSessionAttendance(sessionId, items),
     onSuccess: async () =>

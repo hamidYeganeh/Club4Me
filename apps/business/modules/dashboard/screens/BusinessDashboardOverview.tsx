@@ -1,6 +1,13 @@
 "use client";
 
-import { useBusinessClubActivation, useBusinessClubs, useBusinessDashboardSummary } from "@api/business";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { BusinessToday } from "./BusinessToday";
+import { useSelectedClub } from "@/lib/use-selected-club";
+
+import {
+  useBusinessClubActivation,
+  useBusinessDashboardSummary,
+} from "@api/business";
 import { Button, Card, Spinner } from "@heroui/react";
 import { Icon, type IconName } from "@theme/icon";
 import { Grid, Line, LineChart, RingChart, XAxis } from "@ui/charts";
@@ -16,7 +23,7 @@ import {
   DashboardTrendCard,
 } from "@ui/dashboard-history-card";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 const number = (value: number) => new Intl.NumberFormat("fa-IR").format(value);
 const money = (value: number, compact = false) =>
@@ -90,9 +97,7 @@ const quickActions: Array<{
 ];
 
 export function BusinessDashboardOverview() {
-  const clubs = useBusinessClubs();
-  const [selectedClubId, setClubId] = useState("");
-  const clubId = selectedClubId || clubs.data?.items[0]?.id || "";
+  const { clubs, clubId, setClubId: setClubId } = useSelectedClub();
   const summary = useBusinessDashboardSummary(clubId);
   const activation = useBusinessClubActivation(clubId);
   const stats = summary.data?.stats;
@@ -152,6 +157,22 @@ export function BusinessDashboardOverview() {
     );
   }
 
+  if (clubs.isError) {
+    return (
+      <main className="p-6">
+        <Card className="p-6">
+          <h1 className="text-xl font-bold">باشگاه‌ها دریافت نشدند</h1>
+          <p role="alert" className="mt-2 text-sm text-muted">
+            برای بازیابی باشگاه‌های حساب دوباره تلاش کنید.
+          </p>
+          <Button className="mt-4" onPress={() => void clubs.refetch()}>
+            تلاش دوباره
+          </Button>
+        </Card>
+      </main>
+    );
+  }
+
   if (!clubs.data?.items.length) {
     return (
       <main className="grid flex-1 place-items-center p-6">
@@ -191,26 +212,66 @@ export function BusinessDashboardOverview() {
           </div>
           <label className="grid gap-1.5 text-xs text-muted">
             باشگاه فعال
-            <select
+            <FormSelect
+              aria-label="باشگاه فعال"
               className="h-11 min-w-56 rounded-[1.15rem] border border-border/70 bg-surface/80 px-3 text-sm text-foreground outline-none transition focus:border-focus focus:ring-3 focus:ring-focus/15"
               value={clubId}
-              onChange={(event) => setClubId(event.target.value)}
+              onChange={(event) => setClubId(event)}
             >
               {clubs.data.items.map((club) => (
-                <option key={club.id} value={club.id}>
+                <FormOption entity={club} key={club.id} value={club.id}>
                   {club.name}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </label>
         </header>
 
         {activation.data && !activation.data.ready ? (
           <Card className="mt-5 rounded-[1.5rem] border border-warning/35 bg-warning/8 p-5 shadow-none">
-            <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">راه‌اندازی عرضه: {number(activation.data.completed)} از {number(activation.data.total)}</h2><p className="mt-1 text-sm text-muted">برای دیده‌شدن و اولین رزرو، موارد باقی‌مانده را کامل کنید.</p></div><Link href={activation.data.publicPreviewUrl} className="text-sm font-medium text-accent">پیش‌نمایش عمومی</Link></div>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{activation.data.items.map((item) => <div key={item.id} className={`rounded-xl px-3 py-2 text-sm ${item.complete ? "bg-success/10 text-success" : "bg-surface-secondary text-foreground"}`}>{item.complete ? "✓" : "○"} {item.label}</div>)}</div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="font-semibold">
+                  راه‌اندازی عرضه: {number(activation.data.completed)} از{" "}
+                  {number(activation.data.total)}
+                </h2>
+                <p className="mt-1 text-sm text-muted">
+                  برای دیده‌شدن و اولین رزرو، موارد باقی‌مانده را کامل کنید.
+                </p>
+              </div>
+              <Link
+                href={
+                  new URL(
+                    activation.data.publicPreviewUrl,
+                    process.env.NEXT_PUBLIC_APPLICATION_URL ||
+                      "https://app.gym4me.ir",
+                  ).href
+                }
+                className="text-sm font-medium text-accent"
+              >
+                پیش‌نمایش عمومی
+              </Link>
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {activation.data.items.map((item) => (
+                <div
+                  key={item.id}
+                  className={`rounded-xl px-3 py-2 text-sm ${item.complete ? "bg-success/10 text-success" : "bg-surface-secondary text-foreground"}`}
+                >
+                  {item.complete ? "✓" : "○"} {item.label}
+                </div>
+              ))}
+            </div>
           </Card>
         ) : null}
+
+        <BusinessToday
+          key={clubId}
+          clubId={clubId}
+          clubName={
+            clubs.data.items.find((club) => club.id === clubId)?.name ?? ""
+          }
+        />
 
         {summary.isPending ? (
           <div className="flex justify-center py-24">

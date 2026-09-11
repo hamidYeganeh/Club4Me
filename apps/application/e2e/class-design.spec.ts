@@ -125,6 +125,11 @@ for (const theme of ["light", "dark"] as const) {
         "12",
       );
       await expect(
+        page.getByText("روزهای کاری", { exact: true }),
+      ).toBeVisible();
+      await expect(page.getByText("وضعیت", { exact: true })).toBeVisible();
+      await expect(page.getByText("امتیاز", { exact: true })).toBeVisible();
+      await expect(
         page.getByRole("button", { name: "ثبت‌نام در کلاس", exact: true }),
       ).toBeEnabled();
       await page.screenshot({

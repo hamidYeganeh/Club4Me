@@ -1,21 +1,13 @@
 "use client";
 
-import { ImageCropper } from "@/components/image-cropper";
-import { useState } from "react";
+import { CroppedImageUpload } from "@/components/cropped-image-upload";
 import { Avatar, Badge, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { FALLBACK_IMAGE_SRC, resolveImageSrc } from "@ui/fallback-image";
 import { useTranslations } from "next-intl";
-import { useDropzone } from "react-dropzone";
 
 import { profileImageHeroSectionStyles } from "./ProfileImageHeroSection.styles";
 import type { ProfileImageHeroSectionProps } from "./ProfileImageHeroSection.types";
-
-const profileImageAccept = {
-  "image/jpeg": [".jpg", ".jpeg"],
-  "image/png": [".png"],
-  "image/webp": [".webp"],
-};
 
 export function ProfileImageHeroSection({
   title,
@@ -24,65 +16,15 @@ export function ProfileImageHeroSection({
   isUploading = false,
   onFile,
 }: ProfileImageHeroSectionProps) {
-  const [cropFile, setCropFile] = useState<File | null>(null);
   const styles = profileImageHeroSectionStyles();
   const t = useTranslations("profile");
-  const { getInputProps, getRootProps, isDragActive, open } = useDropzone({
-    accept: profileImageAccept,
-    maxSize: 10 * 1024 * 1024,
-    multiple: false,
-    disabled: isUploading,
-    noClick: true,
-    noKeyboard: true,
-    onDropAccepted: ([file]) => {
-      if (file) {
-        setCropFile(file);
-      }
-    },
-  });
-
-  const requestImage = () => {
-    open();
-  };
-
   return (
     <section className={styles.root()}>
-      {cropFile ? (
-        <ImageCropper
-          file={cropFile}
-          onCancel={() => setCropFile(null)}
-          onConfirm={async (file) => {
-            setCropFile(null);
-            await onFile(file);
-          }}
-        />
-      ) : null}
       <Typography type="h2" align="center" className={styles.title()}>
         {title}
       </Typography>
 
-      <div
-        {...getRootProps({
-          role: "button",
-          tabIndex: 0,
-          "aria-label": t("changeImage"),
-          "aria-busy": isUploading,
-          onClick: requestImage,
-          onKeyDown: (event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              requestImage();
-            }
-          },
-          className: styles.avatarWrap({
-            className: [
-              isDragActive ? "ring-4 ring-accent/30" : undefined,
-              isUploading ? "pointer-events-none" : undefined,
-            ],
-          }),
-        })}
-      >
-        <input {...getInputProps()} />
+      <div className={styles.avatarWrap()}>
         {isUploading ? (
           <svg
             aria-hidden="true"
@@ -146,7 +88,16 @@ export function ProfileImageHeroSection({
         </Badge.Anchor>
       </div>
 
-      <Typography className={styles.uploadHint()}>{t("upload")}</Typography>
+      <div className="mt-5 w-full">
+        <CroppedImageUpload
+          onFile={async (file) => {
+            await onFile(file);
+          }}
+          label={t("changeImage")}
+          aspectRatio={1}
+          disabled={isUploading}
+        />
+      </div>
     </section>
   );
 }

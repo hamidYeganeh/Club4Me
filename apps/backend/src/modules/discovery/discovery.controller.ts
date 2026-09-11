@@ -23,12 +23,12 @@ import {
 @Controller("api/v1/discovery")
 export class DiscoveryFeedController {
   constructor(private readonly service: DiscoveryFeedService) {}
-  @Get() getFeed() {
-    return this.service.getFeed();
+  @Get() getFeed(@Query("placement") placement?: string) {
+    return this.service.getFeed(placement);
   }
 
-  @Get("sections") getSections() {
-    return this.service.getFeed();
+  @Get("sections") getSections(@Query("placement") placement?: string) {
+    return this.service.getFeed(placement);
   }
 
   @Get("catalog/club-types")

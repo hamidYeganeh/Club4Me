@@ -93,6 +93,7 @@ export function ClubClassesSection({ clubId }: { clubId: string }) {
               startAt={item.startDate}
               href={`/discovery/business-class?classId=${item.id}`}
               badge="کلاس باشگاه"
+              variant="club"
               className="w-[min(78vw,19rem)] shrink-0 snap-start"
             />
           ))}
@@ -108,6 +109,7 @@ export function ClubClassesSection({ clubId }: { clubId: string }) {
               startAt={item.courseStartAt}
               href={`/discovery/classes/${item.slug}`}
               badge={item.deliveryMode === "online" ? "آنلاین" : "حضوری"}
+              variant="club"
               className="w-[min(78vw,19rem)] shrink-0 snap-start"
             />
           ))}

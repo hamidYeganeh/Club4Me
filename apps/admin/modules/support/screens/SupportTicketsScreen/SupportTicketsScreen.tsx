@@ -1,5 +1,6 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
 import {
   type SupportTicket,
   useAdminContactLeads,
@@ -88,19 +89,19 @@ export function SupportTicketsScreen() {
             پاسخ درون‌برنامه‌ای یا پیگیری تلفنی
           </p>
         </div>
-        <select
+        <FormSelect
           className="h-11 rounded-xl border border-border bg-surface px-3 text-sm"
           value={status}
-          onChange={(event) => setStatus(event.target.value)}
+          onChange={(event) => setStatus(event)}
           aria-label="فیلتر وضعیت تیکت"
         >
-          <option value="">همه</option>
+          <FormOption value="">همه</FormOption>
           {Object.entries(statusLabel).map(([value, label]) => (
-            <option key={value} value={value}>
+            <FormOption key={value} value={value}>
               {label}
-            </option>
+            </FormOption>
           ))}
-        </select>
+        </FormSelect>
       </div>
       <Card className="mt-5 rounded-[1.75rem] border border-border bg-surface p-2">
         {tickets.isPending ? (
@@ -232,7 +233,7 @@ export function SupportTicketsScreen() {
                       {lead.note || "بدون توضیح"}
                     </p>
                   </div>
-                  <select
+                  <FormSelect
                     aria-label={`وضعیت درخواست ${lead.name}`}
                     className="h-10 rounded-xl border border-border bg-surface px-3 text-sm"
                     value={lead.status}
@@ -240,14 +241,14 @@ export function SupportTicketsScreen() {
                     onChange={(event) =>
                       updateLead.mutate({
                         id: lead._id,
-                        status: event.target.value as typeof lead.status,
+                        status: event as typeof lead.status,
                       })
                     }
                   >
-                    <option value="new">جدید</option>
-                    <option value="contacted">تماس گرفته شد</option>
-                    <option value="closed">بسته</option>
-                  </select>
+                    <FormOption value="new">جدید</FormOption>
+                    <FormOption value="contacted">تماس گرفته شد</FormOption>
+                    <FormOption value="closed">بسته</FormOption>
+                  </FormSelect>
                 </div>
               ))}
             </div>

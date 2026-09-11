@@ -35,6 +35,7 @@ export type PlanRecord = {
   versions: { version: number; createdAt: string; plan: TrainingPlan }[];
 };
 export type Assignment = {
+  planId?: string;
   id: string;
   athleteId: string;
   version: number;
@@ -60,11 +61,14 @@ export type SessionBody = {
   status: "active" | "completed" | "discarded";
   sets: TrainingSet[];
   note: string;
+  effort?: "easy" | "balanced" | "hard" | null;
+  followUpRequested?: boolean;
 };
 export type SessionRecord = SessionBody & {
   clientId: string;
   revision: number;
   snapshot: TrainingPlan;
+  coachReview?: { text: string; reviewedAt: string; revision: number };
 };
 export type SessionWrite = SessionBody & {
   mutationId: string;
@@ -74,7 +78,28 @@ export type TrainingClients = {
   items: { id: string; name: string }[];
   classes: { id: string; title: string }[];
 };
+export type TrainingFollowUp = {
+  athleteId: string;
+  name: string;
+  assignmentId: string | null;
+  reason: string;
+  label: string;
+  pendingReviews: number;
+  lastSessionAt: string | null;
+};
 export const trainingApi = {
+  followUps: () =>
+    http.get<{ items: TrainingFollowUp[] }>("/training/coach/follow-ups"),
+  review: (
+    assignmentId: string,
+    clientId: string,
+    text: string,
+    expectedRevision: number,
+  ) =>
+    http.put<SessionRecord>(
+      `/training/coach/assignments/${assignmentId}/sessions/${clientId}/review`,
+      { text, expectedRevision },
+    ),
   animation: async (id: string, signal?: AbortSignal) =>
     (
       await getHttpClient().get<Blob>(

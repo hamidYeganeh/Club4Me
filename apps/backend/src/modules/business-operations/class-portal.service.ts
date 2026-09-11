@@ -1,4 +1,15 @@
-import { attendanceCredit, attendanceAudit } from "./attendance-credit";
+import { ClassGroups } from "./class-groups";
+import { parse } from "../../lib/validate";
+import {
+  recommendationPreferencesSchema,
+  recommendationMismatches,
+} from "./recommendation-preferences";
+import { assertCoachClassScope } from "./coach-class-scope";
+import {
+  attendanceCredit,
+  attendanceAudit,
+  attendanceTimes,
+} from "./attendance-credit";
 import { businessClassCatalogQuery } from "../discovery/business-class-catalog-query";
 import { assertMockPaymentsEnabled } from "../commerce/mock-payment-policy";
 import { Injectable, Optional } from "@nestjs/common";
@@ -78,6 +89,10 @@ export class BusinessClassPortalService {
     @Optional() private userLocations?: UserLocationsService,
     @Optional() private moduleRef?: ModuleRef,
   ) {}
+
+  get trainingGroups() {
+    return new ClassGroups(this.classes.db);
+  }
 
   private async commerce() {
     const { CommerceService } = await import("../commerce/commerce.service");
@@ -219,6 +234,7 @@ export class BusinessClassPortalService {
     expiresInMinutes: number,
   ) {
     await this.clubs.findForOwner(userId, clubId, "attendance.write");
+    await assertCoachClassScope(this.classes.db, userId, clubId, classId);
     const session = await this.sessions.findOne({
       _id: oid(sessionId),
       classId: oid(classId),
@@ -308,7 +324,7 @@ export class BusinessClassPortalService {
       previous?.status,
       "present",
     );
-    const checkedInAt = new Date();
+    const checkedInAt = previous?.checkedInAt ?? new Date();
     const record = await this.attendance.findOneAndUpdate(
       { sessionId: oid(sessionId), studentId: enrollment.studentId },
       {
@@ -323,7 +339,7 @@ export class BusinessClassPortalService {
           classId: oid(classId),
           clubId: token.clubId,
           status: "present",
-          notes: "",
+          notes: previous?.notes ?? "",
           recordedBy: oid(userId),
           checkInMethod: isCode ? "code" : "qr",
           checkedInAt,
@@ -431,7 +447,27 @@ export class BusinessClassPortalService {
     };
   }
 
+  async recommendationPreferences(userId: string) {
+    const stored = await this.classes.db
+      .collection("athlete_discovery_preferences")
+      .findOne({ _id: oid(userId) });
+    return recommendationPreferencesSchema.parse(stored ?? {});
+  }
+
+  async saveRecommendationPreferences(userId: string, body: unknown) {
+    const input = parse(recommendationPreferencesSchema, body);
+    await this.classes.db
+      .collection("athlete_discovery_preferences")
+      .updateOne(
+        { _id: oid(userId) },
+        { $set: { ...input, updatedAt: new Date() } },
+        { upsert: true },
+      );
+    return input;
+  }
+
   async recommendationsForAthlete(userId: string) {
+    const preferences = await this.recommendationPreferences(userId);
     const studentIds = await this.linkedStudentIds(userId);
     const history = studentIds.length
       ? await this.enrollments
@@ -490,6 +526,10 @@ export class BusinessClassPortalService {
         if (!reasons.length) reasons.push("زمان نزدیک و ظرفیت قابل رزرو");
         return {
           ...data,
+          mismatches: recommendationMismatches(
+            { ...data, distanceKm },
+            preferences,
+          ),
           recommendationScore: Math.round(score),
           distanceKm,
           reasons,
@@ -498,9 +538,20 @@ export class BusinessClassPortalService {
     );
     return {
       items: ranked
-        .filter((item): item is NonNullable<typeof item> => Boolean(item))
+        .filter(
+          (item): item is NonNullable<typeof item> =>
+            Boolean(item) && item!.mismatches.length === 0,
+        )
         .sort((a, b) => b.recommendationScore - a.recommendationScore)
         .slice(0, 8),
+      alternatives: ranked
+        .filter(
+          (item): item is NonNullable<typeof item> =>
+            Boolean(item) && item!.mismatches.length === 1,
+        )
+        .sort((a, b) => b.recommendationScore - a.recommendationScore)
+        .slice(0, 3),
+      preferences,
     };
   }
 
@@ -726,6 +777,28 @@ export class BusinessClassPortalService {
   }
 
   @Atomic("enrollments")
+  async renewWaitlist(userId: string, enrollmentId: string) {
+    const item = await this.athleteEnrollment(userId, enrollmentId);
+    if (
+      item.status !== "waitlisted" ||
+      !item.waitlistOfferExpiresAt ||
+      item.waitlistOfferExpiresAt > new Date()
+    )
+      throw invalid("WAITLIST_RENEWAL_NOT_AVAILABLE");
+    const trainingClass = await this.classes.findById(item.classId);
+    if (
+      !trainingClass ||
+      trainingClass.status !== "active" ||
+      trainingClass.endDate <= new Date()
+    )
+      throw invalid("CLASS_NOT_ACTIVE");
+    item.waitlistRequestedAt = new Date();
+    item.waitlistOfferExpiresAt = null;
+    await item.save();
+    return athleteEnrollmentDto(item, trainingClass);
+  }
+
+  @Atomic("enrollments")
   async claimWaitlist(userId: string, enrollmentId: string) {
     const item = await this.athleteEnrollment(userId, enrollmentId);
     if (
@@ -821,6 +894,8 @@ export class BusinessClassPortalService {
     input: RecordClassAttendanceDto,
   ) {
     const session = await this.coachSession(userId, classId, sessionId);
+    if (session.status === "cancelled")
+      throw invalid("CLASS_SESSION_CANCELLED");
     const valid = await this.enrollments.find({
       classId: oid(classId),
       studentId: { $in: input.items.map((item) => oid(item.studentId)) },
@@ -852,6 +927,9 @@ export class BusinessClassPortalService {
             record.status,
             enrollment.remainingSessions,
             remaining,
+            record.checkedOut && !previous?.checkedOutAt
+              ? "checked_out"
+              : undefined,
           ),
           $set: {
             clubId: session.clubId,
@@ -859,8 +937,7 @@ export class BusinessClassPortalService {
             status: record.status,
             notes: record.notes,
             recordedBy: oid(userId),
-            checkInMethod: "manual",
-            checkedInAt: record.status === "present" ? new Date() : null,
+            ...attendanceTimes(previous, record.status, record.checkedOut),
           },
         },
         { upsert: true, new: true },
@@ -942,8 +1019,22 @@ export class BusinessClassPortalService {
           "certificateMediaIds.0": { $exists: true },
         })
       : 0;
+    const requiredEquipment = item.requiredEquipmentIds?.length
+      ? await this.classes.db
+          .collection("equipment")
+          .find({ _id: { $in: item.requiredEquipmentIds } })
+          .project({ name: 1 })
+          .toArray()
+      : [];
     return {
       ...classBaseDto(item),
+      requiredEquipment: requiredEquipment.map((e) => ({
+        id: String(e._id),
+        name: String(e.name),
+      })),
+      prerequisites: item.prerequisites ?? [],
+      minAge: item.minAge ?? null,
+      maxAge: item.maxAge ?? null,
       enrollmentCount,
       remainingCapacity: Math.max(
         0,
@@ -1143,14 +1234,63 @@ export class BusinessClassPortalService {
     if (item) await this.finalizeEnrollmentPayment(id, false);
   }
 
+  async refreshWaitlistOffers() {
+    const candidates = await this.classes
+      .find({
+        status: "active",
+        endDate: { $gt: new Date() },
+        $expr: {
+          $gt: [
+            "$capacity",
+            {
+              $add: [
+                { $ifNull: ["$activeEnrollmentCount", 0] },
+                { $ifNull: ["$pendingEnrollmentCount", 0] },
+              ],
+            },
+          ],
+        },
+      })
+      .limit(200);
+    for (const candidate of candidates) await this.offerWaitlist(candidate);
+  }
+
+  @Atomic("enrollments")
   private async offerWaitlist(item: BusinessTrainingClassDocument) {
+    const current = await this.classes.findById(item._id);
+    if (
+      !current ||
+      current.status !== "active" ||
+      current.endDate <= new Date()
+    )
+      return;
+    const offered = await this.enrollments.countDocuments({
+      classId: item._id,
+      status: "waitlisted",
+      waitlistOfferExpiresAt: { $gt: new Date() },
+    });
+    const free =
+      current.capacity -
+      (current.activeEnrollmentCount ?? 0) -
+      (current.pendingEnrollmentCount ?? 0) -
+      offered;
+    if (free <= 0) return;
     const waiting = await this.enrollments
-      .find({ classId: item._id, status: "waitlisted" })
-      .sort({ waitlistRequestedAt: 1, enrolledAt: 1 });
+      .find({
+        classId: item._id,
+        status: "waitlisted",
+        waitlistOfferExpiresAt: null,
+      })
+      .sort({ waitlistRequestedAt: 1, enrolledAt: 1 })
+      .limit(free);
     if (!waiting.length) return;
     const expiresAt = new Date(Date.now() + 15 * 60_000);
     await this.enrollments.updateMany(
-      { _id: { $in: waiting.map((entry) => entry._id) } },
+      {
+        _id: { $in: waiting.map((entry) => entry._id) },
+        status: "waitlisted",
+        waitlistOfferExpiresAt: null,
+      },
       { $set: { waitlistOfferExpiresAt: expiresAt } },
     );
     const students = await this.students.find({
@@ -1284,6 +1424,7 @@ function athleteEnrollmentDto(
     agreedPrice: item.agreedPrice,
     remainingSessions: item.remainingSessions,
     enrolledAt: item.enrolledAt.toISOString(),
+    waitlistOfferExpiresAt: item.waitlistOfferExpiresAt?.toISOString() ?? null,
   };
 }
 function coachEnrollmentDto(
@@ -1318,5 +1459,8 @@ function attendanceDto(
     status: item?.status ?? "unrecorded",
     changes: item?.changes ?? [],
     notes: item?.notes ?? "",
+    checkedInAt: item?.checkedInAt?.toISOString() ?? null,
+    checkedOutAt: item?.checkedOutAt?.toISOString() ?? null,
+    checkInMethod: item?.checkInMethod ?? null,
   };
 }

@@ -69,7 +69,7 @@ test("athlete accepts, logs during API outage, resumes after reload and syncs ex
   await page.setViewportSize({ width: 375, height: 900 });
   const a = assignment();
   let outage = false;
-  const sessions = new Map<string, any>();
+  const sessions = new Map<string, { status: string }>();
   let writes = 0;
   await page.route("**/api/v1/training/assignments", (r) =>
     outage
@@ -104,6 +104,14 @@ test("athlete accepts, logs during API outage, resumes after reload and syncs ex
   await page.getByRole("button", { name: "شروع تمرین", exact: true }).click();
   outage = true;
   await page.getByLabel("وزنه حرکت 1 ست 1", { exact: true }).fill("32.5");
+  const weightInput = page.getByLabel("وزنه حرکت 1 ست 1", { exact: true });
+  const weightCounter = page
+    .locator("[data-counter]")
+    .filter({ has: weightInput });
+  await weightCounter.getByRole("button", { name: "افزایش مقدار" }).click();
+  await expect(weightInput).toHaveValue("33");
+  await weightCounter.getByRole("button", { name: "کاهش مقدار" }).click();
+  await expect(weightInput).toHaveValue("32.5");
   await page
     .getByRole("textbox", { name: "یادداشت جلسه", exact: true })
     .fill("تمرین با کنترل کامل");
@@ -113,6 +121,12 @@ test("athlete accepts, logs during API outage, resumes after reload and syncs ex
   await expect(
     page.getByRole("button", { name: "لغو ثبت حرکت 1 ست 1", exact: true }),
   ).toBeVisible();
+  await expect(
+    weightCounter.getByRole("button", { name: "افزایش مقدار" }),
+  ).toBeDisabled();
+  await expect(
+    weightCounter.getByRole("button", { name: "کاهش مقدار" }),
+  ).toBeDisabled();
   await page.reload();
   await expect(
     page.getByLabel("وزنه حرکت 1 ست 1", { exact: true }),
@@ -157,8 +171,8 @@ test("coach builds a versioned plan and assigns its selected version", async ({
   page,
 }, info) => {
   await setup(page);
-  const records: any[] = [];
-  let sent: any;
+  const records: { versions: { plan: typeof plan }[] }[] = [];
+  let sent: { version?: number; mutationId?: string } = {};
   await page.route("**/api/v1/training/coach/plans", (r) =>
     r.fulfill({ json: { data: { items: records } } }),
   );

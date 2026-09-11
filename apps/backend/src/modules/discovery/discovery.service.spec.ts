@@ -42,6 +42,19 @@ describe("DiscoveryFeedService", () => {
         items: [],
       }),
     ]);
+    expect(sections.find).toHaveBeenLastCalledWith({
+      enabled: true,
+      $or: [{ placement: "discovery" }, { placement: { $exists: false } }],
+    });
+    await service.getFeed("reservations");
+    expect(sections.find).toHaveBeenLastCalledWith({
+      enabled: true,
+      placement: "reservations",
+      type: "banners",
+    });
+    await expect(service.getFeed("unknown")).rejects.toMatchObject({
+      status: 400,
+    });
   });
 
   it("imports only missing default sections and appends them", async () => {

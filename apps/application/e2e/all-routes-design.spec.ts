@@ -13,6 +13,8 @@ for(const theme of ["light","dark"] as const) for(const template of routes){
   if(path==="/auth/set-password")state.user.hasPassword=false;
   await installApiMock(page,state);
   await page.addInitScript(({theme,path})=>{
+   // Entry animation has dedicated tests; it must not replace the route screenshot.
+   sessionStorage.setItem("gym4me.splash.shown","1");
    localStorage.setItem("theme",theme);
    if(path.startsWith("/welcome")) return;
    localStorage.setItem("gym4me.welcome.seen","1");

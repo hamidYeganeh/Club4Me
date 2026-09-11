@@ -18,8 +18,6 @@ export const discoveryClubsDetailBodySectionStyles = tv({
     facilitySection: "flex flex-col gap-3",
     facilityHeader: "flex items-center justify-between gap-3",
     facilityTitle: "",
-    facilitySeeAll:
-      "shrink-0 text-sm font-semibold text-foreground underline decoration-accent decoration-2 underline-offset-4 transition-opacity active:opacity-70",
     facilityCarousel: "-mx-4 w-[calc(100%+2rem)] px-4",
     facilitySlide: "!w-auto",
     facilityList: "flex flex-col gap-2.5",

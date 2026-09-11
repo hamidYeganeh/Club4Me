@@ -1,5 +1,6 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { Button, Card, Chip, toast, Typography } from "@heroui/react";
@@ -16,10 +17,10 @@ import {
 } from "@api";
 import { getApiConfig } from "@api";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
-import {
-  CompactCardListSkeleton,
-  DashboardPageSkeleton,
-} from "@/components/loading-skeletons";
+import { CompactCardListSkeleton } from "@/components/loading-skeletons";
+import { ButtonLink } from "@/components/button-link";
+import { RequestFailureState } from "@/components/request-failure-state";
+import { getQueryFailure } from "@/lib/request-failure";
 
 const statusLabel: Record<string, string> = {
   pending: "در انتظار تأیید",
@@ -68,7 +69,31 @@ export function CoachClubClassScreen({ classId }: { classId: string }) {
     [enrollments.data?.items],
   );
 
-  if (detail.isPending) return <DashboardPageSkeleton />;
+  const detailFailure = getQueryFailure(detail.error, detail.fetchStatus);
+  if (!classId || detailFailure || detail.isPending) {
+    return (
+      <main className="app-page coach-workspace">
+        <SecondaryHeader
+          showFilter={false}
+          title="کلاس باشگاه"
+          backHref="/coach"
+        />
+        {!classId ? (
+          <Card className="app-card space-y-4 p-6 text-center shadow-none">
+            <p>ابتدا یک کلاس را از صفحه مربی انتخاب کنید.</p>
+            <ButtonLink href="/coach">مشاهده کلاس‌های من</ButtonLink>
+          </Card>
+        ) : detailFailure ? (
+          <RequestFailureState
+            error={detailFailure}
+            onRetry={() => void detail.refetch()}
+          />
+        ) : (
+          <CompactCardListSkeleton />
+        )}
+      </main>
+    );
+  }
   const item = detail.data;
   if (!item)
     return (
@@ -81,13 +106,15 @@ export function CoachClubClassScreen({ classId }: { classId: string }) {
     );
 
   const saveAttendance = async () => {
-    const items = rows.map((row) => ({
-      studentId: row.studentId,
-      status:
-        draft[row.studentId] ??
-        (row.status === "unrecorded" ? "absent" : row.status),
-      notes: row.notes,
-    })) as Array<{
+    const items = rows
+      .filter((row) => draft[row.studentId] !== undefined)
+      .map((row) => ({
+        studentId: row.studentId,
+        status:
+          draft[row.studentId] ??
+          (row.status === "unrecorded" ? "absent" : row.status),
+        notes: row.notes,
+      })) as Array<{
       studentId: string;
       status: "present" | "absent" | "excused";
       notes: string;
@@ -186,17 +213,20 @@ export function CoachClubClassScreen({ classId }: { classId: string }) {
 
       <Card className="app-card rounded-3xl p-5 shadow-none">
         <Card.Title>جلسه و حضور‌وغیاب</Card.Title>
-        <p className="mt-2 mb-4 text-sm leading-7 text-muted">جلسه را انتخاب کنید؛ سپس وضعیت حضور شاگردها را ثبت کنید.</p>
-        <select
+        <p className="mt-2 mb-4 text-sm leading-7 text-muted">
+          جلسه را انتخاب کنید؛ سپس وضعیت حضور شاگردها را ثبت کنید.
+        </p>
+        <FormSelect
+          aria-label="انتخاب گزینه"
           className="mt-4 h-11 w-full rounded-xl border border-white/10 bg-surface-secondary px-3 text-sm"
           value={sessionId}
-          onChange={(event) => setPickedSession(event.target.value)}
+          onChange={(event) => setPickedSession(event)}
         >
           {!sessions.length ? (
-            <option value="">جلسه‌ای وجود ندارد</option>
+            <FormOption value="">جلسه‌ای وجود ندارد</FormOption>
           ) : null}
           {sessions.map((session) => (
-            <option key={session.id} value={session.id}>
+            <FormOption entity={session} key={session.id} value={session.id}>
               {new Date(session.startsAt).toLocaleString("fa-IR", {
                 dateStyle: "medium",
                 timeStyle: "short",
@@ -207,9 +237,9 @@ export function CoachClubClassScreen({ classId }: { classId: string }) {
                 : session.status === "completed"
                   ? "تمام‌شده"
                   : "لغوشده"}
-            </option>
+            </FormOption>
           ))}
-        </select>
+        </FormSelect>
         {attendance.isPending && sessionId ? (
           <div className="mt-5">
             <CompactCardListSkeleton count={3} />
@@ -220,6 +250,22 @@ export function CoachClubClassScreen({ classId }: { classId: string }) {
             <AttendanceRow
               key={row.studentId}
               row={row}
+              disabled={record.isPending}
+              onCheckOut={async () => {
+                try {
+                  await record.mutateAsync([
+                    {
+                      studentId: row.studentId,
+                      status: "present",
+                      notes: row.notes,
+                      checkedOut: true,
+                    },
+                  ]);
+                  toast.success("خروج ثبت شد");
+                } catch {
+                  toast.danger("ثبت خروج انجام نشد");
+                }
+              }}
               value={draft[row.studentId] ?? row.status}
               onChange={(value) =>
                 setDraft((current) => ({ ...current, [row.studentId]: value }))
@@ -279,7 +325,9 @@ export function CoachClubClassScreen({ classId }: { classId: string }) {
 
       <Card className="app-card rounded-3xl p-5 shadow-none">
         <Card.Title>شاگردهای کلاس</Card.Title>
-        <p className="mt-2 text-sm leading-7 text-muted">فهرست اعضا و وضعیت ثبت‌نام در این کلاس.</p>
+        <p className="mt-2 text-sm leading-7 text-muted">
+          فهرست اعضا و وضعیت ثبت‌نام در این کلاس.
+        </p>
         <div className="mt-4 flex flex-col gap-2">
           {(enrollments.data?.items ?? []).map((entry) => (
             <div
@@ -362,10 +410,14 @@ function Stat({ value, label }: { value: number; label: string }) {
   );
 }
 function AttendanceRow({
+  disabled,
+  onCheckOut,
   row,
   value,
   onChange,
 }: {
+  disabled: boolean;
+  onCheckOut: () => void;
   row: CoachClubClassAttendance;
   value: CoachClubClassAttendance["status"];
   onChange: (value: "present" | "absent" | "excused") => void;
@@ -378,9 +430,20 @@ function AttendanceRow({
           <p className="text-xs text-muted">{row.student.phone}</p>
         </div>
         <div className="flex gap-1">
+          {row.status === "present" && row.checkedInAt ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              isDisabled={disabled || Boolean(row.checkedOutAt)}
+              onPress={onCheckOut}
+            >
+              {row.checkedOutAt ? "خروج ثبت شده" : "ثبت خروج"}
+            </Button>
+          ) : null}
           {(["present", "absent", "excused"] as const).map((status) => (
             <Button
               key={status}
+              isDisabled={disabled}
               size="sm"
               variant={value === status ? "primary" : "ghost"}
               onPress={() => onChange(status)}

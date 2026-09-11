@@ -9,7 +9,7 @@ import {
   useUserLocations,
   type UserLocation,
 } from "@api/locations";
-import { toast, Typography } from "@heroui/react";
+import { toast, Typography, RadioGroup, Radio } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { LocationCardsSkeleton } from "@/components/loading-skeletons";
@@ -91,8 +91,7 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
               </Typography>
             </div>
           ) : (
-            <div
-              role="radiogroup"
+            <RadioGroup value={effectiveSelectedId ?? ""} onChange={setSelectedId}
               aria-label="انتخاب لوکیشن پیش‌فرض"
               className="flex flex-col gap-3"
             >
@@ -101,13 +100,12 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
                   key={location.id}
                   location={location}
                   selected={location.id === effectiveSelectedId}
-                  onSelect={() => setSelectedId(location.id)}
                   editHref={`/${role}/profile/locations/${location.id}/edit`}
                   onDelete={() => void removeLocation(location)}
                   deleting={deleteLocation.isPending}
                 />
               ))}
-            </div>
+            </RadioGroup>
           )}
         </div>
 
@@ -156,14 +154,12 @@ export function LocationsScreen({ role }: { role: "athlete" | "coach" }) {
 function LocationOption({
   location,
   selected,
-  onSelect,
   editHref,
   onDelete,
   deleting,
 }: {
   location: UserLocation;
   selected: boolean;
-  onSelect: () => void;
   editHref: string;
   onDelete: () => void;
   deleting: boolean;
@@ -172,14 +168,7 @@ function LocationOption({
     <div
       className={`relative flex min-h-28 items-center gap-4 rounded-[1.5rem] border p-4 transition-[border-color,background-color,transform,box-shadow] active:scale-[0.99] ${selected ? "border-accent bg-accent/7" : "border-border bg-surface-secondary/55"}`}
     >
-      <button
-        type="button"
-        role="radio"
-        aria-checked={selected}
-        onClick={onSelect}
-        className="absolute inset-0 rounded-[1.5rem]"
-        aria-label={`${location.title}، ${location.address}`}
-      />
+      <Radio value={location.id} aria-label={`${location.title}، ${location.address}`} className="absolute inset-0 rounded-[1.5rem]"><Radio.Content className="h-full w-full"><Radio.Control className="sr-only"><Radio.Indicator /></Radio.Control></Radio.Content></Radio>
       <span
         className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${selected ? "bg-accent/12 text-accent" : "bg-surface text-muted"}`}
       >

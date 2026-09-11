@@ -1,5 +1,7 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
 import { useState, type FormEvent } from "react";
 import { Button, Card, Spinner, toast } from "@heroui/react";
 import {
@@ -49,16 +51,22 @@ const failure = (error: unknown) => {
 export function StudentAccounts({
   clubId,
   writable = true,
+  selectedStudentId,
+  onStudentChange,
 }: {
   clubId: string;
   writable?: boolean;
+  selectedStudentId?: string;
+  onStudentChange?: (id: string) => void;
 }) {
   const students = useClubStudents(clubId);
-  const [studentId, setStudentId] = useState(() =>
+  const [localStudentId, setLocalStudentId] = useState(() =>
     typeof window === "undefined"
       ? ""
       : (new URLSearchParams(window.location.search).get("studentId") ?? ""),
   );
+  const studentId = selectedStudentId ?? localStudentId;
+  const setStudentId = onStudentChange ?? setLocalStudentId;
   const query = useStudentAccounts(clubId, studentId);
   return (
     <Card className="mt-5 space-y-4 p-5" aria-label="حساب شهریه شاگرد">
@@ -70,18 +78,19 @@ export function StudentAccounts({
       </div>
       <label>
         حساب شاگرد
-        <select
+        <FormSelect
+          aria-label="حساب شاگرد"
           className={field}
           value={studentId}
-          onChange={(event) => setStudentId(event.target.value)}
+          onChange={(event) => setStudentId(event)}
         >
-          <option value="">انتخاب شاگرد</option>
+          <FormOption value="">انتخاب شاگرد</FormOption>
           {students.data?.items.map((student) => (
-            <option key={student.id} value={student.id}>
+            <FormOption entity={student} key={student.id} value={student.id}>
               {student.firstName} {student.lastName} · {student.phone}
-            </option>
+            </FormOption>
           ))}
-        </select>
+        </FormSelect>
       </label>
       {studentId &&
         (query.isPending ? (
@@ -234,7 +243,7 @@ function ClassAccount({
                 </p>
                 <label>
                   وصول‌شدهٔ قبل بدون رسید (ریال)
-                  <input
+                  <HeroInput
                     name="openingPaidAmount"
                     inputMode="numeric"
                     defaultValue="0"
@@ -244,7 +253,7 @@ function ClassAccount({
                 </label>
                 <label>
                   بخشودگی قبلی (ریال)
-                  <input
+                  <HeroInput
                     name="waivedAmount"
                     inputMode="numeric"
                     defaultValue="0"
@@ -254,7 +263,7 @@ function ClassAccount({
                 </label>
                 <label className="sm:col-span-2">
                   دلیل و مستند تطبیق
-                  <input
+                  <HeroInput
                     name="reason"
                     required
                     minLength={5}
@@ -283,7 +292,7 @@ function ClassAccount({
             >
               <label>
                 مبلغ رسید شهریه (ریال)
-                <input
+                <HeroInput
                   name="amount"
                   required
                   inputMode="numeric"
@@ -303,15 +312,19 @@ function ClassAccount({
               </label>
               <label>
                 روش دریافت
-                <select name="method" className={field}>
-                  <option value="card">کارتخوان</option>
-                  <option value="cash">نقدی</option>
-                  <option value="transfer">کارت‌به‌کارت</option>
-                </select>
+                <FormSelect
+                  aria-label="روش دریافت"
+                  name="method"
+                  className={field}
+                >
+                  <FormOption value="card">کارتخوان</FormOption>
+                  <FormOption value="cash">نقدی</FormOption>
+                  <FormOption value="transfer">کارت‌به‌کارت</FormOption>
+                </FormSelect>
               </label>
               <label>
                 شماره پیگیری یا توضیح
-                <input name="notes" maxLength={500} className={field} />
+                <HeroInput name="notes" maxLength={500} className={field} />
               </label>
               <p className="text-xs text-muted sm:col-span-2">
                 این فرم رسیدِ وجه دریافت‌شده را ثبت می‌کند. انتقال بانکی انجام
@@ -416,8 +429,13 @@ function Receipt({
               >
                 <label>
                   قرارداد مقصد
-                  <select name="enrollmentId" required className={field}>
-                    <option value="">انتخاب قرارداد</option>
+                  <FormSelect
+                    aria-label="قرارداد مقصد"
+                    name="enrollmentId"
+                    required
+                    className={field}
+                  >
+                    <FormOption value="">انتخاب قرارداد</FormOption>
                     {accounts
                       .filter(
                         (item) =>
@@ -427,18 +445,22 @@ function Receipt({
                             receipt.amount - (receipt.refundedAmount ?? 0),
                       )
                       .map((item) => (
-                        <option
+                        <FormOption
+                          entity={{
+                            ...item,
+                            description: `مانده ${money(item.outstandingAmount)}`,
+                          }}
                           key={item.enrollmentId}
                           value={item.enrollmentId}
                         >
-                          {item.title} · مانده {money(item.outstandingAmount)}
-                        </option>
+                          {item.title}
+                        </FormOption>
                       ))}
-                  </select>
+                  </FormSelect>
                 </label>
                 <label>
                   دلیل تخصیص
-                  <input
+                  <HeroInput
                     name="reason"
                     required
                     minLength={5}
@@ -467,7 +489,7 @@ function Receipt({
                 </p>
                 <label>
                   دلیل ابطال
-                  <input
+                  <HeroInput
                     name="reason"
                     required
                     minLength={5}
@@ -542,7 +564,12 @@ function RefundReceipt({
         </p>
         <label>
           مبلغ وجه برگشتی (ریال)
-          <input name="amount" required inputMode="numeric" className={field} />
+          <HeroInput
+            name="amount"
+            required
+            inputMode="numeric"
+            className={field}
+          />
         </label>
         <label>
           تاریخ برگشت وجه
@@ -558,15 +585,19 @@ function RefundReceipt({
         </label>
         <label>
           روش برگشت وجه
-          <select name="method" className={field}>
-            <option value="transfer">انتقال بانکی</option>
-            <option value="cash">نقدی</option>
-            <option value="card">کارت</option>
-          </select>
+          <FormSelect
+            aria-label="روش برگشت وجه"
+            name="method"
+            className={field}
+          >
+            <FormOption value="transfer">انتقال بانکی</FormOption>
+            <FormOption value="cash">نقدی</FormOption>
+            <FormOption value="card">کارت</FormOption>
+          </FormSelect>
         </label>
         <label>
           دلیل و پیگیری بازگشت
-          <input
+          <HeroInput
             name="reason"
             required
             minLength={5}

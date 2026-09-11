@@ -17,6 +17,7 @@ export type DiscoverySectionAppearance = {
 };
 
 export type DiscoverySectionConfiguration = {
+  placement?: "discovery" | "athlete-home" | "coach-home" | "reservations";
   id: string;
   key: string;
   type: DiscoverySectionType;

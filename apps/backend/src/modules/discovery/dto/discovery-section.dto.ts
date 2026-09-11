@@ -74,6 +74,9 @@ const appearance = z.object({
 });
 
 const fields = {
+  placement: z
+    .enum(["discovery", "athlete-home", "coach-home", "reservations"])
+    .default("discovery"),
   key: z
     .string()
     .trim()
@@ -107,6 +110,7 @@ const fields = {
 };
 
 export class CreateDiscoverySectionDto {
+  placement?: "discovery" | "athlete-home" | "coach-home" | "reservations";
   static schema = z.object(fields);
   key: string;
   type: (typeof DISCOVERY_SECTION_TYPES)[number];
@@ -122,9 +126,16 @@ export class CreateDiscoverySectionDto {
 }
 
 export class UpdateDiscoverySectionDto {
+  placement?: "discovery" | "athlete-home" | "coach-home" | "reservations";
   static schema = z.object({
     ...Object.fromEntries(
-      Object.entries(fields).map(([key, value]) => [key, value.optional()]),
+      Object.entries(fields).map(([key, value]) => [
+        key,
+        (value instanceof z.ZodDefault
+          ? value.removeDefault()
+          : value
+        ).optional(),
+      ]),
     ),
   });
   key?: string;

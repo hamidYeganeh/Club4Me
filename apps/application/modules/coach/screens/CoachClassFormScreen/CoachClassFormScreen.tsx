@@ -1,4 +1,8 @@
 "use client";
+
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
+import { Counter } from "@/components/counter";
 import { ResourceUnavailablePage } from "@/components/resource-unavailable-page";
 
 import { IranDateInput } from "@repo/ui/iran-date-input";
@@ -224,7 +228,10 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
     );
   if (classId && existing.isError && hydrated !== classId)
     return (
-      <ResourceUnavailablePage title="ویرایش کلاس" onRetry={() => void existing.refetch()} />
+      <ResourceUnavailablePage
+        title="ویرایش کلاس"
+        onRetry={() => void existing.refetch()}
+      />
     );
   return (
     <main className="app-page gap-5">
@@ -247,7 +254,7 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
             description="نام و توضیحات روشن به انتخاب ورزشکار کمک می‌کند."
           />
           <Field label="نام کلاس">
-            <input
+            <HeroInput
               required
               minLength={2}
               value={title}
@@ -256,7 +263,7 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
             />
           </Field>
           <Field label="توضیحات">
-            <textarea
+            <HeroTextArea
               required
               value={description}
               onChange={(event) => setDescription(event.target.value)}
@@ -264,22 +271,23 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
             />
           </Field>
           <Field label="رشته ورزشی">
-            <select
+            <FormSelect
+              aria-label="انتخاب گزینه"
               required
               value={sportId}
-              onChange={(event) => setSportId(event.target.value)}
+              onChange={(event) => setSportId(event)}
               className={input}
             >
-              <option value="">انتخاب رشته</option>
+              <FormOption value="">انتخاب رشته</FormOption>
               {(sports.data?.items ?? []).map((item) => (
-                <option key={item.id} value={item.id}>
+                <FormOption entity={item} key={item.id} value={item.id}>
                   {item.name}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </Field>
           <Field label="سوالات متداول">
-            <textarea
+            <HeroTextArea
               value={faqs}
               onChange={(event) => setFaqs(event.target.value)}
               className={`${input} min-h-24 py-3`}
@@ -293,22 +301,23 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="شیوه برگزاری">
-              <select
+              <FormSelect
+                aria-label="انتخاب گزینه"
                 value={deliveryMode}
                 onChange={(event) =>
-                  setDeliveryMode(event.target.value as typeof deliveryMode)
+                  setDeliveryMode(event as typeof deliveryMode)
                 }
                 className={input}
               >
-                <option value="club">در باشگاه</option>
-                <option value="online">آنلاین</option>
-                <option value="home">منزل ورزشکار</option>
-                <option value="outdoor">فضای باز</option>
-              </select>
+                <FormOption value="club">در باشگاه</FormOption>
+                <FormOption value="online">آنلاین</FormOption>
+                <FormOption value="home">منزل ورزشکار</FormOption>
+                <FormOption value="outdoor">فضای باز</FormOption>
+              </FormSelect>
             </Field>
             <Field label="ظرفیت">
-              <input
-                type="number"
+              <Counter
+                aria-label="ظرفیت"
                 min={1}
                 value={capacity}
                 onChange={(event) => setCapacity(Number(event.target.value))}
@@ -323,7 +332,7 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
                 : "نشانی محل برگزاری"
             }
           >
-            <input
+            <HeroInput
               className={input}
               type={deliveryMode === "online" ? "url" : "text"}
               value={deliveryMode === "online" ? onlineUrl : address}
@@ -335,24 +344,26 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
             />
           </Field>
           <Field label="سطح کلاس">
-            <select
+            <FormSelect
+              aria-label="انتخاب گزینه"
               className={input}
               value={skillLevelId}
-              onChange={(event) => setSkillLevelId(event.target.value)}
+              onChange={(event) => setSkillLevelId(event)}
             >
-              <option value="">همه سطوح</option>
+              <FormOption value="">همه سطوح</FormOption>
               {levels.data?.items.map((item) => (
-                <option key={item.id} value={item.id}>
+                <FormOption entity={item} key={item.id} value={item.id}>
                   {item.name}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </Field>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="حداقل سن (اختیاری)">
-              <input
+              <Counter
+                aria-label="حداقل سن (اختیاری)"
                 className={input}
-                type="number"
+
                 min={0}
                 max={120}
                 value={minAge}
@@ -360,9 +371,10 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
               />
             </Field>
             <Field label="حداکثر سن (اختیاری)">
-              <input
+              <Counter
+                aria-label="حداکثر سن (اختیاری)"
                 className={input}
-                type="number"
+
                 min={minAge || 0}
                 max={120}
                 value={maxAge}
@@ -371,16 +383,19 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
             </Field>
           </div>
           <Field label="شیوه پذیرش">
-            <select
+            <FormSelect
+              aria-label="انتخاب گزینه"
               className={input}
               value={enrollmentMode}
               onChange={(event) =>
-                setEnrollmentMode(event.target.value as typeof enrollmentMode)
+                setEnrollmentMode(event as typeof enrollmentMode)
               }
             >
-              <option value="automatic">پذیرش خودکار</option>
-              <option value="requires_approval">نیازمند تأیید مربی</option>
-            </select>
+              <FormOption value="automatic">پذیرش خودکار</FormOption>
+              <FormOption value="requires_approval">
+                نیازمند تأیید مربی
+              </FormOption>
+            </FormSelect>
           </Field>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="شروع ثبت‌نام">
@@ -402,7 +417,7 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
             </Field>
           </div>
           <Field label="پیش‌نیازها (هر مورد یک خط)">
-            <textarea
+            <HeroTextArea
               className={`${input} min-h-24 py-3`}
               value={prerequisites}
               onChange={(event) => setPrerequisites(event.target.value)}
@@ -414,8 +429,8 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
             description="پیش از ذخیره، تاریخ دوره و ساعت جلسات را بررسی کنید."
           />
           <Field label="هزینه (ریال)">
-            <input
-              type="number"
+            <Counter
+              aria-label="هزینه (ریال)"
               min={0}
               value={price}
               onChange={(event) => setPrice(Number(event.target.value))}
@@ -477,7 +492,7 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
               </Field>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="ساعت شروع">
-                  <input
+                  <HeroInput
                     required
                     type="time"
                     value={startTime}
@@ -486,8 +501,8 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
                   />
                 </Field>
                 <Field label="مدت جلسه">
-                  <input
-                    type="number"
+                  <Counter
+                    aria-label="مدت جلسه"
                     min={15}
                     max={480}
                     value={durationMinutes}

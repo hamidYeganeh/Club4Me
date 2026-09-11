@@ -1,8 +1,10 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { useSelectedClub } from "@/lib/use-selected-club";
+
 import {
   useBusinessCalendarClassSessions,
-  useBusinessClubs,
   useBusinessSessions,
   useClubReservations,
   useCreateBusinessCalendarFeed,
@@ -119,7 +121,10 @@ function monthRange(dates: Date[]) {
 function weekDates(anchor: Date) {
   const startOffset = (anchor.getDay() + 1) % 7;
   const start = new Date(anchor.getTime() - startOffset * dayMilliseconds);
-  return Array.from({ length: 7 }, (_, index) => new Date(start.getTime() + index * dayMilliseconds));
+  return Array.from(
+    { length: 7 },
+    (_, index) => new Date(start.getTime() + index * dayMilliseconds),
+  );
 }
 
 function sourceLabel(source: EventSource) {
@@ -177,7 +182,13 @@ function CalendarSkeleton() {
   );
 }
 
-function EventCard({ event, conflict = false }: { event: CalendarEvent; conflict?: boolean }) {
+function EventCard({
+  event,
+  conflict = false,
+}: {
+  event: CalendarEvent;
+  conflict?: boolean;
+}) {
   return (
     <Link
       href={event.href}
@@ -213,7 +224,11 @@ function EventCard({ event, conflict = false }: { event: CalendarEvent; conflict
                 : `${numberFormatter.format(event.reservedCount)} از ${numberFormatter.format(event.capacity)} رزرو`}
             </span>
           </span>
-          {conflict ? <span className="mt-2 inline-flex rounded-full bg-danger/10 px-2 py-1 text-[11px] font-medium text-danger">تداخل زمانی؛ قبل از انتشار بررسی شود</span> : null}
+          {conflict ? (
+            <span className="mt-2 inline-flex rounded-full bg-danger/10 px-2 py-1 text-[11px] font-medium text-danger">
+              تداخل زمانی؛ قبل از انتشار بررسی شود
+            </span>
+          ) : null}
         </span>
       </div>
     </Link>
@@ -221,9 +236,7 @@ function EventCard({ event, conflict = false }: { event: CalendarEvent; conflict
 }
 
 export function BusinessCalendarScreen() {
-  const clubs = useBusinessClubs();
-  const [selectedClubId, setSelectedClubId] = useState("");
-  const clubId = selectedClubId || clubs.data?.items[0]?.id || "";
+  const { clubs, clubId, setClubId: setSelectedClubId } = useSelectedClub();
   const [cursor, setCursor] = useState(() => new Date());
   const monthDates = useMemo(() => datesInPersianMonth(cursor), [cursor]);
   const range = useMemo(() => monthRange(monthDates), [monthDates]);
@@ -276,11 +289,17 @@ export function BusinessCalendarScreen() {
   }, [events]);
   const conflictIds = useMemo(() => {
     const ids = new Set<string>();
-    const active = events.filter((event) => !["cancelled", "completed"].includes(event.status));
+    const active = events.filter(
+      (event) => !["cancelled", "completed"].includes(event.status),
+    );
     active.forEach((event, index) => {
       for (const other of active.slice(index + 1)) {
-        if (new Date(event.startsAt) < new Date(other.endsAt) && new Date(other.startsAt) < new Date(event.endsAt)) {
-          ids.add(event.id); ids.add(other.id);
+        if (
+          new Date(event.startsAt) < new Date(other.endsAt) &&
+          new Date(other.startsAt) < new Date(event.endsAt)
+        ) {
+          ids.add(event.id);
+          ids.add(other.id);
         }
       }
     });
@@ -407,17 +426,18 @@ export function BusinessCalendarScreen() {
         <div className="mt-5 flex flex-wrap items-end justify-between gap-3">
           <label className="grid min-w-52 gap-1.5 text-xs text-muted">
             باشگاه فعال
-            <select
+            <FormSelect
+              aria-label="باشگاه فعال"
               value={clubId}
-              onChange={(event) => setSelectedClubId(event.target.value)}
+              onChange={(event) => setSelectedClubId(event)}
               className="h-11 rounded-2xl border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-focus focus:ring-3 focus:ring-focus/15"
             >
               {clubs.data?.items.map((club) => (
-                <option key={club.id} value={club.id}>
+                <FormOption entity={club} key={club.id} value={club.id}>
                   {club.name}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </label>
           <div className="flex flex-wrap gap-2" aria-label="فیلتر نوع برنامه">
             {(
@@ -438,7 +458,13 @@ export function BusinessCalendarScreen() {
               </Button>
             ))}
             {(["month", "week", "day"] as const).map((value) => (
-              <Button key={value} size="sm" variant={view === value ? "primary" : "secondary"} aria-pressed={view === value} onPress={() => setView(value)}>
+              <Button
+                key={value}
+                size="sm"
+                variant={view === value ? "primary" : "secondary"}
+                aria-pressed={view === value}
+                onPress={() => setView(value)}
+              >
                 {value === "month" ? "ماه" : value === "week" ? "هفته" : "روز"}
               </Button>
             ))}
@@ -446,8 +472,12 @@ export function BusinessCalendarScreen() {
         </div>
 
         {conflictIds.size ? (
-          <div className="mt-4 rounded-2xl border border-danger/30 bg-danger/8 px-4 py-3 text-sm text-danger" role="alert">
-            {numberFormatter.format(conflictIds.size)} برنامه هم‌زمان شناسایی شد. کارت‌های دارای تداخل را پیش از انتشار یا جابه‌جایی بررسی کنید.
+          <div
+            className="mt-4 rounded-2xl border border-danger/30 bg-danger/8 px-4 py-3 text-sm text-danger"
+            role="alert"
+          >
+            {numberFormatter.format(conflictIds.size)} برنامه هم‌زمان شناسایی
+            شد. کارت‌های دارای تداخل را پیش از انتشار یا جابه‌جایی بررسی کنید.
           </div>
         ) : null}
 
@@ -513,85 +543,108 @@ export function BusinessCalendarScreen() {
                   </div>
                 </div>
 
-                {view !== "day" ? <div className="grid grid-cols-7 border-b border-border/60 bg-surface-secondary/45 px-2 py-3 sm:px-4">
-                  {weekdays.map((day) => (
-                    <span
-                      key={day}
-                      className="text-center text-[10px] font-medium text-muted sm:text-xs"
-                    >
-                      {day}
-                    </span>
-                  ))}
-                </div> : null}
+                {view !== "day" ? (
+                  <div className="grid grid-cols-7 border-b border-border/60 bg-surface-secondary/45 px-2 py-3 sm:px-4">
+                    {weekdays.map((day) => (
+                      <span
+                        key={day}
+                        className="text-center text-[10px] font-medium text-muted sm:text-xs"
+                      >
+                        {day}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
                 {view === "day" ? (
                   <div className="space-y-3 p-4 sm:p-5">
-                    {(eventsByDay.get(selectedDate) ?? []).map((event) => <EventCard key={event.id} event={event} conflict={conflictIds.has(event.id)} />)}
-                    {!(eventsByDay.get(selectedDate) ?? []).length ? <p className="py-12 text-center text-sm text-muted">برای این روز برنامه‌ای نیست.</p> : null}
+                    {(eventsByDay.get(selectedDate) ?? []).map((event) => (
+                      <EventCard
+                        key={event.id}
+                        event={event}
+                        conflict={conflictIds.has(event.id)}
+                      />
+                    ))}
+                    {!(eventsByDay.get(selectedDate) ?? []).length ? (
+                      <p className="py-12 text-center text-sm text-muted">
+                        برای این روز برنامه‌ای نیست.
+                      </p>
+                    ) : null}
                   </div>
-                ) : <div
-                  className="grid grid-cols-7 bg-border/60 gap-px"
-                  role="grid"
-                  aria-label={monthTitleFormatter.format(cursor)}
-                >
-                  {Array.from({ length: view === "month" ? firstOffset : 0 }, (_, index) => (
-                    <span
-                      key={`empty-${index}`}
-                      className="min-h-20 bg-surface-secondary/30 sm:min-h-28"
-                      aria-hidden
-                    />
-                  ))}
-                  {(view === "month" ? monthDates : weekDates(selectedDateValue)).map((date) => {
-                    const key = civilDateKey(date);
-                    const dayEvents = eventsByDay.get(key) ?? [];
-                    const selected = selectedDate === key;
-                    const today = todayKey === key;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        role="gridcell"
-                        aria-selected={selected}
-                        aria-label={`${fullDateFormatter.format(date)}، ${numberFormatter.format(dayEvents.length)} برنامه`}
-                        onClick={() => setSelectedDate(key)}
-                        className={`group relative min-h-20 min-w-0 bg-surface p-1.5 text-start transition-colors hover:bg-accent/5 focus-visible:z-[1] focus-visible:outline-2 focus-visible:outline-focus sm:min-h-28 sm:p-2.5 ${selected ? "bg-accent/7 shadow-[inset_0_0_0_2px_var(--accent)]" : ""}`}
-                      >
+                ) : (
+                  <div
+                    className="grid grid-cols-7 bg-border/60 gap-px"
+                    role="grid"
+                    aria-label={monthTitleFormatter.format(cursor)}
+                  >
+                    {Array.from(
+                      { length: view === "month" ? firstOffset : 0 },
+                      (_, index) => (
                         <span
-                          className={`inline-grid size-7 place-items-center rounded-full text-xs font-semibold sm:size-8 sm:text-sm ${today ? "bg-foreground text-background" : selected ? "text-accent" : ""}`}
-                        >
-                          {numberFormatter.format(persianParts(date).day)}
-                        </span>
-                        <span className="mt-1 flex gap-1 sm:hidden" aria-hidden>
-                          {dayEvents.slice(0, 3).map((event) => (
-                            <span
-                              key={event.id}
-                              className={`size-1.5 rounded-full ${event.source === "class" ? "bg-accent" : "bg-warning"}`}
-                            />
-                          ))}
-                        </span>
-                        <span
-                          className="mt-1 hidden space-y-1 sm:block"
+                          key={`empty-${index}`}
+                          className="min-h-20 bg-surface-secondary/30 sm:min-h-28"
                           aria-hidden
+                        />
+                      ),
+                    )}
+                    {(view === "month"
+                      ? monthDates
+                      : weekDates(selectedDateValue)
+                    ).map((date) => {
+                      const key = civilDateKey(date);
+                      const dayEvents = eventsByDay.get(key) ?? [];
+                      const selected = selectedDate === key;
+                      const today = todayKey === key;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          role="gridcell"
+                          aria-selected={selected}
+                          aria-label={`${fullDateFormatter.format(date)}، ${numberFormatter.format(dayEvents.length)} برنامه`}
+                          onClick={() => setSelectedDate(key)}
+                          className={`group relative min-h-20 min-w-0 bg-surface p-1.5 text-start transition-colors hover:bg-accent/5 focus-visible:z-[1] focus-visible:outline-2 focus-visible:outline-focus sm:min-h-28 sm:p-2.5 ${selected ? "bg-accent/7 shadow-[inset_0_0_0_2px_var(--accent)]" : ""}`}
                         >
-                          {dayEvents.slice(0, 2).map((event) => (
-                            <span
-                              key={event.id}
-                              className={`block truncate rounded-lg px-1.5 py-1 text-[10px] font-medium ${conflictIds.has(event.id) ? "bg-danger/12 text-danger" : event.source === "class" ? "bg-accent/10 text-accent" : "bg-warning/12 text-foreground"}`}
-                            >
-                              {timeFormatter.format(new Date(event.startsAt))}{" "}
-                              {event.title}
-                            </span>
-                          ))}
-                          {dayEvents.length > 2 ? (
-                            <span className="block px-1 text-[10px] text-muted">
-                              {numberFormatter.format(dayEvents.length - 2)}{" "}
-                              مورد دیگر
-                            </span>
-                          ) : null}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>}
+                          <span
+                            className={`inline-grid size-7 place-items-center rounded-full text-xs font-semibold sm:size-8 sm:text-sm ${today ? "bg-foreground text-background" : selected ? "text-accent" : ""}`}
+                          >
+                            {numberFormatter.format(persianParts(date).day)}
+                          </span>
+                          <span
+                            className="mt-1 flex gap-1 sm:hidden"
+                            aria-hidden
+                          >
+                            {dayEvents.slice(0, 3).map((event) => (
+                              <span
+                                key={event.id}
+                                className={`size-1.5 rounded-full ${event.source === "class" ? "bg-accent" : "bg-warning"}`}
+                              />
+                            ))}
+                          </span>
+                          <span
+                            className="mt-1 hidden space-y-1 sm:block"
+                            aria-hidden
+                          >
+                            {dayEvents.slice(0, 2).map((event) => (
+                              <span
+                                key={event.id}
+                                className={`block truncate rounded-lg px-1.5 py-1 text-[10px] font-medium ${conflictIds.has(event.id) ? "bg-danger/12 text-danger" : event.source === "class" ? "bg-accent/10 text-accent" : "bg-warning/12 text-foreground"}`}
+                              >
+                                {timeFormatter.format(new Date(event.startsAt))}{" "}
+                                {event.title}
+                              </span>
+                            ))}
+                            {dayEvents.length > 2 ? (
+                              <span className="block px-1 text-[10px] text-muted">
+                                {numberFormatter.format(dayEvents.length - 2)}{" "}
+                                مورد دیگر
+                              </span>
+                            ) : null}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-x-5 gap-y-2 border-t border-border/60 px-4 py-3 text-xs text-muted sm:px-5">
                   <span className="inline-flex items-center gap-2">
                     <span className="size-2 rounded-full bg-accent" />
@@ -629,7 +682,11 @@ export function BusinessCalendarScreen() {
                 <div className="mt-4 space-y-3" aria-live="polite">
                   {selectedEvents.length ? (
                     selectedEvents.map((event) => (
-                      <EventCard key={event.id} event={event} conflict={conflictIds.has(event.id)} />
+                      <EventCard
+                        key={event.id}
+                        event={event}
+                        conflict={conflictIds.has(event.id)}
+                      />
                     ))
                   ) : (
                     <div className="rounded-2xl bg-surface-secondary/60 px-5 py-8 text-center">

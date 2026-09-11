@@ -6,7 +6,10 @@ import {
   type SsgoiConfig,
   type SsgoiTransitionRule,
 } from "@ssgoi/react";
-import { axis, drill, sheet } from "@ssgoi/react/view-transitions";
+import { axis } from "@ssgoi/react/view-transitions";
+
+// One quiet fade/rise for route changes; route rules still own scroll restoration.
+const routeTransition = axis({ type: "y", variant: "non-directional" });
 
 const transitionRules: SsgoiTransitionRule[] = [
   {
@@ -21,33 +24,33 @@ const transitionRules: SsgoiTransitionRule[] = [
       "/discovery/business-class",
       "/discovery/business-classes/:id",
     ],
-    transition: drill({ type: "parallax" }),
+    transition: routeTransition,
     preserveScroll: { from: true, to: false },
   },
   {
     priority: 20,
     on: "/discovery/map",
-    transition: axis({ type: "y" }),
+    transition: routeTransition,
   },
   {
     priority: 20,
     on: "/*/profile/edit",
-    transition: sheet({ type: "static" }),
+    transition: routeTransition,
   },
   {
     priority: 20,
     on: "/*/profile/image",
-    transition: sheet({ type: "static" }),
+    transition: routeTransition,
   },
   {
     on: "/auth/**",
     except: "/auth",
-    transition: drill(),
+    transition: routeTransition,
   },
   {
     on: "/welcome/**",
     except: "/welcome",
-    transition: drill(),
+    transition: routeTransition,
   },
   {
     ordered: [
@@ -56,11 +59,11 @@ const transitionRules: SsgoiTransitionRule[] = [
       "/athlete/reservations",
       "/athlete/profile",
     ],
-    transition: axis({ type: "y", variant: "non-directional" }),
+    transition: routeTransition,
   },
   {
     ordered: ["/coach", "/discovery", "/coach/reservations", "/coach/profile"],
-    transition: axis({ type: "y", variant: "non-directional" }),
+    transition: routeTransition,
   },
 ];
 

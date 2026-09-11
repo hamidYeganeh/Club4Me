@@ -1,5 +1,7 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
 import {
   type Payout,
   useAdminPayouts,
@@ -172,18 +174,18 @@ export function FinanceScreen() {
       <Card className="rounded-[1.75rem] border border-border bg-surface p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">درخواست‌های تسویه</h2>
-          <select
+          <FormSelect
             className={inputClass}
             value={status}
-            onChange={(event) => setStatus(event.target.value)}
+            onChange={(event) => setStatus(event)}
             aria-label="فیلتر وضعیت تسویه"
           >
-            <option value="">همه</option>
-            <option value="requested">در انتظار</option>
-            <option value="under_review">در حال بررسی</option>
-            <option value="paid">پرداخت‌شده</option>
-            <option value="rejected">ردشده</option>
-          </select>
+            <FormOption value="">همه</FormOption>
+            <FormOption value="requested">در انتظار</FormOption>
+            <FormOption value="under_review">در حال بررسی</FormOption>
+            <FormOption value="paid">پرداخت‌شده</FormOption>
+            <FormOption value="rejected">ردشده</FormOption>
+          </FormSelect>
         </div>
         {payouts.isPending ? (
           <div className="flex justify-center py-12">
@@ -284,7 +286,7 @@ export function FinanceScreen() {
               <label htmlFor="wallet-user-id" className="text-sm font-medium">
                 شناسه کاربر
               </label>
-              <input
+              <HeroInput
                 id="wallet-user-id"
                 required
                 name="userId"
@@ -302,7 +304,7 @@ export function FinanceScreen() {
               <label htmlFor="wallet-amount" className="text-sm font-medium">
                 مبلغ (ریال)
               </label>
-              <input
+              <HeroInput
                 id="wallet-amount"
                 required
                 name="amount"
@@ -318,7 +320,7 @@ export function FinanceScreen() {
               <label htmlFor="wallet-note" className="text-sm font-medium">
                 علت افزایش اعتبار
               </label>
-              <input
+              <HeroInput
                 id="wallet-note"
                 required
                 name="note"
@@ -347,7 +349,7 @@ export function FinanceScreen() {
               <label htmlFor="discount-code" className="text-sm font-medium">
                 کد تخفیف
               </label>
-              <input
+              <HeroInput
                 id="discount-code"
                 required
                 name="code"
@@ -365,7 +367,7 @@ export function FinanceScreen() {
               <label htmlFor="discount-title" className="text-sm font-medium">
                 عنوان کمپین
               </label>
-              <input
+              <HeroInput
                 id="discount-title"
                 required
                 name="title"
@@ -379,24 +381,25 @@ export function FinanceScreen() {
               <label htmlFor="discount-kind" className="text-sm font-medium">
                 نوع تخفیف
               </label>
-              <select
+              <FormSelect
+                aria-label="kind"
                 id="discount-kind"
                 name="kind"
                 className={inputClass}
                 value={discountKind}
                 onChange={(event) =>
-                  setDiscountKind(event.target.value as "percent" | "fixed")
+                  setDiscountKind(event as "percent" | "fixed")
                 }
               >
-                <option value="percent">درصدی</option>
-                <option value="fixed">مبلغ ثابت</option>
-              </select>
+                <FormOption value="percent">درصدی</FormOption>
+                <FormOption value="fixed">مبلغ ثابت</FormOption>
+              </FormSelect>
             </div>
             <div className="grid gap-1.5">
               <label htmlFor="discount-value" className="text-sm font-medium">
                 {discountKind === "percent" ? "درصد تخفیف" : "مبلغ تخفیف"}
               </label>
-              <input
+              <HeroInput
                 id="discount-value"
                 required
                 name="value"
@@ -415,7 +418,7 @@ export function FinanceScreen() {
               <label htmlFor="discount-max" className="text-sm font-medium">
                 سقف مبلغ تخفیف
               </label>
-              <input
+              <HeroInput
                 id="discount-max"
                 name="maxDiscount"
                 type="number"
@@ -433,7 +436,7 @@ export function FinanceScreen() {
               >
                 حداقل خرید
               </label>
-              <input
+              <HeroInput
                 id="discount-min-order"
                 name="minOrderAmount"
                 type="number"
@@ -448,7 +451,7 @@ export function FinanceScreen() {
               <label htmlFor="discount-budget" className="text-sm font-medium">
                 بودجه کل
               </label>
-              <input
+              <HeroInput
                 id="discount-budget"
                 required
                 name="budget"
@@ -467,7 +470,7 @@ export function FinanceScreen() {
               >
                 سقف استفاده هر کاربر
               </label>
-              <input
+              <HeroInput
                 id="discount-user-limit"
                 name="perUserLimit"
                 type="number"
@@ -603,7 +606,7 @@ export function FinanceScreen() {
                     >
                       شماره پیگیری بانکی
                     </Label>
-                    <input
+                    <HeroInput
                       id="payout-bank-reference"
                       required
                       minLength={3}

@@ -38,6 +38,9 @@ export interface WorkoutSessionRecord {
   status: "active" | "completed" | "discarded";
   sets: SetLog[];
   note: string;
+  effort?: "easy" | "balanced" | "hard" | null;
+  followUpRequested?: boolean;
+  coachReview?: { text: string; reviewedAt: Date; revision: number };
 }
 const oid = Schema.Types.ObjectId;
 export const WorkoutPlanSchema = new Schema<WorkoutPlanRecord>(
@@ -114,6 +117,19 @@ export const WorkoutSessionSchema = new Schema<WorkoutSessionRecord>(
       default: [],
     },
     note: { type: String, default: "" },
+    effort: {
+      type: String,
+      enum: ["easy", "balanced", "hard", null],
+      default: null,
+    },
+    followUpRequested: { type: Boolean, default: false },
+    coachReview: {
+      type: new Schema(
+        { text: String, reviewedAt: Date, revision: Number },
+        { _id: false },
+      ),
+      default: undefined,
+    },
   },
   { collection: "workout_sessions", timestamps: true },
 );

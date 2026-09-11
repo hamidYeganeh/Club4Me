@@ -1,22 +1,23 @@
 "use client";
 
+import { Uploader } from "@repo/ui/uploader";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { useSelectedClub } from "@/lib/use-selected-club";
+
 import {
   type OperationsDataKind,
   type OperationsImportResult,
-  useBusinessClubs,
   useExportBusinessOperations,
   useImportBusinessOperations,
 } from "@api/business";
 import { Button, Card, Chip, toast } from "@heroui/react";
-import { type ChangeEvent, useState } from "react";
+import { useState } from "react";
 
 const input =
   "h-11 rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm outline-none focus:border-focus focus:ring-3 focus:ring-focus/15";
 
 export function DataExchangeScreen() {
-  const clubs = useBusinessClubs();
-  const [selectedClub, setSelectedClub] = useState("");
-  const clubId = selectedClub || clubs.data?.items[0]?.id || "";
+  const { clubs, clubId, setClubId: setSelectedClub } = useSelectedClub();
   const [kind, setKind] = useState<OperationsDataKind>("students");
   const [format, setFormat] = useState<"csv" | "xlsx">("xlsx");
   const [rows, setRows] = useState<Array<Record<string, string>>>([]);
@@ -40,9 +41,10 @@ export function DataExchangeScreen() {
     }
   };
 
-  const pickFile = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const pickFile = async (file: File) => {
+    setPreview(null);
+    setRows([]);
+    setContentBase64("");
     try {
       if (file.name.toLowerCase().endsWith(".xlsx")) {
         setContentBase64(await fileToBase64(file));
@@ -59,7 +61,8 @@ export function DataExchangeScreen() {
       setPreview(null);
     } catch {
       setRows([]);
-      toast.danger("ساختار CSV معتبر نیست");
+      toast.danger("ساختار فایل معتبر نیست");
+      throw new Error("Invalid import file");
     }
   };
 
@@ -98,48 +101,49 @@ export function DataExchangeScreen() {
           <div className="grid gap-4 md:grid-cols-2">
             <label className="grid gap-1.5 text-sm text-muted">
               باشگاه
-              <select
+              <FormSelect
+                aria-label="باشگاه"
                 className={input}
                 value={clubId}
-                onChange={(event) => setSelectedClub(event.target.value)}
+                onChange={(event) => setSelectedClub(event)}
               >
                 {clubs.data?.items.map((club) => (
-                  <option key={club.id} value={club.id}>
+                  <FormOption entity={club} key={club.id} value={club.id}>
                     {club.name}
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
+              </FormSelect>
             </label>
             <label className="grid gap-1.5 text-sm text-muted">
               فرمت خروجی
-              <select
+              <FormSelect
+                aria-label="فرمت خروجی"
                 className={input}
                 value={format}
-                onChange={(event) =>
-                  setFormat(event.target.value as "csv" | "xlsx")
-                }
+                onChange={(event) => setFormat(event as "csv" | "xlsx")}
               >
-                <option value="xlsx">Excel (.xlsx)</option>
-                <option value="csv">CSV</option>
-              </select>
+                <FormOption value="xlsx">Excel (.xlsx)</FormOption>
+                <FormOption value="csv">CSV</FormOption>
+              </FormSelect>
             </label>
             <label className="grid gap-1.5 text-sm text-muted">
               نوع داده
-              <select
+              <FormSelect
+                aria-label="نوع داده"
                 className={input}
                 value={kind}
                 onChange={(event) => {
-                  setKind(event.target.value as OperationsDataKind);
+                  setKind(event as OperationsDataKind);
                   setRows([]);
                   setPreview(null);
                 }}
               >
-                <option value="students">شاگردها</option>
-                <option value="coaches">مربی‌ها</option>
-                <option value="classes">کلاس‌ها</option>
-                <option value="payments">پرداخت‌ها</option>
-                <option value="attendance">حضور‌وغیاب</option>
-              </select>
+                <FormOption value="students">شاگردها</FormOption>
+                <FormOption value="coaches">مربی‌ها</FormOption>
+                <FormOption value="classes">کلاس‌ها</FormOption>
+                <FormOption value="payments">پرداخت‌ها</FormOption>
+                <FormOption value="attendance">حضور‌وغیاب</FormOption>
+              </FormSelect>
             </label>
           </div>
           <Button
@@ -163,11 +167,24 @@ export function DataExchangeScreen() {
             </p>
           ) : (
             <>
-              <input
-                className="mt-4 block w-full rounded-xl border border-dashed border-border p-4 text-sm"
-                type="file"
-                accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                onChange={(event) => void pickFile(event)}
+              <Uploader
+                multiple={false}
+                disabled={importer.isPending}
+                accept={{
+                  "text/csv": [".csv"],
+                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                    [".xlsx"],
+                }}
+                labels={{
+                  clickToUpload: "انتخاب فایل ورود گروهی",
+                  formats: "CSV یا Excel، حداکثر ۱۰ مگابایت",
+                }}
+                onUpload={pickFile}
+                onRemove={() => {
+                  setRows([]);
+                  setContentBase64("");
+                  setPreview(null);
+                }}
               />
               <p className="mt-2 text-xs text-muted">
                 حداکثر ۵٬۰۰۰ ردیف؛ بررسی اولیه هیچ داده‌ای ذخیره نمی‌کند.

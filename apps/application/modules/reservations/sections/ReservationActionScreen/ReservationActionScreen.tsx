@@ -1,4 +1,6 @@
 "use client";
+import { RadioGroup, Radio } from "@heroui/react";
+import { TextArea as HeroTextArea } from "@heroui/react";
 import { TaskStatusIntro } from "@/components/task-status-intro";
 
 import { useState } from "react";
@@ -43,7 +45,7 @@ export function ReservationActionScreen({
   }).format(new Date(reservation.sessionStartsAt));
 
   return (
-    <main className="fixed inset-0 z-60 flex min-h-dvh flex-1 flex-col overflow-y-auto bg-background pb-[calc(2rem+env(safe-area-inset-bottom))]">
+    <main className="fixed inset-x-0 top-0 bottom-[var(--keyboard-inset,0px)] z-60 mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col overflow-y-auto bg-background pb-[calc(2rem+env(safe-area-inset-bottom))]">
       <SecondaryHeader
         title={mode === "cancel" ? "لغو رزرو" : "تغییر زمان رزرو"}
         showFilter={false}
@@ -119,37 +121,34 @@ export function ReservationActionScreen({
                 <Skeleton key={index} className="h-12 rounded-xl" />
               ))
             ) : (
-              <div className="flex flex-col">
+              <RadioGroup
+                aria-label="دلیل لغو رزرو"
+                name="cancellation-reason"
+                value={reasonId}
+                onChange={(value) => {
+                  setReasonId(value);
+                  if (value !== "other") setCustomReason("");
+                }}
+              >
                 {reasons.map((reason) => (
-                  <label
-                    key={reason.id}
-                    className="flex min-h-12 cursor-pointer items-center gap-3 border-b border-border/60 py-3 last:border-0"
-                  >
-                    <input
-                      type="radio"
-                      name="cancellation-reason"
-                      value={reason.id}
-                      checked={reasonId === reason.id}
-                      onChange={() => {
-                        setReasonId(reason.id);
-                        setCustomReason("");
-                      }}
-                      className="size-5 accent-accent"
-                    />
-                    <span className="text-sm font-semibold">{reason.name}</span>
-                  </label>
+                  <Radio key={reason.id} value={reason.id}>
+                    <Radio.Content className="min-h-12">
+                      <Radio.Control>
+                        <Radio.Indicator />
+                      </Radio.Control>
+                      {reason.name}
+                    </Radio.Content>
+                  </Radio>
                 ))}
-                <label className="flex min-h-12 cursor-pointer items-center gap-3 py-3">
-                  <input
-                    type="radio"
-                    name="cancellation-reason"
-                    checked={reasonId === "other"}
-                    onChange={() => setReasonId("other")}
-                    className="size-5 accent-accent"
-                  />
-                  <span className="text-sm font-semibold">سایر</span>
-                </label>
-              </div>
+                <Radio value="other">
+                  <Radio.Content className="min-h-12">
+                    <Radio.Control>
+                      <Radio.Indicator />
+                    </Radio.Control>
+                    سایر
+                  </Radio.Content>
+                </Radio>
+              </RadioGroup>
             )}
             {reasonId === "other" ? (
               <div>
@@ -159,7 +158,7 @@ export function ReservationActionScreen({
                 >
                   دلیل شما
                 </label>
-                <textarea
+                <HeroTextArea
                   id="custom-cancellation-reason"
                   maxLength={300}
                   value={customReason}

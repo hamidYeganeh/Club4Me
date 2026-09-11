@@ -1,4 +1,8 @@
 "use client";
+
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
+import { useSelectedClub } from "@/lib/use-selected-club";
 import { AttendanceHistory } from "@/components/attendance-history";
 import { IranDateInput } from "@repo/ui/iran-date-input";
 
@@ -8,7 +12,6 @@ import {
   useBusinessClassEnrollments,
   useBusinessClasses,
   useBusinessClassSessions,
-  useBusinessClubs,
   useClubBranches,
   useClubCoachProfiles,
   useClubStudents,
@@ -157,9 +160,7 @@ function Loading() {
 }
 
 export function BusinessClassesScreen() {
-  const clubs = useBusinessClubs();
-  const [picked, setPicked] = useState("");
-  const clubId = picked || clubs.data?.items[0]?.id || "";
+  const { clubs, clubId, setClubId: setPicked } = useSelectedClub();
   const classes = useBusinessClasses(clubId);
   const [draftFilters, setDraftFilters] = useState({
     query: "",
@@ -283,17 +284,18 @@ export function BusinessClassesScreen() {
       action={
         <div className="flex items-end gap-2">
           <Field label="باشگاه">
-            <select
+            <FormSelect
+              aria-label="انتخاب گزینه"
               className={`${input} min-w-52`}
               value={clubId}
-              onChange={(e) => setPicked(e.target.value)}
+              onChange={(e) => setPicked(e)}
             >
               {clubs.data?.items.map((club) => (
-                <option key={club.id} value={club.id}>
+                <FormOption entity={club} key={club.id} value={club.id}>
                   {club.name}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </Field>
           <Button variant="primary">
             <Link href="/classes/new" className="flex items-center gap-2">
@@ -323,7 +325,7 @@ export function BusinessClassesScreen() {
           <>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted">جست‌وجو</span>
-              <input
+              <HeroInput
                 className={input}
                 value={draftFilters.query}
                 onChange={(event) =>
@@ -337,43 +339,45 @@ export function BusinessClassesScreen() {
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted">وضعیت</span>
-              <select
+              <FormSelect
+                aria-label="انتخاب گزینه"
                 className={input}
                 value={draftFilters.status}
                 onChange={(event) =>
                   setDraftFilters((current) => ({
                     ...current,
-                    status: event.target.value as "" | BusinessClassStatus,
+                    status: event as "" | BusinessClassStatus,
                   }))
                 }
               >
-                <option value="">همه</option>
+                <FormOption value="">همه</FormOption>
                 {Object.entries(statusLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
+                  <FormOption key={value} value={value}>
                     {label}
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
+              </FormSelect>
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted">مدل کلاس</span>
-              <select
+              <FormSelect
+                aria-label="انتخاب گزینه"
                 className={input}
                 value={draftFilters.model}
                 onChange={(event) =>
                   setDraftFilters((current) => ({
                     ...current,
-                    model: event.target.value as "" | BusinessClassModel,
+                    model: event as "" | BusinessClassModel,
                   }))
                 }
               >
-                <option value="">همه</option>
+                <FormOption value="">همه</FormOption>
                 {Object.entries(modelLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
+                  <FormOption key={value} value={value}>
                     {label}
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
+              </FormSelect>
             </label>
           </>
         }
@@ -414,9 +418,12 @@ function ClassForm({
   fixedClubId?: string;
 }) {
   const router = useRouter();
-  const clubs = useBusinessClubs();
-  const [clubChoice, setClubChoice] = useState(fixedClubId ?? "");
-  const clubId = fixedClubId || clubChoice || clubs.data?.items[0]?.id || "";
+  const {
+    clubs,
+    clubId: preferredClubId,
+    setClubId: setClubChoice,
+  } = useSelectedClub();
+  const clubId = fixedClubId || preferredClubId;
   const coaches = useClubCoachProfiles(clubId);
   const branches = useClubBranches(clubId);
   const levels = usePublicCatalogResource("sports", "skill-level", {
@@ -533,22 +540,23 @@ function ClassForm({
         <Card className="grid gap-4 app-card shadow-none active:scale-100 p-5 md:grid-cols-2 lg:grid-cols-3">
           {!fixedClubId && (
             <Field label="باشگاه">
-              <select
+              <FormSelect
+                aria-label="انتخاب گزینه"
                 required
                 className={input}
                 value={clubId}
-                onChange={(e) => setClubChoice(e.target.value)}
+                onChange={(e) => setClubChoice(e)}
               >
                 {clubs.data?.items.map((club) => (
-                  <option key={club.id} value={club.id}>
+                  <FormOption entity={club} key={club.id} value={club.id}>
                     {club.name}
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
+              </FormSelect>
             </Field>
           )}
           <Field label="نام کلاس">
-            <input
+            <HeroInput
               required
               minLength={2}
               name="title"
@@ -557,7 +565,7 @@ function ClassForm({
             />
           </Field>
           <Field label="رشته">
-            <input
+            <HeroInput
               name="sport"
               defaultValue={initial?.sport}
               placeholder="مثلاً بدنسازی"
@@ -565,39 +573,41 @@ function ClassForm({
             />
           </Field>
           <Field label="سطح">
-            <select
+            <FormSelect
+              aria-label="skillLevelId"
               name="skillLevelId"
               defaultValue={initial?.skillLevelId ?? ""}
               className={input}
             >
-              <option value="">تعیین نشده</option>
+              <FormOption value="">تعیین نشده</FormOption>
               {initial?.skillLevelId &&
               !levels.data?.items.some(
                 (item) => item.id === initial.skillLevelId,
               ) ? (
-                <option value={initial.skillLevelId}>
+                <FormOption value={initial.skillLevelId}>
                   {initial.level || "سطح ثبت‌شده"}
-                </option>
+                </FormOption>
               ) : null}
               {levels.data?.items.map((item) => (
-                <option key={item.id} value={item.id}>
+                <FormOption entity={item} key={item.id} value={item.id}>
                   {item.name}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </Field>
           <Field label="مدل کلاس">
-            <select
+            <FormSelect
+              aria-label="انتخاب گزینه"
               className={input}
               value={model}
-              onChange={(e) => setModel(e.target.value as BusinessClassModel)}
+              onChange={(e) => setModel(e as BusinessClassModel)}
             >
               {Object.entries(modelLabels).map(([value, label]) => (
-                <option key={value} value={value}>
+                <FormOption key={value} value={value}>
                   {label}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </Field>
           <Field label="ظرفیت">
             <PanelNumberField
@@ -610,69 +620,76 @@ function ClassForm({
             />
           </Field>
           <Field label="وضعیت">
-            <select
+            <FormSelect
+              aria-label="status"
               name="status"
               defaultValue={initial?.status ?? "draft"}
               className={input}
             >
               {Object.entries(statusLabels).map(([value, label]) => (
-                <option key={value} value={value}>
+                <FormOption key={value} value={value}>
                   {label}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </Field>
           <Field label="نمایش در اپ ورزشکار">
-            <select
+            <FormSelect
+              aria-label="visibility"
               name="visibility"
               defaultValue={initial?.visibility ?? "public"}
               className={input}
             >
-              <option value="public">عمومی و قابل ثبت‌نام</option>
-              <option value="private">خصوصی و فقط مدیریت باشگاه</option>
-            </select>
+              <FormOption value="public">عمومی و قابل ثبت‌نام</FormOption>
+              <FormOption value="private">خصوصی و فقط مدیریت باشگاه</FormOption>
+            </FormSelect>
           </Field>
           <Field label="روش تأیید ثبت‌نام">
-            <select
+            <FormSelect
+              aria-label="enrollmentMode"
               name="enrollmentMode"
               defaultValue={initial?.enrollmentMode ?? "automatic"}
               className={input}
             >
-              <option value="automatic">خودکار پس از پرداخت</option>
-              <option value="requires_approval">نیازمند تأیید باشگاه</option>
-            </select>
+              <FormOption value="automatic">خودکار پس از پرداخت</FormOption>
+              <FormOption value="requires_approval">
+                نیازمند تأیید باشگاه
+              </FormOption>
+            </FormSelect>
           </Field>
           <Field label="مربی">
-            <select
+            <FormSelect
+              aria-label="coachProfileId"
               name="coachProfileId"
               defaultValue={initial?.coachProfileId ?? ""}
               className={input}
             >
-              <option value="">بدون مربی</option>
+              <FormOption value="">بدون مربی</FormOption>
               {coaches.data?.items.map((coach) => (
-                <option key={coach.id} value={coach.id}>
+                <FormOption entity={coach} key={coach.id} value={coach.id}>
                   {coach.firstName} {coach.lastName}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </Field>
           <Field label="شعبه">
-            <select
+            <FormSelect
+              aria-label="branchId"
               name="branchId"
               defaultValue={initial?.branchId ?? ""}
               className={input}
             >
-              <option value="">بدون شعبه</option>
+              <FormOption value="">بدون شعبه</FormOption>
               {branches.data?.items.map((branch) => (
-                <option key={branch.id} value={branch.id}>
+                <FormOption entity={branch} key={branch.id} value={branch.id}>
                   {branch.name}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </Field>
           <div className="md:col-span-2 lg:col-span-3">
             <Field label="توضیحات">
-              <textarea
+              <HeroTextArea
                 name="description"
                 defaultValue={initial?.description}
                 className={`${input} h-24 py-3`}
@@ -698,7 +715,7 @@ function ClassForm({
             />
           </Field>
           <Field label="شناسه کاور">
-            <input
+            <HeroInput
               name="coverMediaId"
               dir="ltr"
               defaultValue={initial?.coverMediaId ?? ""}
@@ -708,7 +725,7 @@ function ClassForm({
           </Field>
           <div className="md:col-span-2 lg:col-span-3">
             <Field label="شناسه تصاویر گالری (هر خط یک شناسه)">
-              <textarea
+              <HeroTextArea
                 name="galleryMediaIds"
                 dir="ltr"
                 defaultValue={initial?.galleryMediaIds.join("\n")}
@@ -718,7 +735,7 @@ function ClassForm({
           </div>
           <div className="md:col-span-2 lg:col-span-3">
             <Field label="پیش‌نیازها (هر خط یک مورد)">
-              <textarea
+              <HeroTextArea
                 name="prerequisites"
                 defaultValue={initial?.prerequisites.join("\n")}
                 className={`${input} min-h-24 py-3`}
@@ -727,7 +744,7 @@ function ClassForm({
           </div>
           <div className="md:col-span-2">
             <Field label="شناسه تجهیزات لازم">
-              <textarea
+              <HeroTextArea
                 name="requiredEquipmentIds"
                 dir="ltr"
                 defaultValue={initial?.requiredEquipmentIds.join("\n")}
@@ -736,7 +753,7 @@ function ClassForm({
             </Field>
           </div>
           <Field label="شناسه امکانات">
-            <textarea
+            <HeroTextArea
               name="amenityIds"
               dir="ltr"
               defaultValue={initial?.amenityIds.join("\n")}
@@ -745,7 +762,7 @@ function ClassForm({
           </Field>
           <div className="md:col-span-2 lg:col-span-3">
             <Field label="سوالات متداول">
-              <textarea
+              <HeroTextArea
                 name="faqs"
                 defaultValue={initial?.faqs
                   ?.map((item) => `${item.question} | ${item.answer}`)
@@ -758,19 +775,18 @@ function ClassForm({
         </Card>
         <Card className="grid gap-4 app-card shadow-none active:scale-100 p-5 md:grid-cols-2 lg:grid-cols-4">
           <Field label="مدل پرداخت">
-            <select
+            <FormSelect
+              aria-label="انتخاب گزینه"
               className={input}
               value={pricingModel}
-              onChange={(e) =>
-                setPricingModel(e.target.value as BusinessClassPricingModel)
-              }
+              onChange={(e) => setPricingModel(e as BusinessClassPricingModel)}
             >
               {Object.entries(pricingLabels).map(([value, label]) => (
-                <option key={value} value={value}>
+                <FormOption key={value} value={value}>
                   {label}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </Field>
           <Field label="مبلغ (ریال)">
             <PanelNumberField
@@ -811,7 +827,7 @@ function ClassForm({
             />
           </Field>
           <Field label="شروع ثبت‌نام">
-            <input
+            <HeroInput
               type="datetime-local"
               name="registrationStartAt"
               defaultValue={toLocalInput(initial?.registrationStartAt)}
@@ -819,7 +835,7 @@ function ClassForm({
             />
           </Field>
           <Field label="پایان ثبت‌نام">
-            <input
+            <HeroInput
               type="datetime-local"
               name="registrationEndAt"
               defaultValue={toLocalInput(initial?.registrationEndAt)}
@@ -859,26 +875,23 @@ function ClassForm({
                 className="grid gap-3 rounded-xl bg-default/30 p-3 md:grid-cols-[1fr_1fr_1fr_auto]"
               >
                 <Field label="روز">
-                  <select
+                  <FormSelect
+                    aria-label="انتخاب گزینه"
                     value={row.dayOfWeek}
                     onChange={(e) =>
-                      setScheduleField(
-                        index,
-                        "dayOfWeek",
-                        Number(e.target.value),
-                      )
+                      setScheduleField(index, "dayOfWeek", Number(e))
                     }
                     className={input}
                   >
                     {weekdays.map((day) => (
-                      <option key={day.value} value={day.value}>
+                      <FormOption key={day.value} value={day.value}>
                         {day.label}
-                      </option>
+                      </FormOption>
                     ))}
-                  </select>
+                  </FormSelect>
                 </Field>
                 <Field label="ساعت شروع">
-                  <input
+                  <HeroInput
                     type="time"
                     dir="ltr"
                     value={row.startTime}
@@ -1083,9 +1096,22 @@ export function BusinessClassDetailScreen({
       toast.danger("افزودن شاگرد انجام نشد؛ ممکن است ظرفیت کلاس پر باشد");
     }
   };
-  const mark = (studentId: string, status: "present" | "absent" | "excused") =>
+  const mark = (
+    studentId: string,
+    status: "present" | "absent" | "excused",
+    checkedOut = false,
+  ) =>
     recordAttendance
-      .mutateAsync([{ studentId, status, notes: "" }])
+      .mutateAsync([
+        {
+          studentId,
+          status,
+          checkedOut,
+          notes:
+            attendance.data?.items.find((row) => row.studentId === studentId)
+              ?.notes ?? "",
+        },
+      ])
       .then(() => toast.success("حضور ثبت شد"))
       .catch(() => toast.danger("ثبت حضور انجام نشد"));
   return (
@@ -1200,8 +1226,13 @@ export function BusinessClassDetailScreen({
             className="grid gap-4 md:grid-cols-2 lg:grid-cols-5"
           >
             <Field label="شاگرد">
-              <select required name="studentId" className={input}>
-                <option value="">انتخاب شاگرد</option>
+              <FormSelect
+                aria-label="studentId"
+                required
+                name="studentId"
+                className={input}
+              >
+                <FormOption value="">انتخاب شاگرد</FormOption>
                 {students.data?.items
                   .filter(
                     (student) =>
@@ -1213,17 +1244,21 @@ export function BusinessClassDetailScreen({
                       ),
                   )
                   .map((student) => (
-                    <option key={student.id} value={student.id}>
+                    <FormOption
+                      entity={student}
+                      key={student.id}
+                      value={student.id}
+                    >
                       {student.firstName} {student.lastName}
-                    </option>
+                    </FormOption>
                   ))}
-              </select>
+              </FormSelect>
             </Field>
             <Field label="وضعیت">
-              <select name="status" className={input}>
-                <option value="active">ثبت‌نام فعال</option>
-                <option value="waitlisted">لیست انتظار</option>
-              </select>
+              <FormSelect aria-label="status" name="status" className={input}>
+                <FormOption value="active">ثبت‌نام فعال</FormOption>
+                <FormOption value="waitlisted">لیست انتظار</FormOption>
+              </FormSelect>
             </Field>
             <Field label="مبلغ توافقی">
               <PanelNumberField
@@ -1235,11 +1270,15 @@ export function BusinessClassDetailScreen({
               />
             </Field>
             <Field label="وضعیت پرداخت">
-              <select name="paymentStatus" className={input}>
-                <option value="pending">پرداخت‌نشده</option>
-                <option value="paid">پرداخت‌شده</option>
-                <option value="waived">رایگان</option>
-              </select>
+              <FormSelect
+                aria-label="paymentStatus"
+                name="paymentStatus"
+                className={input}
+              >
+                <FormOption value="pending">پرداخت‌نشده</FormOption>
+                <FormOption value="paid">پرداخت‌شده</FormOption>
+                <FormOption value="waived">رایگان</FormOption>
+              </FormSelect>
             </Field>
             <Field label="تعداد جلسات">
               <PanelNumberField
@@ -1304,51 +1343,52 @@ export function BusinessClassDetailScreen({
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <select
+                        <FormSelect
                           aria-label="وضعیت عضویت"
                           value={enrollment.status}
                           onChange={(e) =>
                             updateEnrollment.mutate({
                               enrollmentId: enrollment.id,
                               payload: {
-                                status: e.target
-                                  .value as typeof enrollment.status,
+                                status: e as typeof enrollment.status,
                               },
                             })
                           }
                           className="h-9 rounded-lg border border-border bg-surface px-2 text-xs"
                         >
-                          <option value="active">فعال</option>
-                          <option value="pending">در انتظار تأیید</option>
-                          <option value="waitlisted">انتظار</option>
-                          <option value="completed">تمام‌شده</option>
-                          <option value="cancelled">لغوشده</option>
-                        </select>
+                          <FormOption value="active">فعال</FormOption>
+                          <FormOption value="pending">
+                            در انتظار تأیید
+                          </FormOption>
+                          <FormOption value="waitlisted">انتظار</FormOption>
+                          <FormOption value="completed">تمام‌شده</FormOption>
+                          <FormOption value="cancelled">لغوشده</FormOption>
+                        </FormSelect>
                         <a
                           className="rounded-lg border border-border px-3 py-2 text-xs"
                           href={`/payments?studentId=${enrollment.studentId}`}
                         >
                           حساب شهریه و رسیدها
                         </a>
-                        <select
+                        <FormSelect
                           aria-label="انتقال شاگرد"
                           defaultValue=""
                           onChange={(e) => {
                             if (
-                              e.target.value &&
+                              e &&
                               window.confirm(
                                 "شاگرد به کلاس انتخاب‌شده منتقل شود؟",
                               )
                             )
                               transfer.mutate({
                                 enrollmentId: enrollment.id,
-                                targetClassId: e.target.value,
+                                targetClassId: e,
                               });
-                            e.target.value = "";
+                            e = "";
                           }}
                           className="h-9 rounded-lg border border-border bg-surface px-2 text-xs"
                         >
-                          <option value="">انتقال به...</option>
+                          <FormOption value="">انتقال به...</FormOption>
                           {classes.data?.items
                             .filter(
                               (target) =>
@@ -1356,11 +1396,15 @@ export function BusinessClassDetailScreen({
                                 target.status === "active",
                             )
                             .map((target) => (
-                              <option key={target.id} value={target.id}>
+                              <FormOption
+                                entity={target}
+                                key={target.id}
+                                value={target.id}
+                              >
                                 {target.title}
-                              </option>
+                              </FormOption>
                             ))}
-                        </select>
+                        </FormSelect>
                       </div>
                     </div>
                   </div>
@@ -1391,22 +1435,27 @@ export function BusinessClassDetailScreen({
             </Button>
           </div>
           <Field label="جلسه">
-            <select
+            <FormSelect
+              aria-label="انتخاب گزینه"
               className={`${input} mt-4`}
               value={sessionId}
-              onChange={(e) => setChosenSession(e.target.value)}
+              onChange={(e) => setChosenSession(e)}
             >
               {sessions.data?.items.map((session) => (
-                <option key={session.id} value={session.id}>
+                <FormOption
+                  entity={session}
+                  key={session.id}
+                  value={session.id}
+                >
                   {dateTime(session.startsAt)} ·{" "}
                   {session.status === "scheduled"
                     ? "برگزارنشده"
                     : session.status === "completed"
                       ? "تمام‌شده"
                       : "لغوشده"}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </Field>
           {sessionId && (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -1504,7 +1553,7 @@ export function BusinessClassDetailScreen({
                 }}
               >
                 <Field label="شروع جدید">
-                  <input
+                  <HeroInput
                     className={input}
                     type="datetime-local"
                     required
@@ -1518,7 +1567,7 @@ export function BusinessClassDetailScreen({
                   />
                 </Field>
                 <Field label="پایان جدید">
-                  <input
+                  <HeroInput
                     className={input}
                     type="datetime-local"
                     required
@@ -1532,19 +1581,22 @@ export function BusinessClassDetailScreen({
                   />
                 </Field>
                 <Field label="دامنه تغییر">
-                  <select
+                  <FormSelect
+                    aria-label="انتخاب گزینه"
                     className={input}
                     value={sessionChange.scope}
                     onChange={(event) =>
                       setSessionChange((value) => ({
                         ...value,
-                        scope: event.target.value as "single" | "future",
+                        scope: event as "single" | "future",
                       }))
                     }
                   >
-                    <option value="single">فقط همین جلسه</option>
-                    <option value="future">این جلسه و همه جلسات بعدی</option>
-                  </select>
+                    <FormOption value="single">فقط همین جلسه</FormOption>
+                    <FormOption value="future">
+                      این جلسه و همه جلسات بعدی
+                    </FormOption>
+                  </FormSelect>
                 </Field>
                 <div className="flex items-end gap-2">
                   <Button
@@ -1598,6 +1650,7 @@ export function BusinessClassDetailScreen({
                       <Button
                         size="sm"
                         variant={current === "present" ? "primary" : "ghost"}
+                        isDisabled={recordAttendance.isPending}
                         onPress={() => mark(enrollment.studentId, "present")}
                       >
                         حاضر
@@ -1605,6 +1658,7 @@ export function BusinessClassDetailScreen({
                       <Button
                         size="sm"
                         variant={current === "absent" ? "danger" : "ghost"}
+                        isDisabled={recordAttendance.isPending}
                         onPress={() => mark(enrollment.studentId, "absent")}
                       >
                         غایب
@@ -1612,11 +1666,35 @@ export function BusinessClassDetailScreen({
                       <Button
                         size="sm"
                         variant={current === "excused" ? "secondary" : "ghost"}
+                        isDisabled={recordAttendance.isPending}
                         onPress={() => mark(enrollment.studentId, "excused")}
                       >
                         موجه
                       </Button>
                     </div>
+                    {current === "present" ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        isDisabled={
+                          recordAttendance.isPending ||
+                          Boolean(
+                            attendance.data?.items.find(
+                              (row) => row.studentId === enrollment.studentId,
+                            )?.checkedOutAt,
+                          )
+                        }
+                        onPress={() =>
+                          mark(enrollment.studentId, "present", true)
+                        }
+                      >
+                        {attendance.data?.items.find(
+                          (row) => row.studentId === enrollment.studentId,
+                        )?.checkedOutAt
+                          ? "خروج ثبت شده"
+                          : "ثبت خروج"}
+                      </Button>
+                    ) : null}
                     <AttendanceHistory
                       changes={
                         attendance.data?.items.find(

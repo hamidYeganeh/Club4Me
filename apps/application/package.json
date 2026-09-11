@@ -13,13 +13,13 @@
     "check-types": "node ../../node_modules/typescript/bin/tsc --noEmit",
     "assets:brand": "node scripts/generate-brand-assets.mjs",
     "cap:sync": "npm run build:cap && cap sync",
-    "cap:sync:hosted": "CAPACITOR_SERVER_URL=https://app.gym4me.ir cap sync android",
+    "cap:sync:hosted": "CAPACITOR_SERVER_URL=https://app.gym4me.ir cap sync android && node scripts/verify-hosted.mjs",
     "cap:sync:demo": "CAPACITOR_ALLOW_CLEARTEXT=1 CAPACITOR_DEMO=1 npm run cap:sync",
     "cap:open:android": "cap open android",
     "cap:open:ios": "cap open ios",
     "cap:run:android": "cap run android",
     "cap:run:ios": "cap run ios",
-    "cap:apk": "CAPACITOR_DEMO=1 npm run android:demo",
+    "cap:apk": "npm run android:hosted",
     "android:apk": "node scripts/verify-native.mjs && cd android && ./gradlew :app:assembleDebug",
     "android:aab": "npm run cap:sync:android && cd android && ./gradlew :app:bundleRelease",
     "native:dev": "vite --config vite.config.ts",
@@ -30,7 +30,8 @@
     "cap:sync:android": "npm run build:cap && cap sync android && node scripts/verify-native.mjs",
     "android:demo": "npm run cap:sync:android && npm run android:apk",
     "test:native": "playwright test --config playwright.native.config.ts",
-    "e2e:fullstack": "playwright test --config playwright.fullstack.config.ts"
+    "e2e:fullstack": "playwright test --config playwright.fullstack.config.ts",
+    "android:hosted": "npm run cap:sync:hosted && cd android && ./gradlew --no-daemon :app:assembleDebug"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
@@ -69,6 +70,7 @@
     "clsx": "^2.1.1",
     "d3-array": "^3.2.1",
     "gsap": "^3.15.0",
+    "jsqr": "^1.4.0",
     "lucide-react": "^0.544.0",
     "motion": "^13.2.0",
     "next": "16.3.4",

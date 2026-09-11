@@ -1,5 +1,6 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { ClubEmptyState } from "@modules/discovery/components/ClubEmptyState";
 
 import {
@@ -102,20 +103,19 @@ export function ClubBenefitProductsSection({
       {renewedFromId && (
         <label className="mb-4 grid gap-2 text-sm">
           شروع قرارداد جدید
-          <select
+          <FormSelect
+            aria-label="شروع قرارداد جدید"
             className="min-h-11 rounded-xl border border-border bg-surface px-3"
             value={startMode}
-            onChange={(event) =>
-              setStartMode(event.target.value as typeof startMode)
-            }
+            onChange={(event) => setStartMode(event as typeof startMode)}
           >
-            <option value="after_expiry">
+            <FormOption value="after_expiry">
               پس از پایان اعتبار قبلی و تمدیدهای ثبت‌شده
-            </option>
-            <option value="immediate">
+            </FormOption>
+            <FormOption value="immediate">
               از امروز (اعتبار قبلی جدا باقی می‌ماند)
-            </option>
-          </select>
+            </FormOption>
+          </FormSelect>
           <span className="text-muted">
             تاریخ شروع هنگام پرداخت ثبت می‌شود. شرایط و قیمت قرارداد جدید مطابق
             محصول انتخابی است.
@@ -128,6 +128,27 @@ export function ClubBenefitProductsSection({
             <Chip size="sm" variant="soft">
               {item.type === "session_pack" ? "بسته جلسه" : "عضویت زمانی"}
             </Chip>
+
+            {!!item.accessClubs?.length && (
+              <div className="rounded-xl bg-surface-secondary p-3 text-xs leading-6">
+                <p className="font-semibold">
+                  اعتبار مشترک در{" "}
+                  {item.accessClubs.length.toLocaleString("fa-IR")} باشگاه
+                </p>
+                <p>تعداد جلسات و سقف هفتگی بین همه باشگاه‌های زیر مشترک است.</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {item.accessClubs.map((club) => (
+                    <Link
+                      key={club.id}
+                      className="inline-flex min-h-11 items-center rounded-xl border border-border px-3 text-accent"
+                      href={`/discovery/clubs/${club.id}/slots`}
+                    >
+                      {club.name} ←
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
             <h3 className="mt-3 font-bold">{item.title}</h3>
             <p className="mt-2 text-xs leading-6 text-muted">
               {item.description}

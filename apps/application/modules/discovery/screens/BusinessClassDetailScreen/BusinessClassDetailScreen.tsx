@@ -1,4 +1,8 @@
 "use client";
+import { useNow } from "@/lib/use-now";
+import { ClassTrainingGroups } from "../../components/ClassTrainingGroups";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
 import { DetailSocialSection } from "../../components/DetailSocialSection";
 import { RelatedBusinessClasses } from "../../components/RelatedBusinessClasses";
 
@@ -9,6 +13,7 @@ import {
   useAthleteClassCheckIn,
   useCancelClubClassEnrollment,
   useClaimClubClassWaitlist,
+  useRenewClubClassWaitlist,
   useCreatePaymentIntent,
   useEnrollInClubClass,
   useMockPaymentDecision,
@@ -35,12 +40,14 @@ const modelLabel: Record<string, string> = {
 
 export function BusinessClassDetailScreen({ classId }: { classId: string }) {
   const query = usePublicClubClass(classId);
+  const now = useNow();
   const enrollments = useAthleteClubClasses();
   const enroll = useEnrollInClubClass();
   const createPayment = useCreatePaymentIntent();
   const payment = useMockPaymentDecision();
   const cancel = useCancelClubClassEnrollment();
   const claimWaitlist = useClaimClubClassWaitlist();
+  const renewWaitlist = useRenewClubClassWaitlist();
   const checkIn = useAthleteClassCheckIn();
   const [checkInCredential, setCheckInCredential] = useState("");
   const [checkInSessionId, setCheckInSessionId] = useState("");
@@ -151,6 +158,30 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
   return (
     <main className="app-page gap-5">
       <SecondaryHeader title="جزئیات کلاس" showFilter={false} />
+      <nav aria-label="دسترسی سریع کلاس" className="flex flex-wrap gap-2">
+        <Button
+          variant="tertiary"
+          size="sm"
+          onPress={() =>
+            document
+              .getElementById("class-first-session")
+              ?.scrollIntoView({ block: "start" })
+          }
+        >
+          راهنمای جلسه اول
+        </Button>
+        <Button
+          variant="tertiary"
+          size="sm"
+          onPress={() =>
+            document
+              .getElementById("class-training-group")
+              ?.scrollIntoView({ block: "start" })
+          }
+        >
+          هم‌تمرینی و دعوت دوست
+        </Button>
+      </nav>
       <DiscoveryQueryState query={enrollments} />
       <DiscoveryImageHero
         imageUrl="/profile/cover.jpg"
@@ -211,21 +242,22 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
             کد ۵ رقمی اعلام‌شده توسط باشگاه را وارد کنید؛ محتوای QR اسکن‌شده نیز
             پذیرفته می‌شود.
           </p>
-          <select
+          <FormSelect
+            aria-label="انتخاب گزینه"
             className="mt-4 h-11 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm"
             value={checkInSessionId || item.sessions[0]?.id}
-            onChange={(event) => setCheckInSessionId(event.target.value)}
+            onChange={(event) => setCheckInSessionId(event)}
           >
             {item.sessions.map((session) => (
-              <option key={session.id} value={session.id}>
+              <FormOption entity={session} key={session.id} value={session.id}>
                 {new Date(session.startsAt).toLocaleString("fa-IR", {
                   dateStyle: "medium",
                   timeStyle: "short",
                 })}
-              </option>
+              </FormOption>
             ))}
-          </select>
-          <input
+          </FormSelect>
+          <HeroInput
             dir="ltr"
             inputMode="numeric"
             value={checkInCredential}
@@ -335,6 +367,11 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
             className="mt-2 w-full"
             variant="primary"
             isPending={claimWaitlist.isPending}
+            isDisabled={
+              !current.waitlistOfferExpiresAt ||
+              now === null ||
+              Date.parse(current.waitlistOfferExpiresAt) <= now
+            }
             onPress={() => void claimCurrentWaitlist()}
           >
             دریافت جای خالی کلاس
@@ -365,6 +402,111 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
       ) : null}
       <DetailSocialSection items={item.socialMedia} />
       <RelatedBusinessClasses excludeId={item.id} clubId={item.clubId} />
+      <section
+        className="space-y-3 rounded-3xl border border-border bg-surface p-5"
+        id="class-first-session"
+        aria-label="راهنمای جلسه اول"
+      >
+        <h2 className="text-lg font-bold">برای جلسه اول آماده‌ای؟</h2>
+        <dl className="space-y-3 text-sm">
+          <div>
+            <dt className="text-muted">محل حضور</dt>
+            <dd className="mt-1">
+              {item.branch?.address ||
+                "آدرس شعبه اعلام نشده؛ پیش از مراجعه از باشگاه بپرس."}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted">سطح و شیوه کلاس</dt>
+            <dd className="mt-1">
+              {item.level || "سطح اعلام نشده"} · {modelLabel[item.model]}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted">هزینه اعلام‌شده</dt>
+            <dd className="mt-1">
+              {item.price.toLocaleString("fa-IR")}{" "}
+              {item.currency === "IRR" ? "ریال" : item.currency} ·{" "}
+              {
+                (
+                  {
+                    monthly: "ماهانه",
+                    course: "کل دوره",
+                    per_session: "هر جلسه",
+                    package: "بسته",
+                  } as const
+                )[item.pricingModel]
+              }
+            </dd>
+          </div>
+        </dl>
+        {!!item.prerequisites?.length && (
+          <div>
+            <h3 className="text-sm font-semibold">پیش‌نیازهای اعلام‌شده</h3>
+            <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted">
+              {item.prerequisites.map((text) => (
+                <li key={text}>{text}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {!!item.requiredEquipment?.length && (
+          <p className="text-sm leading-7">
+            وسایل لازم: {item.requiredEquipment.map((e) => e.name).join("، ")}
+          </p>
+        )}
+        {(item.coach?.verifiedCredentialsCount ?? 0) > 0 && (
+          <p className="text-xs text-success">
+            {item.coach!.verifiedCredentialsCount!.toLocaleString("fa-IR")} مدرک
+            مربی در پلتفرم تأیید شده است.
+          </p>
+        )}
+        <p className="text-xs leading-6 text-muted">
+          توضیحات و پرسش‌های متداول کلاس را برای وسایل لازم، زمان حضور و شرایط
+          لغو بخوان. ثبت‌نام دوستت مستقل است و اشتراک لینک، جا رزرو نمی‌کند.
+        </p>
+      </section>
+      {current?.status === "waitlisted" && (
+        <p className="text-sm leading-7 text-muted">
+          {current.waitlistOfferExpiresAt &&
+          now !== null &&
+          Date.parse(current.waitlistOfferExpiresAt) > now
+            ? `فرصت پذیرش جای خالی تا ${new Date(current.waitlistOfferExpiresAt).toLocaleTimeString("fa-IR", { timeZone: "Asia/Tehran", hour: "2-digit", minute: "2-digit" })}؛ ظرفیت هنگام تأیید دوباره بررسی می‌شود.`
+            : "در لیست انتظار هستی؛ پس از اعلام جای خالی، فرصت پذیرش اینجا نمایش داده می‌شود."}
+        </p>
+      )}
+      {current?.status === "waitlisted" &&
+        current.waitlistOfferExpiresAt &&
+        now !== null &&
+        Date.parse(current.waitlistOfferExpiresAt) <= now && (
+          <div className="space-y-2">
+            <p className="text-xs text-muted">
+              فرصت قبلی تمام شده است. برای پیشنهاد تازه، به انتهای صف برگرد.
+            </p>
+            <Button
+              variant="secondary"
+              isPending={renewWaitlist.isPending}
+              onPress={async () => {
+                try {
+                  await renewWaitlist.mutateAsync(current.id);
+                  toast.success("درخواست تازه در انتهای صف ثبت شد");
+                } catch {
+                  toast.danger("تمدید انتظار انجام نشد؛ دوباره تلاش کن");
+                }
+              }}
+            >
+              ادامه انتظار برای جای خالی
+            </Button>
+          </div>
+        )}
+      <ClassTrainingGroups
+        key={classId}
+        classId={classId}
+        eligible={
+          current?.status === "active" &&
+          ["paid", "waived"].includes(current.paymentStatus)
+        }
+      />
     </main>
   );
 }

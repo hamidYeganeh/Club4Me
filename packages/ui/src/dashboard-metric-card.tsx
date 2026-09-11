@@ -15,6 +15,8 @@ type DashboardMetricCardProps = {
   visual: ReactNode;
   className?: string;
   tone?: "energy" | "activity" | "neutral" | "progress";
+  description?: string;
+  unavailable?: boolean;
 };
 
 export function DashboardMetricCard({
@@ -25,6 +27,8 @@ export function DashboardMetricCard({
   visual,
   className,
   tone,
+  description,
+  unavailable = false,
 }: DashboardMetricCardProps) {
   return (
     <article
@@ -45,13 +49,50 @@ export function DashboardMetricCard({
         <span className="grid size-7 shrink-0 place-items-center">{icon}</span>
       </div>
       <div className="min-h-0" aria-hidden="true">
-        {visual}
+        {unavailable ? (
+          <div className="h-full rounded-xl bg-current/5" />
+        ) : (
+          visual
+        )}
       </div>
       <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap font-semibold leading-none tabular-nums">
         <p className="truncate text-[1.75rem] tracking-[-0.04em]">{value}</p>
         {unit ? <span className="text-sm font-medium">{unit}</span> : null}
       </div>
+      {description ? (
+        <p className="text-xs leading-5 opacity-80">{description}</p>
+      ) : null}
     </article>
+  );
+}
+
+/** Categories use a common scale and explicit labels, never a time-series line. */
+export function MetricCategoryVisual({
+  data,
+}: {
+  data: Array<{ label: string; value: number }>;
+}) {
+  const max = Math.max(1, ...data.map((item) => item.value));
+  return (
+    <div className="flex h-full flex-col justify-center gap-2">
+      {data.map((item) => (
+        <div
+          key={item.label}
+          className="grid grid-cols-[3.25rem_1fr_auto] items-center gap-2 text-[10px] leading-3"
+        >
+          <span>{item.label}</span>
+          <span className="h-1.5 overflow-hidden rounded-full bg-current/10">
+            <span
+              className="block h-full origin-right rounded-full bg-current"
+              style={{ width: `${(Math.max(0, item.value) / max) * 100}%` }}
+            />
+          </span>
+          <span className="tabular-nums">
+            {item.value.toLocaleString("fa-IR")}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
 

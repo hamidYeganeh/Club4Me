@@ -1,48 +1,18 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { cubicBezier } from "motion/react";
+import { EASE_OUT, MOTION_DURATION, MOTION_STAGGER } from "@/lib/ease";
 import { usePathname } from "next/navigation";
 
 export function AppMotion() {
   const pathname = usePathname();
-  const progressRef = useRef<HTMLDivElement>(null);
   const isDiscovery = pathname.startsWith("/discovery");
 
   useEffect(() => {
     // Discovery content arrives in independent queries and changes height while
     // scrolling. Keep it visible instead of hiding it behind stale GSAP triggers.
-    if (isDiscovery) {
-      const scroller = document.querySelector<HTMLElement>(".app-scroll-root");
-      if (!scroller) return;
-      let frame = 0;
-      const update = () => {
-        cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => {
-          const distance = scroller.scrollHeight - scroller.clientHeight;
-          const progress = distance > 0 ? scroller.scrollTop / distance : 0;
-          if (progressRef.current) {
-            progressRef.current.style.transform = `scaleX(${Math.max(0, Math.min(1, progress))})`;
-          }
-        });
-      };
-      const resize = new ResizeObserver(update);
-      const observeContent = () => {
-        resize.disconnect();
-        resize.observe(scroller);
-        for (const child of scroller.children) resize.observe(child);
-        update();
-      };
-      const mutations = new MutationObserver(observeContent);
-      mutations.observe(scroller, { childList: true });
-      scroller.addEventListener("scroll", update, { passive: true });
-      observeContent();
-      return () => {
-        cancelAnimationFrame(frame);
-        scroller.removeEventListener("scroll", update);
-        mutations.disconnect();
-        resize.disconnect();
-      };
-    }
+    if (isDiscovery) return;
 
     let disposed = false;
     let animationContext: { revert: () => void } | undefined;
@@ -55,7 +25,7 @@ export function AppMotion() {
         ".app-reveal, .app-scroll-media, .app-stack-card",
       );
 
-      if (reduceMotion || (!isDiscovery && !hasAnimatedContent)) {
+      if (reduceMotion || !hasAnimatedContent) {
         return;
       }
 
@@ -76,9 +46,9 @@ export function AppMotion() {
                 {
                   autoAlpha: 1,
                   y: 0,
-                  duration: 0.55,
-                  stagger: 0.07,
-                  ease: "power3.out",
+                  duration: MOTION_DURATION.reveal,
+                  stagger: { each: MOTION_STAGGER, amount: 0.2 },
+                  ease: cubicBezier(...EASE_OUT),
                 },
               );
             }
@@ -141,17 +111,5 @@ export function AppMotion() {
     };
   }, [pathname, isDiscovery]);
 
-  if (!isDiscovery) return null;
-
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none fixed inset-x-0 top-0 z-60 mx-auto h-0.75 w-full max-w-xl overflow-hidden"
-    >
-      <div
-        ref={progressRef}
-        className="h-full origin-left bg-accent rtl:origin-right"
-      />
-    </div>
-  );
+  return null;
 }

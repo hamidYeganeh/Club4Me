@@ -203,42 +203,118 @@ export class ClubsService {
   }
 
   async activation(ownerId: string, clubId: string) {
-    const club = await this.repository.findForOwner(ownerId, clubId, "club.read");
+    const club = await this.repository.findForOwner(
+      ownerId,
+      clubId,
+      "club.read",
+    );
     const id = new Types.ObjectId(clubId);
     const [activeClasses, futureSessions] = await Promise.all([
-      this.connection!.collection("business_training_classes").countDocuments({ clubId: id, status: "active", visibility: "public" }),
-      this.connection!.collection("reservable_sessions").countDocuments({ clubId: id, status: "active", startsAt: { $gt: new Date() } }),
+      this.connection!.collection("business_training_classes").countDocuments({
+        clubId: id,
+        status: "active",
+        visibility: "public",
+      }),
+      this.connection!.collection("reservable_sessions").countDocuments({
+        clubId: id,
+        status: "active",
+        startsAt: { $gt: new Date() },
+      }),
     ]);
     const items = [
-      ["profile", "معرفی و توضیح باشگاه", Boolean(club.description && club.shortDescription)],
-      ["location", "نشانی و نقطه روی نقشه", Boolean(club.location?.address && club.location)],
-      ["media", "کاور یا تصویر گالری", Boolean(club.coverMediaId || club.gallery.length)],
+      [
+        "profile",
+        "معرفی و توضیح باشگاه",
+        Boolean(club.description && club.shortDescription),
+      ],
+      [
+        "location",
+        "نشانی و نقطه روی نقشه",
+        Boolean(club.location?.address && club.location),
+      ],
+      [
+        "media",
+        "کاور یا تصویر گالری",
+        Boolean(club.coverMediaId || club.gallery.length),
+      ],
       ["hours", "ساعت کاری", club.weeklyHours.length > 0],
       ["policies", "قانون لغو", club.cancellationRules.length > 0],
-      ["service", "حداقل یک کلاس عمومی فعال", activeClasses > 0],
-      ["slot", "حداقل یک سانس آینده", futureSessions > 0],
+      [
+        "service",
+        "حداقل یک کلاس عمومی یا سانس آینده",
+        activeClasses > 0 || futureSessions > 0,
+      ],
       ["review", "تأیید اپراتور", club.reviewStatus === "approved"],
     ].map(([id, label, complete]) => ({ id, label, complete }));
-    return { clubId, ready: items.every((item) => item.complete), completed: items.filter((item) => item.complete).length, total: items.length, items, publicPreviewUrl: `/discovery/clubs/${club.slug}` };
+    return {
+      clubId,
+      ready: items.every((item) => item.complete),
+      completed: items.filter((item) => item.complete).length,
+      total: items.length,
+      items,
+      publicPreviewUrl: `/discovery/clubs/${club.slug}`,
+    };
   }
 
   async qualityQueue() {
     const clubs = await this.repository.listForAdmin();
     const now = Date.now();
-    return { items: clubs.map((club) => {
-      const reasons = [...club.qualityReasons];
-      if (!club.supplyVerifiedAt) reasons.push("never_verified");
-      if (club.supplyReviewDueAt && Date.parse(club.supplyReviewDueAt) < now) reasons.push("review_overdue");
-      if (club.busyHoursUpdatedAt && Date.parse(club.busyHoursUpdatedAt) < now - 90 * 86_400_000) reasons.push("schedule_stale");
-      return { ...club, qualityReasons: [...new Set(reasons)] };
-    }).filter((club) => club.qualityStatus !== "active" || club.qualityReasons.length).sort((a, b) => b.qualityReasons.length - a.qualityReasons.length) };
+    return {
+      items: clubs
+        .map((club) => {
+          const reasons = [...club.qualityReasons];
+          if (!club.supplyVerifiedAt) reasons.push("never_verified");
+          if (
+            club.supplyReviewDueAt &&
+            Date.parse(club.supplyReviewDueAt) < now
+          )
+            reasons.push("review_overdue");
+          if (
+            club.busyHoursUpdatedAt &&
+            Date.parse(club.busyHoursUpdatedAt) < now - 90 * 86_400_000
+          )
+            reasons.push("schedule_stale");
+          return { ...club, qualityReasons: [...new Set(reasons)] };
+        })
+        .filter(
+          (club) =>
+            club.qualityStatus !== "active" || club.qualityReasons.length,
+        )
+        .sort((a, b) => b.qualityReasons.length - a.qualityReasons.length),
+    };
   }
 
-  async updateQuality(clubId: string, adminId: string, input: { status: "active" | "review_required" | "suspended"; reasons: string[]; assigneeId?: string | null; nextReviewAt?: string | null }) {
-    if (!Types.ObjectId.isValid(clubId)) throw new AppError(404, "CLUB_NOT_FOUND", "Club not found");
+  async updateQuality(
+    clubId: string,
+    adminId: string,
+    input: {
+      status: "active" | "review_required" | "suspended";
+      reasons: string[];
+      assigneeId?: string | null;
+      nextReviewAt?: string | null;
+    },
+  ) {
+    if (!Types.ObjectId.isValid(clubId))
+      throw new AppError(404, "CLUB_NOT_FOUND", "Club not found");
     const now = new Date();
-    const next = input.nextReviewAt ? new Date(input.nextReviewAt) : new Date(now.getTime() + 90 * 86_400_000);
-    await this.connection!.collection("clubs").updateOne({ _id: new Types.ObjectId(clubId) }, { $set: { qualityStatus: input.status, qualityReasons: input.reasons, supplyVerifiedAt: now, supplyReviewDueAt: next, supplyAssigneeId: input.assigneeId ? new Types.ObjectId(input.assigneeId) : new Types.ObjectId(adminId), ...(input.status === "suspended" ? { visibility: "hidden" } : {}) } });
+    const next = input.nextReviewAt
+      ? new Date(input.nextReviewAt)
+      : new Date(now.getTime() + 90 * 86_400_000);
+    await this.connection!.collection("clubs").updateOne(
+      { _id: new Types.ObjectId(clubId) },
+      {
+        $set: {
+          qualityStatus: input.status,
+          qualityReasons: input.reasons,
+          supplyVerifiedAt: now,
+          supplyReviewDueAt: next,
+          supplyAssigneeId: input.assigneeId
+            ? new Types.ObjectId(input.assigneeId)
+            : new Types.ObjectId(adminId),
+          ...(input.status === "suspended" ? { visibility: "hidden" } : {}),
+        },
+      },
+    );
     return this.repository.findById(clubId);
   }
 

@@ -52,11 +52,34 @@ export function createMockApiState(searchMode: SearchMode = "success") {
 }
 
 export async function installApiMock(page: Page, state: MockApiState) {
+  const privacy = {
+    policyVersion: "2026-09-08",
+    purposes: [
+      { id: "analytics", required: false, label: "تحلیل بهبود محصول" },
+      { id: "precise_location", required: false, label: "موقعیت دقیق برای پیشنهاد نزدیک" },
+      { id: "training_results", required: false, label: "اشتراک نتیجه تمرین با مربی" },
+      { id: "marketing", required: false, label: "پیام‌های پیشنهادی" },
+    ],
+    items: [] as Array<{ purpose: string; granted: boolean; version: string; decidedAt: string }>,
+  };
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/v1/, "");
     const method = request.method();
+
+    if (path === "/account/privacy" && method === "GET") {
+      return success(route, privacy);
+    }
+    if (path === "/training/coach/clients" && method === "GET") {
+      return success(route, { items: [], classes: [] });
+    }
+    if (path === "/account/privacy/consent" && method === "PUT") {
+      const payload = request.postDataJSON() as { purpose: string; granted: boolean; version: string };
+      const item = { ...payload, decidedAt: new Date().toISOString() };
+      privacy.items = [...privacy.items.filter((entry) => entry.purpose !== item.purpose), item];
+      return success(route, { policyChanged: false, ...item });
+    }
 
     if (path === "/account/auth/login" && method === "POST") {
       return success(route, {

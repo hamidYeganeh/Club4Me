@@ -1,57 +1,18 @@
 "use client";
 
-import { type CSSProperties, useEffect, useState } from "react";
+import Link from "@/components/app-link";
+import { type CSSProperties, useEffect } from "react";
 import { useDiscoveryFeed, type DiscoverySection } from "@api/discovery";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { DiscoveryDynamicSection } from "@modules/discovery/sections/DiscoveryDynamicSection";
 import { DiscoveryIranMapSection } from "@modules/discovery/sections/DiscoveryIranMapSection";
 import { DiscoveryNearbySection } from "../../sections/DiscoveryNearbySection";
-import { DiscoveryIranMapSkeleton } from "../../components/skeletons/DiscoveryIranMapSkeleton";
 import { RequestFailureState } from "@/components/request-failure-state";
-import { defaultDiscoveryLayouts } from "../../components/discovery-default-layouts";
-import {
-  loadingSection,
-  type DiscoverySectionLayout,
-} from "../../components/discovery-placeholder-sections";
 import { getQueryFailure } from "@/lib/request-failure";
 
 export function DiscoveryHomeScreen() {
   const feed = useDiscoveryFeed();
   const failure = getQueryFailure(feed.error, feed.fetchStatus);
-  const [layouts, setLayouts] = useState(defaultDiscoveryLayouts);
-  useEffect(() => {
-    try {
-      const cached = JSON.parse(
-        localStorage.getItem("discovery-section-layouts-v1") ?? "null",
-      ) as DiscoverySectionLayout[] | null;
-      if (
-        Array.isArray(cached) &&
-        cached.length > 0 &&
-        cached.every(
-          (item) =>
-            item &&
-            typeof item.id === "string" &&
-            typeof item.layout === "string" &&
-            typeof item.key === "string" &&
-            item.appearance &&
-            [
-              "clubs",
-              "coaches",
-              "articles",
-              "sports",
-              "banners",
-              "classes",
-            ].includes(item.type),
-        )
-      ) {
-        // Restore the public layout snapshot after hydration, before the network feed arrives.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setLayouts(cached);
-      }
-    } catch {
-      /* Storage may be unavailable. The default layout is still usable. */
-    }
-  }, []);
   useEffect(() => {
     if (!feed.data?.length) return;
     try {
@@ -71,7 +32,7 @@ export function DiscoveryHomeScreen() {
     }
   }, [feed.data]);
   const loading = feed.isPending && !failure;
-  const sections = feed.data ?? (loading ? layouts.map(loadingSection) : []);
+  const sections = feed.data ?? [];
   const mapBanner = sections.find((section) => section.type === "banners");
   const contentSections = mapBanner
     ? sections.filter((section) => section.id !== mapBanner.id)
@@ -80,6 +41,18 @@ export function DiscoveryHomeScreen() {
   return (
     <main className="app-page gap-6 pb-[calc(11rem+env(safe-area-inset-bottom))]">
       <SecondaryHeader />
+      <Link
+        href="/athlete/recommendations"
+        className="flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-accent/20 bg-surface p-4 text-sm"
+      >
+        <span>
+          <strong className="block">کلاس مناسب برنامه من</strong>
+          <span className="mt-1 block text-xs text-muted">
+            زمان، بودجه و فاصله را انتخاب کن؛ گزینه‌ها را مقایسه کن.
+          </span>
+        </span>
+        <span aria-hidden="true">←</span>
+      </Link>
       {failure ? (
         <RequestFailureState
           error={failure}
@@ -91,22 +64,17 @@ export function DiscoveryHomeScreen() {
           در حال بارگذاری بخش‌های کشف
         </span>
       ) : null}
-      {contentSections
-        .slice(0, 3)
-        .map((section) => renderFeedSection(section, loading))}
-      {loading ? <DiscoveryIranMapSkeleton /> : <DiscoveryIranMapSection />}
+      {contentSections.slice(0, 3).map((section) => renderFeedSection(section))}
+      {!loading ? <DiscoveryIranMapSection /> : null}
       <DiscoveryNearbySection />
-      {mapBanner ? renderFeedSection(mapBanner, loading) : null}
-      {contentSections
-        .slice(3)
-        .map((section) => renderFeedSection(section, loading))}
+      {mapBanner ? renderFeedSection(mapBanner) : null}
+      {contentSections.slice(3).map((section) => renderFeedSection(section))}
     </main>
   );
 }
 
 function renderFeedSection(
   section: DiscoverySection & { skeletonCount?: number },
-  loading = false,
 ) {
   const style = {
     ...(section.appearance.backgroundColor
@@ -128,36 +96,13 @@ function renderFeedSection(
       key={section.id}
       data-discovery-section={section.id}
       style={style}
-      inert={loading}
-      aria-hidden={loading || undefined}
-      className={`rounded-[1.5rem] ${loading ? "discovery-section-skeleton" : ""}`}
+      className="rounded-[1.5rem]"
     >
       <DiscoveryDynamicSection
         section={section}
-        isLoading={loading}
+        isLoading={false}
         skeletonCount={section.skeletonCount}
       />
     </div>
-  );
-}
-
-export function DiscoveryHomeSkeleton() {
-  const sections = defaultDiscoveryLayouts.map(loadingSection);
-  const mapBanner = sections.find((section) => section.type === "banners");
-  const content = sections.filter((section) => section.id !== mapBanner?.id);
-  return (
-    <main
-      className="app-page gap-6 pb-[calc(11rem+env(safe-area-inset-bottom))]"
-      aria-busy="true"
-    >
-      <SecondaryHeader />
-      <span role="status" className="sr-only">
-        در حال بارگذاری بخش‌های کشف
-      </span>
-      {content.slice(0, 3).map((section) => renderFeedSection(section, true))}
-      <DiscoveryIranMapSkeleton />
-      {mapBanner ? renderFeedSection(mapBanner, true) : null}
-      {content.slice(3).map((section) => renderFeedSection(section, true))}
-    </main>
   );
 }

@@ -37,7 +37,7 @@ const reservationTypeLabels: Record<SessionReservation["sessionType"], string> =
     coached_session: "جلسه با مربی",
   };
 
-export function AthleteReminderSection() {
+export function AthleteReminderSection({ widgetOnly = false }: { widgetOnly?: boolean }) {
   const styles = athleteReminderSectionStyles();
   const reservations = useMyReservations();
   const receivedAt = reservations.dataUpdatedAt;
@@ -79,7 +79,7 @@ export function AthleteReminderSection() {
     })?.catch(() => undefined);
   }, [nextReservation, reservations.isError, reservations.isPending]);
 
-  if (!nextReservation) return null;
+  if (widgetOnly || !nextReservation) return null;
 
   const startsAt = new Date(nextReservation.sessionStartsAt);
   const endsAt = new Date(nextReservation.sessionEndsAt);

@@ -2,7 +2,7 @@ import { tv } from "tailwind-variants";
 
 export const reservationsTimelineSectionStyles = tv({
   slots: {
-    root: "flex flex-1 flex-col px-4 pt-8",
+    root: "flex flex-1 flex-col px-4 pt-4",
     toolbar:
       "mb-5 flex min-h-12 items-center justify-between gap-3 rounded-[1.2rem] px-4",
     title: "text-lg font-black text-foreground",
@@ -11,9 +11,9 @@ export const reservationsTimelineSectionStyles = tv({
     list: "relative flex flex-col gap-6 pb-10",
     line: "hidden",
     empty:
-      "flex min-h-[calc(100dvh-15rem)] flex-1 flex-col items-center justify-center px-2 pb-[calc(2rem+env(safe-area-inset-bottom))] text-center",
+      "flex min-h-72 flex-1 flex-col items-center justify-center px-2 pb-[calc(2rem+env(safe-area-inset-bottom))] text-center",
     emptyVisual:
-      "relative isolate mb-2 grid w-full max-w-[17rem] place-items-center",
+      "relative isolate mb-2 grid w-full max-w-[9rem] place-items-center",
     emptyGlow:
       "absolute bottom-[10%] -z-10 h-12 w-3/4 rounded-full bg-accent/18 blur-2xl",
     emptyImage: "size-full object-cover",
@@ -21,7 +21,7 @@ export const reservationsTimelineSectionStyles = tv({
     emptyTitle: "text-balance text-2xl leading-9 font-black text-foreground",
     emptyDescription: "max-w-[28ch] text-sm leading-6 text-muted",
     explore:
-      "mt-7 flex min-h-14 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent px-5 text-base font-black text-accent-foreground transition-transform active:scale-[0.985]",
+      "mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent px-5 text-base font-black text-accent-foreground transition-transform active:scale-[0.985]",
     skeleton:
       "h-[4.75rem] rounded-[1.35rem] border border-white/7 bg-surface/72",
   },

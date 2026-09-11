@@ -81,6 +81,8 @@ export const sessionWriteSchema = z
     status: z.enum(["active", "completed", "discarded"]),
     sets: z.array(setLogSchema).max(600),
     note: text(2000),
+    effort: z.enum(["easy", "balanced", "hard"]).nullable().optional(),
+    followUpRequested: z.boolean().optional(),
   })
   .superRefine((s, ctx) => {
     if (

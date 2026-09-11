@@ -6,9 +6,13 @@ import { ScrollShadow } from "@heroui/react/scroll-shadow";
 import { ClubCard } from "@modules/marketing/components/cards/ClubCard";
 import { BrandText } from "@modules/marketing/components/kit/LineShadowText";
 import { observeScrollProgress } from "../../lib/scroll-progress";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useLandingClubs } from "../../lib/use-landing-catalog";
+
 import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
-import { LANDING_ASSETS, LANDING_CLUBS } from "../../lib/landing-assets";
+import { LANDING_ASSETS } from "../../lib/landing-assets";
 import { BrandMark } from "../../lib/landing-controls";
 import { ClipReveal, InViewRise } from "../../lib/landing-reveal";
 import { useLandingScroll } from "../../lib/landing-scroll";
@@ -17,11 +21,11 @@ import { MarketingThemeToggle } from "../../lib/marketing-theme-toggle";
 import { landingHeroSectionStyles } from "./LandingHeroSection.styles";
 import type { LandingHeroSectionProps } from "./LandingHeroSection.types";
 
-const HERO_CLUBS = LANDING_CLUBS.slice(0, 5);
-
 export function LandingHeroSection({ className }: LandingHeroSectionProps) {
   const t = useTranslations("MarketingLanding.landingHero");
   const shared = useTranslations("MarketingLanding.shared");
+  const router = useRouter();
+  const query = useLandingClubs();
   const slots = landingHeroSectionStyles();
   const { ready, openMenu, scrollTo } = useLandingScroll();
   const sectionRef = useRef<HTMLElement>(null);
@@ -156,7 +160,7 @@ export function LandingHeroSection({ className }: LandingHeroSectionProps) {
               aria-label={t("carouselAria")}
               tabIndex={0}
             >
-              {HERO_CLUBS.map((club) => (
+              {query.clubs.map((club) => (
                 <div className={slots.slide()} key={club.title}>
                   <ClubCard
                     actionLabel={shared("viewAction")}
@@ -164,15 +168,23 @@ export function LandingHeroSection({ className }: LandingHeroSectionProps) {
                     features={[...club.features]}
                     image={club.image}
                     imageAlt={club.title}
-                    onAction={() => scrollTo("#clubs")}
+                    onAction={() =>
+                      router.push(
+                        `/discovery/clubs/${encodeURIComponent(club.slug)}`,
+                      )
+                    }
                     orientation="vertical"
-                    price={club.price}
-                    pricePrefix={shared("pricePrefix")}
-                    priceSuffix={shared("priceSuffix")}
+
                     rating={club.rating}
                     ratingCount={club.ratingCount}
                     subtitle={club.subtitle}
-                    title={club.title}
+                    title={
+                      <Link
+                        href={`/discovery/clubs/${encodeURIComponent(club.slug)}`}
+                      >
+                        {club.title}
+                      </Link>
+                    }
                   />
                 </div>
               ))}

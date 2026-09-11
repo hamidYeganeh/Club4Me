@@ -60,7 +60,6 @@ export function DiscoverySectionHeader({
             href={viewAllUrl}
             variant="ghost"
             size="sm"
-            className={`min-h-11 rounded-xl px-2 text-sm font-semibold ${accent ? "text-[#24272c]" : "text-accent"}`}
           >
             {isLoading ? (
               <SkeletonText>{viewAllLabel}</SkeletonText>

@@ -1,4 +1,14 @@
 "use client";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
+import { useAccountPreference } from "@api/preferences";
+import { useSelectedClub, SelectedClubScope } from "@/lib/use-selected-club";
+import {
+  BranchesScreen,
+  CoachesScreen,
+} from "@modules/operations/screens/BusinessOperationsScreens";
+import { DataExchangeScreen } from "@modules/operations/screens/DataExchangeScreen/DataExchangeScreen";
+import { ReservationManagementScreen } from "@modules/clubs/screens/ReservationManagementScreen";
 import { StudentAccounts } from "./student-accounts";
 import { ReceptionDesk } from "./reception-desk";
 import { AttendanceHistory } from "./attendance-history";
@@ -6,9 +16,9 @@ import { AttendanceHistory } from "./attendance-history";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Spinner, toast } from "@heroui/react";
-import { tokenStore, useBusinessBenefitProducts } from "@api";
+import { useBusinessBenefitProducts } from "@api";
 import {
-  useBusinessClubs,
+  useLogout,
   useClubStudents,
   useCreateClubStudent,
   useClubPayments,
@@ -39,19 +49,37 @@ export function StaffWorkspace({
   initialClubId?: string;
   initialClassId?: string;
 }) {
-  const clubs = useBusinessClubs();
+  const { clubs, clubId: savedClubId, setClubId: saveClub } = useSelectedClub();
   const router = useRouter();
-  const [picked, setPicked] = useState(initialClubId);
+  const logout = useLogout();
+  const [selection, setSelection] = useState(initialClubId);
+  const picked = selection || savedClubId;
+  const setPicked = (id: string) => {
+    setSelection(id);
+    saveClub(id);
+  };
   const [selectedClass, setSelectedClass] = useState(initialClassId);
   const club =
     clubs.data?.items.find((item) => item.id === picked) ??
     clubs.data?.items[0];
-  const [tab, setTab] = useState("classes");
+  const [tab, setTab] = useAccountPreference(`staff-tab:${club?.id ?? ""}`);
   const can = (permission: string) =>
     Boolean(club?.permissions?.includes(permission));
   const tabs = [
     { id: "reception", label: "میز پذیرش", allowed: can("reception.read") },
     { id: "classes", label: "کلاس و حضور", allowed: can("classes.read") },
+    { id: "coaches", label: "مربیان", allowed: can("coaches.write") },
+    { id: "branches", label: "شعبه‌ها", allowed: can("branches.write") },
+    {
+      id: "reservations",
+      label: "زمین و سانس",
+      allowed: can("courts.write") && can("reservations.write"),
+    },
+    {
+      id: "reports",
+      label: "گزارش و تبادل داده",
+      allowed: can("reports.read"),
+    },
     { id: "students", label: "شاگردان", allowed: can("students.read") },
     { id: "payments", label: "پرداخت‌ها", allowed: can("payments.read") },
     {
@@ -73,10 +101,13 @@ export function StaffWorkspace({
         </div>
         <Button
           variant="ghost"
-          onPress={() => {
-            tokenStore.clear();
-            router.replace("/auth");
-          }}
+          isPending={logout.isPending}
+          onPress={() =>
+            void logout
+              .mutateAsync()
+              .catch(() => undefined)
+              .finally(() => router.replace("/auth"))
+          }
         >
           خروج
         </Button>
@@ -94,21 +125,21 @@ export function StaffWorkspace({
         <>
           <label className="grid gap-2 text-sm">
             باشگاه
-            <select
+            <FormSelect
               aria-label="باشگاه محل کار"
               className={field}
               value={club.id}
               onChange={(event) => {
-                setPicked(event.target.value);
+                setPicked(event);
                 setTab("");
               }}
             >
               {clubs.data?.items.map((item) => (
-                <option key={item.id} value={item.id}>
+                <FormOption entity={item} key={item.id} value={item.id}>
                   {item.name}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </label>
           <nav className="flex flex-wrap gap-2" aria-label="عملیات پرسنل">
             {tabs.map((item) => (
@@ -121,38 +152,48 @@ export function StaffWorkspace({
               </Button>
             ))}
           </nav>
-          <div key={`${club.id}-${active}`}>
-            {active === "reception" && (
-              <ReceptionDesk
-                clubId={club.id}
-                onOpenClass={(id) => {
-                  setSelectedClass(id);
-                  setTab("classes");
-                }}
-              />
-            )}
-            {active === "students" && (
-              <StaffStudents
-                clubId={club.id}
-                writable={can("students.write")}
-              />
-            )}
-            {active === "payments" && (
-              <StaffPayments
-                clubId={club.id}
-                writable={can("payments.write")}
-              />
-            )}
-            {active === "classes" && (
-              <StaffClasses
-                clubId={club.id}
-                writable={can("attendance.write")}
-                canCreate={can("classes.write")}
-                initialClassId={selectedClass}
-              />
-            )}
-            {active === "memberships" && <StaffMemberships clubId={club.id} />}
-          </div>
+          <SelectedClubScope.Provider value={club.id}>
+            <div key={`${club.id}-${active}`}>
+              {active === "coaches" && <CoachesScreen />}
+              {active === "branches" && <BranchesScreen />}
+              {active === "reports" && <DataExchangeScreen />}
+              {active === "reservations" && (
+                <ReservationManagementScreen clubId={club.id} />
+              )}
+              {active === "reception" && (
+                <ReceptionDesk
+                  clubId={club.id}
+                  onOpenClass={(id) => {
+                    setSelectedClass(id);
+                    setTab("classes");
+                  }}
+                />
+              )}
+              {active === "students" && (
+                <StaffStudents
+                  clubId={club.id}
+                  writable={can("students.write")}
+                />
+              )}
+              {active === "payments" && (
+                <StaffPayments
+                  clubId={club.id}
+                  writable={can("payments.write")}
+                />
+              )}
+              {active === "classes" && (
+                <StaffClasses
+                  clubId={club.id}
+                  writable={can("attendance.write")}
+                  canCreate={can("classes.write")}
+                  initialClassId={selectedClass}
+                />
+              )}
+              {active === "memberships" && (
+                <StaffMemberships clubId={club.id} />
+              )}
+            </div>
+          </SelectedClubScope.Provider>
         </>
       )}
     </main>
@@ -196,22 +237,37 @@ function StaffStudents({
         <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
           <label>
             نام
-            <input required minLength={2} name="firstName" className={field} />
+            <HeroInput
+              required
+              minLength={2}
+              name="firstName"
+              className={field}
+            />
           </label>
           <label>
             نام خانوادگی
-            <input required minLength={2} name="lastName" className={field} />
+            <HeroInput
+              required
+              minLength={2}
+              name="lastName"
+              className={field}
+            />
           </label>
           <label>
             موبایل
-            <input required name="phone" inputMode="tel" className={field} />
+            <HeroInput
+              required
+              name="phone"
+              inputMode="tel"
+              className={field}
+            />
           </label>
           <Button type="submit" isPending={create.isPending}>
             ثبت شاگرد
           </Button>
         </form>
       )}
-      <input
+      <HeroInput
         aria-label="جست‌وجوی شاگرد"
         placeholder="نام یا موبایل"
         className={field}
@@ -250,6 +306,7 @@ function StaffPayments({
   clubId: string;
   writable: boolean;
 }) {
+  const [studentId, setStudentId] = useState("");
   const query = useClubPayments(clubId);
   const students = useClubStudents(clubId);
   const create = useCreateClubPayment(clubId);
@@ -259,7 +316,7 @@ function StaffPayments({
     const data = new FormData(form);
     try {
       await create.mutateAsync({
-        studentId: String(data.get("studentId")),
+        studentId,
         type: "tuition",
         title: String(data.get("title")),
         amount: Number(asciiDigits(String(data.get("amount")))),
@@ -276,29 +333,35 @@ function StaffPayments({
   };
   return (
     <div>
-      <StudentAccounts clubId={clubId} writable={writable} />
+      <StudentAccounts
+        clubId={clubId}
+        writable={writable}
+        selectedStudentId={studentId}
+        onStudentChange={setStudentId}
+      />
       <Card className="space-y-4 p-5">
         <h2 className="font-bold">پرداخت‌های ثبت‌شده</h2>
         {writable && (
           <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
-            <label>
-              شاگرد
-              <select required name="studentId" className={field}>
-                <option value="">انتخاب شاگرد</option>
-                {students.data?.items.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.firstName} {item.lastName}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <p className="text-sm sm:col-span-2">
+              رسید برای:{" "}
+              {students.data?.items
+                .filter((item) => item.id === studentId)
+                .map((item) => `${item.firstName} ${item.lastName}`)
+                .join("") || "ابتدا حساب شاگرد را انتخاب کنید"}
+            </p>
             <label>
               عنوان رسید
-              <input required minLength={2} name="title" className={field} />
+              <HeroInput
+                required
+                minLength={2}
+                name="title"
+                className={field}
+              />
             </label>
             <label>
               مبلغ (ریال)
-              <input
+              <HeroInput
                 required
                 name="amount"
                 inputMode="numeric"
@@ -319,13 +382,21 @@ function StaffPayments({
             </label>
             <label>
               روش پرداخت
-              <select name="method" className={field}>
-                <option value="card">کارتخوان</option>
-                <option value="cash">نقدی</option>
-                <option value="transfer">کارت‌به‌کارت</option>
-              </select>
+              <FormSelect
+                aria-label="روش پرداخت"
+                name="method"
+                className={field}
+              >
+                <FormOption value="card">کارتخوان</FormOption>
+                <FormOption value="cash">نقدی</FormOption>
+                <FormOption value="transfer">کارت‌به‌کارت</FormOption>
+              </FormSelect>
             </label>
-            <Button type="submit" isPending={create.isPending}>
+            <Button
+              type="submit"
+              isDisabled={!studentId}
+              isPending={create.isPending}
+            >
               ثبت رسید دستی
             </Button>
             <p className="text-xs text-muted sm:col-span-2">
@@ -340,20 +411,22 @@ function StaffPayments({
           <Spinner />
         ) : (
           <ul className="divide-y divide-border">
-            {query.data?.items.map((item) => (
-              <li key={item.id} className="py-3">
-                {item.title} · {item.amount.toLocaleString("fa-IR")}{" "}
-                {item.currency === "IRR" ? "ریال" : item.currency}
-                <p className="text-xs text-muted">
-                  {when(item.paidAt)}
-                  {item.voidedAt
-                    ? " · باطل‌شده"
-                    : (item.refundedAmount ?? 0) > 0
-                      ? ` · برگشتی: ${item.refundedAmount?.toLocaleString("fa-IR")} ریال`
-                      : ""}
-                </p>
-              </li>
-            ))}
+            {query.data?.items
+              .filter((item) => !studentId || item.studentId === studentId)
+              .map((item) => (
+                <li key={item.id} className="py-3">
+                  {item.title} · {item.amount.toLocaleString("fa-IR")}{" "}
+                  {item.currency === "IRR" ? "ریال" : item.currency}
+                  <p className="text-xs text-muted">
+                    {when(item.paidAt)}
+                    {item.voidedAt
+                      ? " · باطل‌شده"
+                      : (item.refundedAmount ?? 0) > 0
+                        ? ` · برگشتی: ${item.refundedAmount?.toLocaleString("fa-IR")} ریال`
+                        : ""}
+                  </p>
+                </li>
+              ))}
           </ul>
         )}
       </Card>
@@ -405,37 +478,39 @@ function StaffClasses({
         <>
           <label>
             کلاس
-            <select
+            <FormSelect
+              aria-label="کلاس"
               className={field}
               value={current}
               onChange={(event) => {
-                setClassId(event.target.value);
+                setClassId(event);
                 setSessionId("");
               }}
             >
               {classes.data?.items.map((item) => (
-                <option key={item.id} value={item.id}>
+                <FormOption entity={item} key={item.id} value={item.id}>
                   {item.title}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </label>
           <label>
             جلسه
-            <select
+            <FormSelect
+              aria-label="جلسه"
               className={field}
               value={sessionId}
-              onChange={(event) => setSessionId(event.target.value)}
+              onChange={(event) => setSessionId(event)}
             >
-              <option value="">انتخاب جلسه</option>
+              <FormOption value="">انتخاب جلسه</FormOption>
               {sessions.data?.items
                 .filter((item) => item.status !== "cancelled")
                 .map((item) => (
-                  <option key={item.id} value={item.id}>
+                  <FormOption entity={item} key={item.id} value={item.id}>
                     {when(item.startsAt)}
-                  </option>
+                  </FormOption>
                 ))}
-            </select>
+            </FormSelect>
           </label>
           {enrollments.isError || attendance.isError ? (
             <p role="alert">فهرست حضور قابل دریافت نیست.</p>

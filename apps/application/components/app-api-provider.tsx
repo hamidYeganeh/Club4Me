@@ -15,7 +15,6 @@ import { createQueryClient } from "@api/query/client";
 
 import { resolveNativeApiUrl } from "@/lib/native-api-url";
 import { secureTokenStorage } from "@/lib/secure-token-storage";
-import { RouteLoadingSkeleton } from "@/components/loading-skeletons";
 
 const CONFIGURED_API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "https://api.gym4me.ir/api/v1";
@@ -41,7 +40,7 @@ export function AppApiProvider({ children }: AppApiProviderProps) {
       .finally(() => setStorageReady(true));
   }, []);
 
-  if (!storageReady) return <RouteLoadingSkeleton />;
+  if (!storageReady) return null;
 
   return <SessionBoundary baseURL={baseURL}>{children}</SessionBoundary>;
 }
@@ -95,7 +94,7 @@ function SessionApiProvider({
         client={client}
         identity={identity}
         namespace={baseURL}
-        fallback={<RouteLoadingSkeleton />}
+        fallback={null}
       >
         {children}
       </OfflineProvider>

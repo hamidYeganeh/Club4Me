@@ -1,5 +1,8 @@
 "use client";
 
+import { Input as HeroInput } from "@heroui/react";
+import { Counter } from "@/components/counter";
+
 import { useEffect, useState } from "react";
 import { Button, Card, Typography } from "@heroui/react";
 import {
@@ -134,7 +137,7 @@ export function MockPaymentGateway({
           >
             <label className="block text-xs">
               کد تخفیف
-              <input
+              <HeroInput
                 aria-label="کد تخفیف"
                 className="mt-1 w-full rounded-xl border border-border bg-background p-2"
                 value={coupon}
@@ -144,9 +147,9 @@ export function MockPaymentGateway({
             </label>
             <label className="block text-xs">
               سهم کیف پول (ریال)
-              <input
+              <Counter
                 aria-label="سهم کیف پول (ریال)"
-                inputMode="numeric"
+                min={0}
                 className="mt-1 w-full rounded-xl border border-border bg-background p-2"
                 value={wallet}
                 onChange={(event) => setWallet(event.target.value)}

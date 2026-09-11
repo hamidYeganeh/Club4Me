@@ -1,3 +1,7 @@
+import {
+  withReferenceSummaries,
+  classDisplayReferences,
+} from "../../../common/utils/reference-summaries";
 import { paymentDeadline } from "../../commerce/payment-deadline";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
@@ -26,7 +30,13 @@ export class CoachPurchasesService {
       .find({ athleteId: objectId(userId) })
       .sort({ purchasedAt: -1 })
       .limit(200);
-    return { items: items.map(toPublicDocument) };
+    return {
+      items: await withReferenceSummaries(
+        this.purchases.db,
+        items.map(toPublicDocument),
+        classDisplayReferences,
+      ),
+    };
   }
   @Atomic("purchases")
   async create(userId: string, offeringId: string, key: string) {

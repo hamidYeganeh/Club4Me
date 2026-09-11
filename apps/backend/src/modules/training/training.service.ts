@@ -463,6 +463,8 @@ export class TrainingService {
       status: input.status,
       sets: input.sets,
       note: input.note,
+      effort: input.effort ?? null,
+      followUpRequested: input.followUpRequested ?? false,
     };
     if (!previous) {
       if (input.expectedRevision !== 0) throw conflict();
@@ -501,6 +503,117 @@ export class TrainingService {
       .lean();
     if (!saved) throw conflict();
     return dto(saved);
+  }
+
+  async reviewSession(
+    userId: string,
+    assignmentId: string,
+    clientId: string,
+    body: unknown,
+  ) {
+    const input = parse(
+      z.object({
+        text: z.string().trim().min(1).max(2000),
+        expectedRevision: z.number().int().min(0),
+      }),
+      body,
+    );
+    parse(z.string().uuid(), clientId);
+    // Reuse the same consent and active-service boundary as reading results.
+    await this.coachSessions(userId, assignmentId);
+    const saved = await this.sessions
+      .findOneAndUpdate(
+        {
+          assignmentId: id(assignmentId),
+          clientId,
+          status: "completed",
+          ...(input.expectedRevision === 0
+            ? { "coachReview.revision": { $exists: false } }
+            : { "coachReview.revision": input.expectedRevision }),
+        },
+        {
+          $set: {
+            coachReview: {
+              text: input.text,
+              reviewedAt: new Date(),
+              revision: input.expectedRevision + 1,
+            },
+          },
+        },
+        { new: true },
+      )
+      .lean();
+    if (!saved) throw conflict();
+    return dto(saved);
+  }
+
+  async followUps(userId: string) {
+    const [clients, assignments] = await Promise.all([
+      this.clients(userId),
+      this.listAssignments(userId, true),
+    ]);
+    const now = Date.now();
+    const items = [];
+    for (const client of clients.items) {
+      const active = assignments.items.filter(
+        (a) =>
+          a.athleteId.toString() === client.id &&
+          a.available &&
+          +a.startsAt <= now,
+      );
+      if (!active.length) {
+        items.push({
+          athleteId: client.id,
+          name: client.name,
+          assignmentId: null,
+          reason: "no_plan",
+          label: "خدمت فعال دارد؛ برنامه فعالی دریافت نکرده",
+          pendingReviews: 0,
+          lastSessionAt: null,
+        });
+        continue;
+      }
+      for (const a of active) {
+        if (!a.consentAt) continue;
+        const sessions = (await this.coachSessions(userId, a.id)).items.filter(
+          (s) => s.status === "completed",
+        );
+        const pending = sessions.filter((s) => !s.coachReview);
+        const last = sessions[0]?.startedAt ?? null;
+        const quietDays = (now - +(last ?? a.startsAt)) / 86400000;
+        const reason = pending.some((s) => s.followUpRequested)
+          ? "requested"
+          : pending.length
+            ? "review"
+            : quietDays >= 7
+              ? "inactive"
+              : +a.endsAt - now < 7 * 86400000
+                ? "expiring"
+                : null;
+        if (!reason) continue;
+        const labels = {
+          requested: "ورزشکار درخواست پیگیری کرده",
+          review: "تمرین ثبت‌شده منتظر بازخورد شماست",
+          inactive: "در هفت روز گذشته تمرین کامل‌شده‌ای ثبت نشده",
+          expiring: "اعتبار برنامه در هفت روز آینده تمام می‌شود",
+        };
+        items.push({
+          athleteId: client.id,
+          name: client.name,
+          assignmentId: a.id,
+          reason,
+          label: labels[reason],
+          pendingReviews: pending.length,
+          lastSessionAt: last,
+        });
+      }
+    }
+    const priority = ["requested", "review", "no_plan", "inactive", "expiring"];
+    return {
+      items: items.sort(
+        (a, b) => priority.indexOf(a.reason) - priority.indexOf(b.reason),
+      ),
+    };
   }
 
   async listSessions(userId: string) {

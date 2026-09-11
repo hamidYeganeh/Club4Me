@@ -59,6 +59,13 @@ export class DiscoveryAppearance {
 
 @Schema({ collection: "discovery_sections", timestamps: true })
 export class DiscoverySection {
+  @Prop({
+    type: String,
+    enum: ["discovery", "athlete-home", "coach-home", "reservations"],
+    default: "discovery",
+    index: true,
+  })
+  placement: string;
   @Prop({ required: true, unique: true, trim: true, maxlength: 80 })
   key: string;
   @Prop({ type: String, enum: DISCOVERY_SECTION_TYPES, required: true })

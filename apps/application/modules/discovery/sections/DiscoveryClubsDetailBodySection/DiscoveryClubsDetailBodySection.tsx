@@ -51,6 +51,7 @@ export function DiscoveryClubsDetailBodySection({
 }: DiscoveryClubsDetailBodySectionProps) {
   const t = useTranslations("discovery.clubDetail");
   const direction = getLocaleDirection(useLocale());
+  const [isAboutExpanded, setIsAboutExpanded] = useState(false);
   const [listKind, setListKind] = useState<FacilityListKind | null>(null);
   const [detailItem, setDetailItem] = useState<DiscoveryFacilityItem | null>(
     null,
@@ -116,22 +117,44 @@ export function DiscoveryClubsDetailBodySection({
         }))}
       />
 
-      <details className="group rounded-3xl bg-transparent py-3">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl py-2 focus-visible:outline-2 focus-visible:outline-focus">
-          <span className="text-lg font-bold">{t("aboutTitle")}</span>
-          <span className="flex items-center gap-2 text-sm text-accent">
-            <span className="group-open:hidden">{t("seeMore")}</span>
-            <span className="hidden group-open:inline">{t("seeLess")}</span>
-            <Icon
-              name="chevron-down"
-              className="transition-transform group-open:rotate-180"
-            />
-          </span>
-        </summary>
-        <p className="mt-3 whitespace-pre-line text-sm leading-8 text-muted">
-          {about.trim() || "هنوز توضیحی درباره باشگاه ثبت نشده است"}
-        </p>
-      </details>
+      <section aria-labelledby="club-about-title" className="py-3">
+        <h2 id="club-about-title" className="text-lg font-bold">
+          {t("aboutTitle")}
+        </h2>
+        <div className="relative mt-3">
+          <p
+            id="club-about-description"
+            className={`whitespace-pre-line text-sm leading-8 text-muted ${isAboutExpanded ? "" : "line-clamp-3"}`}
+          >
+            {about.trim() || "هنوز توضیحی درباره باشگاه ثبت نشده است"}
+          </p>
+          {!isAboutExpanded ? (
+            <div className="absolute inset-x-0 bottom-0 flex h-20 items-end justify-center overflow-hidden bg-linear-to-t from-background via-background/85 to-transparent pb-1 before:pointer-events-none before:absolute before:inset-0 before:backdrop-blur-[6px] before:[mask-image:linear-gradient(to_top,black_0%,transparent_100%)]">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative z-10"
+                aria-expanded={false}
+                aria-controls="club-about-description"
+                onPress={() => setIsAboutExpanded(true)}
+              >
+                {t("seeMore")}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2"
+              aria-expanded={true}
+              aria-controls="club-about-description"
+              onPress={() => setIsAboutExpanded(false)}
+            >
+              {t("seeLess")}
+            </Button>
+          )}
+        </div>
+      </section>
 
       {sports.length > 0 ? (
         <div className={styles.sports()}>
@@ -169,6 +192,7 @@ export function DiscoveryClubsDetailBodySection({
                 badge={coach.badge}
                 rating={coach.rating}
                 reviewsCount={coach.reviewsCount}
+                className="rounded-[2rem]"
                 stats={[
                   { id: "location", icon: "map-pin-1", label: coach.location },
                   { id: "mode", icon: "whistle", label: coach.mode },
@@ -187,6 +211,7 @@ export function DiscoveryClubsDetailBodySection({
         direction={direction}
         onSeeAll={() => setListKind("equipment")}
         onItemPress={setDetailItem}
+        variant="equipment"
       />
 
       <FacilityCarousel
@@ -197,6 +222,7 @@ export function DiscoveryClubsDetailBodySection({
         direction={direction}
         onSeeAll={() => setListKind("amenities")}
         onItemPress={setDetailItem}
+        variant="amenity"
       />
 
       <div className={styles.location()}>
@@ -337,6 +363,7 @@ function FacilityCarousel({
   direction,
   onSeeAll,
   onItemPress,
+  variant,
 }: {
   title: string;
   seeAllLabel: string;
@@ -345,6 +372,7 @@ function FacilityCarousel({
   direction: "ltr" | "rtl";
   onSeeAll: () => void;
   onItemPress: (item: DiscoveryFacilityItem) => void;
+  variant: "equipment" | "amenity";
 }) {
   if (items.length === 0) {
     return (
@@ -366,13 +394,9 @@ function FacilityCarousel({
         <Typography type="h5" className={styles.facilityTitle()}>
           {title}
         </Typography>
-        <button
-          type="button"
-          className={styles.facilitySeeAll()}
-          onClick={onSeeAll}
-        >
+        <Button variant="ghost" size="sm" onPress={onSeeAll}>
           {seeAllLabel}
-        </button>
+        </Button>
       </div>
       <div dir={direction} className={styles.facilityCarousel()}>
         <Swiper
@@ -389,6 +413,14 @@ function FacilityCarousel({
                 title={item.title}
                 icon={item.icon}
                 backgroundImage={item.backgroundImage}
+                supportingText={
+                  variant === "equipment"
+                    ? item.count != null
+                      ? `${item.count.toLocaleString("fa-IR")} دستگاه`
+                      : item.description
+                    : item.description
+                }
+                variant={variant}
                 onPress={() => onItemPress(item)}
               />
             </SwiperSlide>

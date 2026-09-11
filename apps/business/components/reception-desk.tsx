@@ -1,10 +1,14 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
+import { useAccountPreference } from "@api/preferences";
+import { useSelectedClub } from "@/lib/use-selected-club";
+
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Chip, toast } from "@heroui/react";
 import {
-  useBusinessClubs,
   useCheckInClubReservation,
   useReceptionDesk,
   type ReceptionResult,
@@ -149,10 +153,8 @@ function EmptyState({
 }
 
 export function ReceptionDeskScreen() {
-  const clubs = useBusinessClubs();
-  const [picked, setPicked] = useState("");
+  const { clubs, clubId, setClubId: setPicked } = useSelectedClub();
   const router = useRouter();
-  const clubId = picked || clubs.data?.items[0]?.id || "";
 
   return (
     <main className="min-w-0 flex-1 overflow-auto p-4 lg:p-6">
@@ -168,18 +170,18 @@ export function ReceptionDeskScreen() {
           </div>
           <label className="grid gap-1.5 text-sm text-muted sm:w-72">
             باشگاه
-            <select
+            <FormSelect
               aria-label="باشگاه پذیرش"
               className={field}
               value={clubId}
-              onChange={(event) => setPicked(event.target.value)}
+              onChange={(event) => setPicked(event)}
             >
               {clubs.data?.items.map((club) => (
-                <option key={club.id} value={club.id}>
+                <FormOption entity={club} key={club.id} value={club.id}>
                   {club.name}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </label>
         </header>
 
@@ -225,13 +227,13 @@ export function ReceptionDesk({
   clubId: string;
   onOpenClass?: (id: string) => void;
 }) {
-  const [draftPhone, setDraftPhone] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useAccountPreference(`reception-phone:${clubId}`);
+  const [draftPhone, setDraftPhone] = useState<string | null>(null);
   const result = useReceptionDesk(clubId, phone);
 
   const search = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const value = asciiDigits(draftPhone).trim();
+    const value = asciiDigits(draftPhone ?? phone).trim();
     if (value === phone) void result.refetch();
     else setPhone(value);
   };
@@ -262,9 +264,9 @@ export function ReceptionDesk({
           <form onSubmit={search} className="space-y-4 p-5 sm:p-6">
             <label className="grid gap-2 text-sm font-medium">
               موبایل ورزشکار
-              <input
+              <HeroInput
                 required
-                value={draftPhone}
+                value={draftPhone ?? phone}
                 onChange={(event) => setDraftPhone(event.target.value)}
                 type="tel"
                 inputMode="tel"
@@ -660,7 +662,7 @@ function ReservationCheckIn({
         >
           <label className="grid gap-1.5 text-sm">
             تعداد حاضر
-            <input
+            <HeroInput
               required
               inputMode="numeric"
               min={0}
@@ -673,7 +675,7 @@ function ReservationCheckIn({
           </label>
           <label className="grid gap-1.5 text-sm">
             دلیل اصلاح
-            <input
+            <HeroInput
               className={field}
               value={reason}
               onChange={(event) => setReason(event.target.value)}

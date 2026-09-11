@@ -1,3 +1,4 @@
+import { UpdateBusinessClassDto } from "./business-classes.dto";
 import { ClassBillingService } from "./class-billing.service";
 import {
   ClubManualPayment,
@@ -148,6 +149,133 @@ describe("BusinessClassesService integration", () => {
       operationalStatus: "active",
       geo: { cityId: new Types.ObjectId("66d400000000000000000051") },
     });
+  });
+
+  it("scopes club coaches to assigned classes, including rosters, attendance and check-in credentials", async () => {
+    const coachUser = new Types.ObjectId();
+    await students.db.collection("club_memberships").insertOne({
+      clubId: new Types.ObjectId(clubId),
+      userId: coachUser,
+      role: "coach",
+      status: "accepted",
+    });
+    const profile = await coaches.create({
+      clubId: new Types.ObjectId(clubId),
+      userId: coachUser,
+      firstName: "مربی",
+      lastName: "تست",
+      phone: "09121111111",
+      status: "active",
+    });
+    const input = {
+      packageSessionCount: null,
+      coachProfileId: null,
+      branchId: null,
+      title: "کلاس تست دسترسی",
+      description: "",
+      sport: "بدنسازی",
+      level: "",
+      model: "single" as const,
+      pricingModel: "course" as const,
+      price: 0,
+      currency: "IRR",
+      capacity: 2,
+      startDate: "2030-01-05",
+      endDate: "2030-01-05",
+      schedule: [{ dayOfWeek: 6, startTime: "18:00", durationMinutes: 60 }],
+      status: "active" as const,
+    };
+    const assigned = await service.create(ownerId, clubId, {
+      ...input,
+      coachProfileId: String(profile._id),
+    });
+    // Exercise the same DTO parsing as an HTTP PATCH, then verify persisted scope.
+    await service.update(
+      ownerId,
+      clubId,
+      assigned.id,
+      UpdateBusinessClassDto.schema.parse({
+        visibility: "private",
+        enrollmentMode: "requires_approval",
+        status: "paused",
+      }),
+    );
+    await service.update(
+      ownerId,
+      clubId,
+      assigned.id,
+      UpdateBusinessClassDto.schema.parse({ title: "عنوان ویرایش‌شده" }),
+    );
+    const saved = await students.db
+      .collection("business_training_classes")
+      .findOne({ _id: new Types.ObjectId(assigned.id) });
+    expect(saved).toMatchObject({
+      visibility: "private",
+      enrollmentMode: "requires_approval",
+      status: "paused",
+    });
+    expect(String(saved?.coachProfileId)).toBe(String(profile._id));
+    await service.update(ownerId, clubId, assigned.id, { status: "active" });
+    const unassigned = await service.create(ownerId, clubId, input);
+    expect(
+      (await service.list(String(coachUser), clubId)).items.map(
+        (item) => item.id,
+      ),
+    ).toEqual([assigned.id]);
+    expect((await service.get(String(coachUser), clubId, assigned.id)).id).toBe(
+      assigned.id,
+    );
+    const session = (await service.listSessions(ownerId, clubId, unassigned.id))
+      .items[0]!;
+    for (const request of [
+      () => service.get(String(coachUser), clubId, unassigned.id),
+      () => service.listEnrollments(String(coachUser), clubId, unassigned.id),
+      () =>
+        service.listAttendance(
+          String(coachUser),
+          clubId,
+          unassigned.id,
+          session.id,
+        ),
+      () =>
+        service.recordAttendance(
+          String(coachUser),
+          clubId,
+          unassigned.id,
+          session.id,
+          String(coachUser),
+          { items: [] },
+        ),
+      () =>
+        portal.generateOwnerCheckInCredential(
+          String(coachUser),
+          clubId,
+          unassigned.id,
+          session.id,
+          10,
+        ),
+    ])
+      await expect(request()).rejects.toMatchObject({
+        status: 403,
+        code: "CLASS_ASSIGNMENT_REQUIRED",
+      });
+    // A manager can operate across classes; role reduction remains checked by ClubsRepository.
+    await students.db
+      .collection("club_memberships")
+      .updateOne({ userId: coachUser }, { $set: { role: "manager" } });
+    expect((await service.list(String(coachUser), clubId)).items).toHaveLength(
+      2,
+    );
+    await students.db
+      .collection("club_memberships")
+      .updateOne({ userId: coachUser }, { $set: { role: "coach" } });
+    await coaches.updateOne(
+      { _id: profile._id },
+      { $set: { status: "inactive" } },
+    );
+    expect((await service.list(String(coachUser), clubId)).items).toHaveLength(
+      0,
+    );
   });
 
   it("paginates beyond 200 results and filters club visibility and city before counting", async () => {
@@ -407,6 +535,36 @@ describe("BusinessClassesService integration", () => {
         .model(BusinessClassAttendance.name)
         .findOne({ sessionId: unused._id }))!.changes,
     ).toHaveLength(1);
+    const arrival = await students.db
+      .model(BusinessClassAttendance.name)
+      .findOne({ sessionId: unused._id });
+    const checkoutInput = { items: [{ ...input.items[0]!, checkedOut: true }] };
+    await portal.recordCoachAttendance(
+      String(teacher._id),
+      String(training._id),
+      String(unused._id),
+      checkoutInput,
+    );
+    const departure = await students.db
+      .model(BusinessClassAttendance.name)
+      .findOne({ sessionId: unused._id });
+    await portal.recordCoachAttendance(
+      String(teacher._id),
+      String(training._id),
+      String(unused._id),
+      checkoutInput,
+    );
+    const retry = await students.db
+      .model(BusinessClassAttendance.name)
+      .findOne({ sessionId: unused._id });
+    expect(departure!.checkedInAt).toEqual(arrival!.checkedInAt);
+    expect(retry!.checkedOutAt).toEqual(departure!.checkedOutAt);
+    expect(retry!.changes).toHaveLength(2);
+    expect(
+      (await students.db
+        .model(BusinessClassEnrollment.name)
+        .findById(membership._id))!.remainingSessions,
+    ).toBe(0);
   });
 
   it("creates sessions, enrolls a club student, tracks package usage and transfers enrollment", async () => {
@@ -620,5 +778,63 @@ describe("BusinessClassesService integration", () => {
         )
       ).items[0]?.status,
     ).toBe("present");
+  });
+  it("offers only available seats in queue order and moves to the next person after expiry without repeated offers", async () => {
+    const course = await students.db
+      .model(BusinessTrainingClass.name)
+      .create({
+        clubId: new Types.ObjectId(clubId),
+        title: "صف ظرفیت",
+        classModel: "group",
+        pricingModel: "course",
+        capacity: 1,
+        price: 0,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 86400000),
+        schedule: [],
+        status: "active",
+      });
+    const enrollments = students.db.model(BusinessClassEnrollment.name);
+    const rows = [];
+    for (let i = 0; i < 3; i++)
+      rows.push(
+        await enrollments.create({
+          classId: course._id,
+          clubId: course.clubId,
+          studentId: new Types.ObjectId(),
+          status: "waitlisted",
+          paymentStatus: "waived",
+          agreedPrice: 0,
+          createdBy: new Types.ObjectId(ownerId),
+          waitlistRequestedAt: new Date(Date.now() - (3 - i) * 60000),
+        }),
+      );
+    await portal.refreshWaitlistOffers();
+    expect(
+      (await enrollments.findById(rows[0]!._id)).waitlistOfferExpiresAt,
+    ).toBeTruthy();
+    expect(
+      (await enrollments.findById(rows[1]!._id)).waitlistOfferExpiresAt,
+    ).toBeNull();
+    await portal.refreshWaitlistOffers();
+    expect(
+      await enrollments.countDocuments({
+        classId: course._id,
+        waitlistOfferExpiresAt: { $ne: null },
+      }),
+    ).toBe(1);
+    await enrollments.updateOne(
+      { _id: rows[0]!._id },
+      { $set: { waitlistOfferExpiresAt: new Date(Date.now() - 1000) } },
+    );
+    await portal.refreshWaitlistOffers();
+    expect(
+      (await enrollments.findById(rows[1]!._id)).waitlistOfferExpiresAt,
+    ).toBeTruthy();
+    expect(
+      (
+        await enrollments.findById(rows[0]!._id)
+      ).waitlistOfferExpiresAt.getTime(),
+    ).toBeLessThan(Date.now());
   });
 });

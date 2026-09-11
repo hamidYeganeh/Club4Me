@@ -182,7 +182,7 @@ export function LandingTestimonialsSection({
                           : slots.quoteMarkDark(),
                     })}
                   >
-                    &quot;
+                    ↗
                   </span>
                 </div>
                 <Typography
@@ -194,7 +194,7 @@ export function LandingTestimonialsSection({
                   })}
                   type="body"
                 >
-                  «<TextWithBrand shadow="onBrand">{card.quote}</TextWithBrand>»
+                  <TextWithBrand shadow="onBrand">{card.quote}</TextWithBrand>
                 </Typography>
                 <div className={slots.authorRow()}>
                   <CoverImage

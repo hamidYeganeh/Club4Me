@@ -1,4 +1,6 @@
 "use client";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
 import Link from "@/components/app-link";
 import { AppPageIntro } from "@/components/app-page-intro";
 
@@ -96,15 +98,17 @@ export function SupportTicketsScreen({
         showFilter={false}
         backHref={view === "list" ? `/${role}/settings` : base}
       />
-      <AppPageIntro
-        page={
-          view === "new"
-            ? "supportNew"
-            : view === "detail"
-              ? "supportThread"
-              : "support"
-        }
-      />
+      {view === "new" ? (
+        <div className="px-1 pt-4">
+          <h1 className="text-xl font-bold">چطور می‌توانیم کمک کنیم؟</h1>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            موضوع و جزئیات درخواست را بنویسید. پاسخ تیم پشتیبانی را همین‌جا
+            دنبال کنید.
+          </p>
+        </div>
+      ) : (
+        <AppPageIntro page={view === "detail" ? "supportThread" : "support"} />
+      )}
       <div className="space-y-5 pt-5">
         {view === "list" ? (
           <Link
@@ -115,8 +119,8 @@ export function SupportTicketsScreen({
           </Link>
         ) : null}
         {view === "new" ? (
-          <Card className="p-4">
-            <form className="space-y-3" onSubmit={submit}>
+          <Card className="rounded-[var(--app-radius-feature,24px)] border border-border bg-surface p-4 sm:p-5">
+            <form className="space-y-4" onSubmit={submit}>
               {reference ? (
                 <div className="rounded-xl bg-accent/10 p-3 text-sm">
                   <p>درخواست به سفارش شما متصل می‌شود.</p>
@@ -125,8 +129,15 @@ export function SupportTicketsScreen({
                   </p>
                 </div>
               ) : null}
-              <input
+              <label
+                htmlFor="support-subject"
+                className="block text-sm font-semibold"
+              >
+                موضوع درخواست
+              </label>
+              <HeroInput
                 required
+                id="support-subject"
                 name="subject"
                 maxLength={160}
                 defaultValue={reference ? "پیگیری سفارش" : ""}
@@ -135,19 +146,33 @@ export function SupportTicketsScreen({
                 placeholder="موضوع"
                 className={fieldClass}
               />
-              <select
+              <label
+                htmlFor="support-category"
+                className="block text-sm font-semibold"
+              >
+                دسته‌بندی
+              </label>
+              <FormSelect
+                id="support-category"
                 name="category"
                 aria-label="دسته‌بندی درخواست"
                 className={fieldClass}
               >
-                <option value="reservation">رزرو</option>
-                <option value="payment">پرداخت</option>
-                <option value="account">حساب کاربری</option>
-                <option value="club">باشگاه</option>
-                <option value="other">سایر</option>
-              </select>
-              <textarea
+                <FormOption value="reservation">رزرو</FormOption>
+                <FormOption value="payment">پرداخت</FormOption>
+                <FormOption value="account">حساب کاربری</FormOption>
+                <FormOption value="club">باشگاه</FormOption>
+                <FormOption value="other">سایر</FormOption>
+              </FormSelect>
+              <label
+                htmlFor="support-message"
+                className="block text-sm font-semibold"
+              >
+                شرح درخواست
+              </label>
+              <HeroTextArea
                 required
+                id="support-message"
                 name="message"
                 maxLength={5000}
                 aria-label="شرح درخواست"
@@ -155,20 +180,28 @@ export function SupportTicketsScreen({
                 placeholder="شرح درخواست"
                 className={`${fieldClass} min-h-28`}
               />
-              <select
+              <label
+                htmlFor="support-preferredContact"
+                className="block text-sm font-semibold"
+              >
+                روش دریافت پاسخ
+              </label>
+              <FormSelect
+                id="support-preferredContact"
                 name="preferredContact"
                 aria-label="روش دریافت پاسخ"
                 className={fieldClass}
               >
-                <option value="in_app">پاسخ داخل اپ</option>
-                <option value="phone">تماس تلفنی</option>
-              </select>
+                <FormOption value="in_app">پاسخ داخل اپ</FormOption>
+                <FormOption value="phone">تماس تلفنی</FormOption>
+              </FormSelect>
               <Button
                 type="submit"
                 variant="primary"
+                className="h-12 w-full rounded-xl font-bold"
                 isPending={create.isPending}
               >
-                ارسال
+                ثبت درخواست
               </Button>
             </form>
           </Card>
@@ -287,7 +320,7 @@ export function SupportTicketsScreen({
                         }
                       }}
                     >
-                      <input
+                      <HeroInput
                         required
                         name="message"
                         aria-label="پاسخ شما"

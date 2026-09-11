@@ -1,5 +1,8 @@
 "use client";
 
+import { Checkbox as HeroCheckbox } from "@heroui/react";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
 import type { ClubProfile, ClubBusyHour } from "@api/business";
 import { ClubResourceField } from "./ClubResourceField";
 import { useState } from "react";
@@ -61,7 +64,7 @@ export function ClubProfileFields({
               <div className="grid gap-3 sm:grid-cols-2">
                 <label>
                   نام فضا
-                  <input
+                  <HeroInput
                     required
                     maxLength={120}
                     className={input}
@@ -110,7 +113,7 @@ export function ClubProfileFields({
                 ).map(([key, label]) => (
                   <label key={key}>
                     {label}
-                    <input
+                    <HeroInput
                       type="number"
                       min="0.01"
                       max={key.endsWith("Count") ? 10000 : 1000000}
@@ -181,7 +184,7 @@ export function ClubProfileFields({
           ).map(([key, label]) => (
             <label key={key}>
               {label}
-              <input
+              <HeroInput
                 type="number"
                 min={1}
                 max={key === "classCapacity" ? 10000 : 1000000}
@@ -238,32 +241,40 @@ export function ClubProfileFields({
       </fieldset>
       <fieldset className="space-y-3">
         <legend className="mb-3 font-bold">اولین مراجعه و جلسه آزمایشی</legend>
-        <label className="flex gap-2">
-          <input
-            type="checkbox"
-            checked={trial}
-            onChange={(e) => onTrialChange(e.target.checked)}
-          />
-          فعال‌سازی رزرو یک جلسه آزمایشی رایگان
-        </label>
+        <HeroCheckbox
+          className="flex gap-2"
+          isSelected={trial}
+          onChange={(e) => onTrialChange(e)}
+        >
+          <HeroCheckbox.Content>
+            <HeroCheckbox.Control>
+              <HeroCheckbox.Indicator />
+            </HeroCheckbox.Control>
+            فعال‌سازی رزرو یک جلسه آزمایشی رایگان
+          </HeroCheckbox.Content>
+        </HeroCheckbox>
         <p className="text-sm text-muted">
           هر کاربر یک جلسه برای یک نفر در این باشگاه؛ بدون خدمات جانبی و بدون
           پرداخت. رزرو لغوشده قابل تکرار است؛ جلسه تکمیل‌شده یا عدم حضور، فرصت
           آزمایشی را مصرف می‌کند.
         </p>
-        <label className="flex gap-2">
-          <input
-            type="checkbox"
-            checked={visit.visitAvailable ?? false}
-            onChange={(e) =>
-              onChange({
-                ...value,
-                firstVisit: { ...visit, visitAvailable: e.target.checked },
-              })
-            }
-          />
-          امکان بازدید از باشگاه
-        </label>
+        <HeroCheckbox
+          className="flex gap-2"
+          isSelected={visit.visitAvailable ?? false}
+          onChange={(e) =>
+            onChange({
+              ...value,
+              firstVisit: { ...visit, visitAvailable: e },
+            })
+          }
+        >
+          <HeroCheckbox.Content>
+            <HeroCheckbox.Control>
+              <HeroCheckbox.Indicator />
+            </HeroCheckbox.Control>
+            امکان بازدید از باشگاه
+          </HeroCheckbox.Content>
+        </HeroCheckbox>
         <ClubResourceField
           label="افزودن وسیله لازم"
           category="classes"
@@ -322,7 +333,7 @@ export function ClubProfileFields({
         ) : null}
         <label className="block">
           چند دقیقه زودتر مراجعه شود؟
-          <input
+          <HeroInput
             type="number"
             min={0}
             max={180}
@@ -342,7 +353,7 @@ export function ClubProfileFields({
         </label>
         <label className="block">
           راهنمای مراجعه
-          <textarea
+          <HeroTextArea
             maxLength={2000}
             className={input}
             value={visit.instructions ?? ""}
@@ -356,7 +367,7 @@ export function ClubProfileFields({
         </label>
         <label className="block">
           هزینه‌های جانبی
-          <input
+          <HeroInput
             maxLength={500}
             className={input}
             value={visit.extraFees ?? ""}
@@ -405,7 +416,7 @@ export function ClubProfileFields({
                     );
                     return (
                       <td key={day} className="p-1">
-                        <select
+                        <FormSelect
                           aria-label={`${days[day]} ساعت ${hour}`}
                           className="rounded-lg border border-border bg-surface p-2"
                           value={cell?.level ?? ""}
@@ -413,22 +424,22 @@ export function ClubProfileFields({
                             const next = busyHours.filter(
                               (h) => h.dayOfWeek !== day || h.hour !== hour,
                             );
-                            if (e.target.value)
+                            if (e)
                               next.push({
                                 dayOfWeek: day,
                                 hour,
-                                level: e.target.value as ClubBusyHour["level"],
+                                level: e as ClubBusyHour["level"],
                               });
                             onBusyHoursChange(next);
                           }}
                         >
-                          <option value="">نامشخص</option>
+                          <FormOption value="">نامشخص</FormOption>
                           {Object.entries(levels).map(([key, label]) => (
-                            <option key={key} value={key}>
+                            <FormOption key={key} value={key}>
                               {label}
-                            </option>
+                            </FormOption>
                           ))}
-                        </select>
+                        </FormSelect>
                       </td>
                     );
                   })}

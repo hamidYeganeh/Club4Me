@@ -1,3 +1,9 @@
+import { z } from "zod";
+import { parse } from "../../lib/validate";
+import {
+  withReferenceSummaries,
+  studentDisplayReference,
+} from "../../common/utils/reference-summaries";
 import { createHash } from "node:crypto";
 import { ClassBillingService, receiptDto } from "./class-billing.service";
 import { membershipWeekKey } from "../commerce/membership-week";
@@ -72,6 +78,168 @@ export class BusinessOperationsService {
   ) {
     await this.clubs.findForOwner(ownerId, clubId, permission);
     return oid(clubId);
+  }
+
+  async capacityOverview(ownerId: string, clubId: string) {
+    const club = await this.club(ownerId, clubId, "classes.read");
+    await this.club(ownerId, clubId, "enrollments.read");
+    const classes = await this.classes
+      .find({ clubId: club, status: "active", endDate: { $gt: new Date() } })
+      .lean();
+    const enrollments = await this.students.db
+      .collection("business_class_enrollments")
+      .find({
+        classId: { $in: classes.map((c) => c._id) },
+        $or: [
+          { status: "waitlisted" },
+          { status: "active", waitlistRequestedAt: { $ne: null } },
+        ],
+      })
+      .project({
+        classId: 1,
+        status: 1,
+        waitlistRequestedAt: 1,
+        waitlistOfferExpiresAt: 1,
+      })
+      .toArray();
+    return {
+      items: classes
+        .map((c) => {
+          const related = enrollments.filter(
+            (e) => String(e.classId) === String(c._id),
+          );
+          return {
+            id: String(c._id),
+            title: c.title,
+            remainingCapacity: Math.max(
+              0,
+              c.capacity -
+                (c.activeEnrollmentCount ?? 0) -
+                (c.pendingEnrollmentCount ?? 0),
+            ),
+            waitlisted: related.filter((e) => e.status === "waitlisted").length,
+            offers: related.filter(
+              (e) =>
+                e.status === "waitlisted" &&
+                e.waitlistOfferExpiresAt > new Date(),
+            ).length,
+            recovered: related.filter(
+              (e) => e.status === "active" && e.waitlistRequestedAt,
+            ).length,
+          };
+        })
+        .filter(
+          (c) => c.remainingCapacity > 0 || c.waitlisted > 0 || c.recovered > 0,
+        ),
+    };
+  }
+
+  async memberFollowUps(ownerId: string, clubId: string) {
+    const club = await this.club(ownerId, clubId, "students.read");
+    await this.club(ownerId, clubId, "attendance.read");
+    const now = new Date();
+    const [students, manual, classes, contacts] = await Promise.all([
+      this.students.find({ clubId: club, status: "active" }).lean(),
+      this.attendance.aggregate<{ _id: Types.ObjectId; last: Date }>([
+        { $match: { clubId: club, status: "present", date: { $lte: now } } },
+        { $group: { _id: "$studentId", last: { $max: "$date" } } },
+      ]),
+      this.classAttendance.aggregate<{ _id: Types.ObjectId; last: Date }>([
+        { $match: { clubId: club, status: "present" } },
+        {
+          $lookup: {
+            from: "business_class_sessions",
+            localField: "sessionId",
+            foreignField: "_id",
+            as: "session",
+          },
+        },
+        { $unwind: "$session" },
+        { $match: { "session.startsAt": { $lte: now } } },
+        { $group: { _id: "$studentId", last: { $max: "$session.startsAt" } } },
+      ]),
+      this.students.db
+        .collection("club_member_follow_ups")
+        .find({ clubId: club })
+        .toArray(),
+    ]);
+    const last = new Map<string, Date>();
+    for (const row of [...manual, ...classes])
+      if (!last.has(String(row._id)) || +last.get(String(row._id))! < +row.last)
+        last.set(String(row._id), row.last);
+    const items = students.flatMap((student) => {
+      const contact = contacts.find(
+        (c) => String(c._id) === String(student._id),
+      );
+      const attendedAt = last.get(String(student._id)) ?? null;
+      const expiry = student.membershipEndsAt;
+      const reasons: string[] = [];
+      if (expiry && +expiry < +now) reasons.push("اعتبار عضویت تمام شده");
+      else if (expiry && +expiry - +now < 7 * 86400000)
+        reasons.push("اعتبار عضویت در هفت روز آینده تمام می‌شود");
+      if (+now - +(attendedAt ?? student.createdAt) >= 14 * 86400000)
+        reasons.push("در چهارده روز گذشته حضوری ثبت نشده");
+      if (!reasons.length) return [];
+      return [
+        {
+          studentId: String(student._id),
+          name: `${student.firstName} ${student.lastName}`.trim(),
+          phone: student.phone,
+          reasons,
+          lastAttendanceAt: attendedAt,
+          membershipEndsAt: expiry,
+          note: contact?.note ?? "",
+          contactedAt: contact?.contactedAt ?? null,
+          nextFollowUpAt: contact?.nextFollowUpAt ?? null,
+          deferred: !!contact?.nextFollowUpAt && +contact.nextFollowUpAt > +now,
+        },
+      ];
+    });
+    return {
+      items: items.sort(
+        (a, b) =>
+          Number(a.deferred) - Number(b.deferred) ||
+          b.reasons.length - a.reasons.length,
+      ),
+      generatedAt: now,
+    };
+  }
+
+  async saveMemberFollowUp(
+    ownerId: string,
+    clubId: string,
+    studentId: string,
+    body: unknown,
+  ) {
+    const club = await this.club(ownerId, clubId, "students.write");
+    const input = parse(
+      z.object({
+        note: z.string().trim().min(1).max(500),
+        remindInDays: z.number().int().min(1).max(30),
+      }),
+      body,
+    );
+    if (!(await this.students.exists({ _id: oid(studentId), clubId: club })))
+      throw new AppError(404, "STUDENT_NOT_FOUND", "عضو پیدا نشد");
+    const contactedAt = new Date();
+    await this.students.db
+      .collection("club_member_follow_ups")
+      .updateOne(
+        { _id: oid(studentId), clubId: club },
+        {
+          $set: {
+            clubId: club,
+            note: input.note,
+            contactedAt,
+            nextFollowUpAt: new Date(
+              +contactedAt + input.remindInDays * 86400000,
+            ),
+            recordedBy: oid(ownerId),
+          },
+        },
+        { upsert: true },
+      );
+    return { saved: true };
   }
 
   async authorizeExport(ownerId: string, clubId: string) {
@@ -465,7 +633,20 @@ export class BusinessOperationsService {
       .find({ clubId: id })
       .sort({ createdAt: -1 })
       .limit(1000);
-    return { items: items.map(studentDto) };
+    return {
+      items: await withReferenceSummaries(
+        this.students.db,
+        items.map(studentDto),
+        [
+          {
+            field: "userId",
+            as: "user",
+            collection: "users",
+            fields: ["firstName", "lastName", "avatarUrl"],
+          },
+        ],
+      ),
+    };
   }
   async createStudent(
     ownerId: string,
@@ -532,7 +713,20 @@ export class BusinessOperationsService {
       .find({ clubId: id })
       .sort({ createdAt: -1 })
       .limit(500);
-    return { items: items.map(coachDto) };
+    return {
+      items: await withReferenceSummaries(
+        this.coaches.db,
+        items.map(coachDto),
+        [
+          {
+            field: "userId",
+            as: "user",
+            collection: "users",
+            fields: ["firstName", "lastName", "avatarUrl"],
+          },
+        ],
+      ),
+    };
   }
   async createCoach(ownerId: string, clubId: string, input: CreateCoachDto) {
     const id = await this.club(ownerId, clubId, "coaches.write");
@@ -596,7 +790,13 @@ export class BusinessOperationsService {
       .find({ clubId: id })
       .sort({ paidAt: -1 })
       .limit(1000);
-    return { items: items.map(receiptDto) };
+    return {
+      items: await withReferenceSummaries(
+        this.payments.db,
+        items.map(receiptDto),
+        [studentDisplayReference],
+      ),
+    };
   }
   async createPayment(
     ownerId: string,
@@ -622,7 +822,21 @@ export class BusinessOperationsService {
       .find(filter)
       .sort({ date: -1 })
       .limit(1000);
-    return { items: items.map(attendanceDto) };
+    return {
+      items: await withReferenceSummaries(
+        this.attendance.db,
+        items.map(attendanceDto),
+        [
+          studentDisplayReference,
+          {
+            field: "recordedBy",
+            as: "recorder",
+            collection: "users",
+            fields: ["firstName", "lastName"],
+          },
+        ],
+      ),
+    };
   }
   async upsertAttendance(
     ownerId: string,

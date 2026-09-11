@@ -7,6 +7,7 @@ common_args=(
   --network=host
   -f Dockerfile.production
   --build-arg NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}"
+  --build-arg NEXT_PUBLIC_APPLICATION_URL="${NEXT_PUBLIC_APPLICATION_URL:-https://app.gym4me.ir}"
   --build-arg NEXT_PUBLIC_WEBSITE_URL="${NEXT_PUBLIC_WEBSITE_URL:-https://gym4me.ir}"
   --build-arg NEXT_PUBLIC_APP_RELEASE="${APP_RELEASE:-production}"
   --build-arg NEXT_PUBLIC_TINYMCE_API_KEY="${NEXT_PUBLIC_TINYMCE_API_KEY:-}"

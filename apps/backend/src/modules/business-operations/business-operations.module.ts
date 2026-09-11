@@ -1,3 +1,4 @@
+import { MediaModule } from "../media/media.module";
 import { ClassBillingService } from "./class-billing.service";
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
@@ -57,6 +58,7 @@ import {
 
 @Module({
   imports: [
+    MediaModule,
     AuthModule,
     ClubsModule,
     UsersModule,

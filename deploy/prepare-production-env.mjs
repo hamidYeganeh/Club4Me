@@ -30,6 +30,7 @@ const storageBucket = required(
 const values = {
   PORT: "7088",
   NODE_ENV: "production",
+  PAYMENT_MODE: "simulation",
   TRUST_PROXY: "true",
   MONGO_ROOT_USERNAME: mongoUser,
   MONGO_ROOT_PASSWORD: mongoPassword,
@@ -72,6 +73,7 @@ const values = {
   CORS_ORIGINS:
     "https://gym4me.ir,https://www.gym4me.ir,https://app.gym4me.ir,https://admin.gym4me.ir,https://business.gym4me.ir,https://localhost",
   NEXT_PUBLIC_API_URL: "https://api.gym4me.ir/api/v1",
+  NEXT_PUBLIC_APPLICATION_URL: "https://app.gym4me.ir",
   NEXT_PUBLIC_WEBSITE_URL: "https://gym4me.ir",
   NEXT_PUBLIC_APP_RELEASE: release,
   NEXT_PUBLIC_NESHAN_MAP_KEY: required(

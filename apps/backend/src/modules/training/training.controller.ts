@@ -33,6 +33,17 @@ export class TrainingController {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.sendFile(file);
   }
+  @Get("coach/follow-ups") followUps(@CurrentUser() u: AuthTokenPayload) {
+    return this.training.followUps(u.sub);
+  }
+  @Put("coach/assignments/:id/sessions/:clientId/review") review(
+    @CurrentUser() u: AuthTokenPayload,
+    @Param("id") id: string,
+    @Param("clientId") clientId: string,
+    @Body() body: unknown,
+  ) {
+    return this.training.reviewSession(u.sub, id, clientId, body);
+  }
   @Get("coach/clients") clients(@CurrentUser() u: AuthTokenPayload) {
     return this.training.clients(u.sub);
   }

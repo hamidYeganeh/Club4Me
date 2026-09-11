@@ -8,13 +8,6 @@ import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoveryS
 import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 import { RequestFailureState } from "@/components/request-failure-state";
 
-const FALLBACK_IMAGES = [
-  "/discovery/locations/city-modern.jpg",
-  "/discovery/locations/city-caspian.jpg",
-  "/discovery/locations/city-heritage.jpg",
-  "/discovery/locations/city-south-coast.jpg",
-] as const;
-
 export function DiscoveryInfiniteClubsSection() {
   const clubs = useInfiniteClubs();
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -75,13 +68,12 @@ export function DiscoveryInfiniteClubsSection() {
       ) : null}
 
       <div className="flex flex-col gap-4">
-        {items.map((club, index) => (
+        {items.map((club) => (
           <ClubCard
             key={club.id}
             variant="compact"
             title={club.name}
             location={club.city}
-            imageUrl={FALLBACK_IMAGES[index % FALLBACK_IMAGES.length]}
             href={`/discovery/clubs/${club.slug}`}
             className="!aspect-[16/9] !w-full"
           />

@@ -1,3 +1,4 @@
+import { partialWithoutDefaults } from "../../common/utils/partial-without-defaults";
 import { Types } from "mongoose";
 import { z } from "zod";
 
@@ -40,7 +41,10 @@ const businessClassFields = z
     branchId: objectId.nullable().default(null),
     coverMediaId: objectId.nullable().default(null),
     galleryMediaIds: z.array(objectId).max(30).default([]),
-    prerequisites: z.array(z.string().trim().min(1).max(240)).max(30).default([]),
+    prerequisites: z
+      .array(z.string().trim().min(1).max(240))
+      .max(30)
+      .default([]),
     requiredEquipmentIds: z.array(objectId).max(50).default([]),
     amenityIds: z.array(objectId).max(50).default([]),
     minAge: z.number().int().min(0).max(120).nullable().default(null),
@@ -142,8 +146,7 @@ export class CreateBusinessClassDto {
 }
 
 export class UpdateBusinessClassDto {
-  static schema = businessClassFields
-    .partial()
+  static schema = partialWithoutDefaults(businessClassFields.shape)
     .strict()
     .superRefine((value, context) => {
       if (value.startDate && value.endDate && value.startDate > value.endDate)
@@ -247,6 +250,7 @@ export class RecordClassAttendanceDto {
           z.object({
             studentId: objectId,
             status: z.enum(["present", "absent", "excused"]),
+            checkedOut: z.boolean().optional(),
             notes: z.string().trim().max(500).default(""),
           }),
         )
@@ -257,6 +261,7 @@ export class RecordClassAttendanceDto {
   items: Array<{
     studentId: string;
     status: "present" | "absent" | "excused";
+    checkedOut?: boolean;
     notes: string;
   }>;
 }

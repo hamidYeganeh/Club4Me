@@ -3,7 +3,6 @@ import { iconNames, type IconName } from "@theme/icon";
 const ICON_NAME_SET = new Set<string>(iconNames);
 const CLUB_TYPE_ICONS: Record<string, IconName> = {
   GYM: "weight",
-  GYM_DEMO: "weight",
   SPORT_COMPLEX: "building-1",
   POOL: "person-swimming",
   ACADEMY: "academic-cap",

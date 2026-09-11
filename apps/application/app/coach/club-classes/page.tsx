@@ -3,7 +3,6 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { CoachClubClassScreen } from "@modules/coach/screens/CoachClubClassScreen";
-import { DashboardPageSkeleton } from "@/components/loading-skeletons";
 
 function Content() {
   const params = useSearchParams();
@@ -12,7 +11,7 @@ function Content() {
 
 export default function CoachClubClassPage() {
   return (
-    <Suspense fallback={<DashboardPageSkeleton />}>
+    <Suspense fallback={null}>
       <Content />
     </Suspense>
   );

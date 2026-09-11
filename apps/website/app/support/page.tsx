@@ -1,7 +1,11 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { LegalPage } from "@/components/legal-page";
 
-export const metadata: Metadata = { title: "پشتیبانی | جیم فور می" };
+export const metadata = pageMetadata(
+  "پشتیبانی",
+  "روش‌های تماس با پشتیبانی Gym4Me و راهنمای پیگیری مشکلات حساب و رزرو.",
+  "/support",
+);
 
 export default function SupportPage() {
   return (

@@ -18,6 +18,7 @@ import { Soccer } from "@modules/marketing/icons/icons/Soccer";
 import { Tennis } from "@modules/marketing/icons/icons/Tennis";
 import { SportCard } from "@modules/marketing/components/cards/SportCard";
 import { motion, useReducedMotion, type Variants } from "@ui/landing-motion";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { ComponentType } from "react";
 import { LANDING_ASSETS, LANDING_SPORT_THEMES } from "../../lib/landing-assets";
@@ -98,12 +99,16 @@ function SportTileCard({
   const slots = landingSportsSectionStyles();
   const theme = LANDING_SPORT_THEMES[themeIndex % LANDING_SPORT_THEMES.length]!;
   const Icon = tile.icon;
+  const router = useRouter();
 
   return (
     <SportCard
       actionColor={theme.actionColor}
       actionForegroundColor={theme.actionForegroundColor}
       actionLabel={viewSportLabel}
+      onPress={() =>
+        router.push(`/discovery?q=${encodeURIComponent(tile.name)}`)
+      }
       className={slots.card()}
       color={theme.color}
       foregroundColor={theme.foregroundColor}

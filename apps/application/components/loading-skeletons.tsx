@@ -278,32 +278,6 @@ export function CityDetailSkeleton() {
   );
 }
 
-export function DashboardPageSkeleton() {
-  return (
-    <main className="app-page gap-6" {...loadingProps}>
-      <PageHeaderSkeleton />
-      <Card className="app-card space-y-4 rounded-[1.75rem] p-5 shadow-none">
-        <div className="flex items-center gap-4">
-          <Skeleton className="size-16 shrink-0 rounded-2xl" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-32 rounded-lg" />
-            <Skeleton className="h-3 w-48 max-w-full rounded-lg" />
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 rounded-2xl" />
-          ))}
-        </div>
-      </Card>
-      <div className="space-y-3">
-        <Skeleton className="h-5 w-32 rounded-lg" />
-        <CompactCardListSkeleton count={3} />
-      </div>
-    </main>
-  );
-}
-
 export function FormPageSkeleton({ fields = 5 }: { fields?: number }) {
   return (
     <main className="app-page gap-6" {...loadingProps}>
@@ -510,8 +484,4 @@ export function MapResultsSkeleton() {
       <DiscoveryResultCardSkeleton count={1} />
     </div>
   );
-}
-
-export function RouteLoadingSkeleton() {
-  return <ListPageSkeleton count={4} />;
 }

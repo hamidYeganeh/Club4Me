@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "@/components/app-link";
 import { Button, Skeleton, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
-import { SwipeableList } from "@repo/ui/swipeable-list";
 import { RequestFailureState } from "@/components/request-failure-state";
 import {
   SortBottomSheet,
@@ -83,7 +82,11 @@ function ReservationTimelineRow({
               <span className={styles.metaDivider()} aria-hidden />
               <span className={styles.metaItem()}>
                 <Icon name="clock" size={15} className={styles.metaMuted()} />
-                <strong>{durationLabel}</strong>
+                <strong>
+                  {item.source === "class"
+                    ? `تا ${formatReservationDate(item.sessionEndsAt)}`
+                    : durationLabel}
+                </strong>
               </span>
               <span className={styles.metaDivider()} aria-hidden />
               <span className={styles.metaItem()}>
@@ -154,7 +157,6 @@ export function ReservationsTimelineSection({
   peopleLabel,
   durationLabel,
   statusLabel,
-  cancelLabel,
 }: ReservationsTimelineSectionProps) {
   const styles = reservationsTimelineSectionStyles();
   const [sortOpen, setSortOpen] = useState(false);
@@ -253,61 +255,32 @@ export function ReservationsTimelineSection({
       ) : (
         <div className={styles.list()}>
           <span aria-hidden className={styles.line()} />
-          <SwipeableList
-            className="gap-5"
-            itemClassName="rounded-3xl bg-surface-secondary"
-            surfaceClassName="rounded-3xl bg-surface"
-            railClassName="rounded-3xl bg-surface-secondary [direction:ltr]"
-            items={items.map((item) => ({
-              id: item.id,
-              content: (
-                <ReservationTimelineRow
-                  item={item}
-                  selected={selectedId === item.id}
-                  onSelect={onSelect}
-                  peopleLabel={peopleLabel(item.participantCount)}
-                  durationLabel={durationLabel(
-                    durationMinutes(item.sessionStartsAt, item.sessionEndsAt),
-                  )}
-                  statusLabel={statusLabel(item.status)}
-                  historyMode={historyMode}
-                  onCancel={onCancel}
-                  cancelPending={cancelPending}
-                />
-              ),
-              leftActions: [
-                {
-                  id: "renew",
-                  label: renewLabel,
-                  icon: <Icon name="calendar-plus" size={19} />,
-                  className: "bg-accent text-accent-foreground",
-                  onClick: () => onRenew(item),
-                },
-              ],
-              rightActions: [
-                {
-                  id: "cancel",
-                  label:
-                    item.status === "reserved"
-                      ? cancelLabel
-                      : statusLabel(item.status),
-                  icon: (
-                    <Icon
-                      name={
-                        item.status === "reserved"
-                          ? "calendar-plus"
-                          : "calendar-check"
-                      }
-                      size={19}
-                    />
-                  ),
-                  className: "bg-danger text-danger-foreground",
-                  disabled: item.status !== "reserved" || cancelPending,
-                  onClick: () => onCancel(item.id),
-                },
-              ],
-            }))}
-          />
+          {items.map((item) => (
+            <div key={item.id}>
+              <ReservationTimelineRow
+                item={item}
+                selected={selectedId === item.id}
+                onSelect={onSelect}
+                peopleLabel={peopleLabel(item.participantCount)}
+                durationLabel={durationLabel(
+                  durationMinutes(item.sessionStartsAt, item.sessionEndsAt),
+                )}
+                statusLabel={statusLabel(item.status)}
+                historyMode={historyMode}
+                onCancel={onCancel}
+                cancelPending={cancelPending}
+              />
+              {item.status !== "reserved" ? (
+                <Button
+                  variant="secondary"
+                  className="mt-2 min-h-11 w-full"
+                  onPress={() => onRenew(item)}
+                >
+                  {renewLabel}
+                </Button>
+              ) : null}
+            </div>
+          ))}
         </div>
       )}
 

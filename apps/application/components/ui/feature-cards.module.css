@@ -1,0 +1,70 @@
+.suggestion {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 12rem;
+  padding: 1rem;
+  border-radius: 1.5rem;
+  background: var(--surface);
+  color: var(--foreground);
+  text-decoration: none;
+  transition: background 160ms ease;
+}
+.suggestion:hover { background: var(--surface-secondary); }
+.suggestion:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  padding: .2rem .55rem;
+  border-radius: .55rem;
+  background: var(--surface-tertiary);
+  color: var(--foreground);
+  font-size: .65rem;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.arrow {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: .85rem;
+  background: var(--background);
+  color: var(--foreground);
+}
+.exerciseRow {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  padding: .85rem;
+  border-radius: 1.15rem;
+  background: var(--surface);
+}
+.exerciseIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: .85rem;
+  background: var(--background);
+  color: var(--accent);
+}
+.eyebrow, .detail { font-size: .75rem; line-height: 1.8; color: var(--muted); }
+.title { font-size: .875rem; font-weight: 700; line-height: 1.8; overflow-wrap: anywhere; }
+.day { padding-block: 1rem; border-top: 1px solid var(--border); }
+.day ul { margin-top: .85rem; }
+.history { border-radius: 1.5rem; background: var(--surface); padding: 1rem; }
+.history summary { cursor: pointer; min-height: 2.75rem; align-content: center; }
+.history summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: .5rem; }
+.bars { display: flex; align-items: end; gap: 3px; width: 5rem; height: 2.75rem; flex-shrink: 0; direction: ltr; }
+.bars span { flex: 1; min-width: 0; border-radius: 4px 4px 2px 2px; background: currentColor; }
+.metric { display: flex; flex-direction: column; justify-content: space-between; gap: 1.5rem; min-height: 9rem; padding: 1rem; border-radius: 1.5rem; }
+.library { height: 100%; padding: 1rem; border: 0; box-shadow: none; background: var(--surface); }
+@media (prefers-reduced-motion: reduce) { .suggestion { transition: none; } }

@@ -7,6 +7,7 @@
 @import "@repo/theme/app-surface.css";
 @import "@repo/theme/sandow.css";
 @import "@neshan-maps-platform/maplibre-sdk/style.css";
+@import "./motion.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -55,6 +56,23 @@
 @layer base {
   * {
     @apply select-none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  html,
+  body,
+  .app-scroll-root {
+    overscroll-behavior: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable]:not([contenteditable="false"]),
+  [contenteditable]:not([contenteditable="false"]) * {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
   }
 
   button,
@@ -83,7 +101,28 @@
 }
 
 @layer components {
-  /* Sandow control scale; explicit small/large and icon actions retain their size. */
+  /* Application-wide icon action token. This covers HeroUI/ButtonLink icon-only
+     controls and custom accessible controls whose only child is an icon. */
+  :where(.button--icon-only, .toggle-button--icon-only),
+  :where(button, a)[aria-label]:has(> :is(.icon, svg):only-child) {
+    width: 48px !important;
+    min-width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 0 !important;
+    border-radius: 21px !important;
+  }
+
+  :where(.button--icon-only, .toggle-button--icon-only) .icon,
+  :where(.button--icon-only, .toggle-button--icon-only) svg,
+  :where(button, a)[aria-label]:has(> :is(.icon, svg):only-child)
+    > :is(.icon, svg) {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 24px !important;
+  }
+
+  /* Sandow control scale for text buttons. */
   .button:not(.button--icon-only):not(.button--ghost) {
     min-height: 3rem;
     height: 3.5rem;
@@ -367,5 +406,43 @@
   nav[aria-label] {
     padding-left: max(1rem, var(--app-safe-left));
     padding-right: max(1rem, var(--app-safe-right));
+  }
+}
+
+/* Notification reference: event color belongs to the icon, content stays neutral. */
+.app-notification-icon[data-tone="accent"] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.app-notification-icon[data-tone="success"] {
+  background: var(--success);
+  color: var(--success-foreground);
+}
+.app-notification-icon[data-tone="danger"] {
+  background: var(--danger);
+  color: var(--danger-foreground);
+}
+.app-notification-icon[data-tone="activity"] {
+  background: var(--app-metric-activity);
+  color: var(--app-metric-activity-foreground);
+}
+
+/* Short screens (including landscape and resized WebViews) prioritize the form. */
+@media (max-height: 600px) {
+  [data-auth-intro] {
+    margin-block: 0.75rem;
+  }
+  [data-auth-intro] > section {
+    min-height: 0;
+  }
+  [data-auth-intro] > section > img,
+  [data-auth-intro] [data-hero-scrim] {
+    display: none;
+  }
+  [data-auth-intro] > section > div:not([data-hero-scrim]) {
+    padding: 1rem;
+  }
+  [data-auth-screen] > div > form {
+    margin-top: 0.75rem;
   }
 }

@@ -1,7 +1,11 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { LegalPage } from "@/components/legal-page";
 
-export const metadata: Metadata = { title: "سیاست حریم خصوصی | جیم فور می" };
+export const metadata = pageMetadata(
+  "حریم خصوصی",
+  "نحوه نگهداری و استفاده از اطلاعات حساب و فعالیت ورزشی در Gym4Me.",
+  "/privacy",
+);
 
 export default function PrivacyPage() {
   return (

@@ -1,5 +1,6 @@
 "use client";
 
+import { Slider, Label } from "@heroui/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@heroui/react";
 
@@ -195,20 +196,9 @@ export function ImageCropper({
             set: (y: number) => setPosition((value) => ({ ...value, y })),
           },
         ].map((control) => (
-          <label key={control.label} className="block text-sm">
-            {control.label}
-            <input
-              type="range"
-              dir="ltr"
-              className="mt-1 block w-full accent-accent"
-              min={control.min}
-              max={control.max}
-              step={0.01}
-              value={control.value}
-              disabled={pending}
-              onChange={(event) => control.set(Number(event.target.value))}
-            />
-          </label>
+          <Slider key={control.label} aria-label={control.label} minValue={control.min} maxValue={control.max} step={0.01} value={control.value} isDisabled={pending} onChange={value => control.set(Array.isArray(value) ? value[0]! : value)} className="w-full" dir="ltr">
+            <Label>{control.label}</Label><Slider.Track><Slider.Fill /><Slider.Thumb /></Slider.Track>
+          </Slider>
         ))}
       </div>
       {error ? (

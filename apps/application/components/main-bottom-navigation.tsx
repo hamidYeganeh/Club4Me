@@ -1,13 +1,19 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect } from "react";
+import { useAccountPreference } from "@api/preferences";
 import { Icon, type IconName } from "@theme/icon";
 import { useTranslations } from "next-intl";
 
 import { ButtonLink } from "@/components/button-link";
 import { ProgressiveBlur } from "@/components/progressive-blur";
-import { cn } from "@/lib/cn";
+import { useKeyboardOpen } from "@/hooks/use-keyboard-inset";
+import styles from "./main-bottom-navigation.module.css";
+import {
+  ActiveIndicator,
+  ActiveIndicatorGroup,
+} from "@/components/motion/active-indicator";
 
 type NavLabelKey = "home" | "discover" | "profile" | "reservations";
 
@@ -20,7 +26,8 @@ type NavItem = {
 
 type NavConfig = {
   items: NavItem[];
-  actionLabelKey: "add";
+  actionLabelKey: "add" | "search";
+  actionIcon: IconName;
   actionHref: string;
 };
 
@@ -36,7 +43,8 @@ function createRoleNav(role: "athlete" | "coach"): NavConfig {
       },
       { href: `/${role}/profile`, labelKey: "profile", icon: "user" },
     ],
-    actionLabelKey: "add",
+    actionLabelKey: role === "coach" ? "add" : "search",
+    actionIcon: role === "coach" ? "plus-fat" : "magnifying-glass",
     actionHref: role === "coach" ? "/coach/classes/new" : "/discovery/search",
   };
 }
@@ -85,17 +93,21 @@ function isItemActive(pathname: string, item: NavItem): boolean {
 
 export function MainBottomNavigation() {
   const pathname = usePathname();
+  const keyboardOpen = useKeyboardOpen();
   const t = useTranslations("nav");
-  const [lastRole, setLastRole] = useState<"athlete" | "coach">("athlete");
+  const [savedRole, setLastRole] = useAccountPreference("active-role");
+  const lastRole = savedRole === "coach" ? "coach" : "athlete";
   const routeRole = pathname.startsWith("/coach")
     ? "coach"
     : pathname.startsWith("/athlete")
       ? "athlete"
       : null;
-  if (routeRole && routeRole !== lastRole) setLastRole(routeRole);
+  useEffect(() => {
+    if (routeRole) setLastRole(routeRole);
+  }, [routeRole, setLastRole]);
   const config = getNavConfig(pathname, routeRole ?? lastRole);
 
-  if (!config) {
+  if (!config || keyboardOpen) {
     return null;
   }
 
@@ -103,54 +115,56 @@ export function MainBottomNavigation() {
   const trailing = config.items.slice(2);
 
   return (
-    <nav
-      aria-label={t("main")}
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-xl"
-    >
-      <div className="relative h-[var(--app-bottom-nav-height)]">
-        <div className="absolute inset-0 overflow-hidden">
-          <ProgressiveBlur
-            direction="bottom"
-            className="h-full"
-            blurLayers={8}
-            blurIntensity={1.25}
-          />
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-linear-to-t from-background from-40% via-background/75 to-transparent"
-          />
-        </div>
-        <div className="pointer-events-auto absolute inset-x-0 bottom-0 flex items-end px-1 pb-[max(0.4rem,var(--app-safe-bottom))] pt-3">
-          {leading.map((item) => (
-            <NavLink
-              key={item.href}
-              item={item}
-              label={t(item.labelKey)}
-              active={isItemActive(pathname, item)}
+    <ActiveIndicatorGroup>
+      <nav
+        aria-label={t("main")}
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-xl"
+      >
+        <div className="relative h-[var(--app-bottom-nav-height)]">
+          <div className="absolute inset-0 overflow-hidden">
+            <ProgressiveBlur
+              direction="bottom"
+              className="h-full"
+              blurLayers={8}
+              blurIntensity={1.25}
             />
-          ))}
-          <div className="flex flex-1 justify-center pb-2">
-            <ButtonLink
-              href={config.actionHref}
-              isIconOnly
-              variant="primary"
-              aria-label={t(config.actionLabelKey)}
-              className="size-14 -translate-y-2 rounded-[1.35rem]"
-            >
-              <Icon name="plus-fat" size={26} />
-            </ButtonLink>
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-linear-to-t from-background from-40% via-background/75 to-transparent"
+            />
           </div>
-          {trailing.map((item) => (
-            <NavLink
-              key={item.href}
-              item={item}
-              label={t(item.labelKey)}
-              active={isItemActive(pathname, item)}
-            />
-          ))}
+          <div className={styles.tray}>
+            {leading.map((item) => (
+              <NavLink
+                key={item.href}
+                item={item}
+                label={t(item.labelKey)}
+                active={isItemActive(pathname, item)}
+              />
+            ))}
+            <div className={styles.action}>
+              <ButtonLink
+                href={config.actionHref}
+                isIconOnly
+                variant="primary"
+                aria-label={t(config.actionLabelKey)}
+                className={styles.actionLink}
+              >
+                <Icon name={config.actionIcon} size={26} />
+              </ButtonLink>
+            </div>
+            {trailing.map((item) => (
+              <NavLink
+                key={item.href}
+                item={item}
+                label={t(item.labelKey)}
+                active={isItemActive(pathname, item)}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </ActiveIndicatorGroup>
   );
 }
 
@@ -170,13 +184,13 @@ function NavLink({
       variant="ghost"
       size="sm"
       aria-current={active ? "page" : undefined}
-      className={cn(
-        "h-auto min-w-0 flex-1 flex-col gap-1.5 px-1 py-2 text-sm leading-none font-medium whitespace-nowrap no-underline",
-        active ? "text-accent" : "text-foreground/80",
-      )}
+      className={styles.item}
     >
-      <Icon name={item.icon} size={28} />
-      <span>{label}</span>
+      {active ? <ActiveIndicator className="bg-surface-secondary" /> : null}
+      <span className="grid place-items-center">
+        <Icon name={item.icon} size={23} className="relative" />
+      </span>
+      <span className={styles.label}>{label}</span>
     </ButtonLink>
   );
 }

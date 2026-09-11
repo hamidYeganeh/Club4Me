@@ -3,6 +3,10 @@ import { HydratedDocument, Types } from "mongoose";
 
 @Schema({ collection: "benefit_products", timestamps: true })
 export class BenefitProduct {
+  @Prop({ type: [Object], default: [] }) accessClubs: Array<{
+    id: string;
+    name: string;
+  }>;
   @Prop({ type: Types.ObjectId, ref: "Club", required: true, index: true })
   clubId: Types.ObjectId;
   @Prop({ required: true, trim: true, maxlength: 120 }) title: string;
@@ -78,6 +82,10 @@ export const BenefitPurchaseSchema =
 
 @Schema({ collection: "user_entitlements", timestamps: true })
 export class UserEntitlement {
+  @Prop({ type: [Object], default: [] }) accessClubs: Array<{
+    id: string;
+    name: string;
+  }>;
   @Prop({ type: Types.ObjectId, ref: "BenefitProduct", required: true })
   productId: Types.ObjectId;
   @Prop({

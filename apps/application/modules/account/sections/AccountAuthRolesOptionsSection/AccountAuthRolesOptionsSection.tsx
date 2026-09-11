@@ -1,4 +1,6 @@
 "use client";
+import { Counter } from "@/components/counter";
+import { useId } from "react";
 
 import Link from "@/components/app-link";
 import { AuthPageIntro } from "@/components/auth-page-intro";
@@ -346,6 +348,30 @@ function RoleField({
   icon?: React.ComponentProps<typeof Icon>["name"];
   placeholder?: string;
 }) {
+  const id = useId();
+  if (props.type === "number") {
+    return (
+      <div className="grid gap-2">
+        <label htmlFor={id} className="text-sm font-medium">
+          {label}
+        </label>
+        <Counter
+          id={id}
+          name={props.name}
+          value={props.value}
+          defaultValue={props.defaultValue}
+          onChange={(event) => props.onChange?.(event.target.value)}
+          required={!optional}
+          disabled={props.isDisabled}
+          readOnly={props.isReadOnly}
+          min={min}
+          max={max}
+          placeholder={placeholder}
+          aria-label={label}
+        />
+      </div>
+    );
+  }
   return (
     <TextField {...props} isRequired={!optional}>
       <Label>{label}</Label>

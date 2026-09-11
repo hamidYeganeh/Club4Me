@@ -18,6 +18,10 @@ export function QrScannerButton({
   const [open, setOpen] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
+  const onScanRef = useRef(onScan);
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
 
   useEffect(() => {
     if (!open) return;
@@ -27,28 +31,54 @@ export function QrScannerButton({
       const Detector = (
         window as unknown as { BarcodeDetector?: BarcodeDetectorConstructor }
       ).BarcodeDetector;
-      if (!Detector) {
-        toast.danger(
-          "اسکن QR در این مرورگر پشتیبانی نمی‌شود؛ کد ۵ رقمی را وارد کنید",
-        );
-        setOpen(false);
-        return;
-      }
       try {
-        stream.current = await navigator.mediaDevices.getUserMedia({
+        const acquired = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: "environment" } },
           audio: false,
         });
-        if (!video.current || !active) return;
+        if (!video.current || !active) {
+          acquired.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        stream.current = acquired;
         video.current.srcObject = stream.current;
         await video.current.play();
-        const detector = new Detector({ formats: ["qr_code"] });
+        const detector = Detector
+          ? new Detector({ formats: ["qr_code"] })
+          : null;
+        const decode = detector ? null : (await import("jsqr")).default;
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d", { willReadFrequently: true });
         const scan = async () => {
           if (!active || !video.current) return;
           try {
-            const [result] = await detector.detect(video.current);
+            let result: { rawValue: string } | undefined;
+            if (detector) [result] = await detector.detect(video.current);
+            else if (decode && context && video.current.readyState >= 2) {
+              const ratio = Math.min(1, 640 / video.current.videoWidth);
+              canvas.width = Math.round(video.current.videoWidth * ratio);
+              canvas.height = Math.round(video.current.videoHeight * ratio);
+              context.drawImage(
+                video.current,
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+              );
+              const pixels = context.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+              );
+              const code = decode(pixels.data, pixels.width, pixels.height, {
+                inversionAttempts: "dontInvert",
+              });
+              if (code) result = { rawValue: code.data };
+            }
+            if (!active) return;
             if (result?.rawValue) {
-              onScan(result.rawValue);
+              onScanRef.current(result.rawValue);
               setOpen(false);
               toast.success("QR خوانده شد");
               return;
@@ -59,8 +89,16 @@ export function QrScannerButton({
           frame = requestAnimationFrame(() => void scan());
         };
         void scan();
-      } catch {
-        toast.danger("دسترسی دوربین داده نشد");
+      } catch (error) {
+        if (!active) return;
+        const name = error instanceof DOMException ? error.name : "";
+        toast.danger(
+          name === "NotAllowedError"
+            ? "اجازهٔ دوربین داده نشد؛ دسترسی دوربین را در تنظیمات برنامه یا مرورگر فعال کنید."
+            : name === "NotFoundError"
+              ? "دوربینی پیدا نشد؛ کد حضور را وارد کنید."
+              : "دوربین باز نشد؛ برنامه‌های دیگرِ استفاده‌کننده از دوربین را ببندید و دوباره تلاش کنید.",
+        );
         setOpen(false);
       }
     };
@@ -71,7 +109,7 @@ export function QrScannerButton({
       stream.current?.getTracks().forEach((track) => track.stop());
       stream.current = null;
     };
-  }, [onScan, open]);
+  }, [open]);
 
   return (
     <>

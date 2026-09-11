@@ -1,8 +1,12 @@
 "use client";
+import { Uploader, imageUploaderAccept } from "@repo/ui/uploader";
+import { Checkbox as HeroCheckbox } from "@heroui/react";
+import { TextArea as HeroTextArea, Input as HeroInput } from "@heroui/react";
+import { Counter } from "@/components/counter";
 import { IranDateInput } from "@repo/ui/iran-date-input";
 
 import { useId, type ReactNode } from "react";
-import { Button, toast } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { coachLevelLabels, type CoachProfessionalProfile } from "@api";
 
 const control =
@@ -70,26 +74,28 @@ export function CoachProfessionalFields({
           <legend className="mb-3 text-sm font-bold">سطح شاگردان</legend>
           <div className="flex flex-wrap gap-3">
             {Object.entries(coachLevelLabels).map(([key, label]) => (
-              <label
+              <HeroCheckbox
                 key={key}
                 className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm"
+                isSelected={value.levels.includes(
+                  key as Profile["levels"][number],
+                )}
+                onChange={(e) =>
+                  set(
+                    "levels",
+                    e
+                      ? [...value.levels, key as Profile["levels"][number]]
+                      : value.levels.filter((v) => v !== key),
+                  )
+                }
               >
-                <input
-                  type="checkbox"
-                  checked={value.levels.includes(
-                    key as Profile["levels"][number],
-                  )}
-                  onChange={(e) =>
-                    set(
-                      "levels",
-                      e.target.checked
-                        ? [...value.levels, key as Profile["levels"][number]]
-                        : value.levels.filter((v) => v !== key),
-                    )
-                  }
-                />
-                {label}
-              </label>
+                <HeroCheckbox.Content>
+                  <HeroCheckbox.Control>
+                    <HeroCheckbox.Indicator />
+                  </HeroCheckbox.Control>
+                  {label}
+                </HeroCheckbox.Content>
+              </HeroCheckbox>
             ))}
           </div>
         </fieldset>
@@ -192,34 +198,16 @@ export function CoachProfessionalFields({
             </div>
             <label className="block space-y-2 text-sm">
               <span>تصویر مدرک (اختیاری)</span>
-              <input
-                className={control}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
+              <Uploader
+                multiple={false}
+                accept={imageUploaderAccept}
                 disabled={uploading}
-                onChange={async (event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  event.target.value = "";
-                  if (
-                    !["image/jpeg", "image/png", "image/webp"].includes(
-                      file.type,
-                    ) ||
-                    file.size > 10 * 1024 * 1024
-                  ) {
-                    toast.danger(
-                      "تصویر JPG، PNG یا WebP با حجم حداکثر ۱۰ مگابایت انتخاب کنید.",
-                    );
-                    return;
-                  }
-                  try {
-                    updateRow("credentials", index, {
-                      mediaId: await upload(file),
-                    });
-                  } catch {
-                    toast.danger("بارگذاری تصویر مدرک ناموفق بود");
-                  }
+                onUpload={async (file) => {
+                  updateRow("credentials", index, {
+                    mediaId: await upload(file),
+                  });
                 }}
+                labels={{ clickToUpload: "بارگذاری تصویر مدرک" }}
               />
             </label>
             {row.mediaId ? (
@@ -367,20 +355,23 @@ export function CoachProfessionalFields({
               multiline
               max={1500}
             />
-            <label className="flex items-start gap-2 text-sm leading-7">
-              <input
-                type="checkbox"
-                required
-                className="mt-2"
-                checked={row.consent}
-                onChange={(e) =>
-                  updateRow("successStories", index, {
-                    consent: e.target.checked,
-                  })
-                }
-              />
-              رضایت شاگرد را برای انتشار این نمونه دریافت کرده‌ام.
-            </label>
+            <HeroCheckbox
+              className="flex items-start gap-2 text-sm leading-7"
+              isRequired
+              isSelected={row.consent}
+              onChange={(e) =>
+                updateRow("successStories", index, {
+                  consent: e,
+                })
+              }
+            >
+              <HeroCheckbox.Content>
+                <HeroCheckbox.Control>
+                  <HeroCheckbox.Indicator />
+                </HeroCheckbox.Control>
+                رضایت شاگرد را برای انتشار این نمونه دریافت کرده‌ام.
+              </HeroCheckbox.Content>
+            </HeroCheckbox>
             <Remove
               label="حذف نمونه"
               onPress={() =>
@@ -484,14 +475,14 @@ function Text({
           required={required}
           className={control}
         />
+      ) : type === "number" ? (
+        <Counter aria-label={label} {...props} min={0} max={120} />
       ) : multiline ? (
-        <textarea {...props} rows={3} />
+        <HeroTextArea {...props} rows={3} />
       ) : (
-        <input
+        <HeroInput
           {...props}
           type={type}
-          min={type === "number" ? 0 : undefined}
-          max={type === "number" ? 120 : undefined}
           dir={["url", "date"].includes(type) ? "ltr" : undefined}
         />
       )}

@@ -34,7 +34,9 @@ export function KeyboardInsets() {
     return () => {
       stop();
       for (const handle of handles) {
-        void handle.then((listener) => listener.remove());
+        void handle
+          .then((listener) => listener.remove())
+          .catch(() => undefined);
       }
     };
   }, []);

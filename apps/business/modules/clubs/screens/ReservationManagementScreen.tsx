@@ -1,5 +1,7 @@
 "use client";
 
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput } from "@heroui/react";
 import { IranDateInput } from "@repo/ui/iran-date-input";
 import { tehranLocalDate } from "@repo/ui/iran-date";
 
@@ -191,49 +193,52 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
           >
             <h2 className="font-semibold">{t("newSession")}</h2>
             <form onSubmit={addSession} className="mt-4 space-y-3">
-              <input
+              <HeroInput
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className={input}
                 placeholder={t("sessionTitle")}
               />
-              <select
+              <FormSelect
+                aria-label="انتخاب گزینه"
                 value={courtId}
-                onChange={(e) => setCourtId(e.target.value)}
+                onChange={(e) => setCourtId(e)}
                 className={input}
               >
-                <option value="">{t("withoutCourt")}</option>
+                <FormOption value="">{t("withoutCourt")}</FormOption>
                 {(courts.data?.items ?? []).map((item) => (
-                  <option key={item.id} value={item.id}>
+                  <FormOption entity={item} key={item.id} value={item.id}>
                     {item.name}
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
-              <select
+              </FormSelect>
+              <FormSelect
+                aria-label="انتخاب گزینه"
                 value={coachId}
-                onChange={(e) => setCoachId(e.target.value)}
+                onChange={(e) => setCoachId(e)}
                 className={input}
               >
-                <option value="">{t("coachOptional")}</option>
+                <FormOption value="">{t("coachOptional")}</FormOption>
                 {(coaches.data?.items ?? []).map((coach) => (
-                  <option key={coach.id} value={coach.id}>
+                  <FormOption entity={coach} key={coach.id} value={coach.id}>
                     {coach.displayName}
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
-              <select
+              </FormSelect>
+              <FormSelect
+                aria-label="انتخاب گزینه"
                 value={classId}
-                onChange={(e) => setClassId(e.target.value)}
+                onChange={(e) => setClassId(e)}
                 className={input}
               >
-                <option value="">{t("classOptional")}</option>
+                <FormOption value="">{t("classOptional")}</FormOption>
                 {(classes.data?.items ?? []).map((item) => (
-                  <option key={item.id} value={item.id}>
+                  <FormOption entity={item} key={item.id} value={item.id}>
                     {item.title}
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
+              </FormSelect>
               <div className="grid grid-cols-2 gap-2">
                 <label className="space-y-2 text-sm">
                   <span>{t("startsAt")}</span>
@@ -261,35 +266,39 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
               </div>
               <label className="block space-y-2 text-sm">
                 <span>واحد قیمت‌گذاری</span>
-                <select
+                <FormSelect
+                  aria-label="انتخاب گزینه"
                   className={input}
                   value={pricingUnit}
                   onChange={(event) =>
-                    setPricingUnit(event.target.value as typeof pricingUnit)
+                    setPricingUnit(event as typeof pricingUnit)
                   }
                 >
-                  <option value="per_participant">به‌ازای هر نفر</option>
-                  <option value="per_session">کل سانس</option>
-                  <option value="per_court">کل زمین</option>
-                </select>
+                  <FormOption value="per_participant">
+                    به‌ازای هر نفر
+                  </FormOption>
+                  <FormOption value="per_session">کل سانس</FormOption>
+                  <FormOption value="per_court">کل زمین</FormOption>
+                </FormSelect>
               </label>
               <label className="block space-y-2 text-sm">
                 <span>قانون لغو این سانس</span>
-                <select
+                <FormSelect
+                  aria-label="انتخاب گزینه"
                   required
                   className={input}
                   value={policyId}
-                  onChange={(event) => setPolicyId(event.target.value)}
+                  onChange={(event) => setPolicyId(event)}
                 >
-                  <option value="">قانون را انتخاب کنید</option>
+                  <FormOption value="">قانون را انتخاب کنید</FormOption>
                   {club.data?.cancellationRules
                     .filter((item) => item.isActive !== false)
                     .map((item) => (
-                      <option key={item.id} value={item.id}>
+                      <FormOption entity={item} key={item.id} value={item.id}>
                         {item.title}
-                      </option>
+                      </FormOption>
                     ))}
-                </select>
+                </FormSelect>
               </label>
               <div className="rounded-xl border border-border p-3">
                 <div className="flex items-center justify-between gap-2">
@@ -348,7 +357,8 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
                         key={`${option.type}-${index}`}
                         className="grid gap-2 rounded-lg bg-surface-secondary p-2 md:grid-cols-4"
                       >
-                        <select
+                        <FormSelect
+                          aria-label="انتخاب گزینه"
                           required
                           className={input}
                           value={option.resourceId}
@@ -356,21 +366,25 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
                             setOptions((items) =>
                               items.map((item, itemIndex) =>
                                 itemIndex === index
-                                  ? { ...item, resourceId: event.target.value }
+                                  ? { ...item, resourceId: event }
                                   : item,
                               ),
                             )
                           }
                         >
-                          <option value="">{t("selectAddon")}</option>
+                          <FormOption value="">{t("selectAddon")}</FormOption>
                           {(catalog ?? [])
                             .filter((item) => selectedIds?.includes(item.id))
                             .map((item) => (
-                              <option key={item.id} value={item.id}>
+                              <FormOption
+                                entity={item}
+                                key={item.id}
+                                value={item.id}
+                              >
                                 {item.name}
-                              </option>
+                              </FormOption>
                             ))}
-                        </select>
+                        </FormSelect>
                         {(
                           [
                             "availableQuantity",

@@ -5,10 +5,14 @@ import { Typography } from "@heroui/react/typography";
 import { CoachFeatureCard } from "@modules/marketing/components/cards/CoachFeatureCard";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCatalogCoaches } from "@api/discovery";
+import { CatalogStatus } from "../../components/CatalogStatus";
 import { LANDING_ASSETS } from "../../lib/landing-assets";
 import { LandingArrowButton } from "../../lib/landing-controls";
 import { CarouselDots, ClipReveal, InViewRise } from "../../lib/landing-reveal";
-import { useLandingScroll } from "../../lib/landing-scroll";
+
 import { landingTrustSectionStyles } from "./LandingTrustSection.styles";
 import type { LandingTrustSectionProps } from "./LandingTrustSection.types";
 
@@ -16,17 +20,37 @@ export function LandingTrustSection({ className }: LandingTrustSectionProps) {
   const t = useTranslations("MarketingLanding.trust");
   const coachCopy = useTranslations("MarketingLanding.coachDemo");
   const slots = landingTrustSectionStyles();
-  const { scrollTo } = useLandingScroll();
+  const router = useRouter();
+  const query = useCatalogCoaches({ limit: 6 });
+  const slides = (query.data?.items ?? []).map((coach) => ({
+    slug: coach.slug,
+    src: coach.imageUrl ?? "",
+    alt: coach.displayName,
+    name: coach.displayName,
+    specialty: coach.shortBio,
+    yearsExperience: coach.experienceYears,
+    rating: coach.reviewsCount > 0 ? coach.averageRating : undefined,
+    ratingCount: coach.reviewsCount || undefined,
+    headline: ["پیدا کن", "مربی", "مسیر", "خودت"],
+  }));
   const [index, setIndex] = useState(0);
   const [revealKey, setRevealKey] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
   const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const slide = LANDING_ASSETS.coaches[index]!;
+  const slide = slides[index % Math.max(slides.length, 1)] ?? {
+    slug: "",
+    src: LANDING_ASSETS.coaches[0].src,
+    alt: "تصویر معرفی مربیگری",
+    name: "مربی مناسب مسیر تو",
+    specialty: "تخصص، سابقه و شیوه تمرین را بررسی کن",
+    yearsExperience: 0,
+    rating: undefined,
+    ratingCount: undefined,
+    headline: ["پیدا کن", "مربی", "مسیر", "خودت"],
+  };
 
   const go = (next: number) => {
-    setIndex(
-      (next + LANDING_ASSETS.coaches.length) % LANDING_ASSETS.coaches.length,
-    );
+    setIndex((next + Math.max(slides.length, 1)) % Math.max(slides.length, 1));
     setRevealKey((k) => k + 1);
   };
 
@@ -134,26 +158,49 @@ export function LandingTrustSection({ className }: LandingTrustSectionProps) {
 
       <InViewRise fromY={60} fromScale={0.92} className={slots.coachWrap()}>
         <CoachFeatureCard
-          certifiedLabel={
-            slide.isCertified ? coachCopy("certified") : undefined
-          }
           className={slots.coachCard()}
-          experienceLabel={coachCopy("yearsOfExperience", {
-            years: slide.yearsExperience,
-          })}
+          experienceLabel={
+            slide.yearsExperience
+              ? coachCopy("yearsOfExperience", { years: slide.yearsExperience })
+              : undefined
+          }
           image={slide.src}
           imageAlt={slide.alt}
-          isNew={slide.isNew}
+
           key={revealKey}
           newLabel={coachCopy("badgeNew")}
-          onPress={() => scrollTo("#download")}
+          onPress={() =>
+            router.push(
+              slide.slug
+                ? `/discovery/coaches/${encodeURIComponent(slide.slug)}`
+                : "/discovery/coaches",
+            )
+          }
           rating={slide.rating}
           ratingCount={slide.ratingCount}
           specialty={slide.specialty}
-          title={slide.name}
+          title={
+            <Link
+              href={
+                slide.slug
+                  ? `/discovery/coaches/${encodeURIComponent(slide.slug)}`
+                  : "/discovery/coaches"
+              }
+            >
+              {slide.name}
+            </Link>
+          }
         />
       </InViewRise>
 
+      <CatalogStatus
+        pending={query.isPending}
+        error={query.isError}
+        empty={!slides.length}
+        retry={() => {
+          void query.refetch();
+        }}
+      />
       <div className={slots.controls()}>
         <LandingArrowButton
           direction="prev"
@@ -162,7 +209,7 @@ export function LandingTrustSection({ className }: LandingTrustSectionProps) {
           onPress={() => go(index - 1)}
         />
         <CarouselDots
-          count={LANDING_ASSETS.coaches.length}
+          count={Math.max(slides.length, 1)}
           active={index}
           tone="dark"
           onSelect={go}

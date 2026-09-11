@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getHttpClient, http } from "../../http/client";
 
 type EntityBase = {
+  user?: {id: string; firstName?: string; lastName?: string; avatarUrl?: string} | null;
   id: string;
   clubId: string;
   createdAt: string;

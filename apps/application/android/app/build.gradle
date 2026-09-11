@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
-def gym4meVersionCode = providers.gradleProperty('GYM4ME_VERSION_CODE').getOrElse('1').toInteger()
-def gym4meVersionName = providers.gradleProperty('GYM4ME_VERSION_NAME').getOrElse('1.0.0')
+def gym4meVersionCode = providers.gradleProperty('GYM4ME_VERSION_CODE').getOrElse('2').toInteger()
+def gym4meVersionName = providers.gradleProperty('GYM4ME_VERSION_NAME').getOrElse('1.0.1')
 def releaseKeystorePath = System.getenv('GYM4ME_ANDROID_KEYSTORE')
 def releaseKeystorePassword = System.getenv('GYM4ME_ANDROID_KEYSTORE_PASSWORD')
 def releaseKeyAlias = System.getenv('GYM4ME_ANDROID_KEY_ALIAS')

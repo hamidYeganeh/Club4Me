@@ -77,10 +77,7 @@ function makeResourceController(definition: ServerResourceDefinition) {
     @Post()
     create(@Body() body: unknown, @Query("action") action?: string) {
       assertAction(action, [undefined, "create", "seed"]);
-      if (action === "seed")
-        return this.resources.seed(category, segment, {
-          includeSampleArticles: false,
-        });
+      if (action === "seed") return this.resources.seed(category, segment);
       return this.resources.create(
         category,
         segment,

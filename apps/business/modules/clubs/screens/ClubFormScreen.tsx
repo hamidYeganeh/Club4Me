@@ -1,4 +1,8 @@
 "use client";
+import { EntityOptionContent, entityOptionText } from "@repo/ui/entity-option";
+import { Checkbox as HeroCheckbox } from "@heroui/react";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
 import { IranDateInput } from "@repo/ui/iran-date-input";
 import { tehranLocalValue } from "@repo/ui/iran-date";
 
@@ -159,6 +163,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const ageGroups = useInfiniteBusinessCatalog("classes", "age-group");
   const countries = useInfiniteBusinessCatalog("location", "country");
   const [activeStep, setActiveStep] = useState<ClubFormStep>("basic");
+  const [advanced, setAdvanced] = useState(Boolean(clubId));
 
   const [name, setName] = useState("");
   const [profile, setProfile] = useState<ClubProfile>({});
@@ -537,6 +542,8 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
     }
     if (validationError) {
       setFormError(validationError);
+      if (!["basic", "location", "completion"].includes(validationStep))
+        setAdvanced(true);
       setActiveStep(validationStep);
       requestAnimationFrame(() => {
         const error = document.getElementById("club-form-error");
@@ -710,9 +717,14 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
 
     toast.danger("تگ جدید باید توسط ادمین تعریف شود.");
   };
-  const activeStepIndex = clubFormSteps.indexOf(activeStep);
+  const visibleSteps = advanced
+    ? clubFormSteps
+    : (["basic", "location", "completion"] as const);
+  const activeStepIndex = (visibleSteps as readonly ClubFormStep[]).indexOf(
+    activeStep,
+  );
   const selectStep = (index: number) => {
-    const step = clubFormSteps[index];
+    const step = visibleSteps[index];
     if (step) setActiveStep(step);
   };
 
@@ -758,6 +770,22 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
               {formError}
             </p>
           ) : null}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted">
+              ابتدا اطلاعات اصلی را ذخیره کنید؛ امکانات و تنظیمات تکمیلی را
+              می‌توانید بعداً اضافه کنید.
+            </p>
+            <Button
+              type="button"
+              variant="secondary"
+              onPress={() => {
+                setAdvanced(!advanced);
+                setActiveStep("basic");
+              }}
+            >
+              {advanced ? "اطلاعات اصلی" : "تنظیمات تکمیلی"}
+            </Button>
+          </div>
           <Tabs
             selectedKey={activeStep}
             onSelectionChange={(key) =>
@@ -767,7 +795,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
           >
             <Tabs.ListContainer className="w-full min-w-0 max-w-full">
               <Tabs.List aria-label={t("stepsLabel")}>
-                {clubFormSteps.map((step, index) => (
+                {visibleSteps.map((step, index) => (
                   <Tabs.Tab
                     key={step}
                     id={step}
@@ -783,7 +811,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
             <Tabs.Panel id="basic" className="min-w-0 space-y-5">
               <Section title={t("basic")}>
                 <Field label={t("name")} required>
-                  <input
+                  <HeroInput
                     required
                     minLength={2}
                     value={name}
@@ -792,14 +820,14 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                   />
                 </Field>
                 <Field label={t("description")} wide>
-                  <textarea
+                  <HeroTextArea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className={textareaClass}
                   />
                 </Field>
                 <Field label={t("shortDescription")} wide>
-                  <input
+                  <HeroInput
                     value={shortDescription}
                     maxLength={300}
                     onChange={(e) => setShortDescription(e.target.value)}
@@ -919,10 +947,14 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                           <ListBox items={tagOptions}>
                             {(item) => (
                               <ListBox.Item
+                                dir="rtl"
                                 id={item.name}
-                                textValue={item.name}
+                                textValue={entityOptionText(item, item.name)}
                               >
-                                {item.name}
+                                <EntityOptionContent
+                                  entity={item}
+                                  title={item.name}
+                                />
                                 <ListBox.ItemIndicator />
                               </ListBox.Item>
                             )}
@@ -1001,7 +1033,8 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                         <div className="grid min-w-0 gap-2">
                           <label className="text-sm">
                             دسته عکس
-                            <select
+                            <FormSelect
+                              aria-label="دسته عکس"
                               className={inputClass}
                               value={item.category ?? "other"}
                               onChange={(e) =>
@@ -1010,20 +1043,25 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                                     i === index
                                       ? {
                                           ...v,
-                                          category: e.target
-                                            .value as ClubGalleryCategory,
+                                          category: e as ClubGalleryCategory,
                                         }
                                       : v,
                                   ),
                                 )
                               }
                             >
-                              <option value="training">فضای تمرین</option>
-                              <option value="equipment">تجهیزات</option>
-                              <option value="changing_room">رختکن</option>
-                              <option value="entrance">نمای ورودی</option>
-                              <option value="other">سایر</option>
-                            </select>
+                              <FormOption value="training">
+                                فضای تمرین
+                              </FormOption>
+                              <FormOption value="equipment">تجهیزات</FormOption>
+                              <FormOption value="changing_room">
+                                رختکن
+                              </FormOption>
+                              <FormOption value="entrance">
+                                نمای ورودی
+                              </FormOption>
+                              <FormOption value="other">سایر</FormOption>
+                            </FormSelect>
                           </label>
                           <label className="text-sm">
                             تاریخ ثبت عکس
@@ -1044,7 +1082,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                               }
                             />
                           </label>
-                          <input
+                          <HeroInput
                             value={item.title}
                             onChange={(e) =>
                               setGallery((current) =>
@@ -1058,7 +1096,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                             className={inputClass}
                             placeholder={t("mediaTitle")}
                           />
-                          <input
+                          <HeroInput
                             value={item.altText}
                             onChange={(e) =>
                               setGallery((current) =>
@@ -1174,7 +1212,8 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                       <div className="grid gap-3 sm:grid-cols-2">
                         <label className="text-sm">
                           وضعیت استفاده
-                          <select
+                          <FormSelect
+                            aria-label="وضعیت استفاده"
                             className={inputClass}
                             value={
                               amenityAccess[id]?.availability ?? "included"
@@ -1184,21 +1223,23 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                                 ...current,
                                 [id]: {
                                   ...current[id],
-                                  availability: e.target.value as
+                                  availability: e as
                                     "included" | "paid" | "unavailable",
                                 },
                               }))
                             }
                           >
-                            <option value="included">داخل شهریه</option>
-                            <option value="paid">با هزینه جدا</option>
-                            <option value="unavailable">فعلاً غیرفعال</option>
-                          </select>
+                            <FormOption value="included">داخل شهریه</FormOption>
+                            <FormOption value="paid">با هزینه جدا</FormOption>
+                            <FormOption value="unavailable">
+                              فعلاً غیرفعال
+                            </FormOption>
+                          </FormSelect>
                         </label>
                         {amenityAccess[id]?.availability === "paid" && (
                           <label className="text-sm">
                             هزینه ({amenityAccess[id]?.currency ?? currency})
-                            <input
+                            <HeroInput
                               type="number"
                               min={0}
                               step={1}
@@ -1316,7 +1357,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                           </Button>
                         </div>
                         <div className="grid gap-2">
-                          <input
+                          <HeroInput
                             {...dynamicForm.register(`faqs.${index}.question`)}
                             className={inputClass}
                             placeholder={t("faqQuestion")}
@@ -1413,7 +1454,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                   onChange={setDistrictId}
                 />
                 <Field label={t("address")} wide>
-                  <textarea
+                  <HeroTextArea
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     className={textareaClass}
@@ -1466,7 +1507,12 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                   <Select.Popover>
                     <ListBox>
                       {timezones.map((value) => (
-                        <ListBox.Item key={value} id={value} textValue={value}>
+                        <ListBox.Item
+                          dir="rtl"
+                          key={value}
+                          id={value}
+                          textValue={value}
+                        >
                           <span dir="ltr">{value}</span>
                           <ListBox.ItemIndicator />
                         </ListBox.Item>
@@ -1475,7 +1521,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                   </Select.Popover>
                 </Select>
                 <Field label={t("locationNotes")} wide>
-                  <input
+                  <HeroInput
                     value={locationNotes}
                     onChange={(e) => setLocationNotes(e.target.value)}
                     className={inputClass}
@@ -1500,13 +1546,12 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
             <Tabs.Panel id="operations" className="min-w-0 space-y-5">
               <Section title={t("operations")}>
                 <Field label={t("operationalStatus")}>
-                  <select
+                  <FormSelect
+                    aria-label="انتخاب گزینه"
                     className={inputClass}
                     value={operationalStatus}
                     onChange={(e) =>
-                      setOperationalStatus(
-                        e.target.value as typeof operationalStatus,
-                      )
+                      setOperationalStatus(e as typeof operationalStatus)
                     }
                   >
                     {(
@@ -1517,14 +1562,14 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                         "under_maintenance",
                       ] as const
                     ).map((value) => (
-                      <option key={value} value={value}>
+                      <FormOption key={value} value={value}>
                         {t(`statuses.${value}`)}
-                      </option>
+                      </FormOption>
                     ))}
-                  </select>
+                  </FormSelect>
                 </Field>
                 <Field label={t("currency")}>
-                  <input
+                  <HeroInput
                     dir="ltr"
                     required
                     minLength={3}
@@ -1581,18 +1626,21 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                       <ListBox items={ageGroupOptions}>
                         {(item) => (
                           <ListBox.Item
+                            dir="rtl"
                             id={item.id}
-                            textValue={`${item.name} ${item.minAge}-${item.maxAge}`}
+                            textValue={entityOptionText(
+                              item,
+                              String(
+                                `${item.name} ${item.minAge}-${item.maxAge}`,
+                              ),
+                            )}
                           >
-                            <div className="flex min-w-0 flex-col">
-                              <Label>{item.name}</Label>
-                              <Description>
-                                {t("ageGroupRange", {
-                                  min: item.minAge,
-                                  max: item.maxAge,
-                                })}
-                              </Description>
-                            </div>
+                            <EntityOptionContent
+                              entity={item}
+                              title={String(
+                                `${item.name} ${item.minAge}-${item.maxAge}`,
+                              )}
+                            />
                             <ListBox.ItemIndicator />
                           </ListBox.Item>
                         )}
@@ -1622,23 +1670,25 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                     {(
                       ["men", "women", "mixed", "children", "family"] as const
                     ).map((value) => (
-                      <label
+                      <HeroCheckbox
                         key={value}
                         className="flex items-center gap-2 text-sm"
+                        isSelected={audience.includes(value)}
+                        onChange={(e) =>
+                          setAudience((current) =>
+                            e
+                              ? [...new Set([...current, value])]
+                              : current.filter((item) => item !== value),
+                          )
+                        }
                       >
-                        <input
-                          type="checkbox"
-                          checked={audience.includes(value)}
-                          onChange={(e) =>
-                            setAudience((current) =>
-                              e.target.checked
-                                ? [...new Set([...current, value])]
-                                : current.filter((item) => item !== value),
-                            )
-                          }
-                        />
-                        {t(`audiences.${value}`)}
-                      </label>
+                        <HeroCheckbox.Content>
+                          <HeroCheckbox.Control>
+                            <HeroCheckbox.Indicator />
+                          </HeroCheckbox.Control>
+                          {t(`audiences.${value}`)}
+                        </HeroCheckbox.Content>
+                      </HeroCheckbox>
                     ))}
                   </div>
                 </Field>
@@ -1705,6 +1755,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                           <ListBox>
                             {platforms.map((platform) => (
                               <ListBox.Item
+                                dir="rtl"
                                 key={platform}
                                 id={platform}
                                 textValue={t(`platforms.${platform}`)}
@@ -1723,7 +1774,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                         <span className="block text-sm font-medium">
                           {t("socialLink")}
                         </span>
-                        <input
+                        <HeroInput
                           dir="ltr"
                           type={item.platform === "email" ? "email" : "url"}
                           value={item.link}
@@ -1777,7 +1828,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                     className="space-y-3 rounded-xl border border-border p-4"
                   >
                     <div className="flex gap-2">
-                      <input
+                      <HeroInput
                         value={rule.title}
                         onChange={(e) =>
                           setCancellationRules((current) =>
@@ -1929,7 +1980,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
             <span className="me-auto text-sm text-muted">
               {t("stepProgress", {
                 current: activeStepIndex + 1,
-                total: clubFormSteps.length,
+                total: visibleSteps.length,
               })}
             </span>
             {activeStepIndex > 0 ? (
@@ -1941,7 +1992,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 {t("previousStep")}
               </Button>
             ) : null}
-            {activeStepIndex < clubFormSteps.length - 1 ? (
+            {activeStepIndex < visibleSteps.length - 1 ? (
               <Button
                 type="button"
                 variant="primary"
@@ -1963,7 +2014,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                   {t("submit")}
                 </Button>
               )}
-            {activeStep === "completion" ? (
+            {activeStep === "completion" || !clubId ? (
               <Button type="submit" variant="primary" isPending={busy}>
                 {t("save")}
               </Button>
@@ -2094,6 +2145,7 @@ function useCatalogOptions(
     () =>
       (query.data?.pages ?? []).flatMap((page) =>
         page.items.map((item) => ({
+          ...item,
           id: item.id,
           name: item.name,
           description:
@@ -2211,6 +2263,7 @@ function SelectableList({
 
   return (
     <div className="min-w-0 max-w-full space-y-3">
+      <Description>{selectionHint}</Description>
       <CatalogSearchField
         value={search}
         placeholder={searchPlaceholder}
@@ -2254,13 +2307,15 @@ function SelectableList({
                 }
               >
                 {(item) => (
-                  <ListBox.Item id={item.id} textValue={item.name}>
-                    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-                      <Label className="truncate">{item.name}</Label>
-                      <Description className="line-clamp-1">
-                        {item.description ?? selectionHint}
-                      </Description>
-                    </div>
+                  <ListBox.Item
+                    dir="rtl"
+                    id={item.id}
+                    textValue={entityOptionText(item, String(item.name))}
+                  >
+                    <EntityOptionContent
+                      entity={item}
+                      title={String(item.name)}
+                    />
                     <ListBox.ItemIndicator />
                   </ListBox.Item>
                 )}
@@ -2335,6 +2390,7 @@ function CountedGrid({
   return (
     <div className="min-w-0 max-w-full space-y-5">
       <div className="min-w-0 max-w-full space-y-3">
+        <Description>{selectionHint}</Description>
         <CatalogSearchField
           value={search}
           placeholder={searchPlaceholder}
@@ -2379,13 +2435,15 @@ function CountedGrid({
                   }
                 >
                   {(item) => (
-                    <ListBox.Item id={item.id} textValue={item.name}>
-                      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-                        <Label className="truncate">{item.name}</Label>
-                        <Description className="line-clamp-1">
-                          {item.description ?? selectionHint}
-                        </Description>
-                      </div>
+                    <ListBox.Item
+                      dir="rtl"
+                      id={item.id}
+                      textValue={entityOptionText(item, String(item.name))}
+                    >
+                      <EntityOptionContent
+                        entity={item}
+                        title={String(item.name)}
+                      />
                       <ListBox.ItemIndicator />
                     </ListBox.Item>
                   )}
@@ -2572,8 +2630,12 @@ function CatalogComboBox({
       <ComboBox.Popover>
         <ListBox items={items}>
           {(item) => (
-            <ListBox.Item id={item.id} textValue={item.name}>
-              {item.name}
+            <ListBox.Item
+              dir="rtl"
+              id={item.id}
+              textValue={entityOptionText(item, String(item.name))}
+            >
+              <EntityOptionContent entity={item} title={String(item.name)} />
               <ListBox.ItemIndicator />
             </ListBox.Item>
           )}

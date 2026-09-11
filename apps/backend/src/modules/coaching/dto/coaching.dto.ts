@@ -605,6 +605,7 @@ export class UpdateBookingStatusDto {
 }
 
 const AttendanceItemSchema = z.object({
+  checkedOut: z.boolean().optional(),
   athleteId: objectIdSchema,
   status: z.enum(ATTENDANCE_STATUSES),
   note: z.string().trim().max(1000).optional(),

@@ -1,4 +1,6 @@
 "use client";
+import { Checkbox as HeroCheckbox } from "@heroui/react";
+import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
 import { useOverlayFocus } from "../../lib/use-overlay-focus";
 
 import { TextWithBrand } from "@modules/marketing/components/kit/LineShadowText";
@@ -154,7 +156,7 @@ export function LandingContactModal({ className }: LandingContactModalProps) {
           </div>
         ) : (
           <form autoComplete="off" className={slots.form()} onSubmit={onSubmit}>
-            <input
+            <HeroInput
               type="text"
               name="website"
               tabIndex={-1}
@@ -164,7 +166,7 @@ export function LandingContactModal({ className }: LandingContactModalProps) {
             />
             <label className={slots.field()}>
               <span className={slots.label()}>{t("nameLabel")}</span>
-              <input
+              <HeroInput
                 ref={nameRef}
                 name="name"
                 type="text"
@@ -179,7 +181,7 @@ export function LandingContactModal({ className }: LandingContactModalProps) {
             </label>
             <label className={slots.field()}>
               <span className={slots.label()}>{t("emailLabel")}</span>
-              <input
+              <HeroInput
                 name="email"
                 type="email"
                 placeholder={t("emailPlaceholder")}
@@ -194,7 +196,7 @@ export function LandingContactModal({ className }: LandingContactModalProps) {
             </label>
             <label className={slots.field()}>
               <span className={slots.label()}>{t("noteLabel")}</span>
-              <textarea
+              <HeroTextArea
                 name="note"
                 rows={3}
                 placeholder={t("notePlaceholder")}
@@ -205,10 +207,19 @@ export function LandingContactModal({ className }: LandingContactModalProps) {
                 spellCheck={false}
               />
             </label>
-            <label className="flex items-start gap-2 text-xs leading-6 text-muted">
-              <input name="consent" type="checkbox" required className="mt-1 size-4" />
-              با ثبت فرم، با ذخیره نام، ایمیل و متن پیام برای پیگیری همین درخواست مطابق سیاست حریم خصوصی موافقم.
-            </label>
+            <HeroCheckbox
+              className="flex items-start gap-2 text-xs leading-6 text-muted"
+              name="consent"
+              isRequired
+            >
+              <HeroCheckbox.Content>
+                <HeroCheckbox.Control>
+                  <HeroCheckbox.Indicator />
+                </HeroCheckbox.Control>
+                با ثبت فرم، با ذخیره نام، ایمیل و متن پیام برای پیگیری همین
+                درخواست مطابق سیاست حریم خصوصی موافقم.
+              </HeroCheckbox.Content>
+            </HeroCheckbox>
             <Button
               variant="primary"
               isDisabled={sending}

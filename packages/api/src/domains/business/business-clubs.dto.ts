@@ -52,6 +52,7 @@ export type ClubLocation = {
 };
 
 export type BusinessClub = {
+  owner?: {id: string; firstName?: string; lastName?: string; phone?: string} | null;
   permissions?: string[];
   isOwner?: boolean;
   profileResources?: Record<string, { name: string; isActive: boolean }>;

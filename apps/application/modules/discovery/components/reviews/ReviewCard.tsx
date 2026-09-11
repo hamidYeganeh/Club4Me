@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useCreateSupportTicket, tokenStore } from "@api";
 import { Avatar, Button, Card, Typography, toast } from "@heroui/react";
@@ -91,7 +92,22 @@ export function ReviewCard({ review }: { review: ReviewCardItem }) {
       <Typography type="body-sm" color="muted" className="mt-2 leading-7">
         {review.body}
       </Typography>
-      {review.mediaUrls?.length ? <div className="mt-4 grid grid-cols-3 gap-2">{review.mediaUrls.map((url) => <img key={url} src={url} alt="تصویر ثبت‌شده همراه نظر" loading="lazy" className="aspect-square w-full rounded-xl object-cover" />)}</div> : null}
+      {review.mediaUrls?.length ? (
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {review.mediaUrls.map((url) => (
+            <Image
+              width={240}
+              height={240}
+              unoptimized
+              key={url}
+              src={url}
+              alt="تصویر ثبت‌شده همراه نظر"
+              loading="lazy"
+              className="aspect-square w-full rounded-xl object-cover"
+            />
+          ))}
+        </div>
+      ) : null}
 
       {review.verified ? (
         <div className="mt-4 flex items-center gap-2 text-sm font-bold text-accent">

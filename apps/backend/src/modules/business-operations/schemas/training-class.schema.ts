@@ -53,16 +53,22 @@ export class BusinessTrainingClass {
   coachProfileId: Types.ObjectId | null;
   @Prop({ type: Types.ObjectId, ref: "ClubBranch", default: null })
   branchId: Types.ObjectId | null;
-  @Prop({ type: [Types.ObjectId], ref: "Media", default: [] }) galleryMediaIds: Types.ObjectId[];
-  @Prop({ type: Types.ObjectId, ref: "Media", default: null }) coverMediaId: Types.ObjectId | null;
+  @Prop({ type: [Types.ObjectId], ref: "Media", default: [] })
+  galleryMediaIds: Types.ObjectId[];
+  @Prop({ type: Types.ObjectId, ref: "Media", default: null })
+  coverMediaId: Types.ObjectId | null;
   @Prop({ type: [String], default: [] }) prerequisites: string[];
-  @Prop({ type: [Types.ObjectId], default: [] }) requiredEquipmentIds: Types.ObjectId[];
+  @Prop({ type: [Types.ObjectId], default: [] })
+  requiredEquipmentIds: Types.ObjectId[];
   @Prop({ type: [Types.ObjectId], default: [] }) amenityIds: Types.ObjectId[];
-  @Prop({ type: Number, min: 0, max: 120, default: null }) minAge: number | null;
-  @Prop({ type: Number, min: 0, max: 120, default: null }) maxAge: number | null;
+  @Prop({ type: Number, min: 0, max: 120, default: null }) minAge:
+    number | null;
+  @Prop({ type: Number, min: 0, max: 120, default: null }) maxAge:
+    number | null;
   @Prop({ type: Date, default: null }) registrationStartAt: Date | null;
   @Prop({ type: Date, default: null }) registrationEndAt: Date | null;
-  @Prop({ type: String, trim: true, maxlength: 1000, default: null }) scheduleError: string | null;
+  @Prop({ type: String, trim: true, maxlength: 1000, default: null })
+  scheduleError: string | null;
   @Prop({ type: Date, required: true }) startDate: Date;
   @Prop({ type: Date, required: true }) endDate: Date;
   @Prop({ type: [BusinessClassSchedule], required: true })
@@ -227,6 +233,7 @@ export class BusinessClassAttendance {
   @Prop({ type: String, enum: ["manual", "qr", "code"], default: "manual" })
   checkInMethod: "manual" | "qr" | "code";
   @Prop({ type: Date, default: null }) checkedInAt: Date | null;
+  @Prop({ type: Date, default: null }) checkedOutAt: Date | null;
   @Prop({ type: [Object], default: [] }) changes: Array<{
     actorId: string;
     at: Date;

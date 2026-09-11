@@ -1,0 +1,128 @@
+{
+  "seedBatch": "scenarios-2026-09-v1",
+  "mode": "apply",
+  "anchor": "2026-09-09T06:51:37.949Z",
+  "total": 355,
+  "summary": {
+    "users": {
+      "planned": 25,
+      "existing": 0,
+      "verified": 25
+    },
+    "clubs": {
+      "planned": 15,
+      "existing": 0,
+      "verified": 15
+    },
+    "club_memberships": {
+      "planned": 23,
+      "existing": 0,
+      "verified": 23
+    },
+    "courts": {
+      "planned": 15,
+      "existing": 0,
+      "verified": 15
+    },
+    "coaches": {
+      "planned": 12,
+      "existing": 0,
+      "verified": 12
+    },
+    "coach_sports": {
+      "planned": 12,
+      "existing": 0,
+      "verified": 12
+    },
+    "coach_availability_rules": {
+      "planned": 36,
+      "existing": 0,
+      "verified": 36
+    },
+    "coach_services": {
+      "planned": 12,
+      "existing": 0,
+      "verified": 12
+    },
+    "classes": {
+      "planned": 14,
+      "existing": 0,
+      "verified": 14
+    },
+    "class_sessions": {
+      "planned": 28,
+      "existing": 0,
+      "verified": 28
+    },
+    "class_enrollments": {
+      "planned": 5,
+      "existing": 0,
+      "verified": 5
+    },
+    "session_bookings": {
+      "planned": 6,
+      "existing": 0,
+      "verified": 6
+    },
+    "reservable_sessions": {
+      "planned": 30,
+      "existing": 0,
+      "verified": 30
+    },
+    "benefit_products": {
+      "planned": 20,
+      "existing": 0,
+      "verified": 20
+    },
+    "session_reservations": {
+      "planned": 5,
+      "existing": 0,
+      "verified": 5
+    },
+    "club_reviews": {
+      "planned": 3,
+      "existing": 0,
+      "verified": 3
+    },
+    "club_branches": {
+      "planned": 8,
+      "existing": 0,
+      "verified": 8
+    },
+    "club_coach_profiles": {
+      "planned": 8,
+      "existing": 0,
+      "verified": 8
+    },
+    "business_training_classes": {
+      "planned": 8,
+      "existing": 0,
+      "verified": 8
+    },
+    "club_students": {
+      "planned": 24,
+      "existing": 0,
+      "verified": 24
+    },
+    "business_class_sessions": {
+      "planned": 40,
+      "existing": 0,
+      "verified": 40
+    },
+    "business_class_enrollments": {
+      "planned": 3,
+      "existing": 0,
+      "verified": 3
+    },
+    "articles": {
+      "planned": 3,
+      "existing": 0,
+      "verified": 3
+    }
+  },
+  "examples": {
+    "club": "scenario-gym",
+    "coach": "scenario-coach-1",
+    "class": "scenario-class-1"
+  }
+}

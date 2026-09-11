@@ -1,6 +1,15 @@
 "use client";
+
+import { Uploader, imageUploaderAccept } from "@repo/ui/uploader";
+import { Checkbox as HeroCheckbox } from "@heroui/react";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
+import { Counter } from "@/components/counter";
 import { ResourceUnavailablePage } from "@/components/resource-unavailable-page";
-import { FormSectionNavigation, FormSectionHeading } from "@/components/form-section-navigation";
+import {
+  FormSectionNavigation,
+  FormSectionHeading,
+} from "@/components/form-section-navigation";
 
 import { useEffect, useState, type FormEvent } from "react";
 import Image from "next/image";
@@ -68,7 +77,10 @@ function ExistingOfferingEditor({ offeringId }: { offeringId: string }) {
       </div>
     );
   return (
-    <ResourceUnavailablePage title="ویرایش خدمت" onRetry={() => void query.refetch()} />
+    <ResourceUnavailablePage
+      title="ویرایش خدمت"
+      onRetry={() => void query.refetch()}
+    />
   );
 }
 
@@ -214,22 +226,31 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
     <main className="app-page gap-5">
       <DiscoveryPageHeader
         title={initial ? "ویرایش خدمت مربی" : "خدمت جدید مربی"}
-        description="رشته، شرایط حضور و قیمت خدمت را مشخص کنید."
       />
       {initial?.status === "archived" ? (
         <p role="alert">خدمت بایگانی‌شده قابل ویرایش نیست.</p>
       ) : null}
-      <FormSectionNavigation sections={[{"id": "service-basics", "title": "معرفی"}, {"id": "service-pricing", "title": "قیمت و ظرفیت"}, {"id": "service-policy", "title": "قوانین"}]} />
+      <FormSectionNavigation
+        sections={[
+          { id: "service-basics", title: "معرفی" },
+          { id: "service-pricing", title: "قیمت و ظرفیت" },
+          { id: "service-policy", title: "قوانین" },
+        ]}
+      />
       <Card className="app-card coach-editor p-5 shadow-none">
         <form onSubmit={submit}>
           <fieldset
             className="space-y-5"
             disabled={saving || initial?.status === "archived"}
           >
-            <FormSectionHeading id="service-basics" title="خدمت شما" description="ورزشکار چه خدمتی و به چه شیوه‌ای دریافت می‌کند؟" />
-          <label className="block text-sm">
+            <FormSectionHeading
+              id="service-basics"
+              title="خدمت شما"
+              description="ورزشکار چه خدمتی و به چه شیوه‌ای دریافت می‌کند؟"
+            />
+            <label className="block text-sm">
               عنوان
-              <input
+              <HeroInput
                 className={field}
                 required
                 minLength={2}
@@ -240,7 +261,7 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
             </label>
             <label className="block text-sm">
               توضیحات
-              <textarea
+              <HeroTextArea
                 className={field}
                 rows={4}
                 maxLength={4000}
@@ -250,25 +271,26 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
             </label>
             <label className="block text-sm">
               رشته ورزشی
-              <select
+              <FormSelect
+                aria-label="رشته ورزشی"
                 className={field}
                 required
                 value={draft.sportId}
-                onChange={(event) => patch({ sportId: event.target.value })}
+                onChange={(event) => patch({ sportId: event })}
               >
-                <option value="">انتخاب رشته</option>
+                <FormOption value="">انتخاب رشته</FormOption>
                 {draft.sportId &&
                 !sports.data?.items.some(
                   (item) => item.id === draft.sportId,
                 ) ? (
-                  <option value={draft.sportId}>رشته ثبت‌شده</option>
+                  <FormOption value={draft.sportId}>رشته ثبت‌شده</FormOption>
                 ) : null}
                 {sports.data?.items.map((item) => (
-                  <option key={item.id} value={item.id}>
+                  <FormOption entity={item} key={item.id} value={item.id}>
                     {item.name}
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
+              </FormSelect>
             </label>
             {sports.isError ? (
               <Button size="sm" onPress={() => void sports.refetch()}>
@@ -277,19 +299,20 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
             ) : null}
             <label className="block text-sm">
               نوع خدمت
-              <select
+              <FormSelect
+                aria-label="نوع خدمت"
                 className={field}
                 value={draft.type}
                 onChange={(event) =>
-                  patch({ type: event.target.value as CoachOffering["type"] })
+                  patch({ type: event as CoachOffering["type"] })
                 }
               >
                 {Object.entries(types).map(([value, label]) => (
-                  <option key={value} value={value}>
+                  <FormOption key={value} value={value}>
                     {label}
-                  </option>
+                  </FormOption>
                 ))}
-              </select>
+              </FormSelect>
             </label>
             <fieldset className="rounded-xl border border-border p-3">
               <legend className="px-2 text-sm">شیوه ارائه</legend>
@@ -297,31 +320,37 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
                 {Object.entries(modes).map(([value, label]) => {
                   const mode = value as CoachOffering["deliveryModes"][number];
                   return (
-                    <label
+                    <HeroCheckbox
                       key={value}
                       className="flex min-h-11 items-center gap-2 text-sm"
+                      isSelected={draft.deliveryModes.includes(mode)}
+                      onChange={(event) =>
+                        patch({
+                          deliveryModes: event
+                            ? [...draft.deliveryModes, mode]
+                            : draft.deliveryModes.filter(
+                                (item) => item !== mode,
+                              ),
+                        })
+                      }
                     >
-                      <input
-                        type="checkbox"
-                        checked={draft.deliveryModes.includes(mode)}
-                        onChange={(event) =>
-                          patch({
-                            deliveryModes: event.target.checked
-                              ? [...draft.deliveryModes, mode]
-                              : draft.deliveryModes.filter(
-                                  (item) => item !== mode,
-                                ),
-                          })
-                        }
-                      />
-                      {label}
-                    </label>
+                      <HeroCheckbox.Content>
+                        <HeroCheckbox.Control>
+                          <HeroCheckbox.Indicator />
+                        </HeroCheckbox.Control>
+                        {label}
+                      </HeroCheckbox.Content>
+                    </HeroCheckbox>
                   );
                 })}
               </div>
             </fieldset>
-            <FormSectionHeading id="service-pricing" title="قیمت و ظرفیت" description="مدت جلسه و شرایط رزرو را مشخص کنید." />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormSectionHeading
+              id="service-pricing"
+              title="قیمت و ظرفیت"
+              description="مدت جلسه و شرایط رزرو را مشخص کنید."
+            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Numeric
                 label="مدت جلسه (دقیقه)"
                 value={draft.durationMinutes}
@@ -337,67 +366,76 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
                 onChange={(value) => patch({ capacity: value ?? 1 })}
               />
             </div>
-            <label className="block text-sm">
-              سطح ورزشکار
-              <select
-                className={field}
-                value={draft.skillLevelId ?? ""}
-                onChange={(event) =>
-                  patch({ skillLevelId: event.target.value || null })
-                }
-              >
-                <option value="">همه سطوح</option>
-                {draft.skillLevelId &&
-                !levels.data?.items.some(
-                  (item) => item.id === draft.skillLevelId,
-                ) ? (
-                  <option value={draft.skillLevelId}>سطح ثبت‌شده</option>
-                ) : null}
-                {levels.data?.items.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Numeric
-                label="حداقل سن (اختیاری)"
-                optional
-                value={draft.minAge}
-                min={0}
-                max={120}
-                onChange={(minAge) => patch({ minAge })}
-              />
-              <Numeric
-                label="حداکثر سن (اختیاری)"
-                optional
-                value={draft.maxAge}
-                min={0}
-                max={120}
-                onChange={(maxAge) => patch({ maxAge })}
-              />
-            </div>
+            <details open={initial ? true : undefined} className="space-y-3">
+              <summary className="cursor-pointer font-medium">
+                شرایط اختیاری ورزشکار (سطح و سن)
+              </summary>
+              <label className="block text-sm">
+                سطح ورزشکار
+                <FormSelect
+                  aria-label="سطح ورزشکار"
+                  className={field}
+                  value={draft.skillLevelId ?? ""}
+                  onChange={(event) => patch({ skillLevelId: event || null })}
+                >
+                  <FormOption value="">همه سطوح</FormOption>
+                  {draft.skillLevelId &&
+                  !levels.data?.items.some(
+                    (item) => item.id === draft.skillLevelId,
+                  ) ? (
+                    <FormOption value={draft.skillLevelId}>
+                      سطح ثبت‌شده
+                    </FormOption>
+                  ) : null}
+                  {levels.data?.items.map((item) => (
+                    <FormOption entity={item} key={item.id} value={item.id}>
+                      {item.name}
+                    </FormOption>
+                  ))}
+                </FormSelect>
+              </label>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Numeric
+                  label="حداقل سن (اختیاری)"
+                  optional
+                  value={draft.minAge}
+                  min={0}
+                  max={120}
+                  onChange={(minAge) => patch({ minAge })}
+                />
+                <Numeric
+                  label="حداکثر سن (اختیاری)"
+                  optional
+                  value={draft.maxAge}
+                  min={0}
+                  max={120}
+                  onChange={(maxAge) => patch({ maxAge })}
+                />
+              </div>
+            </details>
             <label className="block text-sm">
               واحد فروش
-              <select
+              <FormSelect
+                aria-label="واحد فروش"
                 className={field}
                 value={draft.pricingType}
                 onChange={(event) =>
                   patch({
-                    pricingType: event.target
-                      .value as CoachOffering["pricingType"],
+                    pricingType: event as CoachOffering["pricingType"],
                   })
                 }
               >
-                <option value="per_session">جلسه‌ای</option>
-                <option value="package">بسته جلسات</option>
-                <option value="per_month">ماهانه</option>
-              </select>
+                <FormOption value="per_session">جلسه‌ای</FormOption>
+                <FormOption value="package">بسته جلسات</FormOption>
+                <FormOption value="per_month">ماهانه</FormOption>
+              </FormSelect>
             </label>
             {draft.pricingType !== "per_session" ? (
               <p className="rounded-xl bg-warning/10 p-3 text-sm">
-                ورزشکار ابتدا این خدمت را می‌خرد؛ سپس سانس‌های همین خدمت را با اعتبار آن رزرو می‌کند. خدمت ماهانه ۳۰ روز از زمان پرداخت معتبر است و تمدید خودکار ندارد. لغو مربی یا لغو با بازپرداخت کامل، اعتبار جلسه را برمی‌گرداند.
+                ورزشکار ابتدا این خدمت را می‌خرد؛ سپس سانس‌های همین خدمت را با
+                اعتبار آن رزرو می‌کند. خدمت ماهانه ۳۰ روز از زمان پرداخت معتبر
+                است و تمدید خودکار ندارد. لغو مربی یا لغو با بازپرداخت کامل،
+                اعتبار جلسه را برمی‌گرداند.
               </p>
             ) : null}
             <Numeric
@@ -411,7 +449,11 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
             />
             {draft.pricingType !== "per_session" ? (
               <Numeric
-                label={draft.pricingType === "package" ? "تعداد جلسات بسته" : "سقف جلسات ماهانه (خالی = نامحدود)"}
+                label={
+                  draft.pricingType === "package"
+                    ? "تعداد جلسات بسته"
+                    : "سقف جلسات ماهانه (خالی = نامحدود)"
+                }
                 value={draft.sessionCount}
                 min={1}
                 max={1000}
@@ -420,7 +462,7 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
             ) : null}
             <label className="block text-sm">
               وسایل لازم
-              <textarea
+              <HeroTextArea
                 className={field}
                 rows={3}
                 maxLength={2000}
@@ -433,37 +475,31 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
             {draft.deliveryModes.includes("club") ? (
               <fieldset className="space-y-3 rounded-xl border border-border p-3">
                 <legend className="px-2 text-sm">باشگاه‌های محل ارائه</legend>
-                <input
+                <HeroInput
                   aria-label="جستجوی باشگاه محل ارائه"
                   className={field}
                   placeholder="نام باشگاه"
                   value={clubSearch}
                   onChange={(event) => setClubSearch(event.target.value)}
                 />
-                <select
+                <FormSelect
                   aria-label="افزودن باشگاه"
                   className={field}
                   value=""
                   onChange={(event) => {
-                    if (
-                      event.target.value &&
-                      !draft.venueClubIds?.includes(event.target.value)
-                    )
+                    if (event && !draft.venueClubIds?.includes(event))
                       patch({
-                        venueClubIds: [
-                          ...(draft.venueClubIds ?? []),
-                          event.target.value,
-                        ],
+                        venueClubIds: [...(draft.venueClubIds ?? []), event],
                       });
                   }}
                 >
-                  <option value="">انتخاب باشگاه</option>
+                  <FormOption value="">انتخاب باشگاه</FormOption>
                   {clubs.data?.items.map((item) => (
-                    <option key={item.id} value={item.id}>
+                    <FormOption entity={item} key={item.id} value={item.id}>
                       {item.name}
-                    </option>
+                    </FormOption>
                   ))}
-                </select>
+                </FormSelect>
                 {clubs.isError ? (
                   <Button size="sm" onPress={() => void clubs.refetch()}>
                     دریافت دوباره باشگاه‌ها
@@ -495,161 +531,173 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
                 ))}
               </fieldset>
             ) : null}
-            <FormSectionHeading id="service-policy" title="قوانین و تصویر" description="شرایط لغو را شفاف کنید تا ورزشکار با آگاهی رزرو کند." />
-          <fieldset className="space-y-3 rounded-xl border border-border p-3">
-              <legend className="px-2 text-sm">قانون لغو</legend>
-              <label className="block text-sm">
-                عنوان قانون
-                <input
-                  className={field}
-                  maxLength={140}
-                  value={
-                    typeof draft.cancellationPolicy?.title === "string"
-                      ? draft.cancellationPolicy.title
-                      : "قانون لغو مربی"
-                  }
-                  onChange={(event) =>
-                    patch({
-                      cancellationPolicy: {
-                        ...draft.cancellationPolicy,
-                        title: event.target.value,
-                      },
-                    })
-                  }
-                />
-              </label>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {(
-                  [
-                    [
-                      "reservationCutoffMinutes",
-                      "مهلت بستن رزرو (دقیقه قبل)",
-                      0,
-                      525600,
-                    ],
-                    [
-                      "rescheduleCutoffMinutes",
-                      "مهلت تغییر زمان (دقیقه قبل)",
-                      0,
-                      525600,
-                    ],
-                    ["noShowRefundPercent", "بازگشت عدم حضور (درصد)", 0, 100],
-                    [
-                      "ownerCancellationRefundPercent",
-                      "بازگشت لغو مربی (درصد)",
-                      100,
-                      100,
-                    ],
-                  ] as const
-                ).map(([key, label, fallback, max]) => (
-                  <Numeric
-                    key={key}
-                    label={label}
-                    min={0}
-                    max={max}
+            <FormSectionHeading
+              id="service-policy"
+              title="قوانین و تصویر"
+              description="شرایط لغو را شفاف کنید تا ورزشکار با آگاهی رزرو کند."
+            />
+            <p className="my-3 text-sm text-muted">
+              {initial || policyDirty
+                ? "قانون سفارشی فعال است؛ جزئیات آن در تنظیمات زیر قابل بررسی و ویرایش است."
+                : "قانون پیش‌فرض: تا ۲۴ ساعت قبل ۸۰٪ بازگشت؛ پس از آن بدون بازگشت. لغو مربی با بازگشت کامل."}
+            </p>
+            <details
+              className="rounded-xl border border-border p-3"
+              open={initial ? true : undefined}
+            >
+              <summary className="cursor-pointer font-medium">
+                تنظیمات پیشرفتهٔ لغو و بازپرداخت
+              </summary>
+              <fieldset className="space-y-3">
+                <legend className="px-2 text-sm">قانون لغو</legend>
+                <label className="block text-sm">
+                  عنوان قانون
+                  <HeroInput
+                    className={field}
+                    maxLength={140}
                     value={
-                      typeof draft.cancellationPolicy?.[key] === "number"
-                        ? (draft.cancellationPolicy[key] as number)
-                        : fallback
+                      typeof draft.cancellationPolicy?.title === "string"
+                        ? draft.cancellationPolicy.title
+                        : "قانون لغو مربی"
                     }
-                    onChange={(value) =>
+                    onChange={(event) =>
                       patch({
                         cancellationPolicy: {
                           ...draft.cancellationPolicy,
-                          [key]: value ?? fallback,
+                          title: event.target.value,
                         },
                       })
                     }
                   />
-                ))}
-              </div>
-              <p className="text-xs text-muted">
-                درصد بازگشت بر اساس ساعت باقی‌مانده تا شروع جلسه.
-              </p>
-              {tiers.map((tier, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-[1fr_1fr_auto] items-end gap-2"
-                >
-                  <Numeric
-                    label="حداقل ساعت قبل"
-                    value={tier.hoursBefore}
-                    min={0}
-                    max={8760}
-                    onChange={(value) => {
-                      setPolicyDirty(true);
-                      setTiers((current) =>
-                        current.map((item, position) =>
-                          position === index
-                            ? { ...item, hoursBefore: value ?? 0 }
-                            : item,
-                        ),
-                      );
-                    }}
-                  />
-                  <Numeric
-                    label="بازگشت (درصد)"
-                    value={tier.refundPercent}
-                    min={0}
-                    max={100}
-                    onChange={(value) => {
-                      setPolicyDirty(true);
-                      setTiers((current) =>
-                        current.map((item, position) =>
-                          position === index
-                            ? { ...item, refundPercent: value ?? 0 }
-                            : item,
-                        ),
-                      );
-                    }}
-                  />
-                  <Button
-                    aria-label={`حذف بند ${index + 1}`}
-                    size="sm"
-                    variant="danger-soft"
-                    onPress={() => {
-                      setPolicyDirty(true);
-                      setTiers((current) =>
-                        current.filter((_, position) => position !== index),
-                      );
-                    }}
-                  >
-                    حذف
-                  </Button>
+                </label>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {(
+                    [
+                      [
+                        "reservationCutoffMinutes",
+                        "مهلت بستن رزرو (دقیقه قبل)",
+                        0,
+                        525600,
+                      ],
+                      [
+                        "rescheduleCutoffMinutes",
+                        "مهلت تغییر زمان (دقیقه قبل)",
+                        0,
+                        525600,
+                      ],
+                      ["noShowRefundPercent", "بازگشت عدم حضور (درصد)", 0, 100],
+                      [
+                        "ownerCancellationRefundPercent",
+                        "بازگشت لغو مربی (درصد)",
+                        100,
+                        100,
+                      ],
+                    ] as const
+                  ).map(([key, label, fallback, max]) => (
+                    <Numeric
+                      key={key}
+                      label={label}
+                      min={0}
+                      max={max}
+                      value={
+                        typeof draft.cancellationPolicy?.[key] === "number"
+                          ? (draft.cancellationPolicy[key] as number)
+                          : fallback
+                      }
+                      onChange={(value) =>
+                        patch({
+                          cancellationPolicy: {
+                            ...draft.cancellationPolicy,
+                            [key]: value ?? fallback,
+                          },
+                        })
+                      }
+                    />
+                  ))}
                 </div>
-              ))}
-              <Button
-                size="sm"
-                variant="secondary"
-                isDisabled={tiers.length >= 10}
-                onPress={() => {
-                  setPolicyDirty(true);
-                  setTiers((current) => [
-                    ...current,
-                    { hoursBefore: 0, refundPercent: 0 },
-                  ]);
-                }}
-              >
-                افزودن بند
-              </Button>
-            </fieldset>
+                <p className="text-xs text-muted">
+                  درصد بازگشت بر اساس ساعت باقی‌مانده تا شروع جلسه.
+                </p>
+                {tiers.map((tier, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-[1fr_1fr_auto] items-end gap-2"
+                  >
+                    <Numeric
+                      label="حداقل ساعت قبل"
+                      value={tier.hoursBefore}
+                      min={0}
+                      max={8760}
+                      onChange={(value) => {
+                        setPolicyDirty(true);
+                        setTiers((current) =>
+                          current.map((item, position) =>
+                            position === index
+                              ? { ...item, hoursBefore: value ?? 0 }
+                              : item,
+                          ),
+                        );
+                      }}
+                    />
+                    <Numeric
+                      label="بازگشت (درصد)"
+                      value={tier.refundPercent}
+                      min={0}
+                      max={100}
+                      onChange={(value) => {
+                        setPolicyDirty(true);
+                        setTiers((current) =>
+                          current.map((item, position) =>
+                            position === index
+                              ? { ...item, refundPercent: value ?? 0 }
+                              : item,
+                          ),
+                        );
+                      }}
+                    />
+                    <Button
+                      aria-label={`حذف بند ${index + 1}`}
+                      size="sm"
+                      variant="danger-soft"
+                      onPress={() => {
+                        setPolicyDirty(true);
+                        setTiers((current) =>
+                          current.filter((_, position) => position !== index),
+                        );
+                      }}
+                    >
+                      حذف
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  isDisabled={tiers.length >= 10}
+                  onPress={() => {
+                    setPolicyDirty(true);
+                    setTiers((current) => [
+                      ...current,
+                      { hoursBefore: 0, refundPercent: 0 },
+                    ]);
+                  }}
+                >
+                  افزودن بند
+                </Button>
+              </fieldset>
+            </details>
             <div className="space-y-3">
               <label className="block text-sm">
                 تصویر خدمت
-                <input
-                  className={field}
-                  type="file"
-                  accept="image/*"
-                  onChange={async (event) => {
-                    const file = event.target.files?.[0];
-                    if (!file) return;
-                    try {
-                      const item = await upload.mutateAsync(file);
-                      patch({ coverMediaId: item.id });
-                    } catch {
-                      toast.danger("بارگذاری تصویر انجام نشد");
-                    }
+                <Uploader
+                  multiple={false}
+                  accept={imageUploaderAccept}
+                  disabled={upload.isPending}
+                  onUpload={async (file) => {
+                    const item = await upload.mutateAsync(file);
+                    patch({ coverMediaId: item.id });
                   }}
+                  labels={{ clickToUpload: "بارگذاری تصویر خدمت" }}
                 />
               </label>
               {cover ? (
@@ -700,9 +748,10 @@ function Numeric({
   return (
     <label className="block text-sm">
       {label}
-      <input
+      <Counter
+        aria-label={label}
         className={field}
-        type="number"
+
         required={!optional}
         min={min}
         max={max}

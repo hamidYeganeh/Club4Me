@@ -1,5 +1,6 @@
 "use client";
 
+import { EntityOptionContent, entityOptionText } from "@repo/ui/entity-option";
 import { useEffect, useMemo, useRef } from "react";
 import {
   Button,
@@ -187,11 +188,15 @@ export function ArticlesEditorForm({
                     <ListBox>
                       {categories.map((item) => (
                         <ListBox.Item
+                          dir="rtl"
                           key={item.id}
                           id={item.id}
-                          textValue={item.name}
+                          textValue={entityOptionText(item, String(item.name))}
                         >
-                          {item.name}
+                          <EntityOptionContent
+                            entity={item}
+                            title={String(item.name)}
+                          />
                           <ListBox.ItemIndicator />
                         </ListBox.Item>
                       ))}
@@ -250,11 +255,15 @@ export function ArticlesEditorForm({
                   </Select.Trigger>
                   <Select.Popover>
                     <ListBox>
-                      <ListBox.Item id="draft" textValue={t("draft")}>
+                      <ListBox.Item dir="rtl" id="draft" textValue={t("draft")}>
                         {t("draft")}
                         <ListBox.ItemIndicator />
                       </ListBox.Item>
-                      <ListBox.Item id="published" textValue={t("published")}>
+                      <ListBox.Item
+                        dir="rtl"
+                        id="published"
+                        textValue={t("published")}
+                      >
                         {t("published")}
                         <ListBox.ItemIndicator />
                       </ListBox.Item>

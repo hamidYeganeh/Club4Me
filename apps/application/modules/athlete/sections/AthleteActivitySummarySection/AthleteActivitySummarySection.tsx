@@ -3,16 +3,15 @@
 import Link from "@/components/app-link";
 import { SectionHeading } from "@ui/section-heading";
 import { useAthleteClubClasses, useSavedItems, useMyReservations } from "@api";
-import { Typography } from "@heroui/react";
+import { Button, Typography } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import {
   DashboardMetricCard,
-  MetricBarVisual,
+  MetricCategoryVisual,
   MetricHeatmapVisual,
-  MetricLineVisual,
   MetricRingVisual,
 } from "@ui/dashboard-metric-card";
-import { DashboardHistoryCard } from "@ui/dashboard-history-card";
+import styles from "./activity-summary.module.css";
 
 const formatNumber = (value: number) => value.toLocaleString("fa-IR");
 const dateFormat = new Intl.DateTimeFormat("fa-IR", {
@@ -56,13 +55,27 @@ export function AthleteActivitySummarySection() {
     "cancelled",
     "no_show",
   ].map((status) => ({
-    label: status,
+    label: (
+      {
+        reserved: "فعال",
+        completed: "تکمیل",
+        cancelled: "لغو",
+        no_show: "عدم حضور",
+      } as Record<string, string>
+    )[status]!,
     value: reservationItems.filter((item) => item.status === status).length,
   }));
   const classStatusData = ["pending", "active", "waitlisted", "completed"].map(
     (status) => ({
-      label: status,
-      primary: classItems.filter((item) => item.status === status).length,
+      label: (
+        {
+          pending: "در انتظار",
+          active: "فعال",
+          waitlisted: "صف انتظار",
+          completed: "تکمیل",
+        } as Record<string, string>
+      )[status]!,
+      value: classItems.filter((item) => item.status === status).length,
     }),
   );
   const metricValue = (unavailable: boolean, value: number) =>
@@ -74,13 +87,6 @@ export function AthleteActivitySummarySection() {
         new Date(a.sessionStartsAt).getTime(),
     )
     .slice(0, 3);
-  const recentReservationSeries = [...reservationItems]
-    .sort(
-      (a, b) =>
-        new Date(a.sessionStartsAt).getTime() -
-        new Date(b.sessionStartsAt).getTime(),
-    )
-    .slice(-7);
   const reservationStatus = {
     reserved: {
       label: "رزرو فعال",
@@ -112,7 +118,7 @@ export function AthleteActivitySummarySection() {
       <SectionHeading
         id="athlete-activity-summary-title"
         title="نمای کلی من"
-        description="خلاصه‌ای از فعالیت‌های ورزشی تو"
+        description="فعالیت‌های ثبت‌شده؛ هر کارت را برای جزئیات باز کن"
         action={
           <Link
             href="/athlete/profile"
@@ -123,13 +129,14 @@ export function AthleteActivitySummarySection() {
         }
       />
 
-      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className={styles.grid}>
         <Link
           href="/athlete/reservations"
           aria-label="رزروهای من"
-          className="shrink-0 rounded-[32px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className={styles.link}
         >
           <DashboardMetricCard
+            className={styles.metric}
             title="رزروها"
             value={metricValue(
               reservations.isPending || reservations.isError,
@@ -137,16 +144,25 @@ export function AthleteActivitySummarySection() {
             )}
             unit="رزرو"
             icon={<Icon name="ticket" size={20} />}
-            visual={<MetricBarVisual data={reservationStatusData} />}
+            visual={<MetricCategoryVisual data={reservationStatusData} />}
+            unavailable={reservations.isPending || reservations.isError}
+            description={
+              reservations.isPending
+                ? "در حال دریافت…"
+                : reservations.isError
+                  ? "دریافت نشد؛ دوباره تلاش کن"
+                  : `${formatNumber(reservationCount)} رزرو فعال یا تکمیل‌شده`
+            }
             tone="energy"
           />
         </Link>
         <Link
           href="/athlete/classes"
           aria-label="کلاس‌های فعال من"
-          className="shrink-0 rounded-[32px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className={styles.link}
         >
           <DashboardMetricCard
+            className={styles.metric}
             title="کلاس‌های من"
             value={metricValue(
               clubClasses.isPending || clubClasses.isError,
@@ -154,16 +170,25 @@ export function AthleteActivitySummarySection() {
             )}
             unit="فعال"
             icon={<Icon name="weight" size={20} />}
-            visual={<MetricLineVisual data={classStatusData} />}
+            visual={<MetricCategoryVisual data={classStatusData} />}
+            unavailable={clubClasses.isPending || clubClasses.isError}
+            description={
+              clubClasses.isPending
+                ? "در حال دریافت…"
+                : clubClasses.isError
+                  ? "دریافت نشد؛ دوباره تلاش کن"
+                  : "فعال، در انتظار تأیید یا در صف"
+            }
             tone="activity"
           />
         </Link>
         <Link
           href="/athlete/favorites"
           aria-label="موارد ذخیره‌شده من"
-          className="shrink-0 rounded-[32px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className={styles.link}
         >
           <DashboardMetricCard
+            className={styles.metric}
             title="ذخیره‌شده"
             value={metricValue(
               favorites.isPending || favorites.isError,
@@ -172,28 +197,89 @@ export function AthleteActivitySummarySection() {
             unit="مورد"
             icon={<Icon name="bookmark" size={20} />}
             visual={<MetricHeatmapVisual value={favoriteItems.length} />}
+            unavailable={favorites.isPending || favorites.isError}
+            description={
+              favorites.isPending
+                ? "در حال دریافت…"
+                : favorites.isError
+                  ? "دریافت نشد؛ دوباره تلاش کن"
+                  : "هر خانه یک ذخیره؛ نمایش تا ۲۰ مورد"
+            }
             tone="neutral"
           />
         </Link>
         <Link
           href="/athlete/reservations"
           aria-label="نرخ تکمیل رزروها"
-          className="shrink-0 rounded-[32px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className={styles.link}
         >
           <DashboardMetricCard
+            className={styles.metric}
             title="نرخ تکمیل"
             value={metricValue(
-              reservations.isPending || reservations.isError,
+              reservations.isPending || reservations.isError || !outcomeCount,
               completionRate,
             )}
             unit="٪"
             icon={<Icon name="check-circle" size={20} />}
             visual={<MetricRingVisual value={completionRate} />}
+            unavailable={
+              reservations.isPending || reservations.isError || !outcomeCount
+            }
+            description={
+              reservations.isPending
+                ? "در حال دریافت…"
+                : reservations.isError
+                  ? "دریافت نشد؛ دوباره تلاش کن"
+                  : outcomeCount
+                    ? `${formatNumber(completedCount)} حضور از ${formatNumber(outcomeCount)} رزرو با نتیجه مشخص`
+                    : "بعد از ثبت اولین نتیجه نمایش داده می‌شود"
+            }
             tone="progress"
           />
         </Link>
       </div>
 
+      {[reservations, clubClasses, favorites].some((query) => query.isError) ? (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 text-xs text-muted"
+        >
+          <p>بخشی از اطلاعات دریافت نشد.</p>
+          <Button
+            size="sm"
+            variant="ghost"
+            onPress={() => {
+              [reservations, clubClasses, favorites].forEach((query) => {
+                if (query.isError) void query.refetch();
+              });
+            }}
+          >
+            تلاش دوباره
+          </Button>
+        </div>
+      ) : null}
+      {reservations.isSuccess && !reservationItems.length ? (
+        <div className={styles.empty}>
+          <span className={styles.emptyVisual} aria-hidden="true">
+            <Icon name="ticket" size={30} />
+          </span>
+          <div>
+            <h3 className="text-base font-semibold">
+              اولین فعالیتت از اینجا شروع می‌شود
+            </h3>
+            <p className="mt-2 text-sm leading-7 text-muted">
+              بعد از رزرو، برنامه و سابقه حضورت را اینجا می‌بینی.
+            </p>
+            <Link
+              href="/discovery/search"
+              className="mt-3 inline-flex min-h-11 items-center gap-2 font-semibold text-accent"
+            >
+              پیدا کردن باشگاه <Icon name="arrow-left" size={18} />
+            </Link>
+          </div>
+        </div>
+      ) : null}
       {recentReservations.length ? (
         <div className="mt-2 flex flex-col gap-3">
           <Typography type="h5" weight="bold">
@@ -208,23 +294,30 @@ export function AthleteActivitySummarySection() {
                 href={`/athlete/reservations/${reservation.id}`}
                 className="rounded-[28px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               >
-                <DashboardHistoryCard
-                  date={dateFormat.format(startsAt)}
-                  meta={timeFormat.format(startsAt)}
-                  value={formatNumber(reservation.participantCount)}
-                  unit="نفر"
-                  status={status.label}
-                  statusIcon={<Icon name={status.icon} size={18} />}
-                  chartColor={status.color}
-                  data={recentReservationSeries.map((item) => ({
-                    label: item.id,
-                    value: item.participantCount,
-                    color:
-                      item.id === reservation.id
-                        ? status.color
-                        : `color-mix(in oklch, ${status.color} 24%, transparent)`,
-                  }))}
-                />
+                <article className={styles.history}>
+                  <span
+                    className={styles.statusIcon}
+                    style={{ color: status.color }}
+                    aria-hidden="true"
+                  >
+                    <Icon name={status.icon} size={22} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-sm font-semibold">
+                      {reservation.sessionTitle}
+                    </h3>
+                    <p className="mt-1 text-xs leading-5 text-muted">
+                      {dateFormat.format(startsAt)} ·{" "}
+                      {timeFormat.format(startsAt)}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-end">
+                    <p className="text-xs font-medium">{status.label}</p>
+                    <p className="mt-1 text-xs text-muted tabular-nums">
+                      {formatNumber(reservation.participantCount)} نفر
+                    </p>
+                  </div>
+                </article>
               </Link>
             );
           })}
