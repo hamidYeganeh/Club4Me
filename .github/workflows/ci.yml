@@ -13,15 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     services:
-      mongodb:
-        image: mongo:8
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
       redis:
         image: redis:7-alpine
         ports:
@@ -37,6 +28,24 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Start MongoDB with transaction support
+        run: |
+          docker run -d --name gym4me-ci-mongo -p 27017:27017 mongo:8 --replSet rs0 --bind_ip_all
+          for attempt in {1..30}; do
+            if docker exec gym4me-ci-mongo mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          docker exec gym4me-ci-mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
+          for attempt in {1..30}; do
+            if docker exec gym4me-ci-mongo mongosh --quiet --eval 'quit(db.hello().isWritablePrimary ? 0 : 1)'; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs gym4me-ci-mongo
+          exit 1
       - run: npm ci
       - run: npm run check-types
       - run: npm run lint
@@ -61,7 +70,7 @@ jobs:
         env:
           NODE_ENV: test
           PORT: 7088
-          MONGODB_URL: mongodb://127.0.0.1:27017/gym4me-ci
+          MONGODB_URL: mongodb://127.0.0.1:27017/gym4me-ci?replicaSet=rs0
           REDIS_URL: redis://127.0.0.1:6379
           JWT_SECRET: ci-only-jwt-secret-value
           CORS_ORIGINS: http://127.0.0.1:7080
