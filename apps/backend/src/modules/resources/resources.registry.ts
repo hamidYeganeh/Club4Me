@@ -35,6 +35,7 @@ const rows: readonly Row[] = [
   ["sports", "sport", "sports", "sports"],
   ["sports", "sport-category", "sport_categories", "sport_categories"],
   ["sports", "club-type", "club_types", "club_types"],
+  ["sports", "employment-type", "employment_types", "employment_types"],
   ["sports", "coach-type", "coach_types", "coach_types"],
   ["sports", "class-type", "class_types", "class_types"],
   ["sports", "court-type", "court_types", "court_types"],

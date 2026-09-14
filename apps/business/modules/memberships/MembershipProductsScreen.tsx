@@ -26,8 +26,7 @@ import {
 } from "@/components/data-table";
 import { PanelNumberField } from "@/components/form/PanelNumberField";
 
-const input =
-  "h-11 rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm outline-none focus:border-accent";
+const input = "w-full min-w-0";
 
 const productColumnHelper = createListColumnHelper<BenefitProduct>();
 
@@ -198,7 +197,9 @@ export function MembershipProductsScreen() {
       form.reset();
       toast.success("دعوت همکاری ثبت شد");
     } catch {
-      toast.danger("ثبت دعوت انجام نشد؛ شناسه کاربر را بررسی کنید");
+      toast.danger(
+        "ثبت دعوت انجام نشد؛ شماره موبایل و دسترسی خود را بررسی کنید",
+      );
     }
   };
 
@@ -239,6 +240,7 @@ export function MembershipProductsScreen() {
               <label className="grid gap-1 text-sm text-muted">
                 عنوان
                 <HeroInput
+                  variant="secondary"
                   required
                   name="title"
                   minLength={3}
@@ -351,6 +353,7 @@ export function MembershipProductsScreen() {
               <label className="grid gap-1 text-sm text-muted md:col-span-2">
                 توضیح
                 <HeroTextArea
+                  variant="secondary"
                   name="description"
                   className={`${input} h-24 py-3`}
                 />
@@ -381,6 +384,7 @@ export function MembershipProductsScreen() {
             onSubmit={invite}
           >
             <HeroInput
+              variant="secondary"
               required
               name="phone"
               inputMode="tel"
@@ -512,6 +516,7 @@ export function MembershipProductsScreen() {
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
                 <HeroInput
+                  variant="secondary"
                   className={input}
                   value={draftFilters.query}
                   onChange={(event) =>

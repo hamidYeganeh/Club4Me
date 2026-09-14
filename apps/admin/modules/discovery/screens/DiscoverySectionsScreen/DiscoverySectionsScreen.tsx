@@ -1,5 +1,7 @@
 "use client";
 
+import { CatalogMultiSelect } from "@repo/ui/catalog-multi-select";
+import { useResources } from "@api/resources";
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import {
   Button,
@@ -10,7 +12,6 @@ import {
   ListBox,
   Select,
   Spinner,
-  TextArea,
   toast,
 } from "@heroui/react";
 import {
@@ -65,8 +66,7 @@ const placementLabels = {
   reservations: "رزروهای من",
 };
 
-const input =
-  "h-11 rounded-xl border border-border bg-surface-secondary px-3 text-sm";
+const input = "w-full min-w-0";
 
 export function DiscoverySectionsScreen() {
   const list = useAdminDiscoverySections();
@@ -293,9 +293,6 @@ function SectionEditor({
         }
       : empty,
   );
-  const [filtersText, setFiltersText] = useState(() =>
-    JSON.stringify(initial?.selection.filters ?? {}, null, 2),
-  );
   const [formError, setFormError] = useState("");
   const handleSave = () => {
     if (isPending) return;
@@ -305,31 +302,8 @@ function SectionEditor({
       );
       return;
     }
-    let filters = value.selection.filters;
-    if (value.type !== "banners" && value.selection.mode === "query") {
-      try {
-        const parsed: unknown = JSON.parse(filtersText);
-        if (
-          !parsed ||
-          typeof parsed !== "object" ||
-          Array.isArray(parsed) ||
-          !Object.values(parsed).every(
-            (entry) =>
-              Array.isArray(entry) &&
-              entry.every((item) => typeof item === "string"),
-          )
-        )
-          throw new Error("Invalid filters");
-        filters = parsed as Record<string, string[]>;
-      } catch {
-        setFormError(
-          "فیلترها باید یک شیء JSON با مقدارهای آرایه‌ای از متن باشند.",
-        );
-        return;
-      }
-    }
     setFormError("");
-    void onSave({ ...value, selection: { ...value.selection, filters } });
+    void onSave(value);
   };
   const options = useDiscoveryOptions(
     value.type,
@@ -682,15 +656,71 @@ function SectionEditor({
                   </div>
                 </Field>
               ) : (
-                <Field label="فیلترها (JSON)" wide>
-                  <TextArea
-                    dir="ltr"
-                    className="h-28 rounded-xl border border-border bg-surface-secondary px-3 py-3 font-mono text-sm"
-                    aria-label="فیلترها (JSON)"
-                    value={filtersText}
-                    onChange={(e) => setFiltersText(e.target.value)}
+                <div className="col-span-full grid gap-4 sm:grid-cols-2">
+                  {(
+                    [
+                      ["cityIds", "شهرها", "location", "city"],
+                      ["sportIds", "رشته‌ها", "sports", "sport"],
+                      ["clubTypeIds", "انواع باشگاه", "sports", "club-type"],
+                      [
+                        "categoryIds",
+                        "دسته‌بندی مقالات",
+                        "content",
+                        "article-category",
+                      ],
+                      ["tags", "برچسب‌ها", "clubs", "tag"],
+                    ] as const
+                  ).map(([key, label, category, resource]) => (
+                    <DiscoveryCatalogFilter
+                      key={key}
+                      label={label}
+                      category={category}
+                      resource={resource}
+                      value={value.selection.filters[key] ?? []}
+                      onChange={(ids) =>
+                        set("selection", {
+                          ...value.selection,
+                          filters: { ...value.selection.filters, [key]: ids },
+                        })
+                      }
+                    />
+                  ))}
+                  <CatalogMultiSelect
+                    label="مخاطبان"
+                    options={[
+                      { id: "men", name: "آقایان" },
+                      { id: "women", name: "بانوان" },
+                      { id: "mixed", name: "مختلط" },
+                      { id: "children", name: "کودکان" },
+                      { id: "family", name: "خانواده" },
+                    ]}
+                    value={value.selection.filters.audience ?? []}
+                    onChange={(ids) =>
+                      set("selection", {
+                        ...value.selection,
+                        filters: { ...value.selection.filters, audience: ids },
+                      })
+                    }
                   />
-                </Field>
+                  <CatalogMultiSelect
+                    label="شیوه ارائه"
+                    options={[
+                      { id: "online", name: "آنلاین" },
+                      { id: "in_person", name: "حضوری" },
+                      { id: "hybrid", name: "ترکیبی" },
+                    ]}
+                    value={value.selection.filters.serviceModes ?? []}
+                    onChange={(ids) =>
+                      set("selection", {
+                        ...value.selection,
+                        filters: {
+                          ...value.selection.filters,
+                          serviceModes: ids,
+                        },
+                      })
+                    }
+                  />
+                </div>
               )}
             </>
           ) : (
@@ -771,10 +801,7 @@ function BannerFields({
   return (
     <div className="flex flex-col gap-4 sm:col-span-2">
       {value.banners.map((banner, index) => (
-        <div
-          key={index}
-          className="grid gap-4 rounded-2xl p-4 sm:grid-cols-2"
-        >
+        <div key={index} className="grid gap-4 rounded-2xl p-4 sm:grid-cols-2">
           <div className="flex items-center justify-between sm:col-span-2">
             <strong>بنر {index + 1}</strong>
             <Button
@@ -846,6 +873,49 @@ function BannerFields({
         <Icon name="plus-fat" />
         افزودن بنر
       </Button>
+    </div>
+  );
+}
+
+function DiscoveryCatalogFilter({
+  label,
+  category,
+  resource,
+  value,
+  onChange,
+}: {
+  label: string;
+  category: string;
+  resource: string;
+  value: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const query = useResources(category, resource, {
+    isActive: true,
+    limit: 100,
+    search,
+  });
+  return (
+    <div className="space-y-2">
+      <Input
+        aria-label={`جست‌وجو در ${label}`}
+        placeholder={`جست‌وجو در ${label}`}
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+      />
+      <CatalogMultiSelect
+        label={label}
+        options={(query.data?.items ?? []).map((item) => ({
+          id: resource === "tag" ? String(item.name ?? "") : item.id,
+          name: String(item.name ?? item.title ?? "بدون نام"),
+        }))}
+        value={value}
+        onChange={onChange}
+        isPending={query.isPending}
+        isError={query.isError}
+        onRetry={() => void query.refetch()}
+      />
     </div>
   );
 }

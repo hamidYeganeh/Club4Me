@@ -21,8 +21,7 @@ import { TicketListSkeleton } from "@/components/loading-skeletons";
 import { RequestFailureState } from "@/components/request-failure-state";
 import { getQueryFailure } from "@/lib/request-failure";
 
-const fieldClass =
-  "w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-accent";
+const fieldClass = "w-full min-w-0";
 
 export function SupportTicketsScreen({
   view = "list",
@@ -143,6 +142,7 @@ export function SupportTicketsScreen({
                 موضوع درخواست
               </label>
               <HeroInput
+                variant="secondary"
                 required
                 id="support-subject"
                 name="subject"
@@ -178,6 +178,7 @@ export function SupportTicketsScreen({
                 شرح درخواست
               </label>
               <HeroTextArea
+                variant="secondary"
                 required
                 id="support-message"
                 name="message"
@@ -328,6 +329,7 @@ export function SupportTicketsScreen({
                       }}
                     >
                       <HeroInput
+                        variant="secondary"
                         required
                         name="message"
                         aria-label="پاسخ شما"

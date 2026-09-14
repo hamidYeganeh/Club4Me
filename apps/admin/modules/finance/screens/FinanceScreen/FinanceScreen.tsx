@@ -27,8 +27,7 @@ import { EntityDetailsModal } from "@ui/entity-details-modal";
 import { FormEvent, useState } from "react";
 
 const money = new Intl.NumberFormat("fa-IR");
-const inputClass =
-  "h-11 rounded-xl border border-border bg-surface px-3 text-sm outline-none focus:border-primary";
+const inputClass = "w-full min-w-0";
 
 export function FinanceScreen() {
   const [section, setSection] = useState("payouts");
@@ -323,6 +322,7 @@ export function FinanceScreen() {
                 مبلغ (ریال)
               </label>
               <HeroInput
+                variant="secondary"
                 id="wallet-amount"
                 required
                 name="amount"
@@ -339,6 +339,7 @@ export function FinanceScreen() {
                 علت افزایش اعتبار
               </label>
               <HeroInput
+                variant="secondary"
                 id="wallet-note"
                 required
                 name="note"
@@ -371,6 +372,7 @@ export function FinanceScreen() {
                 کد تخفیف
               </label>
               <HeroInput
+                variant="secondary"
                 id="discount-code"
                 required
                 name="code"
@@ -389,6 +391,7 @@ export function FinanceScreen() {
                 عنوان کمپین
               </label>
               <HeroInput
+                variant="secondary"
                 id="discount-title"
                 required
                 name="title"
@@ -421,6 +424,7 @@ export function FinanceScreen() {
                 {discountKind === "percent" ? "درصد تخفیف" : "مبلغ تخفیف"}
               </label>
               <HeroInput
+                variant="secondary"
                 id="discount-value"
                 required
                 name="value"
@@ -440,6 +444,7 @@ export function FinanceScreen() {
                 سقف مبلغ تخفیف
               </label>
               <HeroInput
+                variant="secondary"
                 id="discount-max"
                 name="maxDiscount"
                 type="number"
@@ -458,6 +463,7 @@ export function FinanceScreen() {
                 حداقل خرید
               </label>
               <HeroInput
+                variant="secondary"
                 id="discount-min-order"
                 name="minOrderAmount"
                 type="number"
@@ -473,6 +479,7 @@ export function FinanceScreen() {
                 بودجه کل
               </label>
               <HeroInput
+                variant="secondary"
                 id="discount-budget"
                 required
                 name="budget"
@@ -492,6 +499,7 @@ export function FinanceScreen() {
                 سقف استفاده هر کاربر
               </label>
               <HeroInput
+                variant="secondary"
                 id="discount-user-limit"
                 name="perUserLimit"
                 type="number"
@@ -628,6 +636,7 @@ export function FinanceScreen() {
                       شماره پیگیری بانکی
                     </Label>
                     <HeroInput
+                      variant="secondary"
                       id="payout-bank-reference"
                       required
                       minLength={3}
@@ -661,7 +670,7 @@ export function FinanceScreen() {
                       if (reviewError) setReviewError("");
                     }}
                     rows={4}
-                    className="rounded-xl border border-border bg-surface-secondary px-3 py-2 text-sm"
+                    className="rounded-xl bg-surface-secondary px-3 py-2 text-sm"
                     aria-describedby={
                       reviewError ? "payout-review-error" : undefined
                     }

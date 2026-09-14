@@ -486,7 +486,7 @@ export function SupportTicketsScreen() {
                     if (formError) setFormError("");
                   }}
                   rows={5}
-                  className="mt-2 rounded-xl border border-border bg-surface-secondary px-3 py-2 text-sm"
+                  className="mt-2 rounded-xl bg-surface-secondary px-3 py-2 text-sm"
                   aria-describedby={
                     formError ? "support-reply-error" : undefined
                   }

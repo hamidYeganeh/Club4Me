@@ -1,5 +1,6 @@
 "use client";
 
+import { CatalogMultiSelect } from "@repo/ui/catalog-multi-select";
 import { Checkbox as HeroCheckbox } from "@heroui/react";
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
@@ -32,8 +33,7 @@ import { FormPageSkeleton } from "@/components/loading-skeletons";
 
 import { CoachProfessionalFields } from "../../components/CoachProfessionalFields";
 
-const input =
-  "h-12 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm outline-none focus:border-accent";
+const input = "w-full min-w-0";
 
 export function CoachProfileFormScreen() {
   const profile = useCoachProfile();
@@ -93,6 +93,11 @@ export function CoachProfileFormScreen() {
     setGeoDirty(true);
   };
   const sportsCatalog = usePublicCatalogResource("sports", "sport");
+  const specialtiesCatalog = usePublicCatalogResource(
+    "sports",
+    "coach-specialty",
+    { limit: 100 },
+  );
   const [professionalProfile, setProfessionalProfile] =
     useState<CoachProfessionalProfile>(emptyCoachProfessionalProfile);
   const [minAge, setMinAge] = useState("");
@@ -106,7 +111,9 @@ export function CoachProfileFormScreen() {
   const [serviceModes, setServiceModes] = useState<string[]>(["club"]);
   const [phone, setPhone] = useState("");
   const [sportIds, setSportIds] = useState<string[]>([]);
-  const [specialties, setSpecialties] = useState("");
+  const [specialties, setSpecialties] = useState<
+    Array<{ title: string; description: string }>
+  >([]);
   const [trainingStyles, setTrainingStyles] = useState("");
   const [experienceSummary, setExperienceSummary] = useState("");
   const [experience, setExperience] = useState("");
@@ -149,11 +156,7 @@ export function CoachProfileFormScreen() {
       setExperienceYears(data.experienceYears);
       setLanguages(data.languages.join("، "));
       setServiceModes(data.serviceModes);
-      setSpecialties(
-        data.specialties
-          .map((item) => `${item.title} | ${item.description}`)
-          .join("\n"),
-      );
+      setSpecialties(data.specialties);
       setTrainingStyles(
         (data.trainingStyles ?? [])
           .map((item) =>
@@ -302,10 +305,7 @@ export function CoachProfileFormScreen() {
           .filter(Boolean),
         serviceModes,
         contact: { ...profile.data.contact, phone: phone.trim() },
-        specialties: parseRows(specialties, 2).map(([title, description]) => ({
-          title,
-          description,
-        })),
+        specialties,
         trainingStyles: parseRows(trainingStyles, 2).map(
           ([title, description, image]) => ({
             title,
@@ -423,6 +423,7 @@ export function CoachProfileFormScreen() {
             />
             <Field label="نام نمایشی">
               <HeroInput
+                variant="secondary"
                 required
                 minLength={2}
                 value={displayName}
@@ -503,6 +504,7 @@ export function CoachProfileFormScreen() {
                   <fieldset>
                     <legend className="mb-2 text-sm">محله‌های تحت پوشش</legend>
                     <HeroInput
+                      variant="secondary"
                       className={input}
                       aria-label="جستجوی محله"
                       placeholder="جستجوی محله"
@@ -603,6 +605,7 @@ export function CoachProfileFormScreen() {
                   </summary>
                   <Field label="عرض جغرافیایی محل عمومی">
                     <HeroInput
+                      variant="secondary"
                       aria-label="عرض جغرافیایی محل عمومی"
                       type="number"
                       min={-90}
@@ -617,6 +620,7 @@ export function CoachProfileFormScreen() {
                   </Field>
                   <Field label="طول جغرافیایی محل عمومی">
                     <HeroInput
+                      variant="secondary"
                       aria-label="طول جغرافیایی محل عمومی"
                       type="number"
                       min={-180}
@@ -663,6 +667,7 @@ export function CoachProfileFormScreen() {
             />
             <Field label="معرفی کوتاه">
               <HeroInput
+                variant="secondary"
                 required
                 value={shortBio}
                 onChange={(event) => setShortBio(event.target.value)}
@@ -671,6 +676,7 @@ export function CoachProfileFormScreen() {
             </Field>
             <Field label="درباره من">
               <HeroTextArea
+                variant="secondary"
                 required
                 value={bio}
                 onChange={(event) => setBio(event.target.value)}
@@ -692,6 +698,7 @@ export function CoachProfileFormScreen() {
               </Field>
               <Field label="تلفن عمومی">
                 <HeroInput
+                  variant="secondary"
                   dir="ltr"
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
@@ -701,6 +708,7 @@ export function CoachProfileFormScreen() {
             </div>
             <Field label="زبان‌ها">
               <HeroInput
+                variant="secondary"
                 value={languages}
                 onChange={(event) => setLanguages(event.target.value)}
                 className={input}
@@ -770,25 +778,116 @@ export function CoachProfileFormScreen() {
                 ))}
               </div>
             </Field>
-            <Field label="تخصص‌ها و توضیح">
-              <HeroTextArea
-                value={specialties}
-                onChange={(event) => setSpecialties(event.target.value)}
-                className={`${input} min-h-28 py-3`}
-                placeholder="کاهش وزن | برنامه شخصی‌سازی‌شده بر اساس شرایط بدنی"
+            <div className="space-y-4">
+              <CatalogMultiSelect
+                label="تخصص‌ها"
+                options={(specialtiesCatalog.data?.items ?? []).map((item) => ({
+                  id: item.name,
+                  name: item.name,
+                }))}
+                value={specialties.map((item) => item.title)}
+                onChange={(names) =>
+                  setSpecialties(
+                    names.map(
+                      (title) =>
+                        specialties.find((item) => item.title === title) ?? {
+                          title,
+                          description: "",
+                        },
+                    ),
+                  )
+                }
+                isPending={specialtiesCatalog.isPending}
+                isError={specialtiesCatalog.isError}
+                onRetry={() => void specialtiesCatalog.refetch()}
               />
-            </Field>
-            <Field label="سبک‌های تمرینی">
-              <HeroTextArea
-                value={trainingStyles}
-                onChange={(event) => setTrainingStyles(event.target.value)}
-                className={`${input} min-h-32 py-3`}
-                placeholder="تمرین قدرتی دقیق | تمرکز بر فرم و پیشرفت تدریجی"
-              />
-              <p className="mt-1 text-xs leading-6 text-muted">
-                هر خط: عنوان | توضیح. تصویر هر سبک را با دکمه زیر انتخاب کنید.
-              </p>
-            </Field>
+              {specialties.map((item, index) => (
+                <Field key={item.title} label={`توضیح ${item.title}`}>
+                  <HeroTextArea
+                    variant="secondary"
+                    required
+                    minLength={2}
+                    maxLength={1000}
+                    value={item.description}
+                    onChange={(event) =>
+                      setSpecialties((rows) =>
+                        rows.map((row, i) =>
+                          i === index
+                            ? { ...row, description: event.target.value }
+                            : row,
+                        ),
+                      )
+                    }
+                  />
+                </Field>
+              ))}
+            </div>
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-bold">سبک‌های تمرینی</legend>
+              {trainingStyles
+                ? trainingStyles.split("\n").map((row, index) => {
+                    const [title = "", description = ""] = row
+                      .split("|")
+                      .map((part) => part.trim());
+                    const change = (part: number, value: string) =>
+                      setTrainingStyles((current) =>
+                        current
+                          .split("\n")
+                          .map((line, i) => {
+                            if (i !== index) return line;
+                            const cells = line.split("|");
+                            cells[part] = value.replace(/[|\n]/g, " ");
+                            return cells.join("|");
+                          })
+                          .join("\n"),
+                      );
+                    return (
+                      <div key={index} className="space-y-2">
+                        <Field label="نام سبک">
+                          <HeroInput
+                            variant="secondary"
+                            aria-label={`نام سبک ${index + 1}`}
+                            value={title}
+                            onChange={(event) => change(0, event.target.value)}
+                          />
+                        </Field>
+                        <Field label="توضیح سبک">
+                          <HeroTextArea
+                            variant="secondary"
+                            value={description}
+                            onChange={(event) => change(1, event.target.value)}
+                          />
+                        </Field>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onPress={() =>
+                            setTrainingStyles((current) =>
+                              current
+                                .split("\n")
+                                .filter((_, i) => i !== index)
+                                .join("\n"),
+                            )
+                          }
+                        >
+                          حذف سبک
+                        </Button>
+                      </div>
+                    );
+                  })
+                : null}
+              <Button
+                type="button"
+                variant="secondary"
+                onPress={() =>
+                  setTrainingStyles((current) =>
+                    current ? current + "\n|" : "|",
+                  )
+                }
+              >
+                افزودن سبک تمرینی
+              </Button>
+            </fieldset>
             {trainingStyles.split("\n").map((row, index) => {
               const [title, description] = row
                 .split("|")
@@ -898,12 +997,14 @@ export function CoachProfileFormScreen() {
             </div>
             <Field label="سوابق حرفه‌ای">
               <HeroTextArea
+                variant="secondary"
                 value={experienceSummary}
                 onChange={(event) => setExperienceSummary(event.target.value)}
                 className={`${input} mb-3 min-h-24 py-3`}
                 placeholder="خلاصه‌ای از سال‌ها و زمینه تجربه حرفه‌ای شما"
               />
               <HeroTextArea
+                variant="secondary"
                 value={experience}
                 onChange={(event) => setExperience(event.target.value)}
                 className={`${input} min-h-28 py-3`}
@@ -924,6 +1025,7 @@ export function CoachProfileFormScreen() {
             />
             <Field label="سوالات متداول">
               <HeroTextArea
+                variant="secondary"
                 value={faqs}
                 onChange={(event) => setFaqs(event.target.value)}
                 className={`${input} min-h-28 py-3`}
@@ -1002,6 +1104,7 @@ function GeoSelect({
   return (
     <div className="space-y-2">
       <HeroInput
+        variant="secondary"
         className={input}
         aria-label={`جستجوی ${label}`}
         placeholder={`جستجوی ${label}`}

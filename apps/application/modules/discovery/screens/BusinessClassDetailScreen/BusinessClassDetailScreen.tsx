@@ -287,7 +287,7 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
             onChange={(event) =>
               setCheckInCredential(event.target.value.trim())
             }
-            className="mt-3 h-12 w-full rounded-xl border border-border bg-surface-secondary px-4 text-center text-xl tracking-[.25em] outline-none focus:border-accent"
+            className="mt-3 h-12 w-full rounded-xl bg-surface-secondary px-4 text-center text-xl tracking-[.25em]"
             placeholder="کد ۵ رقمی"
           />
           <QrScannerButton onScan={acceptQr} />

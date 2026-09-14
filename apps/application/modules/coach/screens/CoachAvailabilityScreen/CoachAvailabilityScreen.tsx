@@ -250,7 +250,7 @@ export function CoachAvailabilityScreen() {
                 value={exceptionReason}
                 onChange={(event) => setExceptionReason(event.target.value)}
                 placeholder="دلیل (اختیاری)"
-                className="h-12 rounded-xl border border-border bg-surface-secondary px-3"
+                className="h-12 rounded-xl bg-surface-secondary px-3"
               />
               <Button
                 variant="secondary"

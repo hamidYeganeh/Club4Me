@@ -748,7 +748,7 @@ export function DiscoverySearchScreen({
                         type="time"
                         value={timeFrom}
                         onChange={(event) => setTimeFrom(event.target.value)}
-                        className="min-h-11 rounded-xl border border-border bg-surface px-3"
+                        className="min-h-11 rounded-xl bg-surface px-3"
                       />
                     </label>
                     <label className="grid gap-1 text-sm">
@@ -758,7 +758,7 @@ export function DiscoverySearchScreen({
                         value={timeTo}
                         min={timeFrom || undefined}
                         onChange={(event) => setTimeTo(event.target.value)}
-                        className="min-h-11 rounded-xl border border-border bg-surface px-3"
+                        className="min-h-11 rounded-xl bg-surface px-3"
                       />
                     </label>
                   </div>

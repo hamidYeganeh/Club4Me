@@ -60,7 +60,7 @@ export function ClubResourceField({
         aria-label={`جست‌وجوی ${label}`}
         placeholder={`جست‌وجوی ${label}`}
         maxLength={200}
-        className="w-full rounded-lg border border-border bg-surface p-2 text-xs"
+        className="w-full rounded-lg bg-surface p-2 text-xs"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />

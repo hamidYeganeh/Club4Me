@@ -69,6 +69,7 @@ export function FormSelect({
   if (options.length > 12)
     return (
       <ComboBox
+        variant="secondary"
         aria-label={aria["aria-label"]}
         aria-labelledby={aria["aria-labelledby"]}
         aria-describedby={aria["aria-describedby"]}
@@ -122,6 +123,7 @@ export function FormSelect({
     );
   return (
     <Select
+      variant="secondary"
       placeholder="انتخاب کنید"
       aria-label={aria["aria-label"]}
       aria-labelledby={aria["aria-labelledby"]}

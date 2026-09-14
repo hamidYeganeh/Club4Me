@@ -1,4 +1,6 @@
 "use client";
+import { CatalogMultiSelect } from "@repo/ui/catalog-multi-select";
+import { usePublicCatalogResource } from "@api";
 import { Uploader, imageUploaderAccept } from "@repo/ui/uploader";
 import { Checkbox as HeroCheckbox } from "@heroui/react";
 import { TextArea as HeroTextArea, Input as HeroInput } from "@heroui/react";
@@ -9,8 +11,7 @@ import { useId, type ReactNode } from "react";
 import { Button } from "@heroui/react";
 import { coachLevelLabels, type CoachProfessionalProfile } from "@api";
 
-const control =
-  "w-full rounded-xl border border-border bg-surface-secondary px-3 py-3 text-sm outline-none focus:border-accent";
+const control = "w-full min-w-0";
 type Profile = CoachProfessionalProfile;
 
 export function CoachProfessionalFields({
@@ -32,6 +33,9 @@ export function CoachProfessionalFields({
   upload: (file: File) => Promise<string>;
   uploading: boolean;
 }) {
+  const goalsCatalog = usePublicCatalogResource("classes", "goal-type", {
+    limit: 100,
+  });
   const set = <K extends keyof Profile>(key: K, next: Profile[K]) =>
     onChange({ ...value, [key]: next });
   const updateRow = <
@@ -62,14 +66,18 @@ export function CoachProfessionalFields({
           max={1500}
           placeholder="مثلاً بزرگسالانی که تمرین قدرتی را از پایه شروع می‌کنند"
         />
-        <Text
+        <CatalogMultiSelect
           label="هدف‌های تمرین"
-          value={value.goals.join("،")}
-          onChange={(v) => set("goals", v.split(/[،,]/))}
-          max={1200}
-          placeholder="افزایش قدرت، یادگیری تکنیک، آمادگی مسابقه"
+          options={(goalsCatalog.data?.items ?? []).map((item) => ({
+            id: item.name,
+            name: item.name,
+          }))}
+          value={value.goals}
+          onChange={(goals) => set("goals", goals.slice(0, 12))}
+          isPending={goalsCatalog.isPending}
+          isError={goalsCatalog.isError}
+          onRetry={() => void goalsCatalog.refetch()}
         />
-        <p className="text-xs text-muted">حداکثر ۱۲ هدف؛ با ویرگول جدا کنید.</p>
         <fieldset>
           <legend className="mb-3 text-sm font-bold">سطح شاگردان</legend>
           <div className="flex flex-wrap gap-3">
@@ -254,10 +262,7 @@ export function CoachProfessionalFields({
         description="نام مسابقه یا رویداد، سال و نقش خود را دقیق بنویسید."
       >
         {value.achievements.map((row, index) => (
-          <fieldset
-            key={index}
-            className="space-y-3 rounded-2xl p-4"
-          >
+          <fieldset key={index} className="space-y-3 rounded-2xl p-4">
             <legend className="px-2 text-sm font-bold">
               افتخار {index + 1}
             </legend>
@@ -312,10 +317,7 @@ export function CoachProfessionalFields({
         description="مسیر و نتیجه واقعی همکاری را بدون اطلاعات شناسایی شاگرد بنویسید. انتشار هر نمونه به رضایت او نیاز دارد."
       >
         {value.successStories.map((row, index) => (
-          <fieldset
-            key={index}
-            className="space-y-3 rounded-2xl p-4"
-          >
+          <fieldset key={index} className="space-y-3 rounded-2xl p-4">
             <legend className="px-2 text-sm font-bold">
               نمونه {index + 1}
             </legend>
@@ -478,9 +480,10 @@ function Text({
       ) : type === "number" ? (
         <Counter aria-label={label} {...props} min={0} max={120} />
       ) : multiline ? (
-        <HeroTextArea {...props} rows={3} />
+        <HeroTextArea variant="secondary" {...props} rows={3} />
       ) : (
         <HeroInput
+          variant="secondary"
           {...props}
           type={type}
           dir={["url", "date"].includes(type) ? "ltr" : undefined}

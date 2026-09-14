@@ -13,11 +13,6 @@
 
 @source "../../../packages/ui/src";
 
-/* Use HeroUI's field border token instead of per-form border utilities. */
-:root {
-  --field-border-width: 1px;
-}
-
 @theme inline {
   --animate-line-shadow: line-shadow 15s linear infinite;
   --color-chart-scale-pattern-color: var(--chart-scale-pattern-color);
@@ -323,16 +318,8 @@
   min-width: 0;
   max-width: 100%;
   min-height: 3rem;
-  border: 1px solid var(--color-border);
-  border-radius: 1rem;
-  background: var(--color-surface-secondary);
   color: var(--color-foreground);
   font-size: 1rem;
-}
-.coach-editor :is(input, select, textarea):focus-visible,
-.coach-workspace :is(input, select):focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
 }
 .coach-editor fieldset {
   min-width: 0;

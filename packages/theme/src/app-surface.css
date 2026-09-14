@@ -14,7 +14,7 @@
   }
 
   .app-field {
-    @apply h-13 rounded-[1.15rem] border border-white/10 bg-surface/80 px-4 text-foreground outline-none backdrop-blur-md transition-[border-color,box-shadow] duration-200 focus-within:border-focus focus-within:ring-3 focus-within:ring-focus/15;
+    @apply h-13 rounded-[1.15rem] bg-surface/80 px-4 text-foreground backdrop-blur-md transition-[border-color,box-shadow] duration-200;
   }
 
   .app-chip-row {

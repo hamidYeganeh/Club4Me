@@ -36,8 +36,7 @@ import {
 import { AthleteScreenHeaderSection } from "@modules/athlete/sections/AthleteScreenHeaderSection";
 import { CompactCardListSkeleton } from "@/components/loading-skeletons";
 
-const inputClass =
-  "h-11 w-full rounded-xl border border-white/10 bg-surface-secondary px-3 text-sm outline-none focus:border-accent";
+const inputClass = "w-full min-w-0";
 
 const statusLabels: Record<string, string> = {
   pending: "در انتظار تأیید",
@@ -320,6 +319,7 @@ export function CoachReservationsScreen() {
             </label>
           ) : null}
           <HeroInput
+            variant="secondary"
             className={inputClass}
             aria-label="عنوان سانس (اختیاری)"
             value={sessionTitle}
@@ -336,6 +336,7 @@ export function CoachReservationsScreen() {
           />
           {selectedDeliveryMode === "online" ? (
             <HeroInput
+              variant="secondary"
               required
               type="url"
               className={inputClass}
@@ -345,6 +346,7 @@ export function CoachReservationsScreen() {
             />
           ) : (
             <HeroInput
+              variant="secondary"
               required={
                 selectedDeliveryMode === "club" ||
                 selectedDeliveryMode === "outdoor"
@@ -390,19 +392,36 @@ export function CoachReservationsScreen() {
                       size="sm"
                       variant="secondary"
                       isPending={rescheduleSession.isPending}
-                      onPress={() => textAction.open({
-                        title: "تغییر زمان جلسه",
-                        description: "تاریخ شمسی و ساعت تهران، مثل ۱۴۰۵/۰۶/۲۱ ۱۸:۳۰",
-                        initialValue: iranDateInputValue(tehranLocalValue(item.startAt), true),
-                        maxLength: 30,
-                        onSubmit: async (value) => {
-                          const start = tehranLocalDate(parseIranDateInput(value, true) ?? "");
-                          if (Number.isNaN(start.getTime())) throw new Error("زمان واردشده معتبر نیست");
-                          const duration = new Date(item.endAt).getTime() - new Date(item.startAt).getTime();
-                          await rescheduleSession.mutateAsync({ sessionId: item.id, startAt: start.toISOString(), endAt: new Date(start.getTime() + duration).toISOString() });
-                          toast.success("زمان جلسه تغییر کرد");
-                        },
-                      })}
+                      onPress={() =>
+                        textAction.open({
+                          title: "تغییر زمان جلسه",
+                          description:
+                            "تاریخ شمسی و ساعت تهران، مثل ۱۴۰۵/۰۶/۲۱ ۱۸:۳۰",
+                          initialValue: iranDateInputValue(
+                            tehranLocalValue(item.startAt),
+                            true,
+                          ),
+                          maxLength: 30,
+                          onSubmit: async (value) => {
+                            const start = tehranLocalDate(
+                              parseIranDateInput(value, true) ?? "",
+                            );
+                            if (Number.isNaN(start.getTime()))
+                              throw new Error("زمان واردشده معتبر نیست");
+                            const duration =
+                              new Date(item.endAt).getTime() -
+                              new Date(item.startAt).getTime();
+                            await rescheduleSession.mutateAsync({
+                              sessionId: item.id,
+                              startAt: start.toISOString(),
+                              endAt: new Date(
+                                start.getTime() + duration,
+                              ).toISOString(),
+                            });
+                            toast.success("زمان جلسه تغییر کرد");
+                          },
+                        })
+                      }
                     >
                       تغییر زمان
                     </Button>
@@ -700,6 +719,7 @@ export function CoachReservationsScreen() {
                   <label className="mt-3 grid gap-2 text-xs text-muted">
                     یادداشت (اختیاری)
                     <HeroInput
+                      variant="secondary"
                       className={inputClass}
                       value={attendanceNotes[item.athleteId] ?? item.note ?? ""}
                       onChange={(event) =>

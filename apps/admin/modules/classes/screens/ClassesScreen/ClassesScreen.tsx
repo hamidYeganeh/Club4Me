@@ -69,7 +69,7 @@ export function ClassesScreen() {
           }}
         >
           <Label className="sr-only">وضعیت</Label>
-          <Select.Trigger className="h-11 rounded-xl border border-border bg-surface px-4 text-sm">
+          <Select.Trigger className="h-11 rounded-xl bg-surface px-4 text-sm">
             <Select.Value />
             <Select.Indicator />
           </Select.Trigger>

@@ -20,8 +20,7 @@ import {
   ListPagePanel,
 } from "@/components/data-table";
 
-const input =
-  "h-11 w-full rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm outline-none focus:border-accent";
+const input = "w-full min-w-0";
 
 const reviewColumnHelper = createListColumnHelper<ClubReview>();
 
@@ -174,6 +173,7 @@ export function BusinessReviewsScreen() {
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
                 <HeroInput
+                  variant="secondary"
                   className={input}
                   value={draftFilters.query}
                   onChange={(event) =>

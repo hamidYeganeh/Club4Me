@@ -1,6 +1,19 @@
 import { PublicResourcesController } from "./public-resources.controller";
 
 describe("PublicResourcesController", () => {
+  it.each([
+    ["sports", "employment-type"],
+    ["classes", "goal-type"],
+    ["sports", "coach-specialty"],
+  ])("exposes only active %s/%s options", async (category, resource) => {
+    const list = jest.fn().mockResolvedValue({ items: [] });
+    const controller = new PublicResourcesController({ list } as never);
+    await controller.list(category, resource, { isActive: "false" });
+    expect(list).toHaveBeenCalledWith(category, resource, {
+      isActive: "true",
+      limit: "100",
+    });
+  });
   it("exposes active report reasons through the public catalog", async () => {
     const list = jest.fn().mockResolvedValue({ items: [] });
     const controller = new PublicResourcesController({ list } as never);

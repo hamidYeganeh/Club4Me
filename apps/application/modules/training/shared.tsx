@@ -30,8 +30,7 @@ export const errorText = (e: unknown) => {
     return "نسخه جدیدتری روی سرور وجود دارد؛ تغییرات محلی حفظ شده‌اند.";
   return e instanceof Error ? e.message : "ارتباط برقرار نشد؛ دوباره تلاش کنید";
 };
-export const fieldClass =
-  "w-full min-h-11 rounded-xl border border-border bg-field px-3 py-2 text-foreground focus:outline-2 focus:outline-accent";
+export const fieldClass = "w-full min-w-0";
 export function useIdentity() {
   return useSyncExternalStore(
     tokenStore.subscribe,

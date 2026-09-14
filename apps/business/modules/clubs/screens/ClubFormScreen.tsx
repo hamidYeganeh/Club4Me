@@ -76,8 +76,7 @@ import type {
   ClubGalleryCategory,
 } from "@api/business";
 
-const inputClass =
-  "box-border h-11 w-full min-w-0 max-w-full rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm outline-none backdrop-blur-md transition-[border-color,box-shadow] duration-200 focus:border-focus focus:ring-3 focus:ring-focus/15";
+const inputClass = "w-full min-w-0";
 const textareaClass = `${inputClass} h-auto min-h-28 py-3`;
 const platforms: SocialPlatform[] = [
   "instagram",
@@ -817,6 +816,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
               <Section title={t("basic")}>
                 <Field label={t("name")} required>
                   <HeroInput
+                    variant="secondary"
                     required
                     minLength={2}
                     value={name}
@@ -826,6 +826,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 </Field>
                 <Field label={t("description")} wide>
                   <HeroTextArea
+                    variant="secondary"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className={textareaClass}
@@ -833,6 +834,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 </Field>
                 <Field label={t("shortDescription")} wide>
                   <HeroInput
+                    variant="secondary"
                     value={shortDescription}
                     maxLength={300}
                     onChange={(e) => setShortDescription(e.target.value)}
@@ -1088,6 +1090,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                             />
                           </label>
                           <HeroInput
+                            variant="secondary"
                             value={item.title}
                             onChange={(e) =>
                               setGallery((current) =>
@@ -1102,6 +1105,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                             placeholder={t("mediaTitle")}
                           />
                           <HeroInput
+                            variant="secondary"
                             value={item.altText}
                             onChange={(e) =>
                               setGallery((current) =>
@@ -1245,6 +1249,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                           <label className="text-sm">
                             هزینه ({amenityAccess[id]?.currency ?? currency})
                             <HeroInput
+                              variant="secondary"
                               type="number"
                               min={0}
                               step={1}
@@ -1360,6 +1365,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                         </div>
                         <div className="grid gap-2">
                           <HeroInput
+                            variant="secondary"
                             {...dynamicForm.register(`faqs.${index}.question`)}
                             className={inputClass}
                             placeholder={t("faqQuestion")}
@@ -1457,6 +1463,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 />
                 <Field label={t("address")} wide>
                   <HeroTextArea
+                    variant="secondary"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     className={textareaClass}
@@ -1524,6 +1531,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 </Select>
                 <Field label={t("locationNotes")} wide>
                   <HeroInput
+                    variant="secondary"
                     value={locationNotes}
                     onChange={(e) => setLocationNotes(e.target.value)}
                     className={inputClass}
@@ -1618,6 +1626,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 </Field>
                 <Field label={t("currency")}>
                   <HeroInput
+                    variant="secondary"
                     dir="ltr"
                     required
                     minLength={3}
@@ -1823,6 +1832,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                           {t("socialLink")}
                         </span>
                         <HeroInput
+                          variant="secondary"
                           dir="ltr"
                           type={item.platform === "email" ? "email" : "url"}
                           value={item.link}
@@ -1874,6 +1884,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                   <div key={ruleIndex} className="space-y-3 rounded-xl p-4">
                     <div className="flex gap-2">
                       <HeroInput
+                        variant="secondary"
                         value={rule.title}
                         onChange={(e) =>
                           setCancellationRules((current) =>

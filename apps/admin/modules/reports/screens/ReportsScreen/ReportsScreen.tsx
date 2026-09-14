@@ -79,7 +79,7 @@ export function ReportsScreen() {
           }}
         >
           <Label className="sr-only">وضعیت</Label>
-          <Select.Trigger className="h-11 rounded-xl border border-border bg-surface px-4 text-sm">
+          <Select.Trigger className="h-11 rounded-xl bg-surface px-4 text-sm">
             <Select.Value />
             <Select.Indicator />
           </Select.Trigger>
@@ -309,7 +309,7 @@ export function ReportsScreen() {
                     if (formError) setFormError("");
                   }}
                   rows={4}
-                  className="mt-2 rounded-xl border border-border bg-surface-secondary px-3 py-2 text-sm"
+                  className="mt-2 rounded-xl bg-surface-secondary px-3 py-2 text-sm"
                   aria-describedby={
                     formError ? "report-resolution-error" : undefined
                   }

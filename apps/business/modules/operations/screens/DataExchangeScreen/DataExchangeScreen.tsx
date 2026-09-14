@@ -13,8 +13,7 @@ import {
 import { Button, Card, Chip, toast } from "@heroui/react";
 import { useState } from "react";
 
-const input =
-  "h-11 rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm outline-none focus:border-focus focus:ring-3 focus:ring-focus/15";
+const input = "w-full min-w-0";
 
 export function DataExchangeScreen() {
   const { clubs, clubId, setClubId: setSelectedClub } = useSelectedClub();

@@ -55,7 +55,7 @@ export function ResourcesDashboardScreen() {
           placeholder="جست‌وجوی عنوان یا مسیر API"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          className="w-full rounded-xl border border-border bg-surface p-3"
+          className="w-full rounded-xl bg-surface p-3"
         />
         <button
           type="button"

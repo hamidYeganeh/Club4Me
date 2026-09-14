@@ -156,7 +156,7 @@ export default function SocialAuthCallbackPage() {
                 }
                 placeholder="09123456789"
                 required
-                className="min-h-12 rounded-xl border border-border bg-surface px-3"
+                className="min-h-12 rounded-xl bg-surface px-3"
                 disabled={otpSent || busy}
               />
             </label>
@@ -173,7 +173,7 @@ export default function SocialAuthCallbackPage() {
                       setCode(normalizeNumberInput(event.target.value))
                     }
                     required
-                    className="min-h-12 rounded-xl border border-border bg-surface px-3"
+                    className="min-h-12 rounded-xl bg-surface px-3"
                     disabled={busy}
                   />
                 </label>

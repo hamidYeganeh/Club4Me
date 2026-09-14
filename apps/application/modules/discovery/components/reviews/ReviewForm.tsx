@@ -144,7 +144,7 @@ export function ReviewForm({
             onChange={(event) => setBody(event.target.value)}
             placeholder="از فضای باشگاه، امکانات و برخورد کارکنان بگویید…"
             rows={5}
-            className="min-h-40 w-full resize-y rounded-2xl border border-border bg-surface-secondary p-4 text-sm leading-7"
+            className="min-h-40 w-full resize-y rounded-2xl bg-surface-secondary p-4 text-sm leading-7"
           />
           <div
             id={`${bodyId}-count`}

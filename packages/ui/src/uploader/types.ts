@@ -36,6 +36,7 @@ export type UploaderUploadHelpers = {
 
 export type UploaderProps = {
   files?: UploaderFile[];
+  hideCompletedFiles?: boolean;
   accept?: Accept;
   maxSize?: number;
   multiple?: boolean;

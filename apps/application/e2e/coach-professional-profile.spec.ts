@@ -6,6 +6,12 @@ import {
   setBrowserSession,
 } from "./support/mock-api";
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    window.sessionStorage.setItem("gym4me.splash.shown", "1"),
+  );
+});
+
 const coachId = "66d400000000000000000021";
 const sportId = "66d400000000000000000022";
 const profileFixture = (): CoachProfile => ({
@@ -103,12 +109,35 @@ test("coach saves professional details, keeps existing sports and sees them on t
       },
     }),
   );
+  await page.route("**/api/v1/classes/class_goal_types?**", (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          items: [
+            { id: "goal-strength", name: "افزایش قدرت" },
+            { id: "goal-technique", name: "یادگیری تکنیک" },
+          ],
+        },
+      },
+    }),
+  );
   await page.goto("/coach/profile/professional");
   await page
     .getByLabel("مناسب چه کسانی است؟")
     .fill("بزرگسالانی که تمرین را از پایه شروع می‌کنند");
-  await page.getByLabel("هدف‌های تمرین").fill("افزایش قدرت، یادگیری تکنیک");
-  await page.getByLabel("مبتدی", { exact: true }).check();
+  await page
+    .getByRole("combobox", { name: "هدف‌های تمرین", exact: true })
+    .fill("قدرت");
+  await page.getByRole("option", { name: "افزایش قدرت", exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "هدف‌های تمرین", exact: true })
+    .fill("تکنیک");
+  await page
+    .getByRole("option", { name: "یادگیری تکنیک", exact: true })
+    .click();
+  await page.keyboard.press("Escape");
+  await page.getByText("مبتدی", { exact: true }).click();
+  await expect(page.getByLabel("مبتدی", { exact: true })).toBeChecked();
   await page.getByLabel("حداقل سن", { exact: true }).fill("18");
   await page.getByLabel("حداکثر سن", { exact: true }).fill("60");
   await page
@@ -148,7 +177,12 @@ test("coach saves professional details, keeps existing sports and sees them on t
     "رضایت شاگرد را برای انتشار این نمونه دریافت کرده‌ام.",
   );
   await expect(consent).toHaveAttribute("required", "");
-  await consent.check();
+  await page
+    .getByText("رضایت شاگرد را برای انتشار این نمونه دریافت کرده‌ام.", {
+      exact: true,
+    })
+    .click();
+  await expect(consent).toBeChecked();
   await page
     .getByRole("button", { name: "ذخیره پروفایل", exact: true })
     .click();

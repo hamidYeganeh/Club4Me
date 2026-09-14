@@ -69,6 +69,7 @@ async function runUpload(
 
 export function Uploader({
   files,
+  hideCompletedFiles = false,
   accept = defaultAccept,
   maxSize = tenMegabytes,
   multiple = true,
@@ -253,16 +254,18 @@ export function Uploader({
           className="flex w-full min-w-0 max-w-full flex-col gap-3"
           aria-live="polite"
         >
-          {items.map((item) => (
-            <li key={item.id} className="min-w-0 max-w-full">
-              <UploaderFileItem
-                item={item}
-                labels={labels}
-                onRemove={handleRemove}
-                onRetry={handleRetry}
-              />
-            </li>
-          ))}
+          {items
+            .filter((item) => !hideCompletedFiles || item.status !== "success")
+            .map((item) => (
+              <li key={item.id} className="min-w-0 max-w-full">
+                <UploaderFileItem
+                  item={item}
+                  labels={labels}
+                  onRemove={handleRemove}
+                  onRetry={handleRetry}
+                />
+              </li>
+            ))}
         </ul>
       ) : null}
     </div>

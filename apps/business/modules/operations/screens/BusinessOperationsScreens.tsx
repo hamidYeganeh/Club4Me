@@ -1,5 +1,7 @@
 "use client";
 
+import { CatalogMultiSelect } from "@repo/ui/catalog-multi-select";
+import { usePublicCatalogResource } from "@api";
 import { PanelSectionSwitcher } from "@repo/ui/panel-section-switcher";
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
@@ -55,8 +57,7 @@ import {
 } from "react";
 import { PanelNumberField } from "@/components/form/PanelNumberField";
 
-const inputClass =
-  "h-11 w-full rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm outline-none transition focus:border-accent";
+const inputClass = "w-full min-w-0";
 const textareaClass = `${inputClass} h-24 py-3`;
 const iranPhonePattern = "(?:\\+98|0)?9\\d{9}";
 const ibanPattern = "IR\\d{24}";
@@ -372,6 +373,7 @@ export function StudentsScreen() {
           >
             <Field label="نام">
               <HeroInput
+                variant="secondary"
                 required
                 minLength={2}
                 name="firstName"
@@ -380,6 +382,7 @@ export function StudentsScreen() {
             </Field>
             <Field label="نام خانوادگی">
               <HeroInput
+                variant="secondary"
                 required
                 minLength={2}
                 name="lastName"
@@ -388,6 +391,7 @@ export function StudentsScreen() {
             </Field>
             <Field label="شماره تماس">
               <HeroInput
+                variant="secondary"
                 required
                 name="phone"
                 type="tel"
@@ -401,10 +405,15 @@ export function StudentsScreen() {
               />
             </Field>
             <Field label="رشته ورزشی">
-              <HeroInput name="sport" className={inputClass} />
+              <HeroInput
+                variant="secondary"
+                name="sport"
+                className={inputClass}
+              />
             </Field>
             <Field label="عنوان عضویت">
               <HeroInput
+                variant="secondary"
                 name="membershipTitle"
                 placeholder="مثلاً بدنسازی ماهانه"
                 className={inputClass}
@@ -419,7 +428,11 @@ export function StudentsScreen() {
             </Field>
             <div className="md:col-span-2 lg:col-span-3">
               <Field label="یادداشت">
-                <HeroTextArea name="notes" className={textareaClass} />
+                <HeroTextArea
+                  variant="secondary"
+                  name="notes"
+                  className={textareaClass}
+                />
               </Field>
             </div>
             <div className="flex gap-2 md:col-span-2 lg:col-span-3">
@@ -450,6 +463,7 @@ export function StudentsScreen() {
           title="فهرست شاگردها"
           toolbarExtra={
             <HeroInput
+              variant="secondary"
               type="search"
               aria-label="جستجوی شاگرد"
               placeholder="نام یا شماره موبایل"
@@ -476,6 +490,7 @@ export function StudentsScreen() {
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
                 <HeroInput
+                  variant="secondary"
                   className={inputClass}
                   value={draftFilters.query}
                   onChange={(event) =>
@@ -602,6 +617,17 @@ export function StudentsScreen() {
 }
 
 export function CoachesScreen() {
+  const specialtiesCatalog = usePublicCatalogResource(
+    "sports",
+    "coach-specialty",
+    { limit: 100 },
+  );
+  const employmentCatalog = usePublicCatalogResource(
+    "sports",
+    "employment-type",
+    { limit: 100 },
+  );
+  const [specialtyNames, setSpecialtyNames] = useState<string[]>([]);
   const { clubs, clubId, setClubId } = useSelectedClub();
   const coaches = useClubCoachProfiles(clubId);
   const create = useCreateClubCoach(clubId);
@@ -733,15 +759,12 @@ export function CoachesScreen() {
         firstName: String(data.get("firstName")),
         lastName: String(data.get("lastName")),
         phone: String(data.get("phone")).trim(),
-        specialties: String(data.get("specialties"))
-          .split(/[،,]/)
-          .map((v) => v.trim())
-          .filter(Boolean),
+        specialties: specialtyNames,
         employmentType: String(data.get("employmentType")),
         status: "active",
         notes: String(data.get("notes")),
       });
-      event.currentTarget.reset();
+      setSpecialtyNames([]);
       setOpen(false);
       toast.success("مربی اضافه شد");
     } catch {
@@ -778,6 +801,7 @@ export function CoachesScreen() {
           >
             <Field label="نام">
               <HeroInput
+                variant="secondary"
                 required
                 name="firstName"
                 minLength={2}
@@ -786,6 +810,7 @@ export function CoachesScreen() {
             </Field>
             <Field label="نام خانوادگی">
               <HeroInput
+                variant="secondary"
                 required
                 name="lastName"
                 minLength={2}
@@ -794,6 +819,7 @@ export function CoachesScreen() {
             </Field>
             <Field label="شماره تماس">
               <HeroInput
+                variant="secondary"
                 required
                 name="phone"
                 type="tel"
@@ -806,22 +832,48 @@ export function CoachesScreen() {
                 className={inputClass}
               />
             </Field>
-            <Field label="تخصص‌ها">
-              <HeroInput
-                name="specialties"
-                placeholder="بدنسازی، تی‌آر‌ایکس"
-                className={inputClass}
-              />
-            </Field>
+            <CatalogMultiSelect
+              label="تخصص‌ها"
+              options={(specialtiesCatalog.data?.items ?? []).map((item) => ({
+                id: item.name,
+                name: item.name,
+              }))}
+              value={specialtyNames}
+              onChange={setSpecialtyNames}
+              isPending={specialtiesCatalog.isPending}
+              isError={specialtiesCatalog.isError}
+              onRetry={() => void specialtiesCatalog.refetch()}
+            />
             <Field label="نوع همکاری">
-              <HeroInput
+              <FormSelect
                 name="employmentType"
-                placeholder="تمام‌وقت، درصدی و ..."
-                className={inputClass}
-              />
+                aria-label="نوع همکاری"
+                disabled={
+                  employmentCatalog.isPending || employmentCatalog.isError
+                }
+              >
+                <FormOption value="">انتخاب نوع همکاری</FormOption>
+                {employmentCatalog.data?.items.map((item) => (
+                  <FormOption key={item.id} value={item.name}>
+                    {item.name}
+                  </FormOption>
+                ))}
+              </FormSelect>
+              {employmentCatalog.isError && (
+                <Button
+                  variant="ghost"
+                  onPress={() => void employmentCatalog.refetch()}
+                >
+                  دریافت دوباره گزینه‌ها
+                </Button>
+              )}
             </Field>
             <Field label="یادداشت">
-              <HeroInput name="notes" className={inputClass} />
+              <HeroInput
+                variant="secondary"
+                name="notes"
+                className={inputClass}
+              />
             </Field>
             <div className="flex gap-2 md:col-span-2 lg:col-span-3">
               <Button
@@ -863,6 +915,7 @@ export function CoachesScreen() {
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
                 <HeroInput
+                  variant="secondary"
                   className={inputClass}
                   value={draftFilters.query}
                   onChange={(event) =>
@@ -1261,6 +1314,7 @@ export function PaymentsScreen() {
             </Field>
             <Field label="شماره شبا">
               <HeroInput
+                variant="secondary"
                 required
                 name="iban"
                 dir="ltr"
@@ -1322,6 +1376,7 @@ export function PaymentsScreen() {
               </Field>
               <Field label="عنوان">
                 <HeroInput
+                  variant="secondary"
                   required
                   name="title"
                   placeholder="شهریه شهریور"
@@ -1360,7 +1415,11 @@ export function PaymentsScreen() {
               </Field>
               <div className="md:col-span-2 lg:col-span-3">
                 <Field label="یادداشت">
-                  <HeroTextArea name="notes" className={textareaClass} />
+                  <HeroTextArea
+                    variant="secondary"
+                    name="notes"
+                    className={textareaClass}
+                  />
                 </Field>
               </div>
               <div className="flex gap-2 md:col-span-2 lg:col-span-3">
@@ -1403,6 +1462,7 @@ export function PaymentsScreen() {
                 <label className="grid gap-1.5 text-sm">
                   <span className="text-muted">جست‌وجو</span>
                   <HeroInput
+                    variant="secondary"
                     className={inputClass}
                     value={draftFilters.query}
                     onChange={(event) =>
@@ -1770,6 +1830,7 @@ export function AttendanceScreen() {
           </Field>
           <Field label="عنوان سانس">
             <HeroInput
+              variant="secondary"
               required
               minLength={2}
               maxLength={120}
@@ -1805,6 +1866,7 @@ export function AttendanceScreen() {
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted">جست‌وجو</span>
               <HeroInput
+                variant="secondary"
                 className={inputClass}
                 value={draftFilters.query}
                 onChange={(event) =>
@@ -2024,6 +2086,7 @@ export function BranchesScreen() {
           <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
             <Field label="نام شعبه">
               <HeroInput
+                variant="secondary"
                 required
                 minLength={2}
                 name="name"
@@ -2033,6 +2096,7 @@ export function BranchesScreen() {
             </Field>
             <Field label="شماره تماس">
               <HeroInput
+                variant="secondary"
                 name="phone"
                 type="tel"
                 inputMode="tel"
@@ -2047,6 +2111,7 @@ export function BranchesScreen() {
             <div className="md:col-span-2">
               <Field label="نشانی">
                 <HeroTextArea
+                  variant="secondary"
                   required
                   minLength={5}
                   name="address"
@@ -2094,6 +2159,7 @@ export function BranchesScreen() {
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
                 <HeroInput
+                  variant="secondary"
                   className={inputClass}
                   value={draftFilters.query}
                   onChange={(event) =>

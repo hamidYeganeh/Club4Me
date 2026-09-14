@@ -99,6 +99,13 @@ export const resourceGroups = [
         "مدیریت انواع باشگاه",
       ),
       resource(
+        "employment_types",
+        "employment-type",
+        "employment_types",
+        "انواع همکاری مربی",
+        "مدیریت گزینه‌های همکاری با مربیان",
+      ),
+      resource(
         "coach_types",
         "coach-type",
         "coach_types",

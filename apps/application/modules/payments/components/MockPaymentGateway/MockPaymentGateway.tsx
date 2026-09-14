@@ -139,7 +139,7 @@ export function MockPaymentGateway({
               کد تخفیف
               <HeroInput
                 aria-label="کد تخفیف"
-                className="mt-1 w-full rounded-xl border border-border bg-background p-2"
+                className="mt-1 w-full rounded-xl bg-background p-2"
                 value={coupon}
                 onChange={(event) => setCoupon(event.target.value)}
                 disabled={busy}

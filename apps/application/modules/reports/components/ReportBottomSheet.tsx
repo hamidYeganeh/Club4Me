@@ -210,7 +210,7 @@ export function ReportBottomSheet({
                     maxLength={2000}
                     disabled={report.isPending}
                     rows={2}
-                    className="min-h-20 resize-none rounded-xl border border-foreground/12 bg-background px-3 py-2 text-sm font-normal leading-7 text-foreground outline-none placeholder:text-muted focus:border-accent"
+                    className="min-h-20 resize-none rounded-xl bg-background px-3 py-2 text-sm font-normal leading-7 text-foreground placeholder:text-muted"
                     placeholder="چه مشکلی در این صفحه دیدید؟"
                   />
                   <span className="text-end text-xs font-normal text-muted">

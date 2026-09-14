@@ -91,7 +91,7 @@ function ParentFilter({
       }}
     >
       <Label className="sr-only">{definition.label}</Label>
-      <Select.Trigger className="h-10 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
+      <Select.Trigger className="h-10 rounded-xl bg-surface-secondary px-3 text-sm">
         <Select.Value />
         <Select.Indicator />
       </Select.Trigger>
@@ -276,7 +276,7 @@ export function ResourceListScreen({
             }}
           >
             <Label className="sr-only">{t("statusFilter")}</Label>
-            <Select.Trigger className="h-10 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
+            <Select.Trigger className="h-10 rounded-xl bg-surface-secondary px-3 text-sm">
               <Select.Value />
               <Select.Indicator />
             </Select.Trigger>
@@ -322,7 +322,7 @@ export function ResourceListScreen({
             }}
           >
             <Label className="sr-only">{t("sort")}</Label>
-            <Select.Trigger className="h-10 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
+            <Select.Trigger className="h-10 rounded-xl bg-surface-secondary px-3 text-sm">
               <Select.Value />
               <Select.Indicator />
             </Select.Trigger>

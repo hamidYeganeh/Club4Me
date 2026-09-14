@@ -38,10 +38,6 @@
     transform: translateY(1px);
   }
 
-  .admin-panel :where(input, textarea):focus-visible {
-    @apply ring-2 ring-accent/35 ring-offset-2 ring-offset-background;
-  }
-
   .release-input {
     @apply h-12 w-full rounded-xl border border-border/80 bg-surface-secondary/80 px-4 text-sm outline-none transition-colors focus:border-accent;
   }
@@ -82,4 +78,3 @@
     min-height: 9rem;
   }
 }
-

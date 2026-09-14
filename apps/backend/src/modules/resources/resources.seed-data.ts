@@ -471,6 +471,13 @@ const baseResourceSeedData: Readonly<
       supportedSportIds: ["@CLIMBING"],
     },
   ],
+  employment_types: [
+    { name: "تمام‌وقت", code: "FULL_TIME" },
+    { name: "پاره‌وقت", code: "PART_TIME" },
+    { name: "درصدی", code: "COMMISSION" },
+    { name: "جلسه‌ای", code: "PER_SESSION" },
+    { name: "قراردادی", code: "CONTRACT" },
+  ],
   coach_specialties: [
     {
       name: "عضله‌سازی و افزایش قدرت",

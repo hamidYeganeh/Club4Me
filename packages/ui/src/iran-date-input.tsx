@@ -8,6 +8,7 @@ type Props = Omit<
   InputHTMLAttributes<HTMLInputElement>,
   "type" | "value" | "defaultValue" | "onChange" | "min" | "max"
 > & {
+  variant?: "primary" | "secondary";
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
@@ -60,6 +61,7 @@ export function IranDateInput({
   return (
     <>
       <Input
+        variant="secondary"
         {...props}
         ref={input}
         type="text"

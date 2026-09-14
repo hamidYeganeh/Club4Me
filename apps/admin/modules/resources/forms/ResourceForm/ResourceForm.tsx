@@ -201,7 +201,7 @@ function RelationInput({
             {field.label}
             {field.required ? " *" : ""}
           </Label>
-          <Select.Trigger className="h-11 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
+          <Select.Trigger className="h-11 rounded-xl bg-surface-secondary px-3 text-sm">
             <Select.Value />
             <Select.Indicator />
           </Select.Trigger>
@@ -403,7 +403,7 @@ export function ResourceForm({
                               {field.label}
                               {field.required ? " *" : ""}
                             </Label>
-                            <Select.Trigger className="h-11 rounded-xl border border-border bg-surface-secondary px-3 text-sm">
+                            <Select.Trigger className="h-11 rounded-xl bg-surface-secondary px-3 text-sm">
                               <Select.Value />
                               <Select.Indicator />
                             </Select.Trigger>
@@ -446,7 +446,7 @@ export function ResourceForm({
                             onChange={(event) =>
                               controlled.onChange(event.target.value)
                             }
-                            className="w-full rounded-xl border border-border bg-surface-secondary px-3 py-2 text-sm"
+                            className="w-full rounded-xl bg-surface-secondary px-3 py-2 text-sm"
                           />
                           {fieldState.error?.message ? (
                             <span className="block text-xs text-danger">

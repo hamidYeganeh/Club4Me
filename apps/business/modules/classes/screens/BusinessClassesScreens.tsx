@@ -1,4 +1,6 @@
 "use client";
+import { CatalogMultiSelect } from "@repo/ui/catalog-multi-select";
+import { MediaPicker } from "@/components/form/MediaPicker";
 import { EnrollmentTransfer } from "../components/EnrollmentTransfer";
 
 import { FormSelect, FormOption } from "@repo/ui/form-select";
@@ -56,8 +58,7 @@ import {
 import { PanelNumberField } from "@/components/form/PanelNumberField";
 import QRCode from "qrcode";
 
-const input =
-  "h-11 w-full rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm text-foreground outline-none transition focus:border-accent";
+const input = "w-full min-w-0";
 const dateTime = (value: string) =>
   new Intl.DateTimeFormat("fa-IR", {
     timeZone: "Asia/Tehran",
@@ -327,6 +328,7 @@ export function BusinessClassesScreen() {
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted">جست‌وجو</span>
               <HeroInput
+                variant="secondary"
                 className={input}
                 value={draftFilters.query}
                 onChange={(event) =>
@@ -430,6 +432,27 @@ function ClassForm({
   const levels = usePublicCatalogResource("sports", "skill-level", {
     limit: 100,
   });
+  const sports = usePublicCatalogResource("sports", "sport", { limit: 100 });
+  const equipment = usePublicCatalogResource("facilities", "equipment", {
+    limit: 100,
+  });
+  const amenities = usePublicCatalogResource("facilities", "amenity", {
+    limit: 100,
+  });
+  const [coverMediaIds, setCoverMediaIds] = useState<string[]>(
+    initial?.coverMediaId ? [initial.coverMediaId] : [],
+  );
+  const [galleryMediaIds, setGalleryMediaIds] = useState<string[]>(
+    initial?.galleryMediaIds ?? [],
+  );
+  const [requiredEquipmentIds, setRequiredEquipmentIds] = useState<string[]>(
+    initial?.requiredEquipmentIds ?? [],
+  );
+  const [amenityIds, setAmenityIds] = useState<string[]>(
+    initial?.amenityIds ?? [],
+  );
+  const [coverBusy, setCoverBusy] = useState(false);
+  const [galleryBusy, setGalleryBusy] = useState(false);
   const create = useCreateBusinessClass(clubId);
   const update = useUpdateBusinessClass(clubId, initial?.id ?? "");
   const [model, setModel] = useState<BusinessClassModel>(
@@ -445,12 +468,13 @@ function ClassForm({
   );
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (coverBusy || galleryBusy) return;
     const data = new FormData(event.currentTarget);
     const payload: BusinessClassPayload = {
       title: String(data.get("title")),
       description: String(data.get("description")),
       faqs: parseFaqRows(String(data.get("faqs") ?? "")),
-      sport: String(data.get("sport")),
+      sport: String(data.get("sport") ?? initial?.sport ?? ""),
       skillLevelId: String(data.get("skillLevelId")) || null,
       level:
         levels.data?.items.find(
@@ -469,13 +493,11 @@ function ClassForm({
       capacity: Number(data.get("capacity")),
       coachProfileId: String(data.get("coachProfileId")) || null,
       branchId: String(data.get("branchId")) || null,
-      coverMediaId: String(data.get("coverMediaId")) || null,
-      galleryMediaIds: parseIdList(String(data.get("galleryMediaIds") ?? "")),
+      coverMediaId: coverMediaIds[0] ?? null,
+      galleryMediaIds,
       prerequisites: parseLineList(String(data.get("prerequisites") ?? "")),
-      requiredEquipmentIds: parseIdList(
-        String(data.get("requiredEquipmentIds") ?? ""),
-      ),
-      amenityIds: parseIdList(String(data.get("amenityIds") ?? "")),
+      requiredEquipmentIds,
+      amenityIds,
       minAge: data.get("minAge") === "" ? null : Number(data.get("minAge")),
       maxAge: data.get("maxAge") === "" ? null : Number(data.get("maxAge")),
       registrationStartAt: localDateTime(
@@ -535,7 +557,7 @@ function ClassForm({
   return (
     <Shell
       title={initial ? "ویرایش کلاس" : "ساخت کلاس جدید"}
-      description="نوع کلاس، مدل مالی و برنامه هفتگی را مشخص کنید"
+      description="اطلاعات اصلی و برنامه کلاس را وارد کنید؛ جزئیات تکمیلی را می‌توانید بعداً اضافه کنید."
     >
       <form onSubmit={save} className="mt-6 grid gap-5">
         <Card className="grid gap-4 app-card shadow-none active:scale-100 p-5 md:grid-cols-2 lg:grid-cols-3">
@@ -558,6 +580,7 @@ function ClassForm({
           )}
           <Field label="نام کلاس">
             <HeroInput
+              variant="secondary"
               required
               minLength={2}
               name="title"
@@ -566,16 +589,38 @@ function ClassForm({
             />
           </Field>
           <Field label="رشته">
-            <HeroInput
+            <FormSelect
               name="sport"
-              defaultValue={initial?.sport}
-              placeholder="مثلاً بدنسازی"
-              className={input}
-            />
+              aria-label="رشته"
+              defaultValue={initial?.sport ?? ""}
+              disabled={sports.isPending || sports.isError}
+            >
+              <FormOption value="">انتخاب رشته</FormOption>
+              {initial?.sport &&
+                !sports.data?.items.some(
+                  (item) => item.name === initial.sport,
+                ) && (
+                  <FormOption value={initial.sport}>{initial.sport}</FormOption>
+                )}
+              {sports.data?.items.map((item) => (
+                <FormOption key={item.id} value={item.name}>
+                  {item.name}
+                </FormOption>
+              ))}
+            </FormSelect>
+            {sports.isError && (
+              <Button
+                type="button"
+                variant="ghost"
+                onPress={() => void sports.refetch()}
+              >
+                دریافت دوباره رشته‌ها
+              </Button>
+            )}
           </Field>
           <Field label="سطح">
             <FormSelect
-              aria-label="skillLevelId"
+              aria-label="سطح کلاس"
               name="skillLevelId"
               defaultValue={initial?.skillLevelId ?? ""}
               className={input}
@@ -620,47 +665,9 @@ function ClassForm({
               aria-label="ظرفیت"
             />
           </Field>
-          <Field label="وضعیت">
-            <FormSelect
-              aria-label="status"
-              name="status"
-              defaultValue={initial?.status ?? "draft"}
-              className={input}
-            >
-              {Object.entries(statusLabels).map(([value, label]) => (
-                <FormOption key={value} value={value}>
-                  {label}
-                </FormOption>
-              ))}
-            </FormSelect>
-          </Field>
-          <Field label="نمایش در اپ ورزشکار">
-            <FormSelect
-              aria-label="visibility"
-              name="visibility"
-              defaultValue={initial?.visibility ?? "public"}
-              className={input}
-            >
-              <FormOption value="public">عمومی و قابل ثبت‌نام</FormOption>
-              <FormOption value="private">خصوصی و فقط مدیریت باشگاه</FormOption>
-            </FormSelect>
-          </Field>
-          <Field label="روش تأیید ثبت‌نام">
-            <FormSelect
-              aria-label="enrollmentMode"
-              name="enrollmentMode"
-              defaultValue={initial?.enrollmentMode ?? "automatic"}
-              className={input}
-            >
-              <FormOption value="automatic">خودکار پس از پرداخت</FormOption>
-              <FormOption value="requires_approval">
-                نیازمند تأیید باشگاه
-              </FormOption>
-            </FormSelect>
-          </Field>
           <Field label="مربی">
             <FormSelect
-              aria-label="coachProfileId"
+              aria-label="مربی کلاس"
               name="coachProfileId"
               defaultValue={initial?.coachProfileId ?? ""}
               className={input}
@@ -675,7 +682,7 @@ function ClassForm({
           </Field>
           <Field label="شعبه">
             <FormSelect
-              aria-label="branchId"
+              aria-label="شعبه کلاس"
               name="branchId"
               defaultValue={initial?.branchId ?? ""}
               className={input}
@@ -688,93 +695,146 @@ function ClassForm({
               ))}
             </FormSelect>
           </Field>
-          <div className="md:col-span-2 lg:col-span-3">
-            <Field label="توضیحات">
-              <HeroTextArea
-                name="description"
-                defaultValue={initial?.description}
-                className={`${input} h-24 py-3`}
-              />
-            </Field>
-          </div>
-          <Field label="حداقل سن">
-            <PanelNumberField
-              name="minAge"
-              minValue={0}
-              maxValue={120}
-              defaultValue={initial?.minAge ?? undefined}
-              aria-label="حداقل سن"
-            />
-          </Field>
-          <Field label="حداکثر سن">
-            <PanelNumberField
-              name="maxAge"
-              minValue={0}
-              maxValue={120}
-              defaultValue={initial?.maxAge ?? undefined}
-              aria-label="حداکثر سن"
-            />
-          </Field>
-          <Field label="شناسه کاور">
-            <HeroInput
-              name="coverMediaId"
-              dir="ltr"
-              defaultValue={initial?.coverMediaId ?? ""}
-              className={input}
-              placeholder="Media ID"
-            />
-          </Field>
-          <div className="md:col-span-2 lg:col-span-3">
-            <Field label="شناسه تصاویر گالری (هر خط یک شناسه)">
-              <HeroTextArea
-                name="galleryMediaIds"
-                dir="ltr"
-                defaultValue={initial?.galleryMediaIds.join("\n")}
-                className={`${input} min-h-24 py-3`}
-              />
-            </Field>
-          </div>
-          <div className="md:col-span-2 lg:col-span-3">
-            <Field label="پیش‌نیازها (هر خط یک مورد)">
-              <HeroTextArea
-                name="prerequisites"
-                defaultValue={initial?.prerequisites.join("\n")}
-                className={`${input} min-h-24 py-3`}
-              />
-            </Field>
-          </div>
-          <div className="md:col-span-2">
-            <Field label="شناسه تجهیزات لازم">
-              <HeroTextArea
-                name="requiredEquipmentIds"
-                dir="ltr"
-                defaultValue={initial?.requiredEquipmentIds.join("\n")}
-                className={`${input} min-h-20 py-3`}
-              />
-            </Field>
-          </div>
-          <Field label="شناسه امکانات">
-            <HeroTextArea
-              name="amenityIds"
-              dir="ltr"
-              defaultValue={initial?.amenityIds.join("\n")}
-              className={`${input} min-h-20 py-3`}
-            />
-          </Field>
-          <div className="md:col-span-2 lg:col-span-3">
-            <Field label="سوالات متداول">
-              <HeroTextArea
-                name="faqs"
-                defaultValue={initial?.faqs
-                  ?.map((item) => `${item.question} | ${item.answer}`)
-                  .join("\n")}
-                className={`${input} min-h-28 py-3`}
-                placeholder="هر خط: سوال | پاسخ"
-              />
-            </Field>
-          </div>
         </Card>
+        <details className="rounded-3xl bg-surface p-5">
+          <summary className="cursor-pointer py-2 font-bold">
+            تصاویر و جزئیات تکمیلی (اختیاری)
+          </summary>
+          <p className="mt-2 text-sm text-muted">
+            توضیحات، امکانات، محدودیت سنی و تصاویر کلاس
+          </p>
+          <div className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            <Field label="وضعیت">
+              <FormSelect
+                aria-label="status"
+                name="status"
+                defaultValue={initial?.status ?? "draft"}
+                className={input}
+              >
+                {Object.entries(statusLabels).map(([value, label]) => (
+                  <FormOption key={value} value={value}>
+                    {label}
+                  </FormOption>
+                ))}
+              </FormSelect>
+            </Field>
+            <Field label="نمایش در اپ ورزشکار">
+              <FormSelect
+                aria-label="visibility"
+                name="visibility"
+                defaultValue={initial?.visibility ?? "public"}
+                className={input}
+              >
+                <FormOption value="public">عمومی و قابل ثبت‌نام</FormOption>
+                <FormOption value="private">
+                  خصوصی و فقط مدیریت باشگاه
+                </FormOption>
+              </FormSelect>
+            </Field>
+            <Field label="روش تأیید ثبت‌نام">
+              <FormSelect
+                aria-label="enrollmentMode"
+                name="enrollmentMode"
+                defaultValue={initial?.enrollmentMode ?? "automatic"}
+                className={input}
+              >
+                <FormOption value="automatic">خودکار پس از پرداخت</FormOption>
+                <FormOption value="requires_approval">
+                  نیازمند تأیید باشگاه
+                </FormOption>
+              </FormSelect>
+            </Field>
+
+            <div className="md:col-span-2 lg:col-span-3">
+              <Field label="توضیحات">
+                <HeroTextArea
+                  variant="secondary"
+                  name="description"
+                  defaultValue={initial?.description}
+                  className={`${input} h-24 py-3`}
+                />
+              </Field>
+            </div>
+            <Field label="حداقل سن">
+              <PanelNumberField
+                name="minAge"
+                minValue={0}
+                maxValue={120}
+                defaultValue={initial?.minAge ?? undefined}
+                aria-label="حداقل سن"
+              />
+            </Field>
+            <Field label="حداکثر سن">
+              <PanelNumberField
+                name="maxAge"
+                minValue={0}
+                maxValue={120}
+                defaultValue={initial?.maxAge ?? undefined}
+                aria-label="حداکثر سن"
+              />
+            </Field>
+            <div className="md:col-span-2 lg:col-span-3 grid gap-5 sm:grid-cols-2">
+              <MediaPicker
+                label="کاور کلاس"
+                value={coverMediaIds}
+                onChange={setCoverMediaIds}
+                limit={1}
+                onBusyChange={setCoverBusy}
+              />
+              <MediaPicker
+                label="تصاویر گالری"
+                value={galleryMediaIds}
+                onChange={setGalleryMediaIds}
+                onBusyChange={setGalleryBusy}
+              />
+            </div>
+            <div className="md:col-span-2 lg:col-span-3">
+              <Field label="پیش‌نیازها (هر خط یک مورد)">
+                <HeroTextArea
+                  variant="secondary"
+                  name="prerequisites"
+                  defaultValue={initial?.prerequisites.join("\n")}
+                  className={`${input} min-h-24 py-3`}
+                />
+              </Field>
+            </div>
+            <div className="md:col-span-2 lg:col-span-3 grid gap-5 sm:grid-cols-2">
+              <CatalogMultiSelect
+                label="تجهیزات لازم"
+                options={equipment.data?.items ?? []}
+                value={requiredEquipmentIds}
+                onChange={setRequiredEquipmentIds}
+                isPending={equipment.isPending}
+                isError={equipment.isError}
+                onRetry={() => void equipment.refetch()}
+              />
+              <CatalogMultiSelect
+                label="امکانات کلاس"
+                options={amenities.data?.items ?? []}
+                value={amenityIds}
+                onChange={setAmenityIds}
+                isPending={amenities.isPending}
+                isError={amenities.isError}
+                onRetry={() => void amenities.refetch()}
+              />
+            </div>
+            <div className="md:col-span-2 lg:col-span-3">
+              <Field label="سوالات متداول">
+                <HeroTextArea
+                  variant="secondary"
+                  name="faqs"
+                  defaultValue={initial?.faqs
+                    ?.map((item) => `${item.question} | ${item.answer}`)
+                    .join("\n")}
+                  className={`${input} min-h-28 py-3`}
+                  placeholder="هر خط: سوال | پاسخ"
+                />
+              </Field>
+            </div>
+          </div>
+        </details>
         <Card className="grid gap-4 app-card shadow-none active:scale-100 p-5 md:grid-cols-2 lg:grid-cols-4">
+          <h2 className="col-span-full font-bold">هزینه و بازه برگزاری</h2>
           <Field label="مدل پرداخت">
             <FormSelect
               aria-label="انتخاب گزینه"
@@ -829,6 +889,7 @@ function ClassForm({
           </Field>
           <Field label="شروع ثبت‌نام">
             <HeroInput
+              variant="secondary"
               type="datetime-local"
               name="registrationStartAt"
               defaultValue={toLocalInput(initial?.registrationStartAt)}
@@ -837,6 +898,7 @@ function ClassForm({
           </Field>
           <Field label="پایان ثبت‌نام">
             <HeroInput
+              variant="secondary"
               type="datetime-local"
               name="registrationEndAt"
               defaultValue={toLocalInput(initial?.registrationEndAt)}
@@ -893,6 +955,7 @@ function ClassForm({
                 </Field>
                 <Field label="ساعت شروع">
                   <HeroInput
+                    variant="secondary"
                     type="time"
                     dir="ltr"
                     value={row.startTime}
@@ -936,6 +999,7 @@ function ClassForm({
             type="submit"
             variant="primary"
             isPending={create.isPending || update.isPending}
+            isDisabled={coverBusy || galleryBusy}
           >
             {initial ? "ذخیره تغییرات" : "ساخت کلاس"}
           </Button>
@@ -953,9 +1017,6 @@ function parseLineList(value: string) {
     .split(/\n|،|,/)
     .map((item) => item.trim())
     .filter(Boolean);
-}
-function parseIdList(value: string) {
-  return parseLineList(value);
 }
 function localDateTime(value: string) {
   return value ? new Date(value).toISOString() : null;
@@ -1548,6 +1609,7 @@ export function BusinessClassDetailScreen({
               >
                 <Field label="شروع جدید">
                   <HeroInput
+                    variant="secondary"
                     className={input}
                     type="datetime-local"
                     required
@@ -1562,6 +1624,7 @@ export function BusinessClassDetailScreen({
                 </Field>
                 <Field label="پایان جدید">
                   <HeroInput
+                    variant="secondary"
                     className={input}
                     type="datetime-local"
                     required

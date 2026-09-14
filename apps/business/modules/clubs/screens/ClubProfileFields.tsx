@@ -7,8 +7,7 @@ import type { ClubProfile, ClubBusyHour } from "@api/business";
 import { ClubResourceField } from "./ClubResourceField";
 import { useState } from "react";
 
-const input =
-  "mt-1 w-full rounded-xl border border-border bg-surface p-3 text-sm";
+const input = "w-full min-w-0";
 const days = [
   "یکشنبه",
   "دوشنبه",
@@ -57,14 +56,12 @@ export function ClubProfileFields({
               ),
             });
           return (
-            <div
-              key={index}
-              className="rounded-2xl p-4 space-y-3"
-            >
+            <div key={index} className="rounded-2xl p-4 space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <label>
                   نام فضا
                   <HeroInput
+                    variant="secondary"
                     required
                     maxLength={120}
                     className={input}
@@ -114,6 +111,7 @@ export function ClubProfileFields({
                   <label key={key}>
                     {label}
                     <HeroInput
+                      variant="secondary"
                       type="number"
                       min="0.01"
                       max={key.endsWith("Count") ? 10000 : 1000000}
@@ -185,6 +183,7 @@ export function ClubProfileFields({
             <label key={key}>
               {label}
               <HeroInput
+                variant="secondary"
                 type="number"
                 min={1}
                 max={key === "classCapacity" ? 10000 : 1000000}
@@ -298,10 +297,7 @@ export function ClubProfileFields({
         />
         <div className="flex flex-wrap gap-2">
           {visit.requiredItemIds?.map((id, index) => (
-            <span
-              key={id}
-              className="rounded-xl p-2 text-sm"
-            >
+            <span key={id} className="rounded-xl p-2 text-sm">
               {itemLabels[id] ??
                 resourceLabels[id]?.name ??
                 `وسیله انتخاب‌شده ${index + 1}`}
@@ -334,6 +330,7 @@ export function ClubProfileFields({
         <label className="block">
           چند دقیقه زودتر مراجعه شود؟
           <HeroInput
+            variant="secondary"
             type="number"
             min={0}
             max={180}
@@ -354,6 +351,7 @@ export function ClubProfileFields({
         <label className="block">
           راهنمای مراجعه
           <HeroTextArea
+            variant="secondary"
             maxLength={2000}
             className={input}
             value={visit.instructions ?? ""}
@@ -368,6 +366,7 @@ export function ClubProfileFields({
         <label className="block">
           هزینه‌های جانبی
           <HeroInput
+            variant="secondary"
             maxLength={500}
             className={input}
             value={visit.extraFees ?? ""}

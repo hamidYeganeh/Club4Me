@@ -22,12 +22,6 @@
 :is(.admin-panel, .business-panel) .button--secondary {
   color: var(--panel-action-text);
 }
-:is(.admin-panel, .business-panel)
-  :is(button, a, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--panel-action-text);
-  outline-offset: 3px;
-  scroll-margin-block: 6rem;
-}
 :is(.admin-panel, .business-panel) :is(button, .button) {
   min-height: 44px;
 }
@@ -166,4 +160,10 @@
 
 .panel-nav-link[data-tooltip-dismissed="true"] .panel-nav-tooltip {
   display: none !important;
+}
+
+/* Native navigation links need their own focus cue; HeroUI controls provide theirs. */
+:is(.admin-panel, .business-panel) a:not(.button):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
 }

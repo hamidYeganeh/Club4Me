@@ -25,8 +25,7 @@ import { usePublicCatalogResource } from "@api/discovery";
 
 import { DiscoveryPageHeader } from "@modules/discovery/components/DiscoveryPageHeader";
 
-const input =
-  "h-12 w-full rounded-xl border border-border bg-surface-secondary px-3 text-sm outline-none focus:border-accent";
+const input = "w-full min-w-0";
 const parseFaqRows = (value: string) =>
   value
     .split("\n")
@@ -255,6 +254,7 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
           />
           <Field label="نام کلاس">
             <HeroInput
+              variant="secondary"
               required
               minLength={2}
               value={title}
@@ -264,6 +264,7 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
           </Field>
           <Field label="توضیحات">
             <HeroTextArea
+              variant="secondary"
               required
               value={description}
               onChange={(event) => setDescription(event.target.value)}
@@ -288,6 +289,7 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
           </Field>
           <Field label="سوالات متداول">
             <HeroTextArea
+              variant="secondary"
               value={faqs}
               onChange={(event) => setFaqs(event.target.value)}
               className={`${input} min-h-24 py-3`}
@@ -333,6 +335,7 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
             }
           >
             <HeroInput
+              variant="secondary"
               className={input}
               type={deliveryMode === "online" ? "url" : "text"}
               value={deliveryMode === "online" ? onlineUrl : address}
@@ -418,6 +421,7 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
           </div>
           <Field label="پیش‌نیازها (هر مورد یک خط)">
             <HeroTextArea
+              variant="secondary"
               className={`${input} min-h-24 py-3`}
               value={prerequisites}
               onChange={(event) => setPrerequisites(event.target.value)}
@@ -493,6 +497,7 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="ساعت شروع">
                   <HeroInput
+                    variant="secondary"
                     required
                     type="time"
                     value={startTime}

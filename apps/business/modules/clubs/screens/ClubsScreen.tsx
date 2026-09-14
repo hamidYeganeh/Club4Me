@@ -16,8 +16,7 @@ import { useMemo, useState } from "react";
 
 const columnHelper = createListColumnHelper<BusinessClub>();
 
-const inputClass =
-  "h-11 w-full rounded-[1.15rem] border border-white/10 bg-surface/80 px-3 text-sm outline-none transition focus:border-accent";
+const inputClass = "w-full min-w-0";
 
 type ClubFilters = {
   query: string;
@@ -184,6 +183,7 @@ export function ClubsScreen() {
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">جست‌وجو</span>
                 <HeroInput
+                  variant="secondary"
                   className={inputClass}
                   value={draftFilters.query}
                   onChange={(event) =>
