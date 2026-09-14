@@ -8,7 +8,7 @@ export const accountAuthSetPasswordFormStyles = tv({
     passwordBlock: "flex w-full flex-col gap-2.5",
     field: "w-full",
     inputGroup:
-      "h-16 w-full rounded-2xl border border-border bg-surface shadow-none",
+      "h-16 w-full rounded-2xl",
     suffix: "pe-2",
     input: "min-w-0 flex-1 px-4 text-start text-base font-medium tracking-wide",
     strength: "w-full px-1",

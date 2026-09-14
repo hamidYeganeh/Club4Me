@@ -7,7 +7,7 @@ export const accountAuthLoginFormStyles = tv({
     group: "flex w-full flex-col gap-3",
     field: "w-full",
     inputGroup:
-      "h-16 w-full rounded-2xl border border-border bg-surface shadow-none",
+      "h-16 w-full rounded-2xl",
     suffix: "pe-2",
     input: "min-w-0 flex-1 px-4 text-start text-base font-medium tracking-wide",
     meta: "mt-1 flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-2",

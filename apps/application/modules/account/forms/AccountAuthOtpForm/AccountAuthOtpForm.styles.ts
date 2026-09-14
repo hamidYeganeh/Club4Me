@@ -6,7 +6,7 @@ export const accountAuthOtpFormStyles = tv({
     fieldset: "gap-6",
     group: "w-full",
     field: "w-full",
-    inputGroup: "h-16 w-full rounded-2xl border border-border bg-surface shadow-none",
+    inputGroup: "h-16 w-full rounded-2xl",
     input: "min-w-0 flex-1 px-4 text-start text-base font-medium tracking-wide",
   },
 });

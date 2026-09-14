@@ -18,7 +18,7 @@ export const accountAuthForgotPasswordConfirmFormStyles = tv({
     error: "min-h-5 text-center text-sm text-danger",
     field: "w-full",
     inputGroup:
-      "h-16 w-full rounded-2xl border border-border bg-surface shadow-none",
+      "h-16 w-full rounded-2xl",
     suffix: "pe-2",
     input: "min-w-0 flex-1 px-4 text-start text-base font-medium tracking-wide",
     actions: "mt-4 w-full",
