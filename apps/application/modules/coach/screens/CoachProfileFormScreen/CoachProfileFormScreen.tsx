@@ -826,9 +826,7 @@ export function CoachProfileFormScreen() {
               <legend className="text-sm font-bold">سبک‌های تمرینی</legend>
               {trainingStyles
                 ? trainingStyles.split("\n").map((row, index) => {
-                    const [title = "", description = ""] = row
-                      .split("|")
-                      .map((part) => part.trim());
+                    const [title = "", description = ""] = row.split("|");
                     const change = (part: number, value: string) =>
                       setTrainingStyles((current) =>
                         current

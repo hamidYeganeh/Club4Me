@@ -123,6 +123,21 @@ test("coach saves professional details, keeps existing sports and sees them on t
   );
   await page.goto("/coach/profile/professional");
   await page
+    .getByRole("button", { name: "افزودن سبک تمرینی", exact: true })
+    .click();
+  await page
+    .getByRole("textbox", { name: "نام سبک 1", exact: true })
+    .pressSequentially("تمرین قدرتی");
+  await expect(
+    page.getByRole("textbox", { name: "نام سبک 1", exact: true }),
+  ).toHaveValue("تمرین قدرتی");
+  await page
+    .getByRole("textbox", { name: "توضیح سبک", exact: true })
+    .pressSequentially("تمرکز بر اجرای درست");
+  await expect(
+    page.getByRole("textbox", { name: "توضیح سبک", exact: true }),
+  ).toHaveValue("تمرکز بر اجرای درست");
+  await page
     .getByLabel("مناسب چه کسانی است؟")
     .fill("بزرگسالانی که تمرین را از پایه شروع می‌کنند");
   await page
@@ -188,6 +203,10 @@ test("coach saves professional details, keeps existing sports and sees them on t
     .click();
   await expect.poll(() => saves).toBe(1);
   expect(sportWrites).toBe(0);
+  expect(saved.trainingStyles?.[0]).toMatchObject({
+    title: "تمرین قدرتی",
+    description: "تمرکز بر اجرای درست",
+  });
   expect(saved.contact.instagram).toBe("https://instagram.com/coach");
   expect(saved.professionalProfile?.goals).toEqual([
     "افزایش قدرت",
