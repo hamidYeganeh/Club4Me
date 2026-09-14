@@ -45,6 +45,26 @@ describe("Portal auth e2e", () => {
     harness.sms.last = undefined;
   });
 
+  it.each(["account", "admin", "business"])(
+    "returns 401 for a deleted account's access and refresh tokens in %s",
+    async (portal) => {
+      const session = await signup("09121000999");
+      await userModel.deleteOne({ _id: session.user.id });
+
+      await request(http)
+        .get(`/api/v1/${portal}/me`)
+        .set("Authorization", `Bearer ${session.accessToken}`)
+        .expect(401);
+      await request(http)
+        .post(`/api/v1/${portal}/auth/refresh`)
+        .send({ refreshToken: session.refreshToken })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.error.code).toBe("UNAUTHORIZED");
+        });
+    },
+  );
+
   describe("admin", () => {
     it("logs in with OTP when the user has the admin role", async () => {
       const session = await signup("09121000001");

@@ -29,7 +29,14 @@ export class JwtAuthGuard implements CanActivate {
       throw new AppError(401, "UNAUTHORIZED", "Invalid or expired token");
     }
 
-    const user = await this.usersService.findById(payload.sub);
+    const user = await this.usersService
+      .findById(payload.sub)
+      .catch((error: unknown) => {
+        if (error instanceof AppError && error.code === "USER_NOT_FOUND") {
+          throw new AppError(401, "UNAUTHORIZED", "Session is no longer valid");
+        }
+        throw error;
+      });
     if (user.status !== "active") {
       throw new AppError(403, "ACCOUNT_SUSPENDED", "Account is suspended");
     }

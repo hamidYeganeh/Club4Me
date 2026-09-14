@@ -155,7 +155,16 @@ export class AuthService {
       );
     }
 
-    const user = await this.usersService.findById(payload.sub);
+    const user = await this.usersService
+      .findById(payload.sub)
+      .catch((error: unknown) => {
+        // A valid token can outlive its account (for example after deletion).
+        // Return an authentication error so clients discard that stale session.
+        if (error instanceof AppError && error.code === "USER_NOT_FOUND") {
+          throw new AppError(401, "UNAUTHORIZED", "Session is no longer valid");
+        }
+        throw error;
+      });
 
     if (requiredRole) {
       await this.assertRole(user, requiredRole);
