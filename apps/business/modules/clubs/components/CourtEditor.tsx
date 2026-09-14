@@ -16,8 +16,7 @@ import {
 } from "@api/business";
 import { useCreateMedia, useMedia } from "@api";
 
-const field =
-  "mt-2 min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm";
+const field = "mt-2 w-full";
 const defaults = {
   name: "",
   code: "",
@@ -171,342 +170,401 @@ export function CourtEditor({
         <legend className="text-base font-bold">
           {initial ? `ویرایش ${initial.name}` : "زمین جدید"}
         </legend>
-        {(
-          [
-            ["name", "نام زمین", 120],
-            ["code", "کد زمین", 40],
-            ["locationLabel", "محل زمین", 120],
-            ["floor", "طبقه", 40],
-          ] as const
-        ).map(([key, label, max]) => (
-          <label key={key} className="block text-sm">
-            {label}
+        <p className="text-sm text-muted">
+          نام و ظرفیت برای شروع کافی است؛ بقیه مشخصات را می‌توانید بعداً تکمیل
+          کنید.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm">
+            نام زمین
             <HeroInput
+              autoFocus
               className={field}
-              required={key === "name"}
-              minLength={key === "name" ? 2 : undefined}
-              maxLength={max}
-              value={draft[key]}
-              onChange={(event) => change(key, event.target.value)}
+              required
+              minLength={2}
+              maxLength={120}
+              value={draft.name}
+              onChange={(e) => change("name", e.target.value)}
+              placeholder="مثلاً سالن اصلی"
             />
           </label>
-        ))}
-        <label className="block text-sm">
-          توضیحات
-          <HeroTextArea
-            className={field}
-            maxLength={2000}
-            rows={3}
-            value={draft.description}
-            onChange={(event) => change("description", event.target.value)}
-          />
-        </label>
-        {(
-          [
-            ["courtTypeId", "نوع زمین", courtTypes, "court"],
-            ["surfaceTypeId", "جنس سطح زمین", surfaces, "surface"],
-          ] as const
-        ).map(([key, label, catalog, searchKey]) => (
-          <div key={key}>
+          <label className="block text-sm">
+            ظرفیت زمین
+            <HeroInput
+              className={field}
+              type="number"
+              required
+              min={1}
+              max={1000}
+              value={draft.capacity}
+              onChange={(e) => change("capacity", Number(e.target.value))}
+            />
+          </label>
+        </div>
+        <details
+          open={initial ? true : undefined}
+          className="rounded-xl bg-surface-secondary p-4"
+        >
+          <summary className="cursor-pointer text-sm font-semibold">
+            مشخصات تکمیلی زمین
+          </summary>
+          <div className="mt-4 space-y-4">
+            {(
+              [
+                ["code", "کد زمین", 40],
+                ["locationLabel", "محل زمین", 120],
+                ["floor", "طبقه", 40],
+              ] as const
+            ).map(([key, label, max]) => (
+              <label key={key} className="block text-sm">
+                {label}
+                <HeroInput
+                  className={field}
+                  maxLength={max}
+                  value={draft[key]}
+                  onChange={(event) => change(key, event.target.value)}
+                />
+              </label>
+            ))}
             <label className="block text-sm">
-              جستجوی {label}
-              <HeroInput
+              توضیحات
+              <HeroTextArea
                 className={field}
-                value={search[searchKey]}
-                onChange={(event) =>
-                  setSearch({ ...search, [searchKey]: event.target.value })
-                }
+                maxLength={2000}
+                rows={3}
+                value={draft.description}
+                onChange={(event) => change("description", event.target.value)}
               />
             </label>
-            <label className="mt-2 block text-sm">
-              {label}
-              <FormSelect
-                aria-label="انتخاب گزینه"
-                className={field}
-                value={draft[key]}
-                onChange={(event) => change(key, event)}
-              >
-                <FormOption value="">مشخص نشده</FormOption>
-                {draft[key] &&
-                !catalog.data?.items.some((item) => item.id === draft[key]) ? (
-                  <FormOption value={draft[key]}>گزینه ثبت‌شده</FormOption>
+            {(
+              [
+                ["courtTypeId", "نوع زمین", courtTypes, "court"],
+                ["surfaceTypeId", "جنس سطح زمین", surfaces, "surface"],
+              ] as const
+            ).map(([key, label, catalog, searchKey]) => (
+              <div key={key}>
+                <label className="block text-sm">
+                  جستجوی {label}
+                  <HeroInput
+                    className={field}
+                    value={search[searchKey]}
+                    onChange={(event) =>
+                      setSearch({ ...search, [searchKey]: event.target.value })
+                    }
+                  />
+                </label>
+                <label className="mt-2 block text-sm">
+                  {label}
+                  <FormSelect
+                    aria-label={label}
+                    className={field}
+                    value={draft[key]}
+                    onChange={(event) => change(key, event)}
+                  >
+                    <FormOption value="">مشخص نشده</FormOption>
+                    {draft[key] &&
+                    !catalog.data?.items.some(
+                      (item) => item.id === draft[key],
+                    ) ? (
+                      <FormOption value={draft[key]}>گزینه ثبت‌شده</FormOption>
+                    ) : null}
+                    {catalog.data?.items.map((item) => (
+                      <FormOption entity={item} key={item.id} value={item.id}>
+                        {item.name}
+                      </FormOption>
+                    ))}
+                  </FormSelect>
+                </label>
+                {catalog.isError ? (
+                  <button
+                    type="button"
+                    className="text-sm text-danger"
+                    onClick={() => void catalog.refetch()}
+                  >
+                    دریافت گزینه‌ها ناموفق بود؛ تلاش دوباره
+                  </button>
                 ) : null}
-                {catalog.data?.items.map((item) => (
-                  <FormOption entity={item} key={item.id} value={item.id}>
-                    {item.name}
-                  </FormOption>
+              </div>
+            ))}
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-bold">
+                رشته‌های قابل استفاده
+              </legend>
+              <HeroInput
+                aria-label="جستجوی رشته"
+                placeholder="جستجوی رشته"
+                className={field}
+                value={search.sport}
+                onChange={(event) =>
+                  setSearch({ ...search, sport: event.target.value })
+                }
+              />
+              <div className="grid max-h-56 gap-3 overflow-y-auto py-2 sm:grid-cols-2">
+                {sports.data?.items.map((sport) => (
+                  <HeroCheckbox
+                    key={sport.id}
+                    className="flex gap-2 text-sm"
+                    isSelected={draft.sportIds.includes(sport.id)}
+                    onChange={(event) =>
+                      change(
+                        "sportIds",
+                        event
+                          ? [...draft.sportIds, sport.id]
+                          : draft.sportIds.filter((id) => id !== sport.id),
+                      )
+                    }
+                  >
+                    <HeroCheckbox.Content>
+                      <HeroCheckbox.Control>
+                        <HeroCheckbox.Indicator />
+                      </HeroCheckbox.Control>
+                      {sport.name}
+                    </HeroCheckbox.Content>
+                  </HeroCheckbox>
                 ))}
+                {draft.sportIds
+                  .filter(
+                    (id) =>
+                      !sports.data?.items.some((sport) => sport.id === id),
+                  )
+                  .map((id) => (
+                    <HeroCheckbox
+                      key={id}
+                      className="flex gap-2 text-sm"
+                      isSelected
+                      onChange={() =>
+                        change(
+                          "sportIds",
+                          draft.sportIds.filter((selected) => selected !== id),
+                        )
+                      }
+                    >
+                      <HeroCheckbox.Content>
+                        <HeroCheckbox.Control>
+                          <HeroCheckbox.Indicator />
+                        </HeroCheckbox.Control>
+                        رشته ثبت‌شده ({id.slice(-6)})
+                      </HeroCheckbox.Content>
+                    </HeroCheckbox>
+                  ))}
+              </div>
+              {sports.isError ? (
+                <button
+                  type="button"
+                  className="text-sm text-danger"
+                  onClick={() => void sports.refetch()}
+                >
+                  دریافت رشته‌ها ناموفق بود؛ تلاش دوباره
+                </button>
+              ) : null}
+            </fieldset>
+            <label className="block text-sm">
+              محیط
+              <FormSelect
+                aria-label="محیط"
+                className={field}
+                value={draft.environment}
+                onChange={(event) =>
+                  change("environment", event as ClubCourt["environment"])
+                }
+              >
+                <FormOption value="indoor">سرپوشیده</FormOption>
+                <FormOption value="outdoor">روباز</FormOption>
+                <FormOption value="covered">مسقف</FormOption>
               </FormSelect>
             </label>
-            {catalog.isError ? (
-              <button
-                type="button"
-                className="text-sm text-danger"
-                onClick={() => void catalog.refetch()}
-              >
-                دریافت گزینه‌ها ناموفق بود؛ تلاش دوباره
-              </button>
-            ) : null}
-          </div>
-        ))}
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-bold">رشته‌های قابل استفاده</legend>
-          <HeroInput
-            aria-label="جستجوی رشته"
-            placeholder="جستجوی رشته"
-            className={field}
-            value={search.sport}
-            onChange={(event) =>
-              setSearch({ ...search, sport: event.target.value })
-            }
-          />
-          {sports.data?.items.map((sport) => (
+            <div className="grid grid-cols-2 gap-3">
+              {(
+                [
+                  ["lengthMeters", "طول (متر)"],
+                  ["widthMeters", "عرض (متر)"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="text-sm">
+                  {label}
+                  <HeroInput
+                    className={field}
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={draft[key]}
+                    onChange={(event) => change(key, event.target.value)}
+                  />
+                </label>
+              ))}
+            </div>
+            {(
+              [
+                [
+                  "minimumReservationMinutes",
+                  "حداقل مدت رزرو (دقیقه)",
+                  1,
+                  1440,
+                ],
+                [
+                  "maximumReservationMinutes",
+                  "حداکثر مدت رزرو (دقیقه)",
+                  1,
+                  10080,
+                ],
+                [
+                  "preparationMinutes",
+                  "آماده‌سازی پیش از رزرو (دقیقه)",
+                  0,
+                  1440,
+                ],
+                ["cleanupMinutes", "نظافت پس از رزرو (دقیقه)", 0, 1440],
+              ] as const
+            ).map(([key, label, min, max]) => (
+              <label key={key} className="block text-sm">
+                {label}
+                <HeroInput
+                  required
+                  className={field}
+                  type="number"
+                  min={min}
+                  max={max}
+                  step={1}
+                  value={draft[key]}
+                  onChange={(event) => change(key, Number(event.target.value))}
+                />
+              </label>
+            ))}
+            <p className="text-xs leading-6 text-muted">
+              محدودیت مدت و زمان آماده‌سازی برای ساخت سانس‌های جدید استفاده
+              می‌شود. رزروهای موجود با ویرایش زمین تغییر نمی‌کنند.
+            </p>
             <HeroCheckbox
-              key={sport.id}
               className="flex gap-2 text-sm"
-              isSelected={draft.sportIds.includes(sport.id)}
-              onChange={(event) =>
-                change(
-                  "sportIds",
-                  event
-                    ? [...draft.sportIds, sport.id]
-                    : draft.sportIds.filter((id) => id !== sport.id),
-                )
-              }
+              isSelected={draft.isReservable}
+              onChange={(event) => change("isReservable", event)}
             >
               <HeroCheckbox.Content>
                 <HeroCheckbox.Control>
                   <HeroCheckbox.Indicator />
                 </HeroCheckbox.Control>
-                {sport.name}
+                پذیرش رزرو جدید
               </HeroCheckbox.Content>
             </HeroCheckbox>
-          ))}
-          {draft.sportIds
-            .filter(
-              (id) => !sports.data?.items.some((sport) => sport.id === id),
-            )
-            .map((id) => (
-              <HeroCheckbox
-                key={id}
-                className="flex gap-2 text-sm"
-                isSelected
-                onChange={() =>
-                  change(
-                    "sportIds",
-                    draft.sportIds.filter((selected) => selected !== id),
-                  )
-                }
-              >
-                <HeroCheckbox.Content>
-                  <HeroCheckbox.Control>
-                    <HeroCheckbox.Indicator />
-                  </HeroCheckbox.Control>
-                  رشته ثبت‌شده ({id.slice(-6)})
-                </HeroCheckbox.Content>
-              </HeroCheckbox>
-            ))}
-          {sports.isError ? (
-            <button
-              type="button"
-              className="text-sm text-danger"
-              onClick={() => void sports.refetch()}
-            >
-              دریافت رشته‌ها ناموفق بود؛ تلاش دوباره
-            </button>
-          ) : null}
-        </fieldset>
-        <label className="block text-sm">
-          محیط
-          <FormSelect
-            aria-label="محیط"
-            className={field}
-            value={draft.environment}
-            onChange={(event) =>
-              change("environment", event as ClubCourt["environment"])
-            }
-          >
-            <FormOption value="indoor">سرپوشیده</FormOption>
-            <FormOption value="outdoor">روباز</FormOption>
-            <FormOption value="covered">مسقف</FormOption>
-          </FormSelect>
-        </label>
-        <div className="grid grid-cols-2 gap-3">
-          {(
-            [
-              ["lengthMeters", "طول (متر)"],
-              ["widthMeters", "عرض (متر)"],
-            ] as const
-          ).map(([key, label]) => (
-            <label key={key} className="text-sm">
-              {label}
-              <HeroInput
-                className={field}
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={draft[key]}
-                onChange={(event) => change(key, event.target.value)}
-              />
-            </label>
-          ))}
-        </div>
-        {(
-          [
-            ["capacity", "ظرفیت زمین", 1, 1000],
-            ["minimumReservationMinutes", "حداقل مدت رزرو (دقیقه)", 1, 1440],
-            ["maximumReservationMinutes", "حداکثر مدت رزرو (دقیقه)", 1, 10080],
-            ["preparationMinutes", "آماده‌سازی پیش از رزرو (دقیقه)", 0, 1440],
-            ["cleanupMinutes", "نظافت پس از رزرو (دقیقه)", 0, 1440],
-          ] as const
-        ).map(([key, label, min, max]) => (
-          <label key={key} className="block text-sm">
-            {label}
-            <HeroInput
-              required
-              className={field}
-              type="number"
-              min={min}
-              max={max}
-              step={1}
-              value={draft[key]}
-              onChange={(event) => change(key, Number(event.target.value))}
-            />
-          </label>
-        ))}
-        <p className="text-xs leading-6 text-muted">
-          محدودیت مدت و زمان آماده‌سازی برای ساخت سانس‌های جدید استفاده می‌شود.
-          رزروهای موجود با ویرایش زمین تغییر نمی‌کنند.
-        </p>
-        <HeroCheckbox
-          className="flex gap-2 text-sm"
-          isSelected={draft.isReservable}
-          onChange={(event) => change("isReservable", event)}
-        >
-          <HeroCheckbox.Content>
-            <HeroCheckbox.Control>
-              <HeroCheckbox.Indicator />
-            </HeroCheckbox.Control>
-            پذیرش رزرو جدید
-          </HeroCheckbox.Content>
-        </HeroCheckbox>
-        {initial ? (
-          <label className="block text-sm">
-            وضعیت زمین
-            <FormSelect
-              aria-label="وضعیت زمین"
-              className={field}
-              value={draft.status}
-              onChange={(event) =>
-                change("status", event as ClubCourt["status"])
-              }
-            >
-              <FormOption value="active">فعال</FormOption>
-              <FormOption value="inactive">غیرفعال</FormOption>
-            </FormSelect>
-          </label>
-        ) : null}
-        <p className="text-xs text-muted">
-          با توقف پذیرش یا غیرفعال‌کردن زمین، فروش جدید متوقف می‌شود؛ رزروهای
-          قبلی حفظ می‌شوند.
-        </p>
-        <fieldset className="space-y-3">
-          <legend className="text-sm font-bold">تصاویر زمین</legend>
-          <label className="block text-sm">
-            افزودن تصویر
-            <Uploader
-              multiple={false}
-              accept={imageUploaderAccept}
-              disabled={uploading || draft.galleryMediaIds.length >= 30}
-              labels={{ clickToUpload: "افزودن تصویر زمین" }}
-              onUpload={async (file) => {
-                if (draft.galleryMediaIds.length >= 30)
-                  throw new Error("حداکثر ۳۰ تصویر مجاز است");
-                setUploading(true);
-                try {
-                  const item = await upload.mutateAsync(file);
-                  setUploadedUrls((old) => ({ ...old, [item.id]: item.url }));
-                  setDraft((old) => ({
-                    ...old,
-                    galleryMediaIds: [
-                      ...new Set([...old.galleryMediaIds, item.id]),
-                    ],
-                  }));
-                } finally {
-                  setUploading(false);
-                }
-              }}
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            {draft.galleryMediaIds.map((id, index) => {
-              const url =
-                uploadedUrls[id] ??
-                media.data?.items.find((item) => item.id === id)?.url;
-              return (
-                <div
-                  key={id}
-                  className="space-y-2 rounded-xl p-2"
+            {initial ? (
+              <label className="block text-sm">
+                وضعیت زمین
+                <FormSelect
+                  aria-label="وضعیت زمین"
+                  className={field}
+                  value={draft.status}
+                  onChange={(event) =>
+                    change("status", event as ClubCourt["status"])
+                  }
                 >
-                  {url ? (
-                    <Image
-                      unoptimized
-                      src={url}
-                      alt={`تصویر زمین ${index + 1}`}
-                      width={200}
-                      height={140}
-                      className="aspect-video w-full rounded-lg object-cover"
-                    />
-                  ) : (
-                    <p className="py-5 text-center text-xs text-muted">
-                      تصویر ثبت‌شده؛ پیش‌نمایش در دسترس نیست
-                    </p>
-                  )}
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      aria-label={`جلو بردن تصویر ${index + 1}`}
-                      disabled={index === 0}
-                      onClick={() => moveImage(index, -1)}
-                    >
-                      قبلی
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`عقب بردن تصویر ${index + 1}`}
-                      disabled={index === draft.galleryMediaIds.length - 1}
-                      onClick={() => moveImage(index, 1)}
-                    >
-                      بعدی
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`حذف تصویر ${index + 1}`}
-                      className="text-danger"
-                      onClick={() =>
-                        change(
-                          "galleryMediaIds",
-                          draft.galleryMediaIds.filter((value) => value !== id),
-                        )
-                      }
-                    >
-                      حذف
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                  <FormOption value="active">فعال</FormOption>
+                  <FormOption value="inactive">غیرفعال</FormOption>
+                </FormSelect>
+              </label>
+            ) : null}
+            <p className="text-xs text-muted">
+              با توقف پذیرش یا غیرفعال‌کردن زمین، فروش جدید متوقف می‌شود؛
+              رزروهای قبلی حفظ می‌شوند.
+            </p>
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-bold">تصاویر زمین</legend>
+              <label className="block text-sm">
+                افزودن تصویر
+                <Uploader
+                  multiple={false}
+                  accept={imageUploaderAccept}
+                  disabled={uploading || draft.galleryMediaIds.length >= 30}
+                  labels={{ clickToUpload: "افزودن تصویر زمین" }}
+                  onUpload={async (file) => {
+                    if (draft.galleryMediaIds.length >= 30)
+                      throw new Error("حداکثر ۳۰ تصویر مجاز است");
+                    setUploading(true);
+                    try {
+                      const item = await upload.mutateAsync(file);
+                      setUploadedUrls((old) => ({
+                        ...old,
+                        [item.id]: item.url,
+                      }));
+                      setDraft((old) => ({
+                        ...old,
+                        galleryMediaIds: [
+                          ...new Set([...old.galleryMediaIds, item.id]),
+                        ],
+                      }));
+                    } finally {
+                      setUploading(false);
+                    }
+                  }}
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {draft.galleryMediaIds.map((id, index) => {
+                  const url =
+                    uploadedUrls[id] ??
+                    media.data?.items.find((item) => item.id === id)?.url;
+                  return (
+                    <div key={id} className="space-y-2 rounded-xl p-2">
+                      {url ? (
+                        <Image
+                          unoptimized
+                          src={url}
+                          alt={`تصویر زمین ${index + 1}`}
+                          width={200}
+                          height={140}
+                          className="aspect-video w-full rounded-lg object-cover"
+                        />
+                      ) : (
+                        <p className="py-5 text-center text-xs text-muted">
+                          تصویر ثبت‌شده؛ پیش‌نمایش در دسترس نیست
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          aria-label={`جلو بردن تصویر ${index + 1}`}
+                          disabled={index === 0}
+                          onClick={() => moveImage(index, -1)}
+                        >
+                          قبلی
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`عقب بردن تصویر ${index + 1}`}
+                          disabled={index === draft.galleryMediaIds.length - 1}
+                          onClick={() => moveImage(index, 1)}
+                        >
+                          بعدی
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`حذف تصویر ${index + 1}`}
+                          className="text-danger"
+                          onClick={() =>
+                            change(
+                              "galleryMediaIds",
+                              draft.galleryMediaIds.filter(
+                                (value) => value !== id,
+                              ),
+                            )
+                          }
+                        >
+                          حذف
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </fieldset>
           </div>
-        </fieldset>
-        <div className="flex gap-3">
+        </details>
+        <div className="flex gap-3 pt-3">
           <Button type="submit" variant="primary" isPending={busy}>
             {initial ? "ذخیره تغییرات زمین" : "ساخت زمین"}
           </Button>
-          {initial ? (
-            <Button type="button" variant="secondary" onPress={onCancel}>
-              بستن ویرایش
-            </Button>
-          ) : null}
+          <Button type="button" variant="secondary" onPress={onCancel}>
+            انصراف
+          </Button>
         </div>
       </fieldset>
     </form>

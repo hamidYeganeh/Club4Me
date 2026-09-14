@@ -91,6 +91,9 @@ test("owner edits the complete court model and persists gallery order after relo
   });
   await page.goto(`/clubs/${club.id}/reservations`);
   await page
+    .getByRole("button", { name: "زمین‌ها و فضاها", exact: true })
+    .click();
+  await page
     .getByRole("button", { name: "ویرایش زمین زمین تنیس", exact: true })
     .click();
   const form = page.getByRole("form", { name: "ویرایش زمین", exact: true });
@@ -98,10 +101,14 @@ test("owner edits the complete court model and persists gallery order after relo
   await form.getByLabel("عرض (متر)", { exact: true }).fill("13");
   await form.getByRole("button", { name: "جلو بردن تصویر 2" }).click();
   await form.getByRole("button", { name: "حذف تصویر 2" }).click();
-  await form.getByLabel("پذیرش رزرو جدید").uncheck();
+  await form.getByText("پذیرش رزرو جدید", { exact: true }).click();
+  await expect(form.getByLabel("پذیرش رزرو جدید")).not.toBeChecked();
   await form.getByRole("button", { name: "ذخیره تغییرات زمین" }).click();
   await expect.poll(() => writes).toBe(1);
   await page.reload();
+  await page
+    .getByRole("button", { name: "زمین‌ها و فضاها", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "ویرایش زمین زمین روباز جدید", exact: true })
     .click();
