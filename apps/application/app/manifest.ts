@@ -5,7 +5,7 @@ import { siteDescription, siteName } from "@/lib/site-metadata";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: `${siteName} | جیم فور می`,
+    name: `${siteName} | کلاب‌فورمی`,
     short_name: siteName,
     description: siteDescription,
     lang: "fa-IR",

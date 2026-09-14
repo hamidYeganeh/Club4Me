@@ -30,11 +30,24 @@ export function DiscoverySportDetailScreen({
           typeof sport.icon === "string" ? sport.icon : undefined,
         )}
       />
-      <RelatedClubs params={params} title={`باشگاه‌های ${sport.name}`} />
-      <RelatedClasses params={params} title={`کلاس‌های ${sport.name}`} />
-      <RelatedCoaches params={params} title={`مربی‌های ${sport.name}`} />
+      <RelatedClubs
+        params={params}
+        title={`باشگاه‌های ${sport.name}`}
+        showAll={false}
+      />
+      <RelatedClasses
+        params={params}
+        title={`کلاس‌های ${sport.name}`}
+        showAll={false}
+      />
+      <RelatedCoaches
+        params={params}
+        title={`مربی‌های ${sport.name}`}
+        showAll={false}
+      />
       <RelatedSports
         excludeId={sport.id}
+        showAll={false}
         categoryId={
           typeof sport.categoryId === "string" ? sport.categoryId : undefined
         }

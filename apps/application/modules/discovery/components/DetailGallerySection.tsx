@@ -74,10 +74,10 @@ export function DetailGallerySection({
                   fill
                   unoptimized
                   sizes="(max-width: 640px) 200px, 224px"
-                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  className="object-cover transition-transform duration-700 ease-out"
                 />
                 <div className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-background/85 to-transparent" />
-                <span className="absolute end-3 bottom-3 rounded-lg border border-white/10 bg-background/80 px-2 py-1 text-xs font-black tabular-nums text-foreground backdrop-blur-md">
+                <span className="absolute end-3 bottom-3 rounded-lg bg-background/80 px-2 py-1 text-xs font-black tabular-nums text-foreground backdrop-blur-md">
                   {(index + 1).toLocaleString("fa-IR")}
                 </span>
               </div>

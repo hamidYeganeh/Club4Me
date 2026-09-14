@@ -35,13 +35,15 @@ export function ProfileScreen({ role }: ProfileScreenProps) {
               اطلاعات شخصی، اعلان‌ها و حریم خصوصی
             </p>
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="profile-navigation">
             {role === "athlete" ? (
               <Link
                 href="/athlete/memberships"
-                className="app-settings-row app-reveal"
+                className="app-settings-row app-reveal profile-navigation-row"
               >
-                <Icon name="ticket" size={22} />
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary text-foreground">
+                  <Icon name="ticket" size={20} />
+                </span>
                 <span className="flex-1 font-bold">بسته‌ها و عضویت‌های من</span>
                 <Icon name="chevron-left" size={18} />
               </Link>
@@ -49,18 +51,20 @@ export function ProfileScreen({ role }: ProfileScreenProps) {
             {role === "athlete" ? (
               <Link
                 href="/athlete/packages"
-                className="app-settings-row app-reveal"
+                className="app-settings-row app-reveal profile-navigation-row"
               >
-                <Icon name="ticket" size={22} />
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary text-foreground">
+                  <Icon name="medal" size={20} />
+                </span>
                 <span className="flex-1 font-bold">بسته‌های مربی من</span>
                 <Icon name="chevron-left" size={18} />
               </Link>
             ) : null}
             <Link
               href="/auth/roles?manage=1"
-              className="app-settings-row app-reveal"
+              className="app-settings-row app-reveal profile-navigation-row"
             >
-              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary text-foreground">
                 <Icon name="users-two" size={20} />
               </span>
               <span className="flex min-w-0 flex-1 flex-col gap-2">
@@ -86,11 +90,13 @@ export function ProfileScreen({ role }: ProfileScreenProps) {
                 href: `/${role}/profile/locations`,
                 icon: "map-pin-1" as const,
                 label: "لوکیشن‌های من",
+                description: "نشانی‌های ذخیره‌شده برای پیدا کردن نزدیک‌ترین‌ها",
               },
               {
                 href: `/${role}/favorites`,
                 icon: "bookmark" as const,
-                label: "مقالات، باشگاه‌ها، مربی‌ها و کلاس‌های ذخیره‌شده",
+                label: "ذخیره‌شده‌ها",
+                description: "مقالات، باشگاه‌ها، مربی‌ها و کلاس‌های ذخیره‌شده",
               },
               ...(role === "athlete"
                 ? [
@@ -98,6 +104,7 @@ export function ProfileScreen({ role }: ProfileScreenProps) {
                       href: "/athlete/notifications",
                       icon: "bell-1" as const,
                       label: "اعلان‌ها",
+                      description: "پیگیری رزروها و پیام‌های تازه",
                     },
                   ]
                 : [
@@ -105,25 +112,38 @@ export function ProfileScreen({ role }: ProfileScreenProps) {
                       href: "/coach/profile/professional",
                       icon: "whistle" as const,
                       label: "پروفایل حرفه‌ای مربی",
+                      description: "معرفی تخصص و تجربه به ورزشکارها",
                     },
                   ]),
               {
                 href: `/${role}/settings`,
                 icon: "shield-check" as const,
                 label: "تنظیمات و حریم خصوصی",
+                description: "مدیریت اعلان‌ها و اطلاعات حساب",
+              },
+              {
+                href: `/${role}/support`,
+                icon: "ticket" as const,
+                label: "راهنما و پشتیبانی",
+                description: "پرسش‌ها و پیگیری درخواست‌های شما",
               },
             ].map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="app-settings-row app-reveal"
+                className="app-settings-row app-reveal profile-navigation-row"
               >
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary text-foreground">
                   <Icon name={item.icon} size={20} />
                 </span>
-                <Typography type="body" weight="bold" className="flex-1">
-                  {item.label}
-                </Typography>
+                <span className="min-w-0 flex-1">
+                  <Typography type="body" weight="bold">
+                    {item.label}
+                  </Typography>
+                  <span className="mt-1 block text-xs leading-6 text-muted">
+                    {item.description}
+                  </span>
+                </span>
                 <Icon name="chevron-left" size={18} className="text-muted" />
               </Link>
             ))}

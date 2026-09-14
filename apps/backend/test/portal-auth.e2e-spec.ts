@@ -1,6 +1,6 @@
 import { getModelToken } from "@nestjs/mongoose";
 import { INestApplication } from "@nestjs/common";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "./mongo-memory";
 import { Model } from "mongoose";
 import request from "supertest";
 import type { App } from "supertest/types";

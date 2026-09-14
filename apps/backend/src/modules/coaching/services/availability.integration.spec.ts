@@ -1,5 +1,5 @@
 import { createConnection, type Connection, Types } from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "../../../../test/mongo-memory";
 import { AvailabilityService } from "./availability.service";
 import {
   CoachAvailabilityRule,

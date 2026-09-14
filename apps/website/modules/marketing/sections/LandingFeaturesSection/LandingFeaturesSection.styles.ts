@@ -14,14 +14,14 @@ export const landingFeaturesSectionStyles = tv({
       "bg-surface-secondary",
     ],
     heroImg:
-      "size-full object-cover transition-transform duration-[1200ms] ease-app will-change-transform group-hover:scale-110",
+      "size-full object-cover transition-transform duration-[1200ms] ease-app will-change-transform",
     mockup: [
       "absolute inset-x-4 -bottom-4 top-4 overflow-hidden rounded-t-[1.25rem]",
-      "border-x border-t border-foreground/5 bg-surface",
+      "bg-surface",
       "md:inset-x-6 md:-bottom-6 md:top-6",
     ],
     chrome:
-      "flex h-8 shrink-0 items-center gap-1.5 border-b border-foreground/5 bg-surface-secondary px-4",
+      "flex h-8 shrink-0 items-center gap-1.5 bg-surface-secondary px-4",
     trafficClose: "size-2.5 rounded-full bg-stats-red",
     trafficMin: "size-2.5 rounded-full bg-stats-yellow",
     trafficMax: "size-2.5 rounded-full bg-success",
@@ -40,7 +40,7 @@ export const landingFeaturesSectionStyles = tv({
     authorRole: "text-[0.8125rem] text-(--on-brand-muted)",
     portraitCard: "h-[16rem] overflow-hidden rounded-[2rem] md:h-[26.25rem]",
     portraitImg:
-      "size-full object-cover transition-transform duration-[1200ms] ease-app will-change-transform hover:scale-105",
+      "size-full object-cover transition-transform duration-[1200ms] ease-app will-change-transform",
     content: "flex flex-col",
     heading: [
       "mb-6 max-w-[33.7rem] text-[clamp(1.75rem,6vw,3.25rem)] font-medium leading-[1.1]",
@@ -55,21 +55,21 @@ export const landingFeaturesSectionStyles = tv({
       "[--button-bg:var(--foreground)] [--button-fg:var(--background)]",
       "[--button-bg-hover:var(--foreground)] [--button-bg-pressed:var(--foreground)]",
       "transition-transform duration-moderate ease-app",
-      "hover:bg-foreground hover:opacity-95 hover:scale-[1.02]",
-      "data-[hovered=true]:bg-foreground data-[hovered=true]:opacity-95 data-[hovered=true]:scale-[1.02]",
-      "data-[pressed=true]:scale-[0.98] data-[pressed=true]:shadow-inner",
+      "hover:bg-foreground hover:opacity-95",
+      "data-[hovered=true]:bg-foreground data-[hovered=true]:opacity-95",
+      "data-[pressed=true]:shadow-inner",
     ],
     primaryChip: [
       "grid size-10 shrink-0 place-items-center rounded-[0.625rem] bg-background text-foreground",
       "transition-transform duration-moderate ease-app group-hover:-translate-x-0.5",
     ],
     secondaryBtn: [
-      "h-14 w-full rounded-[0.875rem] border border-separator bg-surface px-8 py-3.5 sm:w-auto",
+      "h-14 w-full rounded-[0.875rem] bg-surface px-8 py-3.5 sm:w-auto",
       "text-[1rem] font-medium text-foreground shadow-none",
       "transition-[transform,background-color] duration-moderate ease-app",
-      "hover:bg-surface-secondary hover:scale-[1.02]",
-      "data-[hovered=true]:bg-surface-secondary data-[hovered=true]:scale-[1.02]",
-      "data-[pressed=true]:scale-[0.98]",
+      "hover:bg-surface-secondary",
+      "data-[hovered=true]:bg-surface-secondary",
+      "",
     ],
     checklist: "flex flex-col",
     checkRow: [

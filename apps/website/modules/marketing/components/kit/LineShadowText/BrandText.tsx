@@ -14,7 +14,7 @@ export type BrandTextProps = Omit<LineShadowTextProps, "children"> & {
   shadow?: LineShadowShadowColor | string;
 };
 
-/** Standalone Gym4Me wordmark. */
+/** Standalone Club4Me wordmark. */
 export function BrandText({
   children = BRAND_NAME,
   shadow = "foreground",

@@ -1,4 +1,5 @@
 "use client";
+import { EnrollmentTransfer } from "../components/EnrollmentTransfer";
 
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
@@ -146,7 +147,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 function Empty({ children }: { children: ReactNode }) {
   return (
-    <div className="grid min-h-52 place-items-center rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted">
+    <div className="grid min-h-52 place-items-center rounded-2xl p-8 text-center text-sm text-muted">
       {children}
     </div>
   );
@@ -1077,7 +1078,8 @@ export function BusinessClassDetailScreen({
     ) ?? [];
   const addStudent = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const data = new FormData(form);
     try {
       await enroll.mutateAsync({
         studentId: String(data.get("studentId")),
@@ -1089,7 +1091,7 @@ export function BusinessClassDetailScreen({
           ? Number(data.get("totalSessions"))
           : null,
       });
-      event.currentTarget.reset();
+      form.reset();
       setShowEnroll(false);
       toast.success("شاگرد به کلاس اضافه شد");
     } catch {
@@ -1198,7 +1200,7 @@ export function BusinessClassDetailScreen({
         </Card>
       </section>
       {item.data.readiness && !item.data.readiness.ready ? (
-        <Card className="mt-4 rounded-2xl border border-warning/35 bg-warning/8 p-4 shadow-none">
+        <Card className="mt-4 rounded-2xl bg-warning/8 p-4 shadow-none">
           <strong>موارد پیشنهادی پیش از عرضه عمومی</strong>
           <p className="mt-2 text-sm text-muted">
             {item.data.readiness.missing
@@ -1220,7 +1222,7 @@ export function BusinessClassDetailScreen({
         </Card>
       ) : null}
       {showEnroll && (
-        <Card className="app-card mt-4 border-accent/40 p-5 shadow-none active:scale-100">
+        <Card className="app-card mt-4 p-5 shadow-none active:scale-100">
           <form
             onSubmit={addStudent}
             className="grid gap-4 md:grid-cols-2 lg:grid-cols-5"
@@ -1347,13 +1349,22 @@ export function BusinessClassDetailScreen({
                           aria-label="وضعیت عضویت"
                           value={enrollment.status}
                           onChange={(e) =>
-                            updateEnrollment.mutate({
-                              enrollmentId: enrollment.id,
-                              payload: {
-                                status: e as typeof enrollment.status,
+                            updateEnrollment.mutate(
+                              {
+                                enrollmentId: enrollment.id,
+                                payload: {
+                                  status: e as typeof enrollment.status,
+                                },
                               },
-                            })
+                              {
+                                onError: () =>
+                                  toast.danger(
+                                    "تغییر وضعیت انجام نشد؛ دوباره تلاش کنید.",
+                                  ),
+                              },
+                            )
                           }
+                          disabled={updateEnrollment.isPending}
                           className="h-9 rounded-lg border border-border bg-surface px-2 text-xs"
                         >
                           <FormOption value="active">فعال</FormOption>
@@ -1362,49 +1373,32 @@ export function BusinessClassDetailScreen({
                           </FormOption>
                           <FormOption value="waitlisted">انتظار</FormOption>
                           <FormOption value="completed">تمام‌شده</FormOption>
-                          <FormOption value="cancelled">لغوشده</FormOption>
+                          {!enrollment.transferRequiresRefund ? (
+                            <FormOption value="cancelled">لغوشده</FormOption>
+                          ) : null}
                         </FormSelect>
                         <a
-                          className="rounded-lg border border-border px-3 py-2 text-xs"
+                          className="rounded-lg px-3 py-2 text-xs"
                           href={`/payments?studentId=${enrollment.studentId}`}
                         >
                           حساب شهریه و رسیدها
                         </a>
-                        <FormSelect
-                          aria-label="انتقال شاگرد"
-                          defaultValue=""
-                          onChange={(e) => {
-                            if (
-                              e &&
-                              window.confirm(
-                                "شاگرد به کلاس انتخاب‌شده منتقل شود؟",
-                              )
-                            )
-                              transfer.mutate({
-                                enrollmentId: enrollment.id,
-                                targetClassId: e,
-                              });
-                            e = "";
-                          }}
-                          className="h-9 rounded-lg border border-border bg-surface px-2 text-xs"
-                        >
-                          <FormOption value="">انتقال به...</FormOption>
-                          {classes.data?.items
-                            .filter(
-                              (target) =>
-                                target.id !== classId &&
-                                target.status === "active",
-                            )
-                            .map((target) => (
-                              <FormOption
-                                entity={target}
-                                key={target.id}
-                                value={target.id}
-                              >
-                                {target.title}
-                              </FormOption>
-                            ))}
-                        </FormSelect>
+                        <EnrollmentTransfer
+                          enrollment={enrollment}
+                          classes={classes.data?.items ?? []}
+                          onRefund={() =>
+                            updateEnrollment.mutateAsync({
+                              enrollmentId: enrollment.id,
+                              payload: { status: "cancelled" },
+                            })
+                          }
+                          onTransfer={(targetClassId) =>
+                            transfer.mutateAsync({
+                              enrollmentId: enrollment.id,
+                              targetClassId,
+                            })
+                          }
+                        />
                       </div>
                     </div>
                   </div>
@@ -1526,7 +1520,7 @@ export function BusinessClassDetailScreen({
             </div>
           )}
           {showReschedule && sessionId ? (
-            <Card className="mt-3 rounded-2xl border border-border p-4 shadow-none">
+            <Card className="mt-3 rounded-2xl p-4 shadow-none">
               <form
                 className="grid gap-3 sm:grid-cols-2"
                 onSubmit={async (event) => {
@@ -1728,7 +1722,7 @@ function CheckInCredentialCard({
       });
   }, [credential.qrPayload]);
   return (
-    <div className="mt-4 grid justify-items-center rounded-2xl border border-accent/30 bg-default/20 p-4 text-center">
+    <div className="mt-4 grid justify-items-center rounded-2xl bg-default/20 p-4 text-center">
       <canvas ref={canvas} className="rounded-xl bg-white p-2" />
       <p className="mt-3 text-xs text-muted">کد جایگزین ورود</p>
       <strong dir="ltr" className="mt-1 text-3xl tracking-[.35em]">

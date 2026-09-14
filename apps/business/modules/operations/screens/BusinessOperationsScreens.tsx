@@ -1,5 +1,6 @@
 "use client";
 
+import { PanelSectionSwitcher } from "@repo/ui/panel-section-switcher";
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
 import { useSearchParams } from "next/navigation";
@@ -129,7 +130,7 @@ function ClubSelect({
 
 function Empty({ title, hint }: { title: string; hint: string }) {
   return (
-    <div className="grid min-h-56 place-items-center rounded-2xl border border-dashed border-border p-8 text-center">
+    <div className="grid min-h-56 place-items-center rounded-2xl p-8 text-center">
       <div>
         <Icon name="folder-open" size={30} className="text-muted" />
         <h2 className="mt-3 font-semibold">{title}</h2>
@@ -141,7 +142,7 @@ function Empty({ title, hint }: { title: string; hint: string }) {
 
 function QueryError({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="grid min-h-56 place-items-center rounded-2xl border border-danger/20 bg-danger/5 p-8 text-center">
+    <div className="grid min-h-56 place-items-center rounded-2xl bg-danger/5 p-8 text-center">
       <div>
         <p className="text-sm text-danger">دریافت اطلاعات انجام نشد.</p>
         <Button
@@ -266,7 +267,9 @@ export function StudentsScreen() {
             <div>
               <div>{info.getValue() || "—"}</div>
               <span className="text-xs text-muted">
-                تا {formatDate(info.row.original.membershipEndsAt)}
+                {info.row.original.membershipEndsAt
+                  ? `تا ${formatDate(info.row.original.membershipEndsAt)}`
+                  : "تاریخ پایان ثبت نشده"}
               </span>
             </div>
           ),
@@ -445,6 +448,20 @@ export function StudentsScreen() {
       ) : (
         <ListPagePanel
           title="فهرست شاگردها"
+          toolbarExtra={
+            <HeroInput
+              type="search"
+              aria-label="جستجوی شاگرد"
+              placeholder="نام یا شماره موبایل"
+              value={filters.query}
+              onChange={(e) => {
+                const query = e.target.value;
+                setFilters({ ...filters, query });
+                setDraftFilters({ ...draftFilters, query });
+              }}
+              className="w-full sm:w-64"
+            />
+          }
           description={`${filtered.length.toLocaleString("fa-IR")} نفر`}
           filterActiveCount={filterActiveCount}
           filterTitle="فیلتر شاگردها"
@@ -473,7 +490,7 @@ export function StudentsScreen() {
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">وضعیت</span>
                 <FormSelect
-                  aria-label="انتخاب گزینه"
+                  aria-label="فیلتر وضعیت"
                   className={inputClass}
                   value={draftFilters.status}
                   onChange={(event) =>
@@ -492,6 +509,36 @@ export function StudentsScreen() {
           }
         >
           <DataTable
+            mobileSummary={(student) => (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-bold">
+                    {student.firstName} {student.lastName}
+                  </h3>
+                  <span className="text-sm">
+                    {student.status === "active" ? "فعال" : "غیرفعال"}
+                  </span>
+                </div>
+                <p dir="ltr" className="text-start text-sm">
+                  {student.phone}
+                </p>
+                {student.membershipTitle ? (
+                  <p className="text-sm text-muted">
+                    {student.membershipTitle}
+                    {student.membershipEndsAt
+                      ? ` · تا ${formatDate(student.membershipEndsAt)}`
+                      : ""}
+                  </p>
+                ) : null}
+                <Button
+                  variant="secondary"
+                  onPress={() => setSelected(student)}
+                >
+                  مشاهده پرونده
+                </Button>
+              </div>
+            )}
+
             ariaLabel="فهرست شاگردها"
             data={filtered}
             columns={columns}
@@ -830,7 +877,7 @@ export function CoachesScreen() {
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">وضعیت</span>
                 <FormSelect
-                  aria-label="انتخاب گزینه"
+                  aria-label="فیلتر وضعیت"
                   className={inputClass}
                   value={draftFilters.status}
                   onChange={(event) =>
@@ -911,6 +958,7 @@ export function CoachesScreen() {
 }
 
 export function PaymentsScreen() {
+  const [paymentSection, setPaymentSection] = useState("receipts");
   const { clubs, clubId, setClubId } = useSelectedClub();
   const students = useClubStudents(clubId);
   const payments = useClubPayments(clubId);
@@ -1079,7 +1127,10 @@ export function PaymentsScreen() {
           <Button
             variant="primary"
             isDisabled={!students.data?.items.length}
-            onPress={() => setOpen((v) => !v)}
+            onPress={() => {
+              setPaymentSection("receipts");
+              setOpen((v) => !v);
+            }}
           >
             <Icon name="plus" />
             ثبت پرداخت
@@ -1087,8 +1138,22 @@ export function PaymentsScreen() {
         </div>
       }
     >
-      <StudentAccounts key={clubId} clubId={clubId} />
-      <section className="mt-5 grid gap-4 lg:grid-cols-[1fr_2fr]">
+      <PanelSectionSwitcher
+        label="بخش پرداخت‌ها"
+        value={paymentSection}
+        onChange={setPaymentSection}
+        items={[
+          { value: "receipts", label: "دریافت‌ها و رسیدها" },
+          { value: "settlements", label: "برداشت و تسویه" },
+        ]}
+      />
+      <div hidden={paymentSection !== "receipts"}>
+        <StudentAccounts key={clubId} clubId={clubId} />
+      </div>
+      <section
+        hidden={paymentSection !== "settlements"}
+        className="mt-5 grid gap-4 lg:grid-cols-[1fr_2fr]"
+      >
         <Card className="app-card shadow-none active:scale-100 p-5">
           <p className="text-sm text-muted">موجودی قابل برداشت</p>
           <p className="mt-1 text-xs text-warning">
@@ -1181,7 +1246,7 @@ export function PaymentsScreen() {
           </div>
         </Card>
       </section>
-      {payoutOpen ? (
+      {paymentSection === "settlements" && payoutOpen ? (
         <Card className="mt-4 app-card shadow-none active:scale-100 p-5">
           <form onSubmit={submitPayout} className="grid gap-4 md:grid-cols-2">
             <Field label="مبلغ برداشت (ریال)">
@@ -1218,170 +1283,176 @@ export function PaymentsScreen() {
           </form>
         </Card>
       ) : null}
-      {open && (
-        <Card className="mt-5 app-card shadow-none active:scale-100 p-5">
-          <form
-            onSubmit={submit}
-            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-          >
-            <Field label="شاگرد">
-              <FormSelect
-                aria-label="studentId"
-                required
-                name="studentId"
-                className={inputClass}
-              >
-                <FormOption value="">انتخاب کنید</FormOption>
-                {students.data?.items.map((student) => (
-                  <FormOption
-                    entity={student}
-                    key={student.id}
-                    value={student.id}
-                  >
-                    {student.firstName} {student.lastName}
-                  </FormOption>
-                ))}
-              </FormSelect>
-            </Field>
-            <Field label="نوع پرداخت">
-              <FormSelect aria-label="type" name="type" className={inputClass}>
-                <FormOption value="tuition">شهریه</FormOption>
-                <FormOption value="session">هزینه سانس</FormOption>
-                <FormOption value="other">سایر</FormOption>
-              </FormSelect>
-            </Field>
-            <Field label="عنوان">
-              <HeroInput
-                required
-                name="title"
-                placeholder="شهریه شهریور"
-                className={inputClass}
-              />
-            </Field>
-            <Field label="مبلغ (ریال)">
-              <PanelNumberField
-                name="amount"
-                minValue={1}
-                step={1}
-                isRequired
-                aria-label="مبلغ (ریال)"
-              />
-            </Field>
-            <Field label="تاریخ پرداخت">
-              <IranDateInput
-                required
-                defaultValue={today()}
-                name="paidAt"
-
-                className={inputClass}
-              />
-            </Field>
-            <Field label="روش پرداخت">
-              <FormSelect
-                aria-label="method"
-                name="method"
-                className={inputClass}
-              >
-                <FormOption value="card">کارتخوان</FormOption>
-                <FormOption value="cash">نقدی</FormOption>
-                <FormOption value="transfer">کارت‌به‌کارت</FormOption>
-                <FormOption value="other">سایر</FormOption>
-              </FormSelect>
-            </Field>
-            <div className="md:col-span-2 lg:col-span-3">
-              <Field label="یادداشت">
-                <HeroTextArea name="notes" className={textareaClass} />
-              </Field>
-            </div>
-            <div className="flex gap-2 md:col-span-2 lg:col-span-3">
-              <Button
-                type="submit"
-                variant="primary"
-                isPending={create.isPending}
-              >
-                تأیید پرداخت‌شده
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onPress={() => setOpen(false)}
-              >
-                انصراف
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
-      {payments.isError ? (
-        <div className="mt-5">
-          <QueryError onRetry={() => void payments.refetch()} />
-        </div>
-      ) : (
-        <ListPagePanel
-          title="فهرست پرداخت‌ها"
-          description={`${filteredPayments.length.toLocaleString("fa-IR")} پرداخت`}
-          filterActiveCount={paymentFilterActiveCount}
-          filterTitle="فیلتر پرداخت‌ها"
-          onFilterApply={() => setFilters(draftFilters)}
-          onFilterReset={() => {
-            const empty = { query: "", type: "" as const };
-            setDraftFilters(empty);
-            setFilters(empty);
-          }}
-          filterContent={
-            <>
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-muted">جست‌وجو</span>
-                <HeroInput
-                  className={inputClass}
-                  value={draftFilters.query}
-                  onChange={(event) =>
-                    setDraftFilters((current) => ({
-                      ...current,
-                      query: event.target.value,
-                    }))
-                  }
-                  placeholder="نام شاگرد، عنوان یا نوع"
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-muted">نوع پرداخت</span>
+      <div hidden={paymentSection !== "receipts"}>
+        {open && (
+          <Card className="mt-5 app-card shadow-none active:scale-100 p-5">
+            <form
+              onSubmit={submit}
+              className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+            >
+              <Field label="شاگرد">
                 <FormSelect
-                  aria-label="انتخاب گزینه"
+                  aria-label="شاگرد"
+                  required
+                  name="studentId"
                   className={inputClass}
-                  value={draftFilters.type}
-                  onChange={(event) =>
-                    setDraftFilters((current) => ({
-                      ...current,
-                      type: event as "" | ClubManualPayment["type"],
-                    }))
-                  }
                 >
-                  <FormOption value="">همه</FormOption>
+                  <FormOption value="">انتخاب کنید</FormOption>
+                  {students.data?.items.map((student) => (
+                    <FormOption
+                      entity={student}
+                      key={student.id}
+                      value={student.id}
+                    >
+                      {student.firstName} {student.lastName}
+                    </FormOption>
+                  ))}
+                </FormSelect>
+              </Field>
+              <Field label="نوع پرداخت">
+                <FormSelect
+                  aria-label="نوع پرداخت"
+                  name="type"
+                  className={inputClass}
+                >
                   <FormOption value="tuition">شهریه</FormOption>
                   <FormOption value="session">هزینه سانس</FormOption>
                   <FormOption value="other">سایر</FormOption>
                 </FormSelect>
-              </label>
-            </>
-          }
-        >
-          <DataTable
-            ariaLabel="فهرست پرداخت‌ها"
-            data={filteredPayments}
-            columns={paymentColumns}
-            getRowId={(row) => row.id}
-            rowHeaderColumnId="student"
-            isLoading={payments.isPending}
-            emptyContent={
-              <Empty
-                title="پرداختی ثبت نشده"
-                hint="پس از دریافت وجه، آن را به‌عنوان پرداخت‌شده ثبت کنید"
-              />
+              </Field>
+              <Field label="عنوان">
+                <HeroInput
+                  required
+                  name="title"
+                  placeholder="شهریه شهریور"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="مبلغ (ریال)">
+                <PanelNumberField
+                  name="amount"
+                  minValue={1}
+                  step={1}
+                  isRequired
+                  aria-label="مبلغ (ریال)"
+                />
+              </Field>
+              <Field label="تاریخ پرداخت">
+                <IranDateInput
+                  required
+                  defaultValue={today()}
+                  name="paidAt"
+
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="روش پرداخت">
+                <FormSelect
+                  aria-label="روش پرداخت"
+                  name="method"
+                  className={inputClass}
+                >
+                  <FormOption value="card">کارتخوان</FormOption>
+                  <FormOption value="cash">نقدی</FormOption>
+                  <FormOption value="transfer">کارت‌به‌کارت</FormOption>
+                  <FormOption value="other">سایر</FormOption>
+                </FormSelect>
+              </Field>
+              <div className="md:col-span-2 lg:col-span-3">
+                <Field label="یادداشت">
+                  <HeroTextArea name="notes" className={textareaClass} />
+                </Field>
+              </div>
+              <div className="flex gap-2 md:col-span-2 lg:col-span-3">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isPending={create.isPending}
+                >
+                  تأیید پرداخت‌شده
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onPress={() => setOpen(false)}
+                >
+                  انصراف
+                </Button>
+              </div>
+            </form>
+          </Card>
+        )}
+        {payments.isError ? (
+          <div className="mt-5">
+            <QueryError onRetry={() => void payments.refetch()} />
+          </div>
+        ) : (
+          <ListPagePanel
+            title="فهرست پرداخت‌ها"
+            description={`${filteredPayments.length.toLocaleString("fa-IR")} پرداخت`}
+            filterActiveCount={paymentFilterActiveCount}
+            filterTitle="فیلتر پرداخت‌ها"
+            onFilterApply={() => setFilters(draftFilters)}
+            onFilterReset={() => {
+              const empty = { query: "", type: "" as const };
+              setDraftFilters(empty);
+              setFilters(empty);
+            }}
+            filterContent={
+              <>
+                <label className="grid gap-1.5 text-sm">
+                  <span className="text-muted">جست‌وجو</span>
+                  <HeroInput
+                    className={inputClass}
+                    value={draftFilters.query}
+                    onChange={(event) =>
+                      setDraftFilters((current) => ({
+                        ...current,
+                        query: event.target.value,
+                      }))
+                    }
+                    placeholder="نام شاگرد، عنوان یا نوع"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-sm">
+                  <span className="text-muted">نوع پرداخت</span>
+                  <FormSelect
+                    aria-label="فیلتر وضعیت"
+                    className={inputClass}
+                    value={draftFilters.type}
+                    onChange={(event) =>
+                      setDraftFilters((current) => ({
+                        ...current,
+                        type: event as "" | ClubManualPayment["type"],
+                      }))
+                    }
+                  >
+                    <FormOption value="">همه</FormOption>
+                    <FormOption value="tuition">شهریه</FormOption>
+                    <FormOption value="session">هزینه سانس</FormOption>
+                    <FormOption value="other">سایر</FormOption>
+                  </FormSelect>
+                </label>
+              </>
             }
-          />
-        </ListPagePanel>
-      )}
+          >
+            <DataTable
+              ariaLabel="فهرست پرداخت‌ها"
+              data={filteredPayments}
+              columns={paymentColumns}
+              getRowId={(row) => row.id}
+              rowHeaderColumnId="student"
+              isLoading={payments.isPending}
+              emptyContent={
+                <Empty
+                  title="پرداختی ثبت نشده"
+                  hint="پس از دریافت وجه، آن را به‌عنوان پرداخت‌شده ثبت کنید"
+                />
+              }
+            />
+          </ListPagePanel>
+        )}
+      </div>
       <EntityDetailsModal
         isOpen={Boolean(selectedPayment)}
         onOpenChange={(isOpen) => {
@@ -2037,7 +2108,7 @@ export function BranchesScreen() {
               <label className="grid gap-1.5 text-sm">
                 <span className="text-muted">وضعیت</span>
                 <FormSelect
-                  aria-label="انتخاب گزینه"
+                  aria-label="فیلتر وضعیت"
                   className={inputClass}
                   value={draftFilters.status}
                   onChange={(event) =>

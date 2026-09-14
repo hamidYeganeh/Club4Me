@@ -14,7 +14,7 @@ export function ReviewEmptyState({
         alt=""
         width={750}
         height={516}
-        className="h-auto w-52 max-w-[72%] object-contain drop-shadow-xl"
+        className="h-auto w-52 max-w-[72%] object-contain "
       />
       <p className="mt-4 font-black text-foreground">{title}</p>
       <p className="mt-2 max-w-[34ch] text-sm leading-7 text-muted">

@@ -2,7 +2,7 @@ import { MembershipRemindersService } from "./membership-reminders.service";
 import { getModelToken, MongooseModule } from "@nestjs/mongoose";
 import { Test } from "@nestjs/testing";
 import { Model, Types } from "mongoose";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "../../../test/mongo-memory";
 
 import { ClubsService } from "../clubs/clubs.service";
 import { EntitlementsService } from "./entitlements.service";

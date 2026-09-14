@@ -1,6 +1,6 @@
 "use client";
 
-import NumberFlow from "@number-flow/react";
+import { AnimatedCounter } from "@/components/motion/animated-counter";
 import { DiscoveryQueryState } from "../../components/DiscoveryQueryState";
 import { DiscoveryIranMapSkeleton } from "../../components/skeletons/DiscoveryIranMapSkeleton";
 import type { CSSProperties, KeyboardEvent } from "react";
@@ -150,8 +150,12 @@ export function DiscoveryIranMapSection() {
               <p className={styles.detailLabel()}>استان انتخاب‌شده</p>
               <h3 className={styles.detailTitle()}>{selectedShape.nameFa}</h3>
               <p className={styles.detailValue()}>
-                <NumberFlow value={selectedCount} locales="fa-IR" /> باشگاه
-                ثبت‌شده
+                <AnimatedCounter
+                  value={selectedCount}
+                  numberingSystem="arabext"
+                  separator="٬"
+                />{" "}
+                باشگاه ثبت‌شده
               </p>
             </div>
             <Link href={selectedHref} className={styles.action()}>

@@ -19,6 +19,7 @@ import { SessionsService as CoachSessionsService } from "../coaching/services/se
 import { MediaService } from "../media/media.service";
 import type {
   CreateCourtDto,
+  RecordOnSitePaymentDto,
   UpdateCourtDto,
   CreateReservationDto,
   RescheduleQuoteDto,
@@ -224,6 +225,83 @@ export class ReservationsService {
     return this.listSessionsByClub(clubId, false);
   }
 
+  @Atomic("reservations")
+  async recordOnSitePayment(
+    actorId: string,
+    clubId: string,
+    reservationId: string,
+    input: RecordOnSitePaymentDto,
+  ) {
+    await this.clubs.get(actorId, clubId, "payments.write");
+    const item = await this.reservations
+      .findOne({
+        _id: oid(reservationId),
+        clubId: oid(clubId),
+        paymentMethod: { $in: ["cash", "pos"] },
+      })
+      .exec();
+    if (!item)
+      throw new AppError(
+        404,
+        "RESERVATION_NOT_FOUND",
+        "رزرو با پرداخت حضوری پیدا نشد.",
+      );
+    const refund = input.action === "refund";
+    const amount = refund ? (item.refundAmount ?? 0) : item.totalPrice;
+    if (amount <= 0 || amount !== input.expectedAmount)
+      throw new AppError(
+        409,
+        "PAYMENT_PRICE_CHANGED",
+        "مبلغ را دوباره بررسی کنید.",
+      );
+    if (refund ? item.refundedOnSiteAt : item.collectedOnSiteAt)
+      return publicReservation(item);
+    if (
+      refund
+        ? item.paymentStatus !== "paid" ||
+          !item.collectedOnSiteAt ||
+          !["cancelled", "no_show"].includes(item.status)
+        : item.paymentStatus !== "pay_on_arrival" || item.status !== "reserved"
+    )
+      throw new AppError(
+        409,
+        "PAYMENT_STATE_CHANGED",
+        "وضعیت رزرو تغییر کرده است.",
+      );
+    const updated = await this.reservations
+      .findOneAndUpdate(
+        {
+          _id: item._id,
+          clubId: item.clubId,
+          status: item.status,
+          paymentStatus: item.paymentStatus,
+        },
+        {
+          $set: refund
+            ? {
+                paymentStatus: "refunded",
+                refundedOnSiteAt: new Date(),
+                refundedOnSiteBy: oid(actorId),
+              }
+            : {
+                paymentStatus: "paid",
+                collectedOnSiteAt: new Date(),
+                collectedOnSiteBy: oid(actorId),
+                onSiteReceipt: input.receipt,
+              },
+        },
+        { new: true },
+      )
+      .exec();
+    if (!updated)
+      throw new AppError(
+        409,
+        "PAYMENT_STATE_CHANGED",
+        "وضعیت پرداخت تغییر کرده است؛ دوباره بررسی کنید.",
+      );
+    return publicReservation(updated);
+  }
+
   async listClubReservations(ownerId: string, clubId: string) {
     await this.clubs.get(ownerId, clubId, "reservations.read");
     const items = await this.reservations
@@ -310,7 +388,7 @@ export class ReservationsService {
         clubId: oid(clubId),
         status: "reserved",
         checkedInParticipants: { $not: { $gt: 0 } },
-        paymentStatus: { $in: ["paid", "not_required"] },
+        paymentStatus: { $in: ["paid", "not_required", "pay_on_arrival"] },
         sessionStartsAt: { $lte: new Date() },
       })
       .exec();
@@ -330,10 +408,13 @@ export class ReservationsService {
           $set: {
             status: "no_show",
             refundPercent,
-            refundAmount: Math.floor(
-              (reservation.totalPrice * refundPercent) / 100,
-            ),
-            ...(reservation.paymentStatus === "paid" && refundPercent > 0
+            refundAmount:
+              reservation.paymentStatus === "pay_on_arrival"
+                ? 0
+                : Math.floor((reservation.totalPrice * refundPercent) / 100),
+            ...((reservation.paymentMethod ?? "online") === "online" &&
+            reservation.paymentStatus === "paid" &&
+            refundPercent > 0
               ? { paymentStatus: "refunded" }
               : {}),
           },
@@ -349,7 +430,11 @@ export class ReservationsService {
       );
     }
     const refundAmount = updated.refundAmount ?? 0;
-    if (reservation.paymentStatus === "paid" && refundAmount > 0) {
+    if (
+      (reservation.paymentMethod ?? "online") === "online" &&
+      reservation.paymentStatus === "paid" &&
+      refundAmount > 0
+    ) {
       await this.commerce.refundReservation(
         updated._id,
         refundAmount,
@@ -593,6 +678,18 @@ export class ReservationsService {
       );
     }
     const club = await this.clubs.getPublic(String(session.clubId));
+    const availablePaymentMethods: Array<"online" | "cash" | "pos"> = [
+      "online",
+      ...(["cash", "pos"] as const).filter((method) =>
+        club.onSitePaymentMethods?.includes(method),
+      ),
+    ];
+    if (!availablePaymentMethods.includes(input.paymentMethod ?? "online"))
+      throw new AppError(
+        409,
+        "RESERVATION_PAYMENT_METHOD_UNAVAILABLE",
+        "این روش پرداخت برای باشگاه فعال نیست؛ روش پرداخت را دوباره انتخاب کنید.",
+      );
     if (input.isTrial) {
       if (!club.trialBookingEnabled)
         throw new AppError(
@@ -701,11 +798,12 @@ export class ReservationsService {
         "RESERVATION_PRICE_CHANGED",
         "واحد پول تغییر کرده است؛ خلاصه رزرو را دوباره بررسی کنید.",
       );
-    return { session, selected, pricing };
+    return { session, selected, pricing, availablePaymentMethods };
   }
 
   async quote(userId: string, input: CreateReservationDto) {
-    const { session, pricing } = await this.prepareReservation(userId, input);
+    const { session, pricing, availablePaymentMethods } =
+      await this.prepareReservation(userId, input);
     if (input.entitlementId)
       await this.entitlements.assertEligibleForReservation({
         entitlementId: input.entitlementId,
@@ -733,6 +831,7 @@ export class ReservationsService {
       );
     return {
       ...pricing,
+      availablePaymentMethods,
       sessionId: String(session._id),
       currency: session.currency,
       pricingUnit: session.pricingUnit,
@@ -756,6 +855,12 @@ export class ReservationsService {
         409,
         "RESERVATION_NOT_RESCHEDULABLE",
         "رزرو تأییدشده برای تغییر زمان پیدا نشد.",
+      );
+    if (previous.paymentMethod && previous.paymentMethod !== "online")
+      throw new AppError(
+        409,
+        "ON_SITE_RESCHEDULE_UNAVAILABLE",
+        "برای تغییر سانس با پرداخت حضوری، رزرو فعلی را لغو و دوباره رزرو کنید.",
       );
     if (previous.sessionStartsAt <= new Date())
       throw new AppError(
@@ -1036,13 +1141,24 @@ export class ReservationsService {
         currency: session.currency,
         pricingUnit: session.pricingUnit,
         priceBreakdown: pricing,
-        paymentStatus: totalPrice > 0 ? "pending" : "not_required",
+        paymentMethod: input.paymentMethod ?? "online",
+        paymentStatus:
+          totalPrice > 0
+            ? input.paymentMethod && input.paymentMethod !== "online"
+              ? "pay_on_arrival"
+              : "pending"
+            : "not_required",
         paymentExpiresAt:
-          totalPrice > 0 ? paymentDeadline(session.startsAt) : null,
+          totalPrice > 0 &&
+          (!input.paymentMethod || input.paymentMethod === "online")
+            ? paymentDeadline(session.startsAt)
+            : null,
         cancellationPolicy: session.cancellationPolicy,
         status: "reserved",
       });
-      if (reservation.paymentStatus === "not_required") {
+      if (
+        ["not_required", "pay_on_arrival"].includes(reservation.paymentStatus)
+      ) {
         if (!input.isTrial)
           await this.entitlements.finalizeReservation(reservation._id, true);
         try {
@@ -1119,6 +1235,14 @@ export class ReservationsService {
       },
       { $set: { status: "completed" } },
     );
+    await this.reservations.updateMany(
+      {
+        sessionId: session._id,
+        status: "reserved",
+        paymentStatus: "pay_on_arrival",
+      },
+      { $set: { status: "no_show", refundAmount: 0, refundPercent: 0 } },
+    );
     return publicSession(session);
   }
 
@@ -1161,10 +1285,15 @@ export class ReservationsService {
                 status: "cancelled",
                 cancelledAt,
                 refundPercent,
-                refundAmount: Math.floor(
-                  (reservation.totalPrice * refundPercent) / 100,
-                ),
-                ...(reservation.paymentStatus === "paid" && refundPercent > 0
+                refundAmount:
+                  reservation.paymentStatus === "pay_on_arrival"
+                    ? 0
+                    : Math.floor(
+                        (reservation.totalPrice * refundPercent) / 100,
+                      ),
+                ...((reservation.paymentMethod ?? "online") === "online" &&
+                reservation.paymentStatus === "paid" &&
+                refundPercent > 0
                   ? { paymentStatus: "refunded" }
                   : {}),
               },
@@ -1173,7 +1302,11 @@ export class ReservationsService {
         })),
       );
       for (const reservation of reservations) {
-        if (reservation.paymentStatus === "paid" && refundPercent > 0) {
+        if (
+          (reservation.paymentMethod ?? "online") === "online" &&
+          reservation.paymentStatus === "paid" &&
+          refundPercent > 0
+        ) {
           await this.commerce.refundReservation(
             reservation._id,
             Math.floor((reservation.totalPrice * refundPercent) / 100),
@@ -1249,8 +1382,13 @@ export class ReservationsService {
             status: "cancelled",
             cancelledAt,
             refundPercent: refund.refundPercent,
-            refundAmount: refund.refundAmount,
-            ...(reservation.paymentStatus === "paid" && refund.refundAmount > 0
+            refundAmount:
+              reservation.paymentStatus === "pay_on_arrival"
+                ? 0
+                : refund.refundAmount,
+            ...((reservation.paymentMethod ?? "online") === "online" &&
+            reservation.paymentStatus === "paid" &&
+            refund.refundAmount > 0
               ? { paymentStatus: "refunded" }
               : {}),
           },
@@ -1271,7 +1409,11 @@ export class ReservationsService {
       cancelled.selectedOptions,
       cancelled._id,
     );
-    if (reservation.paymentStatus === "paid" && refund.refundAmount > 0) {
+    if (
+      (reservation.paymentMethod ?? "online") === "online" &&
+      reservation.paymentStatus === "paid" &&
+      refund.refundAmount > 0
+    ) {
       await this.commerce.refundReservation(
         cancelled._id,
         refund.refundAmount,
@@ -1487,6 +1629,9 @@ function publicReservation(value: ReservationDocument) {
     entitlementId: value.entitlementId ? String(value.entitlementId) : null,
     entitlementCoveredAmount: value.entitlementCoveredAmount ?? 0,
     paymentStatus: value.paymentStatus ?? "not_required",
+    paymentMethod: value.paymentMethod ?? "online",
+    collectedOnSiteAt: value.collectedOnSiteAt?.toISOString() ?? null,
+    refundedOnSiteAt: value.refundedOnSiteAt?.toISOString() ?? null,
     paymentExpiresAt: value.paymentExpiresAt?.toISOString() ?? null,
     cancellationPolicy: value.cancellationPolicy,
     refundPercent: value.refundPercent,

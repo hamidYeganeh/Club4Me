@@ -314,7 +314,7 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
                 ))}
               </FormSelect>
             </label>
-            <fieldset className="rounded-xl border border-border p-3">
+            <fieldset className="rounded-xl p-3">
               <legend className="px-2 text-sm">شیوه ارائه</legend>
               <div className="flex flex-wrap gap-4">
                 {Object.entries(modes).map(([value, label]) => {
@@ -473,7 +473,7 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
               />
             </label>
             {draft.deliveryModes.includes("club") ? (
-              <fieldset className="space-y-3 rounded-xl border border-border p-3">
+              <fieldset className="space-y-3 rounded-xl p-3">
                 <legend className="px-2 text-sm">باشگاه‌های محل ارائه</legend>
                 <HeroInput
                   aria-label="جستجوی باشگاه محل ارائه"
@@ -542,7 +542,7 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
                 : "قانون پیش‌فرض: تا ۲۴ ساعت قبل ۸۰٪ بازگشت؛ پس از آن بدون بازگشت. لغو مربی با بازگشت کامل."}
             </p>
             <details
-              className="rounded-xl border border-border p-3"
+              className="rounded-xl p-3"
               open={initial ? true : undefined}
             >
               <summary className="cursor-pointer font-medium">

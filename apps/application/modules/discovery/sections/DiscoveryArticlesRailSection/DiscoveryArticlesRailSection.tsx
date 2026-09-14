@@ -1,8 +1,10 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import { ArticleCardSkeleton } from "../../components/skeletons/ArticleCardSkeleton";
 import { useLocale, useTranslations } from "next-intl";
-import { FreeMode } from "swiper/modules";
+import { FreeMode, Virtual } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { ArticleCard } from "@ui/article-card";
 
@@ -16,7 +18,7 @@ import type { DiscoveryArticlesRailSectionProps } from "./DiscoveryArticlesRailS
 import "swiper/css";
 import "swiper/css/free-mode";
 
-export function DiscoveryArticlesRailSection({
+function DiscoveryArticlesRailSectionContent({
   id,
   title,
   subtitle,
@@ -61,9 +63,10 @@ export function DiscoveryArticlesRailSection({
 
       <Swiper
         dir={direction}
-        modules={[FreeMode]}
+        modules={[FreeMode, Virtual]}
+        virtual={!isLoading}
         freeMode
-        slidesPerView="auto"
+        slidesPerView={1.2}
         spaceBetween={12}
         watchOverflow
         className={styles.swiper()}
@@ -74,12 +77,16 @@ export function DiscoveryArticlesRailSection({
                 <ArticleCardSkeleton
                   orientation={orientation}
                   outlined={cardVariant.outlined}
-                  className={styles.card()}
+                  className={`${styles.card()} w-full!`}
                 />
               </SwiperSlide>
             ))
-          : items.map((article) => (
-              <SwiperSlide key={article.id} className={styles.slide()}>
+          : items.map((article, index) => (
+              <SwiperSlide
+                key={article.id}
+                virtualIndex={index}
+                className="h-auto!"
+              >
                 <ArticleCard
                   title={article.title}
                   description={article.excerpt}
@@ -91,11 +98,21 @@ export function DiscoveryArticlesRailSection({
                   orientation={orientation}
                   outlined={cardVariant.outlined}
                   href={`/discovery/articles/${article.slug}`}
-                  className={styles.card()}
+                  className={`${styles.card()} w-full!`}
                 />
               </SwiperSlide>
             ))}
       </Swiper>
     </section>
+  );
+}
+
+export function DiscoveryArticlesRailSection(
+  props: ComponentProps<typeof DiscoveryArticlesRailSectionContent>,
+) {
+  return (
+    <DiscoveryViewport>
+      <DiscoveryArticlesRailSectionContent {...props} />
+    </DiscoveryViewport>
   );
 }

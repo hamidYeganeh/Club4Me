@@ -9,7 +9,7 @@ export const discoveryClubsRailSectionStyles = tv({
     scroller: "relative z-[1] -mx-5 overflow-x-auto px-5",
     track: "flex w-max snap-x snap-mandatory flex-nowrap gap-3 pb-1",
     card: "snap-start",
-    skeleton: "shrink-0 rounded-[24px] border border-white/7 bg-surface/72",
+    skeleton: "shrink-0 rounded-[24px] bg-surface/72",
     error: "relative z-[1] py-8 text-center",
     errorText: "mb-3 text-danger",
   },

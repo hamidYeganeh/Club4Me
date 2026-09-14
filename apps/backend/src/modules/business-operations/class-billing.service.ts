@@ -522,31 +522,55 @@ export class ClassBillingService {
     }
     const oldClass = await this.classes.findById(source.classId);
     const nextClass = await this.classes.findById(target.classId);
-    if (
-      source.agreedPrice !== target.agreedPrice ||
-      source.totalSessions !== target.totalSessions ||
-      oldClass?.currency !== nextClass?.currency
-    )
+    if (oldClass?.currency !== nextClass?.currency)
       throw conflict(
         "TRANSFER_CONTRACT_MISMATCH",
-        "انتقال با حفظ پرداخت فقط به قرارداد هم‌قیمت و هم‌سهمیه ممکن است",
+        "واحد پول قراردادهای مبدأ و مقصد باید یکسان باشد",
       );
     if (target.status !== "active")
       throw conflict(
         "TRANSFER_CAPACITY_REQUIRED",
         "برای انتقال قرارداد مالی، کلاس مقصد باید ظرفیت داشته باشد",
       );
+    const consumed =
+      source.totalSessions !== null && source.remainingSessions !== null
+        ? Math.max(0, source.totalSessions - source.remainingSessions)
+        : await this.classes.db
+            .collection("business_class_attendance")
+            .countDocuments({
+              classId: source.classId,
+              studentId: source.studentId,
+              status: "present",
+            });
+    if (target.totalSessions !== null && consumed > target.totalSessions)
+      throw conflict(
+        "TRANSFER_CREDITS_EXCEEDED",
+        "جلسات مصرف‌شده بیشتر از سهمیه مقصد است",
+      );
+    const balance = await this.balance(source);
     target.billingMode = "ledger";
     target.openingPaidAmount = source.openingPaidAmount ?? 0;
-    target.waivedAmount = source.waivedAmount ?? 0;
-    target.remainingSessions = source.remainingSessions;
+    target.waivedAmount = Math.min(
+      source.waivedAmount ?? 0,
+      Math.max(0, target.agreedPrice - (balance.paidAmount ?? 0)),
+    );
+    target.remainingSessions =
+      target.totalSessions === null ? null : target.totalSessions - consumed;
     target.billingChanges.push({
       actorId: actor,
       at: new Date(),
       action: "transfer_in",
-      reason: "انتقال قرارداد با حفظ پرداخت و سهمیه",
-      before: { enrollmentId: String(source._id) },
-      after: { enrollmentId: String(target._id) },
+      reason: "انتقال قرارداد با حفظ پرداخت و کسر جلسات مصرف‌شده",
+      before: {
+        enrollmentId: String(source._id),
+        agreedPrice: source.agreedPrice,
+        remainingSessions: source.remainingSessions,
+      },
+      after: {
+        enrollmentId: String(target._id),
+        agreedPrice: target.agreedPrice,
+        remainingSessions: target.remainingSessions,
+      },
     });
     await this.payments.updateMany(
       { enrollmentId: source._id, clubId: source.clubId },

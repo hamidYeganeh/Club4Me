@@ -9,7 +9,7 @@ export const metricCardVariants = tv({
       "overflow-hidden rounded-[24px] text-start text-surface-foreground",
       "outline-none shrink-0",
       "data-[pressable=true]:cursor-pointer",
-      "data-[pressable=true]:transition-transform data-[pressable=true]:active:scale-[0.99]",
+      "data-[pressable=true]:transition-transform",
     ].join(" "),
     // Override `.card__header` (flex-col)
     header: "!flex !flex-row !items-center !justify-between gap-2 p-0",

@@ -47,10 +47,10 @@ export const articleCardStyles = tv({
     },
     outlined: {
       true: {
-        root: "border border-border",
+        root: "",
       },
       false: {
-        root: "border border-transparent",
+        root: "",
       },
     },
   },

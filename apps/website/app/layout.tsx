@@ -10,11 +10,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: siteUrl,
   title: {
-    default: "Gym4Me | رزرو، برنامه تمرین و پیشرفت",
-    template: "%s | Gym4Me",
+    default: "Club4Me | رزرو، برنامه تمرین و پیشرفت",
+    template: "%s | Club4Me",
   },
   description:
-    "باشگاه و مربی پیدا کنید، جلسه رزرو کنید و برنامه تمرین، پیشرفت و اعتبار عضویت خود را در جیم فور می دنبال کنید.",
+    "باشگاه و مربی پیدا کنید، جلسه رزرو کنید و برنامه تمرین، پیشرفت و اعتبار عضویت خود را در کلاب‌فورمی دنبال کنید.",
 };
 
 export default async function RootLayout({

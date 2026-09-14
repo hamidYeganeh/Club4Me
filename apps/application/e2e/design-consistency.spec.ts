@@ -68,7 +68,7 @@ for (const theme of ["light", "dark"] as const) {
         ["professional", "/coach/profile/professional"], ["workspace", "/coach/reservations"], ["not-found", "/missing-design-page"],
       ]) {
         await page.goto(path!);
-        await expect(page.getByRole("status", { name: "Gym4Me", exact: true })).toHaveCount(0);
+        await expect(page.getByRole("status", { name: "Club4Me", exact: true })).toHaveCount(0);
         await expect(page.locator("header").first()).toBeVisible();
         await expect(page).toHaveURL(new RegExp(`${path}$`));
         if (["class", "service", "professional"].includes(name!)) {

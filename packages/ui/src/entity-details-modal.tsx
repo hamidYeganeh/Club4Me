@@ -55,7 +55,7 @@ export function EntityDetailsModal({
                   {section.items.map((item) => (
                     <div
                       key={item.label}
-                      className={`rounded-xl border border-border bg-surface-secondary p-3 ${item.wide ? "sm:col-span-2" : ""}`}
+                      className={`rounded-xl bg-surface-secondary p-3 ${item.wide ? "sm:col-span-2" : ""}`}
                     >
                       <dt className="text-xs text-muted">{item.label}</dt>
                       <dd

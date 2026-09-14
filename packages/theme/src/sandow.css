@@ -98,16 +98,16 @@
 
 @layer components {
   .app-surface {
-    @apply border border-border bg-surface;
+    @apply bg-surface;
   }
   .app-card {
-    @apply border border-border/60 bg-surface;
+    @apply bg-surface;
     border-radius: var(--app-radius-card);
     box-shadow: var(--app-shadow-card);
     backdrop-filter: none;
   }
   .app-icon-button {
-    @apply border-border/60 bg-surface text-foreground;
+    @apply bg-surface text-foreground;
     border-radius: var(--app-radius-control);
   }
   .app-field {

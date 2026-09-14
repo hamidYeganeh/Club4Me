@@ -1,7 +1,14 @@
 "use client";
 
 import { RelatedCoaches } from "../../components/RelatedContent";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { DiscoveryHeroScrim } from "../../components/DiscoveryImageHero";
 import { Button, Card, toast, Typography } from "@heroui/react";
@@ -12,6 +19,7 @@ import {
   type PublicCatalogClass,
 } from "@api/discovery";
 import {
+  trackDiscoveryEntityViewed,
   type CoachBooking,
   type CoachSession,
   useBookCoachSession,
@@ -78,6 +86,13 @@ function CoachDetails({ id }: { id: string }) {
   const router = useRouter();
   const query = useCatalogCoach(id);
   const coach = query.data;
+  const viewed = useRef("");
+  useEffect(() => {
+    if (coach?.id && viewed.current !== coach.id) {
+      viewed.current = coach.id;
+      trackDiscoveryEntityViewed({ entity_type: "coach", entity_id: coach.id });
+    }
+  }, [coach]);
   const sessions = usePublicCoachSessions(coach?.slug ?? "");
   const book = useBookCoachSession();
   const bookClub = useReserveSession();
@@ -99,6 +114,7 @@ function CoachDetails({ id }: { id: string }) {
   if (!coach) return <Missing retry={() => query.refetch()} />;
   const phone = firstString(coach.contact, ["phone", "mobile", "telephone"]);
   const availableSessions = sessions.data?.items ?? [];
+  const coachMeta = `${coach.reviewsCount > 0 ? `${coach.averageRating.toLocaleString("fa-IR", { maximumFractionDigits: 1 })} ★ · ${coach.reviewsCount.toLocaleString("fa-IR")} نظر` : "هنوز نظری ثبت نشده"} · ${coach.experienceYears.toLocaleString("fa-IR")} سال تجربه`;
   const reserve = async (session: CoachSession) => {
     try {
       if (session.source === "club") {
@@ -271,7 +287,7 @@ function CoachDetails({ id }: { id: string }) {
     <DetailLayout
       title={coach.displayName}
       subtitle={coach.experienceSummary || "مربی ورزشی"}
-      meta={`${coach.averageRating.toLocaleString("fa-IR")} ★ · ${coach.experienceYears.toLocaleString("fa-IR")} سال تجربه`}
+      meta={coachMeta}
       description={coach.shortBio || "اطلاعات این مربی به‌زودی تکمیل می‌شود."}
       imageUrl={coach.imageUrl}
       badge="پروفایل مربی"
@@ -289,12 +305,15 @@ function CoachDetails({ id }: { id: string }) {
       actionLabel={
         sessions.isLoading
           ? "در حال دریافت سانس‌ها"
-          : availableSessions.length > 0
-            ? "انتخاب سانس"
-            : phone
-              ? "تماس با مربی"
-              : "فعلاً سانس آزادی نیست"
+          : sessions.isError
+            ? "تلاش دوباره برای دریافت سانس‌ها"
+            : availableSessions.length > 0
+              ? "انتخاب سانس"
+              : phone
+                ? "تماس با مربی"
+                : "فعلاً سانس آزادی نیست"
       }
+      onAction={sessions.isError ? () => void sessions.refetch() : undefined}
       actionHref={
         availableSessions.length > 0
           ? "#coach-sessions"
@@ -360,7 +379,7 @@ function CoachDetails({ id }: { id: string }) {
       <CoachProfessionalSections coach={coach} section="experience" />
       <DetailSocialSection items={coachSocialLinks(coach.contact ?? {})} />
       <DetailFaqSection items={coach.faqs} />
-      <section className="space-y-3">
+      <section id="coach-reviews" className="scroll-mt-6 space-y-3">
         <ReviewSummary
           type="coach"
           average={coach.averageRating}
@@ -402,7 +421,7 @@ function CoachDetails({ id }: { id: string }) {
             {availableSessions.map((session) => (
               <div
                 key={session.id}
-                className="rounded-2xl border border-border bg-surface-secondary p-4"
+                className="rounded-2xl bg-surface-secondary p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -413,14 +432,16 @@ function CoachDetails({ id }: { id: string }) {
                       {new Date(session.startAt).toLocaleString("fa-IR", {
                         dateStyle: "medium",
                         timeStyle: "short",
+                        timeZone: "Asia/Tehran",
                       })}
                     </p>
                     <p className="mt-1 text-xs text-muted">
                       {session.deliveryMode === "online" ? "آنلاین" : "حضوری"}
                       {" · "}
-                      {(session.remainingCapacity ?? 0).toLocaleString(
-                        "fa-IR",
-                      )}{" "}
+                      {(
+                        session.remainingCapacity ??
+                        Math.max(0, session.capacity - session.bookedCount)
+                      ).toLocaleString("fa-IR")}{" "}
                       جای خالی
                     </p>
                   </div>
@@ -436,9 +457,20 @@ function CoachDetails({ id }: { id: string }) {
                       variant="primary"
                       className="mt-2"
                       isPending={book.isPending || bookClub.isPending}
+                      isDisabled={
+                        (session.remainingCapacity ??
+                          Math.max(
+                            0,
+                            session.capacity - session.bookedCount,
+                          )) <= 0
+                      }
                       onPress={() => setReviewSession(session)}
                     >
-                      ادامه
+                      {(session.remainingCapacity ??
+                        Math.max(0, session.capacity - session.bookedCount)) <=
+                      0
+                        ? "ظرفیت تکمیل"
+                        : "انتخاب سانس"}
                     </Button>
                   </div>
                 </div>
@@ -485,10 +517,21 @@ function ClassDetails({ id }: { id: string }) {
   const cancelEnrollment = useCancelClassEnrollment();
   const resolvePayment = useResolveMockClassPayment();
   const [showPayment, setShowPayment] = useState(false);
+  const item = query.data;
+  const viewed = useRef("");
+  useEffect(() => {
+    if (item?.id && viewed.current !== item.id) {
+      viewed.current = item.id;
+      trackDiscoveryEntityViewed({
+        entity_type: "class",
+        entity_id: item.id,
+        ...(item.clubId ? { club_id: item.clubId } : {}),
+      });
+    }
+  }, [item]);
   if (getQueryFailure(query.error, query.fetchStatus) && !query.data)
     return <DiscoveryQueryPage title="کلاس" query={query} />;
   if (query.isLoading) return <Loading />;
-  const item = query.data;
   if (!item) return <Missing retry={() => query.refetch()} />;
   const remaining = Math.max(0, item.capacity - item.enrollmentCount);
   const enrollment = (enrollments.data?.items ?? []).find(
@@ -716,6 +759,11 @@ function DetailLayout({
   galleryHref?: string;
   children?: ReactNode;
 }) {
+  const portalTarget = useSyncExternalStore(
+    subscribeToHydration,
+    () => document.body,
+    () => null,
+  );
   const galleryRouter = useRouter();
   const mediaRef = useRef<HTMLDivElement | null>(null);
   const pullStartRef = useRef<number | null>(null);
@@ -826,7 +874,28 @@ function DetailLayout({
           </Typography>
         </div>
       </div>
-      <section className="relative flex flex-col gap-8 px-4 pt-5">
+      <nav
+        aria-label="بخش‌های پروفایل مربی"
+        className="mx-4 mt-4 flex flex-wrap gap-2"
+      >
+        {[
+          ["coach-about", "درباره مربی"],
+          ["coach-sessions", "سانس‌ها"],
+          ["coach-reviews", "نظرات"],
+        ].map(([target, label]) => (
+          <a
+            key={target}
+            href={`#${target}`}
+            className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-surface px-4 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+      <section
+        id="coach-about"
+        className="relative flex scroll-mt-6 flex-col gap-8 px-4 pt-5"
+      >
         <Card className="app-card app-stack-card p-5 shadow-none">
           <Card.Title>درباره</Card.Title>
           <Card.Description className="mt-3 leading-7 text-muted">
@@ -862,36 +931,51 @@ function DetailLayout({
         ) : null}
         {children}
       </section>
-      <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-xl rounded-t-[2rem] border-t border-border bg-background px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        {onAction ? (
-          <Button
-            variant="primary"
-            size="lg"
-            className="w-full whitespace-nowrap"
-            isDisabled={actionDisabled}
-            isPending={actionPending}
-            onPress={onAction}
-          >
-            {actionLabel}
-          </Button>
-        ) : actionHref ? (
-          <ButtonLink
-            href={actionHref}
-            variant="primary"
-            size="lg"
-            className="w-full"
-          >
-            {actionLabel}
-          </ButtonLink>
-        ) : (
-          <Button isDisabled variant="primary" size="lg" className="w-full">
-            {actionLabel}
-          </Button>
-        )}
-      </div>
+      {portalTarget
+        ? createPortal(
+            <aside
+              aria-label="رزرو مربی"
+              className="app-bottom-fade fixed inset-x-0 bottom-0 z-40 mx-auto max-w-xl px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+            >
+              {onAction ? (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-full whitespace-nowrap"
+                  isDisabled={actionDisabled}
+                  isPending={actionPending}
+                  onPress={onAction}
+                >
+                  {actionLabel}
+                </Button>
+              ) : actionHref ? (
+                <ButtonLink
+                  href={actionHref}
+                  variant="primary"
+                  size="lg"
+                  className="w-full"
+                >
+                  {actionLabel}
+                </ButtonLink>
+              ) : (
+                <Button
+                  isDisabled
+                  variant="primary"
+                  size="lg"
+                  className="w-full"
+                >
+                  {actionLabel}
+                </Button>
+              )}
+            </aside>,
+            portalTarget,
+          )
+        : null}
     </main>
   );
 }
+
+const subscribeToHydration = () => () => {};
 
 function Loading() {
   return <DetailPageSkeleton />;

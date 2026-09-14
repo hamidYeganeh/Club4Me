@@ -90,7 +90,7 @@ export function Tabs({
 
 const listClasses: Record<Variant, string> = {
   pill: "inline-flex items-center gap-1 rounded-full bg-surface p-1",
-  underline: "inline-flex items-center gap-1 border-b border-border",
+  underline: "inline-flex items-center gap-1",
   segment: "inline-flex items-center gap-0 rounded-lg bg-surface p-0.5",
 };
 

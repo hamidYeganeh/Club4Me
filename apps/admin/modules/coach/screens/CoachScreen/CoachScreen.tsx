@@ -1,4 +1,6 @@
 "use client";
+import { useConfirmActionDialog } from "@repo/ui/confirm-action-dialog";
+import { useTextActionDialog } from "@repo/ui/text-action-dialog";
 
 import { useState } from "react";
 import { Button, Card, Chip, Spinner, Table, toast } from "@heroui/react";
@@ -14,21 +16,32 @@ const labels = {
 } as const;
 
 export function CoachScreen() {
+  const confirmation = useConfirmActionDialog();
   const coaches = useAdminCoaches();
   const review = useReviewCoach();
+  const textAction = useTextActionDialog();
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<AdminCoach | null>(null);
 
   const decide = async (coachId: string, status: "approved" | "rejected") => {
-    const reason =
-      status === "rejected"
-        ? window.prompt("دلیل رد پروفایل مربی را وارد کنید")?.trim()
-        : undefined;
-    if (status === "rejected" && !reason) return;
-    if (status === "approved" && !window.confirm("این مربی تأیید شود؟")) return;
+    if (status === "rejected") {
+      textAction.open({
+        title: "دلیل رد پروفایل مربی",
+        onSubmit: async (reason) => {
+          await review.mutateAsync({ coachId, status, reason });
+          toast.success("نتیجه بررسی ثبت شد");
+        },
+      });
+      return;
+    }
+    if (
+      status === "approved" &&
+      !(await confirmation.confirm("این مربی تأیید شود؟"))
+    )
+      return;
     setReviewingId(coachId);
     try {
-      await review.mutateAsync({ coachId, status, reason });
+      await review.mutateAsync({ coachId, status });
       toast.success(
         status === "approved" ? "مربی تأیید شد" : "پروفایل مربی رد شد",
       );
@@ -42,10 +55,12 @@ export function CoachScreen() {
   const items = coaches.data?.items ?? [];
   return (
     <main className="flex-1 overflow-auto p-4 lg:p-6">
+      {confirmation.dialog}
+      {textAction.dialog}
       <h1 className="text-2xl font-semibold">مدیریت مربی‌ها</h1>
       <Card
         variant="transparent"
-        className="mt-5 overflow-hidden rounded-[1.75rem] border border-border bg-surface"
+        className="mt-5 overflow-hidden rounded-[1.75rem] bg-surface"
       >
         {coaches.isPending ? (
           <div className="flex justify-center py-16">

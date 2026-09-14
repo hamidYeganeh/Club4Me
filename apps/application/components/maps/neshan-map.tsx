@@ -383,7 +383,7 @@ export function NeshanMap({
           disabled={locating}
           onClick={() => void requestCurrentLocation()}
           className={cn(
-            "absolute bottom-4 right-4 z-10 flex size-11 items-center justify-center rounded-full border border-foreground/10 bg-background text-foreground shadow-lg transition-transform active:scale-95 disabled:opacity-50",
+            "absolute bottom-4 right-4 z-10 flex size-11 items-center justify-center rounded-full bg-background text-foreground shadow-lg transition-transform disabled:opacity-50",
             locateClassName,
           )}
         >
@@ -420,7 +420,7 @@ function createClubMarkerElement(marker: NeshanMapMarker, selected: boolean) {
   element.style.fontWeight = "800";
   element.style.justifyContent = "center";
   element.style.overflow = "hidden";
-  element.style.transition = "border-color 180ms ease, transform 180ms ease";
+  element.style.transition = "180ms ease, transform 180ms ease";
   applyClubMarkerSelectionStyles(element, selected);
 
   const initial = document.createElement("span");

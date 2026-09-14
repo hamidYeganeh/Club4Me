@@ -23,7 +23,7 @@ export function AthleteScreenHeaderSection({
     );
   return (
     <>
-      <header className={styles.root()} aria-label="جیم‌فورمی">
+      <header className={styles.root()} aria-label="کلاب‌فورمی">
         <div
           className="grid w-full grid-cols-[3rem_1fr_3rem] items-center gap-3"
           dir="rtl"
@@ -45,10 +45,10 @@ export function AthleteScreenHeaderSection({
           </Link>
           <Link
             href={`/${role}`}
-            aria-label="جیم‌فورمی"
+            aria-label="کلاب‌فورمی"
             className="mx-auto rounded-xl text-accent outline-none focus-visible:ring-2 focus-visible:ring-focus"
           >
-            <Logo size={40} label="جیم‌فورمی" />
+            <Logo size={48} label="کلاب‌فورمی" />
           </Link>
           <Link
             href={`/${role}/notifications`}

@@ -1,4 +1,5 @@
 "use client";
+import type { ReservationPaymentMethod } from "@api";
 
 import { Counter } from "@/components/counter";
 import { SecondaryHeader } from "../../components/SecondaryHeader";
@@ -37,7 +38,7 @@ import { useCatalogClub } from "@api/discovery";
 import { Icon } from "@theme/icon";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import NumberFlow from "@number-flow/react";
+import { AnimatedCounter } from "@/components/motion/animated-counter";
 import { useTranslations } from "next-intl";
 import { rememberAuthReturnPath } from "@/lib/auth-return-path";
 import {
@@ -115,6 +116,9 @@ export function DiscoveryClubSlotsScreen({
     "success" | "failed" | null
   >(null);
   const [showReview, setShowReview] = useState(false);
+  const [onSitePaymentDue, setOnSitePaymentDue] = useState(false);
+  const [paymentMethod, setPaymentMethod] =
+    useState<ReservationPaymentMethod>("online");
   const [selection, setSelection] = useState(() =>
     readReservationSelection(params),
   );
@@ -394,6 +398,7 @@ export function DiscoveryClubSlotsScreen({
         session_id: selectedSession.id,
       });
       const result = await reserve.mutateAsync({
+        paymentMethod,
         sessionId: selectedSession.id,
         participantCount,
         options: selectedOptions,
@@ -404,6 +409,7 @@ export function DiscoveryClubSlotsScreen({
           ? { entitlementId: selectedEntitlement.id }
           : {}),
       });
+      setOnSitePaymentDue(result.paymentStatus === "pay_on_arrival");
       if (result.paymentStatus === "pending") {
         setShowReview(false);
         setPendingPayment({
@@ -425,6 +431,8 @@ export function DiscoveryClubSlotsScreen({
             "باشگاه در حال حاضر رزرو آزمایشی نمی‌پذیرد. برای رزرو عادی، گزینه آزمایشی را خاموش کنید.",
           RESERVATION_PRICE_CHANGED:
             "قیمت تغییر کرده است؛ خلاصه رزرو را دوباره بررسی کنید.",
+          RESERVATION_PAYMENT_METHOD_UNAVAILABLE:
+            "باشگاه این روش پرداخت را غیرفعال کرده است؛ دوباره وارد مرور رزرو شوید و روش پرداخت را انتخاب کنید.",
           PAYMENT_EXPIRED:
             "مهلت پرداخت تمام شده است؛ دوباره زمان را انتخاب کنید.",
           INVALID_TRIAL_BOOKING:
@@ -497,7 +505,13 @@ export function DiscoveryClubSlotsScreen({
     return (
       <ReservationResultScreen
         status={reservationResult}
-        message={reservationResult === "failed" ? bookingError : undefined}
+        message={
+          reservationResult === "failed"
+            ? bookingError
+            : onSitePaymentDue
+              ? "رزرو ثبت شد. هزینه را هنگام مراجعه به پذیرش باشگاه پرداخت کنید."
+              : undefined
+        }
         entity={{
           kind: "club",
           title: clubName,
@@ -529,6 +543,11 @@ export function DiscoveryClubSlotsScreen({
   if (showReview && selectedSession) {
     return (
       <ReservationReviewScreen
+        paymentMethod={paymentMethod}
+        onPaymentMethodChange={setPaymentMethod}
+        availablePaymentMethods={
+          quote.data?.availablePaymentMethods ?? ["online"]
+        }
         entity={{
           kind: "club",
           title: clubName,
@@ -889,7 +908,7 @@ export function DiscoveryClubSlotsScreen({
                   aria-haspopup="dialog"
                   aria-expanded={entitlementSheetOpen}
                   onClick={() => setEntitlementSheetOpen(true)}
-                  className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-foreground/10 bg-surface-secondary px-4 text-start text-sm font-semibold text-foreground transition-transform active:scale-[0.99]"
+                  className="flex min-h-12 w-full items-center gap-3 rounded-xl bg-surface-secondary px-4 text-start text-sm font-semibold text-foreground transition-transform"
                 >
                   <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent/12 text-accent">
                     <Icon name="ticket" size={18} />
@@ -903,7 +922,7 @@ export function DiscoveryClubSlotsScreen({
             ) : null}
 
             {selectedSession && !isTrial ? (
-              <div className="space-y-3 border-t border-border pt-4">
+              <div className="space-y-3 pt-4">
                 <label className="block text-sm font-bold">
                   تعداد نفرات
                   <Counter
@@ -983,16 +1002,16 @@ export function DiscoveryClubSlotsScreen({
                 <p className={styles.priceValue()}>
                   {selectedSession ? (
                     <>
-                      <NumberFlow
+                      <AnimatedCounter
                         value={
                           isTrial
                             ? 0
                             : (selectedEntitlement ? 0 : baseAmount) +
                               optionsAmount
                         }
-                        locales="fa-IR"
-                        format={{ useGrouping: true }}
-                        className="inline-block min-w-[3ch]"
+                        numberingSystem="arabext"
+                        separator="٬"
+                        className="min-w-[3ch]"
                       />
                       <span className="ms-1 text-base font-bold text-muted">
                         ریال
@@ -1016,7 +1035,7 @@ export function DiscoveryClubSlotsScreen({
                     return;
                   }
                   try {
-                    await quote.mutateAsync({
+                    const freshQuote = await quote.mutateAsync({
                       sessionId: selectedSession.id,
                       participantCount,
                       options: selectedOptions,
@@ -1025,6 +1044,13 @@ export function DiscoveryClubSlotsScreen({
                         ? { entitlementId: selectedEntitlement.id }
                         : {}),
                     });
+                    if (
+                      !(
+                        freshQuote.availablePaymentMethods ?? ["online"]
+                      ).includes(paymentMethod)
+                    ) {
+                      setPaymentMethod("online");
+                    }
                     setShowReview(true);
                   } catch {
                     toast.danger(
@@ -1058,7 +1084,7 @@ function EntitlementOption({
     <Radio value={value} aria-label={title}>
       <Radio.Content
         className={cn(
-          "flex min-h-20 items-center gap-4 rounded-2xl border p-4 text-start transition-[border-color,background-color,transform] active:scale-[0.99]",
+          "flex min-h-20 items-center gap-4 rounded-2xl border p-4 text-start transition-[border-color,background-color,transform]",
           selected
             ? "border-accent bg-accent/8"
             : "border-border bg-surface-secondary/60",

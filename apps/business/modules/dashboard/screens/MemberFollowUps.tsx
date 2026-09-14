@@ -45,7 +45,7 @@ export function MemberFollowUps({ clubId }: { clubId: string }) {
   );
   return (
     <section
-      className="mt-4 space-y-3 rounded-2xl border border-border p-4"
+      className="mt-4 space-y-3 rounded-2xl p-4"
       aria-label="پیگیری اعضای باشگاه"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -144,7 +144,7 @@ export function MemberFollowUps({ clubId }: { clubId: string }) {
       {selected && (
         <form
           id={`follow-up-form-${clubId}`}
-          className="space-y-3 rounded-xl border border-accent/30 p-4"
+          className="space-y-3 rounded-xl p-4"
           onSubmit={(e) => {
             e.preventDefault();
             if (!mutation.isPending) mutation.mutate();

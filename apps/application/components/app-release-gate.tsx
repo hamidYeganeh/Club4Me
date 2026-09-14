@@ -73,7 +73,7 @@ export function AppReleaseGate() {
       aria-modal="true"
       aria-labelledby="app-release-title"
     >
-      <section className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/10 bg-surface shadow-2xl">
+      <section className="relative w-full max-w-md overflow-hidden rounded-[2rem] bg-surface shadow-2xl">
         <div className="h-1.5 bg-accent" />
         <div className="p-6 sm:p-7">
           <div className="mb-5 flex size-14 items-center justify-center rounded-2xl bg-accent/15 text-2xl">

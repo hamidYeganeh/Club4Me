@@ -1,6 +1,5 @@
 "use client";
 
-import { Input as HeroInput } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@theme/icon";
 
@@ -20,13 +19,13 @@ export function DiscoverySearchField({
 
   return (
     <label
-      className="app-field app-reveal flex items-center gap-3 text-muted"
+      className="app-field app-reveal flex items-center gap-3 text-muted focus-within:ring-2 focus-within:ring-focus focus-within:ring-offset-2 focus-within:ring-offset-background"
       onClick={() => {
         if (href) router.push(href);
       }}
     >
       <Icon name="magnifying-glass" size={20} />
-      <HeroInput
+      <input
         type="search"
         maxLength={200}
         value={value}
@@ -34,7 +33,7 @@ export function DiscoverySearchField({
         placeholder={placeholder}
         readOnly={navigates}
         aria-label={placeholder}
-        className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:appearance-none"
+        className="h-full min-w-0 flex-1 appearance-none rounded-none border-0 bg-transparent p-0 text-base text-foreground shadow-none outline-none focus:outline-none focus-visible:outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:appearance-none"
       />
       {!navigates && value ? (
         <button

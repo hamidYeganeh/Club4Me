@@ -180,11 +180,11 @@ export function ReviewSummary({
         </div>
 
         {ratedCount ? (
-          <div className="border-t border-white/7 px-5 sm:px-6">
+          <div className="px-5 sm:px-6">
             {insightCopy[type].map(({ title, description, icon, metric }) => (
               <div
                 key={title}
-                className="flex items-center gap-4 border-b border-white/7 py-5 last:border-b-0"
+                className="flex items-center gap-4 py-5 last:border-b-0"
               >
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent/12 text-accent">
                   <Icon name={icon} size={24} />

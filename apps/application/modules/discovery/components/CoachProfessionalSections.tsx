@@ -159,7 +159,7 @@ export function CoachProfessionalSections({
       {profile.achievements.length ? (
         <Section title="افتخارات مربی">
           {profile.achievements.map((item, index) => (
-            <article key={index} className="border-s-2 border-accent/40 ps-4">
+            <article key={index} className="ps-4">
               <h3 className="text-sm font-bold">{item.title}</h3>
               {item.organization || item.year ? (
                 <p className="mt-2 text-sm text-muted">

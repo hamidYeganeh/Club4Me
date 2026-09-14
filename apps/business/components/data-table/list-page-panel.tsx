@@ -38,7 +38,7 @@ export function ListPagePanel({
 
   return (
     <Card className="app-card mt-5 overflow-hidden shadow-none active:scale-100">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/7 px-4 py-4 sm:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-5">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-semibold text-foreground">{title}</h2>

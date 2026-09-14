@@ -12,4 +12,5 @@ export type ProfileEditFieldRowProps = {
   suffix?: ReactNode;
   valueDir?: "ltr" | "rtl";
   field: ProfileEditField;
+  disabled?: boolean;
 };

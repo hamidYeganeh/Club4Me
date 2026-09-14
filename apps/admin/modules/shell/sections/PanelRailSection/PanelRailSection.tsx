@@ -1,69 +1,13 @@
 "use client";
-
-import { Avatar } from "@heroui/react";
-import { Icon } from "@theme/icon";
-import { cn } from "@theme/cn";
+import { PanelDesktopNavigation } from "@repo/ui/panel-navigation";
 import { usePathname } from "next/navigation";
-import { useAdminMe } from "@api/admin";
-
-import { ButtonLink } from "@/components/button-link";
-
-import { panelRailSectionStyles } from "./PanelRailSection.styles";
 import type { PanelRailSectionProps } from "./PanelRailSection.types";
-
-function isActive(pathname: string, href: string, exact?: boolean): boolean {
-  if (exact) return pathname === href;
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-export function PanelRailSection({
-  items,
-  avatarSrc,
-  avatarAlt,
-}: PanelRailSectionProps) {
-  const pathname = usePathname();
-  const styles = panelRailSectionStyles();
-  const me = useAdminMe();
-  const accountName =
-    [me.data?.firstName, me.data?.lastName].filter(Boolean).join(" ") ||
-    me.data?.phone ||
-    avatarAlt;
-
+export function PanelRailSection({ items }: PanelRailSectionProps) {
   return (
-    <aside className={styles.root()}>
-      <nav className={styles.nav()} aria-label="بخش‌های مدیریت">
-        {items.map((item) => {
-          const active = isActive(pathname, item.href, item.exact);
-          return (
-            <ButtonLink
-              key={`${item.icon}-${item.href}`}
-              href={item.href}
-              isIconOnly
-              aria-label={item.label}
-              variant="ghost"
-              className={cn(styles.item(), active && styles.itemActive())}
-            >
-              <Icon name={item.icon} size="lg" />
-            </ButtonLink>
-          );
-        })}
-      </nav>
-      <div className={styles.avatarWrap()}>
-        <ButtonLink
-          href="/settings"
-          isIconOnly
-          variant="tertiary"
-          aria-label={accountName}
-          className="rounded-full p-0"
-        >
-          <Avatar className="size-10">
-            {avatarSrc ? (
-              <Avatar.Image alt={accountName} src={avatarSrc} />
-            ) : null}
-            <Avatar.Fallback>{accountName.slice(0, 1)}</Avatar.Fallback>
-          </Avatar>
-        </ButtonLink>
-      </div>
-    </aside>
+    <PanelDesktopNavigation
+      items={items}
+      pathname={usePathname()}
+      business={false}
+    />
   );
 }

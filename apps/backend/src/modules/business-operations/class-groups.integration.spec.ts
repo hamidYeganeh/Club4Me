@@ -1,4 +1,4 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "../../../test/mongo-memory";
 import { createConnection, type Connection, Types } from "mongoose";
 import { ClassGroups } from "./class-groups";
 
@@ -18,13 +18,11 @@ describe("private class groups", () => {
   });
   beforeEach(async () => {
     for (const c of await db.db!.collections()) await c.deleteMany({});
-    await db
-      .collection("business_training_classes")
-      .insertOne({
-        _id: classId,
-        status: "active",
-        endDate: new Date(Date.now() + 86400000),
-      });
+    await db.collection("business_training_classes").insertOne({
+      _id: classId,
+      status: "active",
+      endDate: new Date(Date.now() + 86400000),
+    });
     for (const member of members) {
       const studentId = new Types.ObjectId();
       await db
@@ -33,14 +31,12 @@ describe("private class groups", () => {
       await db
         .collection("club_students")
         .insertOne({ _id: studentId, userId: member });
-      await db
-        .collection("business_class_enrollments")
-        .insertOne({
-          studentId,
-          classId,
-          status: "active",
-          paymentStatus: "paid",
-        });
+      await db.collection("business_class_enrollments").insertOne({
+        studentId,
+        classId,
+        status: "active",
+        paymentStatus: "paid",
+      });
     }
   });
   it("requires paid enrollment and explicit opt-in; never exposes members through another class", async () => {
@@ -90,14 +86,12 @@ describe("private class groups", () => {
       }),
     ).rejects.toMatchObject({ status: 409 });
     await Promise.allSettled(
-      members
-        .slice(1)
-        .map((member) =>
-          service.join(String(member), String(classId), {
-            token: fresh.token,
-            accepted: true,
-          }),
-        ),
+      members.slice(1).map((member) =>
+        service.join(String(member), String(classId), {
+          token: fresh.token,
+          accepted: true,
+        }),
+      ),
     );
     const state = await service.list(owner, String(classId));
     expect(state.items[0]!.members).toHaveLength(8);

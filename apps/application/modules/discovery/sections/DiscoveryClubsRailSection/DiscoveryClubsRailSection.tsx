@@ -1,4 +1,6 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import { Button, ScrollShadow, Typography } from "@heroui/react";
 import { useCatalogClubs } from "@api/discovery";
@@ -28,7 +30,7 @@ const PATTERN_ICONS: IconName[] = [
   "volleyball",
 ];
 
-export function DiscoveryClubsRailSection({
+function DiscoveryClubsRailSectionContent({
   id,
   title,
   subtitle,
@@ -175,5 +177,15 @@ export function DiscoveryClubsRailSection({
         </ScrollShadow>
       ) : null}
     </section>
+  );
+}
+
+export function DiscoveryClubsRailSection(
+  props: ComponentProps<typeof DiscoveryClubsRailSectionContent>,
+) {
+  return (
+    <DiscoveryViewport>
+      <DiscoveryClubsRailSectionContent {...props} />
+    </DiscoveryViewport>
   );
 }

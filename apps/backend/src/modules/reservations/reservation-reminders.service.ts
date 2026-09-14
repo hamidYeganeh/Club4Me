@@ -80,7 +80,7 @@ export class ReservationRemindersService
     const candidates = await this.reservations
       .find({
         status: "reserved",
-        paymentStatus: { $in: ["paid", "not_required"] },
+        paymentStatus: { $in: ["paid", "not_required", "pay_on_arrival"] },
         sessionStartsAt: { $gte: from, $lt: to },
         [field]: null,
       })

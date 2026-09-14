@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../../../packages/ui/src/panel-accessibility.css";
 @import "@heroui/styles";
 @import "@repo/theme/heroui.css";
 @import "@repo/theme/fonts.css";
@@ -48,11 +49,11 @@
   /* Modals render in a portal, so these belong to the admin root rather than
      `.admin-panel`. This keeps every admin form compact and consistent. */
   .modal__dialog {
-    @apply border border-border/80 bg-surface/95 p-0 shadow-2xl backdrop-blur-2xl;
+    @apply bg-surface/95 p-0 shadow-2xl backdrop-blur-2xl;
   }
 
   .modal__header {
-    @apply border-b border-border/70 px-5 py-4 pe-16 sm:px-6;
+    @apply px-5 py-4 pe-16 sm:px-6;
   }
 
   .modal__heading {
@@ -69,7 +70,7 @@
   }
 
   .modal__footer {
-    @apply mt-0 border-t border-border/70 bg-surface-secondary/35 px-5 py-4 sm:px-6;
+    @apply mt-0 bg-surface-secondary/35 px-5 py-4 sm:px-6;
   }
 
   .modal__header + .modal__body,

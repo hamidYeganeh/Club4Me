@@ -27,7 +27,7 @@ test("club hero preserves booking navigation", async ({ page }, testInfo) => {
   await page.goto("/discovery/clubs/energy-plus-demo");
   await expect(page.locator("[data-hero-scrim]")).toBeVisible();
   await expect(
-    page.getByRole("status", { name: "Gym4Me", exact: true }),
+    page.getByRole("status", { name: "Club4Me", exact: true }),
   ).toHaveCount(0);
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: testInfo.outputPath("club-dark-375.png") });

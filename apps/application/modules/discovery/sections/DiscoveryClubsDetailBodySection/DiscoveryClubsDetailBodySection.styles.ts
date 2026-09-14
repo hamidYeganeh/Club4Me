@@ -39,19 +39,18 @@ export const discoveryClubsDetailBodySectionStyles = tv({
     location: "flex flex-col gap-3",
     locationHeader: "flex items-center gap-2 text-foreground",
     locationTitle: "",
-    locationCard:
-      "overflow-hidden rounded-[calc(var(--radius)*4)] border border-foreground/10 bg-surface shadow-sm",
-    locationMap: "min-h-64 rounded-t-[calc(var(--radius)*4)]",
-    locationDetails: "px-4 pb-2 pt-4",
-    locationInfo: "flex items-center gap-3",
-    locationVenueIcon:
-      "flex size-12 shrink-0 items-center justify-center rounded-full border border-foreground/10 bg-surface-secondary text-foreground shadow-sm",
+    locationCard: "relative isolate overflow-hidden rounded-[32px] bg-surface",
+    locationMap: "h-full min-h-[330px] aspect-[267/257] w-full rounded-[32px]",
+    locationDetails:
+      "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end gap-3 bg-linear-to-t from-black via-black/75 to-transparent p-6 pt-16 text-white",
+    locationInfo: "min-w-0 flex-1",
+    locationVenueIcon: "hidden",
     locationText: "min-w-0 flex-1",
-    locationName: "truncate text-foreground",
-    locationAddress: "mt-0.5 line-clamp-2 leading-6",
-    locationDivider: "my-3 h-px bg-foreground/10",
+    locationName: "text-xl font-extrabold text-white",
+    locationAddress: "mt-1 line-clamp-2 text-white/80! leading-6",
+    locationDivider: "hidden",
     locationLink:
-      "flex min-h-12 w-full items-center justify-center gap-2 rounded-[calc(var(--radius)*2)] text-sm font-semibold text-accent transition-colors hover:bg-accent/10 active:bg-accent/15",
+      "pointer-events-auto flex size-16 shrink-0 flex-col items-center justify-center gap-1 rounded-[24px] bg-accent p-2 text-center text-[10px] font-bold text-accent-foreground transition-opacity hover:opacity-90",
   },
   variants: {
     expanded: {

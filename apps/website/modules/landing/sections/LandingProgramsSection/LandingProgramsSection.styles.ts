@@ -7,7 +7,7 @@ export const landingProgramsSectionStyles = tv({
     title:
       "max-w-[16ch] text-3xl font-semibold tracking-tight text-foreground md:text-4xl",
     grid: "mt-12 grid grid-cols-1 gap-4 lg:grid-cols-12 lg:grid-rows-2",
-    card: "h-full rounded-[1.75rem] border border-border bg-surface-secondary p-1.5",
+    card: "h-full rounded-[1.75rem] bg-surface-secondary p-1.5",
     body: "flex flex-col justify-end gap-3 p-5 md:p-6",
     icon: "flex size-10 items-center justify-center rounded-full bg-accent text-accent-foreground",
     heading: "text-xl font-semibold text-foreground",

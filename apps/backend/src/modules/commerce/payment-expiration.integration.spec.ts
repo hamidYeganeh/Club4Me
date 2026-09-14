@@ -13,7 +13,7 @@ import {
   TrainingClassSchema,
 } from "../coaching/schemas/coaching.schemas";
 import { createConnection, type Connection, Types } from "mongoose";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "../../../test/mongo-memory";
 import { CommerceService } from "./commerce.service";
 import { MockPaymentProvider } from "./mock-payment.provider";
 import {

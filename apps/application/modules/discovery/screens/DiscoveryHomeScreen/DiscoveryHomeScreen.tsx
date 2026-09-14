@@ -38,12 +38,18 @@ export function DiscoveryHomeScreen() {
     ? sections.filter((section) => section.id !== mapBanner.id)
     : sections;
 
+  const promotedSection =
+    contentSections.length > 1 ? contentSections.at(-1) : undefined;
+  const orderedSections = promotedSection
+    ? [contentSections[0]!, promotedSection, ...contentSections.slice(1, -1)]
+    : contentSections;
+
   return (
     <main className="app-page gap-6 pb-[calc(11rem+env(safe-area-inset-bottom))]">
       <SecondaryHeader />
       <Link
         href="/athlete/recommendations"
-        className="flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-accent/20 bg-surface p-4 text-sm"
+        className="flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-surface p-4 text-sm"
       >
         <span>
           <strong className="block">کلاس مناسب برنامه من</strong>
@@ -64,11 +70,11 @@ export function DiscoveryHomeScreen() {
           در حال بارگذاری بخش‌های کشف
         </span>
       ) : null}
-      {contentSections.slice(0, 3).map((section) => renderFeedSection(section))}
+      {orderedSections.slice(0, 3).map((section) => renderFeedSection(section))}
       {!loading ? <DiscoveryIranMapSection /> : null}
       <DiscoveryNearbySection />
       {mapBanner ? renderFeedSection(mapBanner) : null}
-      {contentSections.slice(3).map((section) => renderFeedSection(section))}
+      {orderedSections.slice(3).map((section) => renderFeedSection(section))}
     </main>
   );
 }

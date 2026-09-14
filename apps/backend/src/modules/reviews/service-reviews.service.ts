@@ -39,7 +39,13 @@ export class ServiceReviewsService {
         .limit(100)
         .exec(),
       this.reviews.aggregate<{ averageRating: number; reviewsCount: number }>([
-        { $match: { targetType: type, targetId: target.id, status: "published" } },
+        {
+          $match: {
+            targetType: type,
+            targetId: target.id,
+            status: "published",
+          },
+        },
         {
           $group: {
             _id: null,
@@ -65,10 +71,18 @@ export class ServiceReviewsService {
     const target = await this.resolveTarget(type, targetId);
     const athleteId = oid(userId, "USER_NOT_FOUND");
     if (target.ownerId.equals(athleteId))
-      throw new AppError(403, "OWNER_CANNOT_REVIEW_OWN_SERVICE", "You cannot review your own service");
+      throw new AppError(
+        403,
+        "OWNER_CANNOT_REVIEW_OWN_SERVICE",
+        "You cannot review your own service",
+      );
     const attendance = await this.findAttendance(type, target, athleteId);
     if (!attendance)
-      throw new AppError(403, "COMPLETED_ATTENDANCE_REQUIRED", "A completed attendance is required to review this service");
+      throw new AppError(
+        403,
+        "COMPLETED_ATTENDANCE_REQUIRED",
+        "A completed attendance is required to review this service",
+      );
     await this.media.assertOwnedReady(userId, input.mediaIds);
 
     try {
@@ -89,7 +103,11 @@ export class ServiceReviewsService {
       return this.publicReview(review);
     } catch (error) {
       if (isDuplicate(error))
-        throw new AppError(409, "SERVICE_REVIEW_EXISTS", "You have already reviewed this service");
+        throw new AppError(
+          409,
+          "SERVICE_REVIEW_EXISTS",
+          "You have already reviewed this service",
+        );
       throw error;
     }
   }
@@ -122,16 +140,23 @@ export class ServiceReviewsService {
       },
       { new: true },
     );
-    if (!review) throw new AppError(404, "REVIEW_NOT_FOUND", "Review not found");
+    if (!review)
+      throw new AppError(404, "REVIEW_NOT_FOUND", "Review not found");
     return this.publicReview(review);
   }
 
   async adminList(status?: string) {
-    const filter = status && ["published", "hidden", "reported"].includes(status)
-      ? { status }
-      : {};
-    const items = await this.reviews.find(filter).sort({ createdAt: -1 }).limit(200);
-    return { items: await Promise.all(items.map((item) => this.publicReview(item))) };
+    const filter =
+      status && ["published", "hidden", "reported"].includes(status)
+        ? { status }
+        : {};
+    const items = await this.reviews
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .limit(200);
+    return {
+      items: await Promise.all(items.map((item) => this.publicReview(item))),
+    };
   }
 
   async moderate(reviewId: string, input: ModerateServiceReviewDto) {
@@ -140,8 +165,13 @@ export class ServiceReviewsService {
       { $set: { status: input.status, moderationReason: input.reason } },
       { new: true },
     );
-    if (!review) throw new AppError(404, "REVIEW_NOT_FOUND", "Review not found");
-    const target = await this.resolveTarget(review.targetType, String(review.targetId), false);
+    if (!review)
+      throw new AppError(404, "REVIEW_NOT_FOUND", "Review not found");
+    const target = await this.resolveTarget(
+      review.targetType,
+      String(review.targetId),
+      false,
+    );
     await this.refreshRating(review.targetType, target);
     return this.publicReview(review);
   }
@@ -152,21 +182,33 @@ export class ServiceReviewsService {
     athleteId: Types.ObjectId,
   ) {
     if (type === "coach") {
-      const attendance = await this.connection.collection("session_attendance").findOne({
-        coachId: target.id,
-        athleteId,
-        status: "present",
-      }, { sort: { updatedAt: -1 } });
+      const attendance = await this.connection
+        .collection("session_attendance")
+        .findOne(
+          {
+            coachId: target.id,
+            athleteId,
+            status: "present",
+          },
+          { sort: { updatedAt: -1 } },
+        );
       return attendance?._id as Types.ObjectId | undefined;
     }
     if (target.source === "coach_class") {
-      const sessions = await this.connection.collection("class_sessions")
-        .find({ classId: target.id }, { projection: { _id: 1 } }).toArray();
-      const attendance = await this.connection.collection("session_attendance").findOne({
-        sessionId: { $in: sessions.map((item) => item._id) },
-        athleteId,
-        status: "present",
-      }, { sort: { updatedAt: -1 } });
+      const sessions = await this.connection
+        .collection("class_sessions")
+        .find({ classId: target.id }, { projection: { _id: 1 } })
+        .toArray();
+      const attendance = await this.connection
+        .collection("session_attendance")
+        .findOne(
+          {
+            sessionId: { $in: sessions.map((item) => item._id) },
+            athleteId,
+            status: "present",
+          },
+          { sort: { updatedAt: -1 } },
+        );
       return attendance?._id as Types.ObjectId | undefined;
     }
     const student = await this.connection.collection("club_students").findOne({
@@ -174,11 +216,16 @@ export class ServiceReviewsService {
       userId: athleteId,
     });
     if (!student) return undefined;
-    const attendance = await this.connection.collection("business_class_attendance").findOne({
-      classId: target.id,
-      studentId: student._id,
-      status: "present",
-    }, { sort: { updatedAt: -1 } });
+    const attendance = await this.connection
+      .collection("business_class_attendance")
+      .findOne(
+        {
+          classId: target.id,
+          studentId: student._id,
+          status: "present",
+        },
+        { sort: { updatedAt: -1 } },
+      );
     return attendance?._id as Types.ObjectId | undefined;
   }
 
@@ -191,26 +238,52 @@ export class ServiceReviewsService {
     if (type === "coach") {
       const coach = await this.connection.collection("coaches").findOne({
         _id: id,
-        ...(requirePublic ? { reviewStatus: "approved", visibility: "public" } : {}),
+        ...(requirePublic
+          ? { reviewStatus: "approved", visibility: "public" }
+          : {}),
       });
       if (!coach) throw new AppError(404, "COACH_NOT_FOUND", "Coach not found");
       return { id, source: "coach", ownerId: coach.userId as Types.ObjectId };
     }
     const coachClass = await this.connection.collection("classes").findOne({
       _id: id,
-      ...(requirePublic ? { status: { $in: ["published", "registration_closed", "in_progress", "completed"] } } : {}),
+      ...(requirePublic
+        ? {
+            status: {
+              $in: [
+                "published",
+                "registration_closed",
+                "in_progress",
+                "completed",
+              ],
+            },
+          }
+        : {}),
     });
     if (coachClass) {
-      const coach = await this.connection.collection("coaches").findOne({ _id: coachClass.ownerCoachId });
+      const coach = await this.connection
+        .collection("coaches")
+        .findOne({ _id: coachClass.ownerCoachId });
       if (!coach) throw new AppError(404, "CLASS_NOT_FOUND", "Class not found");
-      return { id, source: "coach_class", ownerId: coach.userId as Types.ObjectId };
+      return {
+        id,
+        source: "coach_class",
+        ownerId: coach.userId as Types.ObjectId,
+      };
     }
-    const businessClass = await this.connection.collection("business_training_classes").findOne({
-      _id: id,
-      ...(requirePublic ? { visibility: "public", status: { $in: ["active", "completed"] } } : {}),
-    });
-    if (!businessClass) throw new AppError(404, "CLASS_NOT_FOUND", "Class not found");
-    const club = await this.connection.collection("clubs").findOne({ _id: businessClass.clubId });
+    const businessClass = await this.connection
+      .collection("business_training_classes")
+      .findOne({
+        _id: id,
+        ...(requirePublic
+          ? { visibility: "public", status: { $in: ["active", "completed"] } }
+          : {}),
+      });
+    if (!businessClass)
+      throw new AppError(404, "CLASS_NOT_FOUND", "Class not found");
+    const club = await this.connection
+      .collection("clubs")
+      .findOne({ _id: businessClass.clubId });
     if (!club) throw new AppError(404, "CLASS_NOT_FOUND", "Class not found");
     return {
       id,
@@ -220,14 +293,38 @@ export class ServiceReviewsService {
     };
   }
 
-  private async refreshRating(type: ServiceReviewTarget, target: ResolvedTarget) {
-    const [summary] = await this.reviews.aggregate<{ averageRating: number; reviewsCount: number }>([
-      { $match: { targetType: type, targetId: target.id, status: "published" } },
-      { $group: { _id: null, averageRating: { $avg: "$rating" }, reviewsCount: { $sum: 1 } } },
+  private async refreshRating(
+    type: ServiceReviewTarget,
+    target: ResolvedTarget,
+  ) {
+    const [summary] = await this.reviews.aggregate<{
+      averageRating: number;
+      reviewsCount: number;
+    }>([
+      {
+        $match: { targetType: type, targetId: target.id, status: "published" },
+      },
+      {
+        $group: {
+          _id: null,
+          averageRating: { $avg: "$rating" },
+          reviewsCount: { $sum: 1 },
+        },
+      },
     ]);
-    const values = { averageRating: summary?.averageRating ?? 0, reviewsCount: summary?.reviewsCount ?? 0 };
-    const collection = target.source === "coach" ? "coaches" : target.source === "coach_class" ? "classes" : "business_training_classes";
-    await this.connection.collection(collection).updateOne({ _id: target.id }, { $set: values });
+    const values = {
+      averageRating: summary?.averageRating ?? 0,
+      reviewsCount: summary?.reviewsCount ?? 0,
+    };
+    const collection =
+      target.source === "coach"
+        ? "coaches"
+        : target.source === "coach_class"
+          ? "classes"
+          : "business_training_classes";
+    await this.connection
+      .collection(collection)
+      .updateOne({ _id: target.id }, { $set: values });
   }
 
   private async publicReview(review: ServiceReviewDocument) {
@@ -237,12 +334,18 @@ export class ServiceReviewsService {
 }
 
 function oid(value: string, code: string) {
-  if (!Types.ObjectId.isValid(value)) throw new AppError(404, code, "Not found");
+  if (!Types.ObjectId.isValid(value))
+    throw new AppError(404, code, "Not found");
   return new Types.ObjectId(value);
 }
 
 function isDuplicate(error: unknown) {
-  return typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === 11000;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === 11000
+  );
 }
 
 function toPublic(review: ServiceReviewDocument) {
@@ -256,7 +359,13 @@ function toPublic(review: ServiceReviewDocument) {
     body: review.body,
     mediaIds: review.mediaIds.map(String),
     isVerifiedAttendance: review.isVerifiedAttendance,
-    ownerResponse: review.ownerResponse ? { body: review.ownerResponse.body, respondedAt: review.ownerResponse.respondedAt.toISOString(), respondedBy: String(review.ownerResponse.respondedBy) } : undefined,
+    ownerResponse: review.ownerResponse
+      ? {
+          body: review.ownerResponse.body,
+          respondedAt: review.ownerResponse.respondedAt.toISOString(),
+          respondedBy: String(review.ownerResponse.respondedBy),
+        }
+      : undefined,
     status: review.status,
     moderationReason: review.moderationReason,
     createdAt: review.createdAt.toISOString(),

@@ -144,7 +144,7 @@ export function ReviewCard({ review }: { review: ReviewCardItem }) {
           </time>
         </div>
       ) : null}
-      <div className="mt-5 border-t border-border pt-3">
+      <div className="mt-5 pt-3">
         <Button
           size="sm"
           variant="ghost"

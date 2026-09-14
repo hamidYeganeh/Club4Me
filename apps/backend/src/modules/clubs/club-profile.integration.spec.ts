@@ -1,5 +1,5 @@
 import { ClubAccessService } from "./club-access.service";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "../../../test/mongo-memory";
 import { Connection, Model, Types, createConnection } from "mongoose";
 import { Club, ClubSchema, type ClubDocument } from "./schemas/club.schema";
 import { ClubsRepository } from "./clubs.repository";
@@ -43,6 +43,28 @@ describe("club profile persistence and trial concurrency", () => {
   afterAll(async () => {
     await connection?.close();
     await mongo?.stop();
+  });
+
+  it("only lets the owning club configure optional on-site payments", async () => {
+    const first = await clubs.create(
+      owner,
+      ClubFieldsSchema.parse({ name: "باشگاه اول" }),
+    );
+    const second = await clubs.create(
+      new Types.ObjectId().toHexString(),
+      ClubFieldsSchema.parse({ name: "باشگاه دوم" }),
+    );
+    expect(first.onSitePaymentMethods).toEqual([]);
+    const enabled = await clubs.update(owner, first.id, {
+      onSitePaymentMethods: ["cash"],
+    });
+    expect(enabled.onSitePaymentMethods).toEqual(["cash"]);
+    expect((await clubs.findById(second.id)).onSitePaymentMethods).toEqual([]);
+    await expect(
+      clubs.update(owner, second.id, { onSitePaymentMethods: ["pos"] }),
+    ).rejects.toMatchObject({ code: "CLUB_NOT_FOUND" });
+    await clubs.update(owner, first.id, { onSitePaymentMethods: [] });
+    expect((await clubs.findById(first.id)).onSitePaymentMethods).toEqual([]);
   });
 
   it("round-trips structured details and keeps busy-hour freshness separate from unrelated edits", async () => {

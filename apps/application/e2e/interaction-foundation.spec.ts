@@ -28,12 +28,12 @@ test("splash appears once per app session and route links do not prefetch", asyn
       prefetched.push(request.url());
   });
   await page.goto("/welcome");
-  await expect(page.getByRole("status", { name: "Gym4Me" })).toBeVisible();
-  await expect(page.getByRole("status", { name: "Gym4Me" })).toHaveCount(0);
+  await expect(page.getByRole("status", { name: "Club4Me" })).toBeVisible();
+  await expect(page.getByRole("status", { name: "Club4Me" })).toHaveCount(0);
   await page.getByRole("button", { name: "شروع کنید" }).click();
-  await expect(page.getByRole("status", { name: "Gym4Me" })).toHaveCount(0);
+  await expect(page.getByRole("status", { name: "Club4Me" })).toHaveCount(0);
   await page.reload();
-  await expect(page.getByRole("status", { name: "Gym4Me" })).toHaveCount(0);
+  await expect(page.getByRole("status", { name: "Club4Me" })).toHaveCount(0);
   expect(prefetched).toEqual([]);
 });
 

@@ -143,7 +143,14 @@ function vital() {
       (process.env.NODE_ENV !== "production"
         ? devPaths.find((p) => existsSync(resolve(p, "catalog.json")))
         : undefined);
-    cached = loadVitalCatalog(directory);
+    try {
+      cached = loadVitalCatalog(directory);
+    } catch (error) {
+      // The bundled exercise database must remain available when the optional
+      // licensed animation catalog is missing, stale, or mounted incorrectly.
+      console.error("Optional training catalog could not be loaded", error);
+      cached = { items: [], files: new Map() };
+    }
   }
   return cached;
 }

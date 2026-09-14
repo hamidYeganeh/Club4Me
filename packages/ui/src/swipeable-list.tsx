@@ -200,7 +200,7 @@ function SwipeableRow({
           snapTo(null);
         }}
       >
-        <span className="grid size-10 place-items-center rounded-full transition-transform group-active:scale-90">
+        <span className="grid size-10 place-items-center rounded-full transition-transform">
           {action.icon}
         </span>
       </button>

@@ -27,7 +27,7 @@ export function TrainingFollowUps({
   return (
     <section
       id="follow-ups"
-      className="scroll-mt-24 space-y-3 rounded-3xl border border-border bg-surface p-5"
+      className="scroll-mt-24 space-y-3 rounded-3xl bg-surface p-5"
       aria-label="پیگیری شاگردان"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -101,7 +101,7 @@ export function SessionReview({
   const displayReview = assignmentId ? review : session.coachReview;
   const effort = { easy: "آسان", balanced: "متعادل", hard: "سخت" };
   return (
-    <div className="mt-3 space-y-3 border-t border-border pt-3">
+    <div className="mt-3 space-y-3 pt-3">
       {session.effort && (
         <p className="text-sm">تجربه ورزشکار: {effort[session.effort]}</p>
       )}
@@ -180,7 +180,7 @@ export function AthleteCoachFeedback() {
   if (!latest && !query.error) return null;
   return (
     <section
-      className="space-y-3 rounded-3xl border border-accent/20 bg-surface p-5"
+      className="space-y-3 rounded-3xl bg-surface p-5"
       aria-label="آخرین بازخورد مربی"
     >
       <h2 className="text-lg font-bold">آخرین بازخورد مربی</h2>

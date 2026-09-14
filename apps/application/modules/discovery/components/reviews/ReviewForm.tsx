@@ -82,7 +82,7 @@ export function ReviewForm({
   };
 
   return (
-    <Card className="rounded-[1.75rem] border border-border bg-surface p-5 shadow-none sm:p-6">
+    <Card className="rounded-[1.75rem] bg-surface p-5 shadow-none sm:p-6">
       <Card.Title>ثبت تجربه شما</Card.Title>
       <Card.Description className="mt-1 text-muted">
         نظر شما درباره {entityName}

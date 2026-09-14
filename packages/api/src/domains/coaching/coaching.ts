@@ -14,6 +14,7 @@ import type { CoachProfessionalProfile } from "./professional-profile";
 export * from "./professional-profile";
 
 export type CoachProfile = {
+  location?: { type: "Point"; coordinates: [number, number] } | null;
   geo?: {
     countryId?: string;
     provinceId?: string;

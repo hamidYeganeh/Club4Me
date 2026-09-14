@@ -60,7 +60,7 @@ for (const { width, theme } of [
     ).toHaveCount(31);
     await page.evaluate(() => document.fonts.ready);
     await expect(
-      page.getByRole("status", { name: "Gym4Me", exact: true }),
+      page.getByRole("status", { name: "Club4Me", exact: true }),
     ).toHaveCount(0);
     await expect(page.locator("[data-discovery-section] img")).toHaveCount(0);
     await expect(

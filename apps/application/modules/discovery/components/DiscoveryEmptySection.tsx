@@ -24,13 +24,13 @@ export function DiscoveryEmptySection({
         viewAllLabel={viewAllLabel}
         viewAllUrl={viewAllUrl}
       />
-      <div className="flex min-h-48 flex-col items-center justify-center rounded-3xl border border-border bg-surface px-5 py-6 text-center">
+      <div className="flex min-h-48 flex-col items-center justify-center rounded-3xl bg-surface px-5 py-6 text-center">
         <Image
           src="/discovery/no-slots.png"
           alt=""
           width={160}
           height={104}
-          className="h-24 w-auto object-cover opacity-90 drop-shadow-lg"
+          className="h-24 w-auto object-cover opacity-90 "
         />
         <p className="mt-3 text-sm font-bold text-foreground">
           هنوز نتیجه‌ای در این بخش نیست

@@ -24,6 +24,6 @@ export const accountAuthForgotPasswordConfirmFormStyles = tv({
     suffix: "pe-1",
     input: "min-w-0 flex-1 text-start text-base",
     actions: "w-full",
-    button: "h-14 rounded-full text-base font-bold active:scale-[0.98]",
+    button: "h-14 rounded-full text-base font-bold",
   },
 });

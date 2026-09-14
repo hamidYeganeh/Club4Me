@@ -3,8 +3,14 @@ import { HydratedDocument, Types } from "mongoose";
 
 @Schema({ collection: "data_consents", timestamps: true })
 export class DataConsent {
-  @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true }) userId: Types.ObjectId;
-  @Prop({ type: String, enum: ["analytics", "precise_location", "training_results", "marketing"], required: true }) purpose: "analytics" | "precise_location" | "training_results" | "marketing";
+  @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
+  userId: Types.ObjectId;
+  @Prop({
+    type: String,
+    enum: ["analytics", "precise_location", "training_results", "marketing"],
+    required: true,
+  })
+  purpose: "analytics" | "precise_location" | "training_results" | "marketing";
   @Prop({ required: true }) version: string;
   @Prop({ required: true }) granted: boolean;
   @Prop({ type: Date, required: true }) decidedAt: Date;

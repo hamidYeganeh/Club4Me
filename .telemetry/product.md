@@ -88,3 +88,7 @@ Club
 
 - **Feature areas inferred:** auth, discovery, clubs/coaches/classes, reservations, favorites, reviews, notifications, profiles, release management, and administration
 - **Entity model inferred:** users interact with clubs and reservable sessions; reservations connect users, sessions, and clubs
+
+## Current implementation update — 2026-09-13
+
+The earlier scan above is historical. The code now includes membership/benefit purchases, class billing, a ledger and mock payment intents. Product telemetry is implemented with first-party ingestion and an optional durable PostHog destination. Internal reports use committed records for money/operations and consented telemetry for behavior. Production payment processing is not enabled by this change; PostHog project creation/activation is also pending. See `docs/posthog-analytics-fa.md` for current setup and definitions.

@@ -71,6 +71,49 @@ export class EnrollmentsService {
     };
   }
 
+  async agendaForAthlete(userId: string) {
+    const now = new Date();
+    const through = new Date(now.getTime() + 30 * 86400000);
+    const enrollments = await this.enrollments
+      .find({
+        athleteId: objectId(userId, "ATHLETE_NOT_FOUND"),
+        status: "active",
+        paymentStatus: { $in: ["paid", "not_required"] },
+      })
+      .lean();
+    const classes = await this.classes
+      .find({
+        _id: { $in: enrollments.map((item) => item.classId) },
+        status: { $nin: ["cancelled", "archived", "completed"] },
+      })
+      .lean();
+    const byId = new Map(classes.map((item) => [String(item._id), item]));
+    const sessions = await this.classes.db
+      .collection("class_sessions")
+      .find(
+        {
+          classId: { $in: classes.map((item) => item._id) },
+          status: { $in: ["scheduled", "open_for_booking", "full", "started"] },
+          endAt: { $gt: now },
+          startAt: { $lt: through },
+        },
+        { projection: { classId: 1, startAt: 1, endAt: 1 } },
+      )
+      .sort({ startAt: 1, _id: 1 })
+      .toArray();
+    return {
+      items: sessions.map((item) => ({
+        id: String(item._id),
+        source: "coach_class" as const,
+        title: byId.get(String(item.classId))!.title,
+        startsAt: item.startAt.toISOString(),
+        endsAt: item.endAt.toISOString(),
+        paymentPending: false,
+        href: `/athlete/reservations/${enrollments.find((enrollment) => String(enrollment.classId) === String(item.classId))!._id}?source=class`,
+      })),
+    };
+  }
+
   async addByCoach(userId: string, classId: string, athleteId: string) {
     return this.createEnrollment(userId, classId, athleteId, true);
   }

@@ -13,7 +13,13 @@ export class ContactLeadsService {
     private readonly leads: Model<ContactLeadDocument>,
   ) {}
 
-  async create(input: { name: string; email: string; note: string; consent: true; website?: string }) {
+  async create(input: {
+    name: string;
+    email: string;
+    note: string;
+    consent: true;
+    website?: string;
+  }) {
     if (input.website) return { accepted: true as const };
     const email = input.email.trim().toLowerCase();
     const fingerprint = createHash("sha256")
@@ -36,14 +42,28 @@ export class ContactLeadsService {
   }
 
   async list(status?: string) {
-    const filter = status && ["new", "contacted", "closed"].includes(status) ? { status } : {};
-    const items = await this.leads.find(filter).sort({ createdAt: -1 }).limit(500).select("-fingerprint");
+    const filter =
+      status && ["new", "contacted", "closed"].includes(status)
+        ? { status }
+        : {};
+    const items = await this.leads
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .limit(500)
+      .select("-fingerprint");
     return { items };
   }
 
   async update(id: string, status: "new" | "contacted" | "closed") {
-    const item = await this.leads.findByIdAndUpdate(id, { $set: { status } }, { new: true }).select("-fingerprint");
-    if (!item) throw new AppError(404, "CONTACT_LEAD_NOT_FOUND", "Contact lead not found");
+    const item = await this.leads
+      .findByIdAndUpdate(id, { $set: { status } }, { new: true })
+      .select("-fingerprint");
+    if (!item)
+      throw new AppError(
+        404,
+        "CONTACT_LEAD_NOT_FOUND",
+        "Contact lead not found",
+      );
     return item;
   }
 }

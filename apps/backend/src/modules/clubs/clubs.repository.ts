@@ -50,7 +50,14 @@ export class ClubsRepository {
 
   async listForAdmin(): Promise<PublicClub[]> {
     const items = await this.model.find().sort({ updatedAt: -1 }).exec();
-    return withReferenceSummaries(this.model.db, items.map(toPublicClub), [{field: "ownerId", as: "owner", collection: "users", fields: ["firstName", "lastName", "phone"]}]);
+    return withReferenceSummaries(this.model.db, items.map(toPublicClub), [
+      {
+        field: "ownerId",
+        as: "owner",
+        collection: "users",
+        fields: ["firstName", "lastName", "phone"],
+      },
+    ]);
   }
 
   async findById(clubId: string): Promise<PublicClub> {
@@ -364,6 +371,7 @@ function toPersistence(input: Partial<ClubFields>): Record<string, unknown> {
     "maxAge",
     "currency",
     "taxPercent",
+    "onSitePaymentMethods",
     "operationalStatus",
   ] as const) {
     if (input[field] !== undefined) result[field] = input[field];

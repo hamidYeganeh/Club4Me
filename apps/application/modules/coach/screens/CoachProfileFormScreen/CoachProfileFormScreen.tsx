@@ -3,6 +3,7 @@
 import { Checkbox as HeroCheckbox } from "@heroui/react";
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
+import { NeshanMap } from "@/components/maps/neshan-map";
 import { Counter } from "@/components/counter";
 import {
   FormSectionNavigation,
@@ -46,6 +47,9 @@ export function CoachProfileFormScreen() {
   const sportsHydrated = useRef(false);
   const [profileReady, setProfileReady] = useState(false);
   const [sportsReady, setSportsReady] = useState(false);
+  const [publicLatitude, setPublicLatitude] = useState("");
+  const [publicLongitude, setPublicLongitude] = useState("");
+  const [pointDirty, setPointDirty] = useState(false);
   const [geo, setGeo] = useState<CoachProfile["geo"]>(null);
   const [geoDirty, setGeoDirty] = useState(false);
   const [travelRadiusKm, setTravelRadiusKm] = useState(0);
@@ -125,6 +129,12 @@ export function CoachProfileFormScreen() {
       profileHydrated.current = data.id;
       setProfileReady(true);
       setGeo(data.geo ?? null);
+      setPublicLatitude(
+        data.location ? String(data.location.coordinates[1]) : "",
+      );
+      setPublicLongitude(
+        data.location ? String(data.location.coordinates[0]) : "",
+      );
       setTravelRadiusKm(data.travelRadiusKm ?? 0);
       setPortfolioMedia(data.galleryMediaIds.map((id) => ({ id, url: "" })));
       setDisplayName(data.displayName);
@@ -238,6 +248,19 @@ export function CoachProfileFormScreen() {
         return;
       }
     }
+    if (
+      pointDirty &&
+      (publicLatitude !== "" || publicLongitude !== "") &&
+      (publicLatitude.trim() === "" ||
+        publicLongitude.trim() === "" ||
+        !Number.isFinite(Number(publicLatitude)) ||
+        !Number.isFinite(Number(publicLongitude)) ||
+        Math.abs(Number(publicLatitude)) > 90 ||
+        Math.abs(Number(publicLongitude)) > 180)
+    ) {
+      toast.danger("طول و عرض جغرافیایی محل ارائه خدمت معتبر نیست");
+      return;
+    }
     setSaving(true);
     try {
       const sportsChanged =
@@ -247,6 +270,20 @@ export function CoachProfileFormScreen() {
         );
       await update.mutateAsync({
         ...(geoDirty ? { geo: geo ?? null } : {}),
+        ...(pointDirty
+          ? {
+              location:
+                publicLatitude === "" && publicLongitude === ""
+                  ? null
+                  : {
+                      type: "Point" as const,
+                      coordinates: [
+                        Number(publicLongitude),
+                        Number(publicLatitude),
+                      ] as [number, number],
+                    },
+            }
+          : {}),
         travelRadiusKm,
         displayName,
         shortBio,
@@ -393,7 +430,7 @@ export function CoachProfileFormScreen() {
                 className={input}
               />
             </Field>
-            <fieldset className="space-y-4 rounded-2xl border border-border p-4">
+            <fieldset className="space-y-4 rounded-2xl p-4">
               <legend className="px-2 text-sm font-bold">
                 محدوده ارائه خدمت
               </legend>
@@ -531,6 +568,79 @@ export function CoachProfileFormScreen() {
                   دریافت دوباره محدوده‌ها
                 </Button>
               ) : null}
+              <div className="space-y-3">
+                <p className="text-sm leading-7 text-muted">
+                  موقعیت عمومی محل ارائه خدمت برای جست‌وجوی نزدیک استفاده
+                  می‌شود. نشانی منزل خصوصی را وارد نکنید. مربی‌های بدون موقعیت
+                  در جست‌وجوی سراسری نمایش داده می‌شوند.
+                </p>
+                <NeshanMap
+                  className="h-64 overflow-hidden rounded-2xl"
+                  center={{
+                    latitude:
+                      publicLatitude === "" ? 35.7 : Number(publicLatitude),
+                    longitude:
+                      publicLongitude === "" ? 51.4 : Number(publicLongitude),
+                  }}
+                  marker={
+                    publicLatitude !== "" && publicLongitude !== ""
+                      ? {
+                          latitude: Number(publicLatitude),
+                          longitude: Number(publicLongitude),
+                        }
+                      : undefined
+                  }
+                  markerLabel="محل عمومی ارائه خدمت"
+                  onPointChange={(point) => {
+                    setPublicLatitude(String(point.latitude));
+                    setPublicLongitude(String(point.longitude));
+                    setPointDirty(true);
+                  }}
+                />
+                <details>
+                  <summary className="cursor-pointer text-xs text-muted">
+                    ورود مختصات به‌صورت دستی
+                  </summary>
+                  <Field label="عرض جغرافیایی محل عمومی">
+                    <HeroInput
+                      aria-label="عرض جغرافیایی محل عمومی"
+                      type="number"
+                      min={-90}
+                      max={90}
+                      step="any"
+                      value={publicLatitude}
+                      onChange={(event) => {
+                        setPublicLatitude(event.target.value);
+                        setPointDirty(true);
+                      }}
+                    />
+                  </Field>
+                  <Field label="طول جغرافیایی محل عمومی">
+                    <HeroInput
+                      aria-label="طول جغرافیایی محل عمومی"
+                      type="number"
+                      min={-180}
+                      max={180}
+                      step="any"
+                      value={publicLongitude}
+                      onChange={(event) => {
+                        setPublicLongitude(event.target.value);
+                        setPointDirty(true);
+                      }}
+                    />
+                  </Field>
+                </details>
+                <Button
+                  variant="secondary"
+                  onPress={() => {
+                    setPublicLatitude("");
+                    setPublicLongitude("");
+                    setPointDirty(true);
+                  }}
+                >
+                  حذف موقعیت عمومی
+                </Button>
+              </div>
               <Field label="شعاع رفت‌وآمد (کیلومتر)">
                 <Counter
                   aria-label="شعاع رفت‌وآمد (کیلومتر)"

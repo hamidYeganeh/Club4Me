@@ -5,7 +5,7 @@
 .hero {
   position: relative;
   isolation: isolate;
-  min-height: 23rem;
+  min-height: 14rem;
   display: flex;
   align-items: flex-end;
   overflow: hidden;
@@ -21,7 +21,7 @@
 .heroContent {
   position: relative;
   width: 100%;
-  padding: 8rem 1.25rem 1.5rem;
+  padding: 3rem 1.25rem 1.5rem;
 }
 
 .eyebrow {

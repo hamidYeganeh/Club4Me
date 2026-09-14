@@ -188,7 +188,7 @@ function ClassAccount({
   };
   return (
     <section
-      className="space-y-3 rounded-xl border border-border p-4"
+      className="space-y-3 rounded-xl p-4"
       aria-label={`حساب ${account.title}`}
     >
       <h3 className="font-semibold">{account.title}</h3>
@@ -402,7 +402,7 @@ function Receipt({
     }
   };
   return (
-    <article className="space-y-2 rounded-xl border border-border p-4 text-sm">
+    <article className="space-y-2 rounded-xl p-4 text-sm">
       <p className="font-medium">
         {receipt.title} · {money(receipt.amount, receipt.currency)}
       </p>

@@ -1,5 +1,7 @@
 "use client";
 
+import { PanelMobileMenu } from "@repo/ui/panel-navigation";
+import { usePathname } from "next/navigation";
 import { Icon } from "@theme/icon";
 import { ThemeToggle } from "@theme/theme-toggle";
 
@@ -9,14 +11,17 @@ import { panelHeaderSectionStyles } from "./PanelHeaderSection.styles";
 import type { PanelHeaderSectionProps } from "./PanelHeaderSection.types";
 
 export function PanelHeaderSection({
+  items,
   settingsHref,
   settingsLabel,
 }: PanelHeaderSectionProps) {
+  const pathname = usePathname();
   const styles = panelHeaderSectionStyles();
 
   return (
     <header className={styles.root()}>
-      <p className="text-sm font-semibold">مدیریت جیم‌فورمی</p>
+      <PanelMobileMenu key={pathname} items={items} pathname={pathname} />
+      <p className="text-sm font-semibold">مدیریت کلاب‌فورمی</p>
       <div className={styles.actions()}>
         <ThemeToggle className={styles.iconBtn()} />
         <ButtonLink

@@ -12,6 +12,6 @@ export const accountAuthForgotPasswordFormStyles = tv({
     prefix: "ps-3 text-muted",
     input: "min-w-0 flex-1 text-start text-base tracking-wide",
     actions: "w-full",
-    button: "h-14 rounded-full text-base font-bold active:scale-[0.98]",
+    button: "h-14 rounded-full text-base font-bold",
   },
 });

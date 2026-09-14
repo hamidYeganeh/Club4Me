@@ -11,9 +11,9 @@ export const landingFaqSectionStyles = tv({
     ].join(" "),
     list: "flex w-full flex-col gap-5",
     item: [
-      "overflow-hidden rounded-[1.25rem] border border-transparent",
+      "overflow-hidden rounded-[1.25rem]",
       "bg-surface-secondary transition-all duration-moderate ease-app",
-      "has-[[aria-expanded=true]]:border-border",
+      "",
       "has-[[aria-expanded=true]]:bg-surface",
     ].join(" "),
     trigger: [

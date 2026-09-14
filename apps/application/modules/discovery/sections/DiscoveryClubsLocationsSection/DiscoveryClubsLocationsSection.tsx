@@ -1,4 +1,6 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import { ScrollShadow } from "@heroui/react";
 import { CityCard } from "@ui/city-card";
@@ -11,7 +13,7 @@ import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEm
 import { discoveryClubsLocationsSectionStyles } from "./DiscoveryClubsLocationsSection.styles";
 import type { DiscoveryClubsLocationsSectionProps } from "./DiscoveryClubsLocationsSection.types";
 
-export function DiscoveryClubsLocationsSection({
+function DiscoveryClubsLocationsSectionContent({
   items,
   seeAllHref = "/discovery/cities",
   title,
@@ -85,4 +87,8 @@ export function DiscoveryClubsLocationsSection({
       </ScrollShadow>
     </section>
   );
+}
+
+export function DiscoveryClubsLocationsSection(props: ComponentProps<typeof DiscoveryClubsLocationsSectionContent>) {
+ return <DiscoveryViewport><DiscoveryClubsLocationsSectionContent {...props} /></DiscoveryViewport>;
 }

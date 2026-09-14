@@ -12,7 +12,7 @@ export const coachCardStyles = tv({
     badge:
       "max-w-[70%] rounded-full border-none bg-foreground px-2.5 text-background",
     action:
-      "z-[3] size-8 min-w-8 rounded-full border border-border bg-background/80 text-foreground shadow-none backdrop-blur-md",
+      "z-[3] size-8 min-w-8 rounded-full bg-background/80 text-foreground shadow-none backdrop-blur-md",
     actionMark: "block size-3.5 rounded-full border-[1.5px] border-current",
     footer: "flex min-w-0 flex-col",
     title: "m-0 line-clamp-2 font-bold text-foreground",

@@ -7,7 +7,7 @@ export const landingFooterSectionStyles = tv({
       "px-6 py-14 text-(--on-brand) sm:px-10 sm:py-16",
     ],
     ctaBand:
-      "flex flex-col gap-8 border-b border-(--glass-border) pb-14 sm:flex-row sm:items-end sm:justify-between",
+      "flex flex-col gap-8 pb-14 sm:flex-row sm:items-end sm:justify-between",
     ctaTitle:
       "mt-4 text-balance text-4xl font-bold leading-[0.92] tracking-tight sm:text-5xl lg:text-6xl",
     columns: "grid gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr_1fr]",
@@ -23,7 +23,7 @@ export const landingFooterSectionStyles = tv({
     colList:
       "mt-4 space-y-3 text-sm text-(--on-brand) opacity-80 [&_a]:transition-opacity [&_a]:duration-fast [&_a]:ease-app hover:[&_a]:opacity-70",
     bottom: [
-      "flex flex-col gap-5 border-t border-(--glass-border) pt-8 text-sm text-(--on-brand-muted)",
+      "flex flex-col gap-5 pt-8 text-sm text-(--on-brand-muted)",
       "pb-[max(0px,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between",
     ],
     social:

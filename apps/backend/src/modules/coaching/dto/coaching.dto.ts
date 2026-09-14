@@ -113,6 +113,15 @@ const CoachProfileInputSchema = z
     minAcceptedAge: z.number().int().min(0).max(120).nullable(),
     maxAcceptedAge: z.number().int().min(0).max(120).nullable(),
     geo: geoSchema.nullable(),
+    location: z
+      .object({
+        type: z.literal("Point"),
+        coordinates: z.tuple([
+          z.number().min(-180).max(180),
+          z.number().min(-90).max(90),
+        ]),
+      })
+      .nullable(),
     travelRadiusKm: z.number().int().min(0).max(1000),
     contact: customAttributesSchema,
   })
@@ -159,6 +168,7 @@ export class UpdateCoachProfileDto implements CoachProfileInput {
   minAcceptedAge?: number | null;
   maxAcceptedAge?: number | null;
   geo?: z.infer<typeof geoSchema> | null;
+  location?: { type: "Point"; coordinates: [number, number] } | null;
   travelRadiusKm?: number;
   contact?: Record<string, unknown>;
 }

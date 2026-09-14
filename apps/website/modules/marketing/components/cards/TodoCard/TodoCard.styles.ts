@@ -28,7 +28,7 @@ export const todoCardVariants = tv({
     ].join(" "),
     index: [
       "flex size-7 shrink-0 items-center justify-center rounded-full",
-      "border border-border text-xs font-semibold tabular-nums text-foreground",
+      "text-xs font-semibold tabular-nums text-foreground",
     ].join(" "),
     label: "min-w-0 flex-1 text-sm font-medium leading-snug text-foreground",
     check: [

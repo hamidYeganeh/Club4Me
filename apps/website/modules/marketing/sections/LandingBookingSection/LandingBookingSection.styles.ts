@@ -35,18 +35,18 @@ export const landingBookingSectionStyles = tv({
       "md:block md:w-[55%]",
     ].join(" "),
     orbitAvatar: [
-      "absolute cursor-pointer overflow-hidden rounded-full border-[3px] border-background",
-      "shadow-lg transition-transform duration-300 ease-app hover:scale-110",
+      "absolute cursor-pointer overflow-hidden rounded-full",
+      "shadow-lg transition-transform duration-300 ease-app",
     ].join(" "),
     orbitAvatarInner: "size-full! min-h-0 min-w-0",
     stack: "z-10 mt-8 flex flex-wrap md:hidden",
     stackAvatar: [
-      "-ms-2 size-12 overflow-hidden rounded-full border-2 border-background",
+      "-ms-2 size-12 overflow-hidden rounded-full",
       "first:ms-0",
     ].join(" "),
     countChip: [
       "-ms-2 flex size-12 items-center justify-center rounded-full",
-      "border-2 border-background bg-background/20 text-[12px] font-bold",
+      "bg-background/20 text-[12px] font-bold",
       "text-accent-foreground",
     ].join(" "),
   },

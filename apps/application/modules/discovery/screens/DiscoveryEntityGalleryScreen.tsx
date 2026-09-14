@@ -10,6 +10,10 @@ import type { Swiper as SwiperType } from "swiper";
 import { Keyboard, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FallbackImage } from "@/components/FallbackImage";
+import { DiscoveryQueryPage } from "../components/DiscoveryQueryPage";
+import { getQueryFailure } from "@/lib/request-failure";
+import { VisualEmptyState } from "@/components/ui/clarity";
+import { ButtonLink } from "@/components/button-link";
 
 import "swiper/css";
 import "swiper/css/pagination";
@@ -36,18 +40,41 @@ export function DiscoveryEntityGalleryScreen({
         ? [classItem.data.imageUrl]
         : [];
   const slides = images.length ? images : [FALLBACK_IMAGE_SRC];
+  const query = type === "coach" ? coach : classItem;
+  const browseHref =
+    type === "coach" ? "/discovery/coaches" : "/discovery/classes";
+  if (getQueryFailure(query.error, query.fetchStatus) && !query.data)
+    return <DiscoveryQueryPage title="گالری" query={query} />;
 
   if (pending)
     return (
-      <main className="flex min-h-dvh flex-col gap-4 bg-background p-4">
+      <main
+        aria-busy="true"
+        aria-label="در حال بارگذاری محتوا"
+        className="flex min-h-dvh flex-col gap-4 bg-background p-4"
+      >
         <Skeleton className="h-14 rounded-2xl" />
         <Skeleton className="min-h-0 flex-1 rounded-[2rem]" />
       </main>
     );
   if (!name)
     return (
-      <main className="grid min-h-dvh place-items-center bg-background p-6 text-muted">
-        گالری در دسترس نیست.
+      <main className="app-page">
+        <SecondaryHeader
+          title="گالری"
+          showFilter={false}
+          backHref={browseHref}
+        />
+        <VisualEmptyState
+          icon="image-1"
+          title="گالری در دسترس نیست."
+          description="برای دیدن تصاویر، از فهرست یک مورد دیگر انتخاب کن."
+          action={
+            <ButtonLink href={browseHref} variant="primary">
+              بازگشت به فهرست
+            </ButtonLink>
+          }
+        />
       </main>
     );
 
@@ -110,7 +137,7 @@ export function DiscoveryEntityGalleryScreen({
                 instance.slideTo(activeIndex, 0);
               }}
               onSlideChange={(instance) => setActiveIndex(instance.realIndex)}
-              className="h-full overflow-hidden rounded-[2rem] border border-border bg-surface-secondary [&_.swiper-pagination-bullet]:bg-foreground/55 [&_.swiper-pagination-bullet-active]:w-7 [&_.swiper-pagination-bullet-active]:rounded-full [&_.swiper-pagination-bullet-active]:bg-accent"
+              className="h-full overflow-hidden rounded-[2rem] bg-surface-secondary [&_.swiper-pagination-bullet]:bg-foreground/55 [&_.swiper-pagination-bullet-active]:w-7 [&_.swiper-pagination-bullet-active]:rounded-full [&_.swiper-pagination-bullet-active]:bg-accent"
             >
               {slides.map((src, index) => (
                 <SwiperSlide
@@ -160,7 +187,7 @@ export function DiscoveryEntityGalleryScreen({
                 type="button"
                 aria-label={`تصویر ${index + 1}`}
                 data-active={index === activeIndex}
-                className="relative aspect-square h-full shrink-0 overflow-hidden rounded-[1.1rem] border-2 border-border data-[active=true]:border-accent"
+                className="relative aspect-square h-full shrink-0 overflow-hidden rounded-[1.1rem]"
                 onClick={() => swiper?.slideTo(index)}
               >
                 <FallbackImage

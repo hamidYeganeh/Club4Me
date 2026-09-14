@@ -7,7 +7,7 @@ export const coachFeatureCardVariants = tv({
       "relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-[28px]",
       "outline-none transition-transform duration-fast ease-app",
       "data-[pressable=true]:cursor-pointer",
-      "data-[pressable=true]:active:scale-[0.985]",
+      "",
     ].join(" "),
     media: "absolute inset-0 overflow-hidden",
     image:
@@ -25,7 +25,7 @@ export const coachFeatureCardVariants = tv({
     closeButton: [
       "size-9 shrink-0 rounded-full bg-overlay/90 text-overlay-foreground",
       "hover:bg-overlay data-[hovered=true]:bg-overlay",
-      "data-[pressed=true]:scale-[0.96]",
+      "",
     ].join(" "),
     body: [
       "relative z-10 mt-auto flex w-full min-w-0 flex-col items-center gap-1.5",

@@ -15,7 +15,8 @@ type OptionProps = OptionHTMLAttributes<HTMLOptionElement> & {
   entity?: unknown;
 };
 /** Declarative option data consumed by FormSelect; never rendered as native options. */
-export function FormOption(_props: OptionProps) {
+export function FormOption(props: OptionProps) {
+  void props; // Options are read declaratively by FormSelect.
   return null;
 }
 function textContent(node: ReactNode): string {

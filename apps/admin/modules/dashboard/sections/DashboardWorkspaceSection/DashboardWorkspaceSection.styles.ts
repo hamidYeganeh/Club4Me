@@ -3,7 +3,7 @@ import { tv } from "tailwind-variants";
 export const dashboardWorkspaceSectionStyles = tv({
   slots: {
     root: "grid flex-1 gap-4 lg:grid-cols-12",
-    card: "rounded-[1.75rem] border border-border bg-surface p-5",
+    card: "rounded-[1.75rem] bg-surface p-5",
     cardTitle: "text-sm text-muted",
     cardValue: "mt-1 text-3xl font-semibold tabular-nums tracking-tight",
     score: "lg:col-span-7 min-h-[17rem]",

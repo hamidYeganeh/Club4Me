@@ -25,17 +25,28 @@ export class AuditController {
       .limit(limit)
       .lean();
     return {
-      items: await withReferenceSummaries(this.logs.db, items.map((item) => ({
-        id: String(item._id),
-        actorId: String(item.actorId),
-        action: item.action,
-        method: item.method,
-        path: item.path,
-        statusCode: item.statusCode,
-        metadata: item.metadata,
-        ip: item.ip ?? null,
-        createdAt: item.createdAt.toISOString(),
-      })), [{field: "actorId", as: "actor", collection: "users", fields: ["firstName", "lastName", "phone"]}]),
+      items: await withReferenceSummaries(
+        this.logs.db,
+        items.map((item) => ({
+          id: String(item._id),
+          actorId: String(item.actorId),
+          action: item.action,
+          method: item.method,
+          path: item.path,
+          statusCode: item.statusCode,
+          metadata: item.metadata,
+          ip: item.ip ?? null,
+          createdAt: item.createdAt.toISOString(),
+        })),
+        [
+          {
+            field: "actorId",
+            as: "actor",
+            collection: "users",
+            fields: ["firstName", "lastName", "phone"],
+          },
+        ],
+      ),
     };
   }
 }

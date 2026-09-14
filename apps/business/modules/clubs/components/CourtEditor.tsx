@@ -446,7 +446,7 @@ export function CourtEditor({
               return (
                 <div
                   key={id}
-                  className="space-y-2 rounded-xl border border-border p-2"
+                  className="space-y-2 rounded-xl p-2"
                 >
                   {url ? (
                     <Image

@@ -11,12 +11,11 @@ import { DiscoveryClubsDetailActionsSection } from "@modules/discovery/sections/
 import { DiscoveryClubsDetailBodySection } from "@modules/discovery/sections/DiscoveryClubsDetailBodySection";
 import { DiscoveryClubsDetailHeroSection } from "@modules/discovery/sections/DiscoveryClubsDetailHeroSection";
 import { ClubReservationsAndReviewsSection } from "@modules/discovery/sections/ClubReservationsAndReviewsSection";
-import { ClubSlotsSection } from "@modules/discovery/sections/ClubSlotsSection";
 import { ClubProfileSection } from "@modules/discovery/sections/ClubProfileSection";
 import { ClubCoachesContextSection } from "@modules/discovery/sections/ClubCoachesContextSection";
 import { ClubSportsSection } from "@modules/discovery/sections/ClubSportsSection";
 import { ClubClassesSection } from "@modules/discovery/sections/ClubClassesSection";
-import { ClubBenefitProductsSection } from "@modules/discovery/sections/ClubBenefitProductsSection";
+import { ClubPricingSection } from "../../sections/ClubPricingSection";
 import { iconNames, type IconName } from "@theme/icon";
 import { RequestFailureState } from "@/components/request-failure-state";
 import { DetailSocialSection } from "@modules/discovery/components/DetailSocialSection";
@@ -232,15 +231,13 @@ export function DiscoveryClubsDetailScreen({
       <ClubSportsSection sportIds={data.sportIds} />
       <ClubProfileSection club={data} />
 
-      <ClubSlotsSection club={data} />
-
       <ClubClassesSection clubId={club.id} />
       <ClubCoachesContextSection
         clubId={club.id}
         timezone={location?.timezone ?? "Asia/Tehran"}
       />
 
-      <ClubBenefitProductsSection clubId={club.id} />
+      <ClubPricingSection club={data} />
 
       <section className="px-4">
         <DetailSocialSection items={data.socialMedia} />

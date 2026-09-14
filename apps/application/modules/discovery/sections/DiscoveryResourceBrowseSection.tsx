@@ -1,4 +1,6 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import type { PublicResourceItem } from "@api/discovery";
 import { ScrollShadow, Typography } from "@heroui/react";
@@ -11,7 +13,7 @@ import { resolveClubTypeIcon } from "@modules/discovery/discovery-icons";
 import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 import { cn } from "@/lib/cn";
 
-export function DiscoveryResourceBrowseSection({
+function DiscoveryResourceBrowseSectionContent({
   title,
   subtitle,
   items,
@@ -92,7 +94,7 @@ export function DiscoveryResourceBrowseSection({
                 key={item.id}
                 href={hrefFor(item)}
                 scroll={false}
-                className="flex w-36 snap-start flex-col items-center gap-3 rounded-3xl border border-border bg-surface p-4 text-center no-underline transition-transform active:scale-[0.98]"
+                className="flex w-36 snap-start flex-col items-center gap-3 rounded-3xl bg-surface p-4 text-center no-underline transition-transform"
               >
                 <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-accent/12 text-accent">
                   <Icon name={icon} size={28} />
@@ -111,4 +113,8 @@ export function DiscoveryResourceBrowseSection({
       </ScrollShadow>
     </section>
   );
+}
+
+export function DiscoveryResourceBrowseSection(props: ComponentProps<typeof DiscoveryResourceBrowseSectionContent>) {
+ return <DiscoveryViewport><DiscoveryResourceBrowseSectionContent {...props} /></DiscoveryViewport>;
 }

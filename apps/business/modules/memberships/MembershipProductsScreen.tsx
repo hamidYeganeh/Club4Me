@@ -315,7 +315,7 @@ export function MembershipProductsScreen() {
               </label>
               <fieldset
                 key={clubId}
-                className="space-y-3 md:col-span-2 rounded-2xl border border-border p-4"
+                className="space-y-3 md:col-span-2 rounded-2xl p-4"
               >
                 <legend className="px-2 text-sm font-semibold">
                   باشگاه‌های مجاز برای مصرف این بسته

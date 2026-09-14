@@ -5,6 +5,10 @@ import { emptyCoachProfessionalProfile } from "@api";
 import { createMockApiState, installApiMock, reservationFixture } from "./support/mock-api";
 const routes:string[]=JSON.parse(readFileSync(resolve(__dirname,"../../../docs/design/route-inventory.json"),"utf8")).application;
 const params:Record<string,string>={clubId:"energy-plus-demo",reservationId:"66d700000000000000000001",coachId:"demo",classId:"demo",articleId:"demo",entitlementId:"demo",locationId:"demo",membershipId:"demo",ticketId:"demo",offeringId:"demo",provinceId:"tehran",cityId:"tehran",districtId:"demo",regionId:"demo",sportId:"demo",typeId:"demo"};
+test.beforeEach(async ({ page }) => {
+  // A route capture should not reload when another local task saves a file.
+  await page.routeWebSocket(/\/_next\/webpack-hmr/, (socket) => socket.close());
+});
 for(const theme of ["light","dark"] as const) for(const template of routes){
  const path=template.replace(/\[([^\]]+)\]/g,(_,key)=>params[key]??"demo");
  test(`application route ${theme} ${template}`,async({page},info)=>{
@@ -36,10 +40,11 @@ for(const theme of ["light","dark"] as const) for(const template of routes){
   await page.route("**/api/v1/benefits/wallet",route=>route.fulfill({json:{data:{availableAmount:0,reservedAmount:0,transactions:[]}}}));
   await page.route("**/api/v1/benefits/referral-code",route=>route.fulfill({json:{data:{code:"GYM-DEMO"}}}));
   await page.setViewportSize({width:375,height:900});
-  await page.goto(path.endsWith("/confirm") ? `${path}?phone=09121234567` : path);
-  await expect(page.getByRole("status",{name:"Gym4Me",exact:true})).toHaveCount(0);
+  await page.goto(path.endsWith("/confirm") ? `${path}?phone=09121234567` : path, { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("status",{name:"Club4Me",exact:true})).toHaveCount(0);
   await expect(page.locator("main").first()).toBeVisible();
   await page.evaluate(()=>document.fonts.ready);
+  await expect(page.locator('[aria-busy="true"][aria-label="در حال بارگذاری محتوا"]')).toHaveCount(0);
   await expect(page.getByText("بارگذاری کامل نشد",{exact:true})).toHaveCount(0);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),path).toBe(true);
   await page.screenshot({path:info.outputPath("mobile.png")});

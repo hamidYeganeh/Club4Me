@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "../../../test/mongo-memory";
 import mongoose, { Connection } from "mongoose";
 import request from "supertest";
 import { GlobalExceptionFilter } from "../../common/filters/global-exception.filter";

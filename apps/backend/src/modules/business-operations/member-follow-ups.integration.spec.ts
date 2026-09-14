@@ -1,4 +1,4 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "../../../test/mongo-memory";
 import { createConnection, Connection, Types } from "mongoose";
 import { BusinessOperationsService } from "./business-operations.service";
 import { ClubStudentSchema } from "./schemas/student.schema";
@@ -84,16 +84,14 @@ describe("member follow-up isolation", () => {
     await db
       .collection("business_class_sessions")
       .insertOne({ _id: sessionId, startsAt: new Date() });
-    await db
-      .collection("business_class_attendance")
-      .insertOne({
-        sessionId,
-        classId,
-        clubId: club,
-        studentId: student,
-        status: "present",
-        createdAt: new Date(0),
-      });
+    await db.collection("business_class_attendance").insertOne({
+      sessionId,
+      classId,
+      clubId: club,
+      studentId: student,
+      status: "present",
+      createdAt: new Date(0),
+    });
     expect((await service.memberFollowUps(owner, String(club))).items).toEqual(
       [],
     );

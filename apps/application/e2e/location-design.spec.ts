@@ -65,7 +65,7 @@ for (const theme of ["light", "dark"] as const) {
           page.getByRole("heading", { name: title!, exact: true }),
         ).toBeVisible();
         await expect(
-          page.getByRole("status", { name: "Gym4Me", exact: true }),
+          page.getByRole("status", { name: "Club4Me", exact: true }),
         ).toHaveCount(0);
         await expect(page.locator("header")).toHaveCount(1);
         await expect(

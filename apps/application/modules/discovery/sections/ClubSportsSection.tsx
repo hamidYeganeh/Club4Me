@@ -65,7 +65,7 @@ export function ClubSportsSection({ sportIds }: { sportIds: string[] }) {
           title="رشته‌های ورزشی"
           subtitle="فعالیت‌هایی که در این باشگاه ارائه می‌شوند"
           items={selectedSports}
-          seeAllHref="/discovery/search"
+          seeAllHref={null}
         />
       )}
     </div>

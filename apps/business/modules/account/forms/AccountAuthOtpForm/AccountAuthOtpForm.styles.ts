@@ -17,6 +17,6 @@ export const accountAuthOtpFormStyles = tv({
       "h-8 min-h-8 w-auto gap-1 border-0 bg-transparent px-0 shadow-none",
     flag: "size-5 overflow-hidden rounded-sm",
     actions: "w-full",
-    button: "h-14 rounded-full text-base font-bold active:scale-[0.98]",
+    button: "h-14 rounded-full text-base font-bold",
   },
 });

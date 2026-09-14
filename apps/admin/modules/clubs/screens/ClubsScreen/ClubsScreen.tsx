@@ -1,33 +1,52 @@
 "use client";
+import { useConfirmActionDialog } from "@repo/ui/confirm-action-dialog";
+import { useTextActionDialog } from "@repo/ui/text-action-dialog";
 
 import { useState } from "react";
 import { Button, Card, Chip, Spinner, Table, toast } from "@heroui/react";
-import { useAdminClubs, useAdminSupplyQuality, useReviewClub, useUpdateClubSupplyQuality, useVerifyClub } from "@api/admin";
+import {
+  useAdminClubs,
+  useAdminSupplyQuality,
+  useReviewClub,
+  useUpdateClubSupplyQuality,
+  useVerifyClub,
+} from "@api/admin";
 import type { BusinessClub } from "@api/business";
 import { EntityDetailsModal } from "@ui/entity-details-modal";
 import { useTranslations } from "next-intl";
 
 export function ClubsScreen() {
+  const confirmation = useConfirmActionDialog();
   const t = useTranslations("clubsPage");
   const clubs = useAdminClubs();
   const review = useReviewClub();
   const verification = useVerifyClub();
   const qualityQueue = useAdminSupplyQuality();
   const updateQuality = useUpdateClubSupplyQuality();
+  const textAction = useTextActionDialog();
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<BusinessClub | null>(null);
 
   const decide = async (clubId: string, status: "approved" | "rejected") => {
     if (review.isPending) return;
-    const reason =
-      status === "rejected"
-        ? window.prompt(t("rejectionReasonPrompt"))?.trim()
-        : undefined;
-    if (status === "rejected" && !reason) return;
-    if (status === "approved" && !window.confirm(t("approveConfirm"))) return;
+    if (status === "rejected") {
+      textAction.open({
+        title: "دلیل رد باشگاه",
+        onSubmit: async (reason) => {
+          await review.mutateAsync({ clubId, status, reason });
+          toast.success("نتیجه بررسی ثبت شد");
+        },
+      });
+      return;
+    }
+    if (
+      status === "approved" &&
+      !(await confirmation.confirm(t("approveConfirm")))
+    )
+      return;
     setReviewingId(clubId);
     try {
-      await review.mutateAsync({ clubId, status, reason });
+      await review.mutateAsync({ clubId, status });
       toast.success(
         t(status === "approved" ? "approveSuccess" : "rejectSuccess"),
       );
@@ -38,14 +57,122 @@ export function ClubsScreen() {
     }
   };
 
+  const renderActions = (club: BusinessClub) => (
+    <div className="flex flex-wrap gap-2">
+      <Button size="sm" variant="ghost" onPress={() => setSelected(club)}>
+        جزئیات
+      </Button>
+      {(
+        [
+          ["identity", "هویت"],
+          ["documents", "مدارک"],
+          ["on_site", "بازدید حضوری"],
+        ] as const
+      ).map(([kind, label]) => (
+        <Button
+          key={kind}
+          size="sm"
+          variant="secondary"
+          isDisabled={verification.isPending}
+          onPress={async () => {
+            try {
+              await verification.mutateAsync({
+                clubId: club.id,
+                kind,
+                verified: !club.verifications?.[kind],
+              });
+              toast.success("نشان تأیید به‌روزرسانی شد");
+            } catch {
+              toast.danger("به‌روزرسانی نشان انجام نشد");
+            }
+          }}
+        >
+          {club.verifications?.[kind] ? "لغو تأیید" : "تأیید"} {label}
+        </Button>
+      ))}
+      {club.reviewStatus === "pending" ? (
+        <>
+          <Button
+            size="sm"
+            variant="primary"
+            isDisabled={review.isPending}
+            isPending={reviewingId === club.id && review.isPending}
+            onPress={() => void decide(club.id, "approved")}
+          >
+            {t("approve")}
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            isDisabled={review.isPending}
+            onPress={() => void decide(club.id, "rejected")}
+          >
+            {t("reject")}
+          </Button>
+        </>
+      ) : null}
+      <Button
+        size="sm"
+        variant={club.qualityStatus === "active" ? "secondary" : "primary"}
+        isPending={updateQuality.isPending}
+        onPress={() =>
+          void updateQuality
+            .mutateAsync({
+              clubId: club.id,
+              status: "active",
+              reasons: [],
+              nextReviewAt: new Date(
+                Date.now() + 90 * 86_400_000,
+              ).toISOString(),
+            })
+            .then(() => toast.success("عرضه تا ۹۰ روز تأیید شد"))
+            .catch(() => toast.danger("ثبت کنترل کیفیت انجام نشد"))
+        }
+      >
+        تأیید تازگی
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        isDisabled={updateQuality.isPending}
+        onPress={() =>
+          textAction.open({
+            title: "علت توقف عرضه",
+            onSubmit: async (reason) => {
+              await updateQuality.mutateAsync({
+                clubId: club.id,
+                status: "suspended",
+                reasons: [reason],
+              });
+            },
+          })
+        }
+      >
+        توقف عرضه
+      </Button>
+    </div>
+  );
   const items = clubs.data?.items ?? [];
   return (
     <main className="flex-1 overflow-auto p-4 lg:p-6">
+      {confirmation.dialog}
+      {textAction.dialog}
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
-      {qualityQueue.data?.items.length ? <Card className="mt-5 rounded-2xl border border-warning/30 bg-warning/8 p-4"><strong>صف کنترل کیفیت عرضه: {qualityQueue.data.items.length.toLocaleString("fa-IR")}</strong><p className="mt-1 text-sm text-muted">موعد بررسی، تازگی برنامه یا علت توقف این باشگاه‌ها نیاز به اقدام دارد.</p></Card> : null}
+      {qualityQueue.data?.items.length ? (
+        <Card className="mt-5 rounded-2xl bg-warning/8 p-4">
+          <strong>
+            صف کنترل کیفیت عرضه:{" "}
+            {qualityQueue.data.items.length.toLocaleString("fa-IR")}
+          </strong>
+          <p className="mt-1 text-sm text-muted">
+            موعد بررسی، تازگی برنامه یا علت توقف این باشگاه‌ها نیاز به اقدام
+            دارد.
+          </p>
+        </Card>
+      ) : null}
       <Card
         variant="transparent"
-        className="mt-5 overflow-hidden rounded-[1.75rem] border border-border bg-surface"
+        className="mt-5 overflow-hidden rounded-[1.75rem] bg-surface"
       >
         {clubs.isPending ? (
           <div className="flex justify-center py-16">
@@ -56,120 +183,89 @@ export function ClubsScreen() {
         ) : items.length === 0 ? (
           <p className="px-6 py-12 text-center text-muted">{t("empty")}</p>
         ) : (
-          <Table>
-            <Table.ScrollContainer>
-              <Table.Content aria-label={t("title")}>
-                <Table.Header>
-                  <Table.Column isRowHeader>{t("name")}</Table.Column>
-                  <Table.Column>{t("owner")}</Table.Column>
-                  <Table.Column>{t("status")}</Table.Column>
-                  <Table.Column>{t("updatedAt")}</Table.Column>
-                  <Table.Column>{t("actions")}</Table.Column>
-                </Table.Header>
-                <Table.Body>
-                  {items.map((club) => (
-                    <Table.Row key={club.id} id={club.id}>
-                      <Table.Cell className="font-medium">
-                        {club.name}
-                      </Table.Cell>
-                      <Table.Cell className="text-muted" dir="ltr">
-                        {[club.owner?.firstName, club.owner?.lastName].filter(Boolean).join(" ") || club.owner?.phone || "مالک در دسترس نیست"}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Chip
-                          color={
-                            club.reviewStatus === "approved"
-                              ? "success"
-                              : club.reviewStatus === "rejected"
-                                ? "danger"
-                                : club.reviewStatus === "pending"
-                                  ? "warning"
-                                  : "default"
-                          }
-                          size="sm"
-                        >
-                          {t(club.reviewStatus)}
-                        </Chip>
-                      </Table.Cell>
-                      <Table.Cell className="text-muted tabular-nums">
-                        {new Intl.DateTimeFormat("fa-IR", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        }).format(new Date(club.updatedAt))}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onPress={() => setSelected(club)}
-                          >
-                            جزئیات
-                          </Button>
-                          {(
-                            [
-                              ["identity", "هویت"],
-                              ["documents", "مدارک"],
-                              ["on_site", "بازدید حضوری"],
-                            ] as const
-                          ).map(([kind, label]) => (
-                            <Button
-                              key={kind}
+          <>
+            <div className="grid gap-3 p-3 md:hidden" aria-label="باشگاه‌ها">
+              {items.map((club) => (
+                <article
+                  key={club.id}
+                  className="rounded-2xl border border-border p-4 space-y-2"
+                >
+                  <h2 className="font-bold">{club.name}</h2>
+                  <p className="text-sm">{t(club.reviewStatus)}</p>
+                  <p className="text-sm text-muted">
+                    {[club.owner?.firstName, club.owner?.lastName]
+                      .filter(Boolean)
+                      .join(" ") ||
+                      club.owner?.phone ||
+                      "مالک در دسترس نیست"}
+                  </p>
+                  <Button variant="secondary" onPress={() => setSelected(club)}>
+                    مشاهده پرونده
+                  </Button>
+                  <details>
+                    <summary className="cursor-pointer py-3 text-sm">
+                      اقدامات بیشتر
+                    </summary>
+                    {renderActions(club)}
+                  </details>
+                </article>
+              ))}
+            </div>
+            <div className="hidden md:block">
+              <Table>
+                <Table.ScrollContainer>
+                  <Table.Content aria-label={t("title")}>
+                    <Table.Header>
+                      <Table.Column isRowHeader>{t("name")}</Table.Column>
+                      <Table.Column>{t("owner")}</Table.Column>
+                      <Table.Column>{t("status")}</Table.Column>
+                      <Table.Column>{t("updatedAt")}</Table.Column>
+                      <Table.Column>{t("actions")}</Table.Column>
+                    </Table.Header>
+                    <Table.Body>
+                      {items.map((club) => (
+                        <Table.Row key={club.id} id={club.id}>
+                          <Table.Cell className="font-medium">
+                            {club.name}
+                          </Table.Cell>
+                          <Table.Cell className="text-muted" dir="ltr">
+                            {[club.owner?.firstName, club.owner?.lastName]
+                              .filter(Boolean)
+                              .join(" ") ||
+                              club.owner?.phone ||
+                              "مالک در دسترس نیست"}
+                          </Table.Cell>
+                          <Table.Cell>
+                            <Chip
+                              color={
+                                club.reviewStatus === "approved"
+                                  ? "success"
+                                  : club.reviewStatus === "rejected"
+                                    ? "danger"
+                                    : club.reviewStatus === "pending"
+                                      ? "warning"
+                                      : "default"
+                              }
                               size="sm"
-                              variant="secondary"
-                              isDisabled={verification.isPending}
-                              onPress={async () => {
-                                try {
-                                  await verification.mutateAsync({
-                                    clubId: club.id,
-                                    kind,
-                                    verified: !club.verifications?.[kind],
-                                  });
-                                  toast.success("نشان تأیید به‌روزرسانی شد");
-                                } catch {
-                                  toast.danger("به‌روزرسانی نشان انجام نشد");
-                                }
-                              }}
                             >
-                              {club.verifications?.[kind]
-                                ? "لغو تأیید"
-                                : "تأیید"}{" "}
-                              {label}
-                            </Button>
-                          ))}
-                          {club.reviewStatus === "pending" ? (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="primary"
-                                isDisabled={review.isPending}
-                                isPending={
-                                  reviewingId === club.id && review.isPending
-                                }
-                                onPress={() => void decide(club.id, "approved")}
-                              >
-                                {t("approve")}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                isDisabled={review.isPending}
-                                onPress={() => void decide(club.id, "rejected")}
-                              >
-                                {t("reject")}
-                              </Button>
-                            </>
-                          ) : null}
-                          <Button size="sm" variant={club.qualityStatus === "active" ? "secondary" : "primary"} isPending={updateQuality.isPending} onPress={() => void updateQuality.mutateAsync({ clubId: club.id, status: "active", reasons: [], nextReviewAt: new Date(Date.now() + 90 * 86_400_000).toISOString() }).then(() => toast.success("عرضه تا ۹۰ روز تأیید شد")).catch(() => toast.danger("ثبت کنترل کیفیت انجام نشد"))}>تأیید تازگی</Button>
-                          <Button size="sm" variant="ghost" isDisabled={updateQuality.isPending} onPress={() => { const reason = window.prompt("علت توقف عرضه را بنویسید")?.trim(); if (reason) void updateQuality.mutateAsync({ clubId: club.id, status: "suspended", reasons: [reason] }); }}>توقف عرضه</Button>
-                        </div>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table.Content>
-            </Table.ScrollContainer>
-          </Table>
+                              {t(club.reviewStatus)}
+                            </Chip>
+                          </Table.Cell>
+                          <Table.Cell className="text-muted tabular-nums">
+                            {new Intl.DateTimeFormat("fa-IR", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            }).format(new Date(club.updatedAt))}
+                          </Table.Cell>
+                          <Table.Cell>{renderActions(club)}</Table.Cell>
+                        </Table.Row>
+                      ))}
+                    </Table.Body>
+                  </Table.Content>
+                </Table.ScrollContainer>
+              </Table>
+            </div>
+          </>
         )}
       </Card>
       <EntityDetailsModal

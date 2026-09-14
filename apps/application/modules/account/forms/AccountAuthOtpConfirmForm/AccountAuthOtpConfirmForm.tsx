@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, FieldError, Label, Spinner, toast } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useConfirmOtp, useRequestOtp } from "@api/account";
-import NumberFlow from "@number-flow/react";
+import { AnimatedCounter } from "@/components/motion/animated-counter";
 import { OTPInput } from "@repo/ui/otp-input";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
@@ -179,9 +179,8 @@ export function AccountAuthOtpConfirmForm({
                   {cooldown > 0 ? (
                     <span className={styles.resendTimer()}>
                       {resendInPrefix}{" "}
-                      <NumberFlow
+                      <AnimatedCounter
                         value={cooldown}
-                        trend={-1}
                         className={styles.resendSeconds()}
                       />{" "}
                       {resendInSuffix}

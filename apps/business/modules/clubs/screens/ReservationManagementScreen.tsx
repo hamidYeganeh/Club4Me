@@ -1,4 +1,5 @@
 "use client";
+import { useRecordOnSiteReservationPayment } from "@api";
 
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput } from "@heroui/react";
@@ -41,6 +42,7 @@ type OptionDraft = {
 const paymentStatusLabels: Record<string, string> = {
   not_required: "رایگان",
   pending: "در انتظار پرداخت",
+  pay_on_arrival: "پرداخت در پذیرش",
   paid: "پرداخت‌شده",
   refunded: "بازپرداخت‌شده",
   failed: "پرداخت ناموفق",
@@ -52,6 +54,7 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
   const courts = useClubCourts(clubId);
   const sessions = useBusinessSessions(clubId);
   const reservations = useClubReservations(clubId);
+  const onSitePayment = useRecordOnSiteReservationPayment(clubId);
   const coaches = useClubCoaches(clubId);
   const classes = useReservableClubClasses(clubId);
   const equipmentCatalog = useBusinessCatalog("facilities", "equipment");
@@ -300,7 +303,7 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
                     ))}
                 </FormSelect>
               </label>
-              <div className="rounded-xl border border-border p-3">
+              <div className="rounded-xl p-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium">{t("addons")}</span>
                   <div className="flex gap-2">
@@ -529,7 +532,57 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
                 </p>
                 <p className="mt-1 text-xs text-muted">
                   پرداخت: {paymentStatusLabels[item.paymentStatus]}
+                  {item.paymentMethod === "cash"
+                    ? " · نقدی"
+                    : item.paymentMethod === "pos"
+                      ? " · کارت‌خوان"
+                      : ""}
                 </p>
+                {(item.status === "reserved" &&
+                  item.paymentStatus === "pay_on_arrival") ||
+                (["cancelled", "no_show"].includes(item.status) &&
+                  item.paymentStatus === "paid" &&
+                  item.paymentMethod &&
+                  item.paymentMethod !== "online" &&
+                  (item.refundAmount ?? 0) > 0) ? (
+                  <Button
+                    className="mt-3"
+                    size="sm"
+                    isPending={onSitePayment.isPending}
+                    onPress={async () => {
+                      const refund = item.status !== "reserved";
+                      const amount = refund
+                        ? item.refundAmount!
+                        : item.totalPrice;
+                      if (
+                        !window.confirm(
+                          `آیا مبلغ ${amount.toLocaleString("fa-IR")} ریال را ${refund ? "به مشتری بازگردانده‌اید" : "از مشتری دریافت کرده‌اید"}؟`,
+                        )
+                      )
+                        return;
+                      try {
+                        await onSitePayment.mutateAsync({
+                          id: item.id,
+                          action: refund ? "refund" : "collect",
+                          expectedAmount: amount,
+                        });
+                        toast.success(
+                          refund
+                            ? "بازپرداخت حضوری ثبت شد"
+                            : "دریافت وجه ثبت شد",
+                        );
+                      } catch {
+                        toast.danger(
+                          "ثبت پرداخت انجام نشد؛ اطلاعات را به‌روز کنید.",
+                        );
+                      }
+                    }}
+                  >
+                    {item.status === "reserved"
+                      ? "ثبت دریافت وجه در پذیرش"
+                      : "ثبت بازپرداخت حضوری"}
+                  </Button>
+                ) : null}
                 {item.status === "reserved" &&
                 item.paymentStatus !== "pending" &&
                 new Date(item.sessionStartsAt) <= new Date() ? (

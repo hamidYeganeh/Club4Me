@@ -23,7 +23,7 @@ export type TextWithBrandProps = {
   brandClassName?: string;
 };
 
-/** Renders copy with every `Gym4Me` segment using {@link LineShadowText}. */
+/** Renders copy with every `Club4Me` segment using {@link LineShadowText}. */
 export function TextWithBrand({
   children,
   as: Wrapper = "span",

@@ -29,7 +29,18 @@ import { PrivacyService, PRIVACY_POLICY_VERSION } from "./privacy.service";
 import { z } from "zod";
 
 class UpdateConsentDto {
-  static schema = z.object({ purpose: z.enum(["analytics", "precise_location", "training_results", "marketing"]), granted: z.boolean(), version: z.string() }).strict();
+  static schema = z
+    .object({
+      purpose: z.enum([
+        "analytics",
+        "precise_location",
+        "training_results",
+        "marketing",
+      ]),
+      granted: z.boolean(),
+      version: z.string(),
+    })
+    .strict();
   purpose: "analytics" | "precise_location" | "training_results" | "marketing";
   granted: boolean;
   version: string;
@@ -38,15 +49,30 @@ import type { AuthTokenPayload } from "./services/token.service";
 
 @Controller("api/v1/account")
 export class AuthController {
-  constructor(private readonly authService: AuthService, private readonly privacy: PrivacyService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly privacy: PrivacyService,
+  ) {}
 
   @Get("privacy")
   @UseGuards(JwtAuthGuard)
-  privacySettings(@CurrentUser() user: AuthTokenPayload) { return this.privacy.get(user.sub); }
+  privacySettings(@CurrentUser() user: AuthTokenPayload) {
+    return this.privacy.get(user.sub);
+  }
 
   @Put("privacy/consent")
   @UseGuards(JwtAuthGuard)
-  consent(@CurrentUser() user: AuthTokenPayload, @Body() body: UpdateConsentDto) { return this.privacy.decide(user.sub, body.purpose, body.granted, body.version || PRIVACY_POLICY_VERSION); }
+  consent(
+    @CurrentUser() user: AuthTokenPayload,
+    @Body() body: UpdateConsentDto,
+  ) {
+    return this.privacy.decide(
+      user.sub,
+      body.purpose,
+      body.granted,
+      body.version || PRIVACY_POLICY_VERSION,
+    );
+  }
 
   @Post("auth/otp")
   @Throttle({ default: { limit: 5, ttl: 60_000 } })

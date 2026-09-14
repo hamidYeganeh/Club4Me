@@ -1,4 +1,6 @@
 "use client";
+import { useTextActionDialog } from "@repo/ui/text-action-dialog";
+import { useRecordBrowser } from "@/components/record-browser";
 
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput } from "@heroui/react";
@@ -66,11 +68,27 @@ const attendanceStatusLabels: Record<AttendanceStatus, string> = {
 };
 
 export function CoachReservationsScreen() {
+  const textAction = useTextActionDialog();
   const [workspaceView, setWorkspaceView] = useState("bookings");
   const offerings = useCoachOfferings();
   const calendar = useCoachCalendar();
   const coachClasses = useCoachClasses();
   const bookings = useCoachBookings();
+  const offeringBrowser = useRecordBrowser(offerings.data?.items ?? [], {
+    label: "خدمات",
+    text: (item) => item.title,
+    status: (item) => item.status,
+  });
+  const bookingBrowser = useRecordBrowser(bookings.data?.items ?? [], {
+    label: "رزروهای شاگردان",
+    text: (item) => item.sessionTitle,
+    status: (item) => item.status,
+  });
+  const sessionBrowser = useRecordBrowser(calendar.data?.items ?? [], {
+    label: "جلسات",
+    text: (item) => item.title,
+    status: (item) => item.status,
+  });
   const publishOffering = useUpdateCoachOfferingStatus();
   const createSession = useCreateCoachSession();
   const cancelSession = useCancelCoachSession();
@@ -164,6 +182,7 @@ export function CoachReservationsScreen() {
 
   return (
     <main className="app-page coach-workspace gap-6">
+      {textAction.dialog}
       <AthleteScreenHeaderSection title="رزروهای مربی" />
       <nav aria-label="بخش‌های مدیریت رزرو" className="workspace-navigation">
         {[
@@ -198,7 +217,8 @@ export function CoachReservationsScreen() {
           تعریف خدمت جدید
         </Link>
         <div className="mt-5 flex flex-col gap-2">
-          {(offerings.data?.items ?? []).map((item) => (
+          {offeringBrowser.controls}
+          {offeringBrowser.items.map((item) => (
             <div
               key={item.id}
               className="flex items-center justify-between rounded-2xl bg-surface-secondary p-3"
@@ -345,7 +365,8 @@ export function CoachReservationsScreen() {
           </Button>
         </form>
         <div className="mt-5 flex flex-col gap-2">
-          {(calendar.data?.items ?? [])
+          {sessionBrowser.controls}
+          {sessionBrowser.items
             .filter((item) => new Date(item.endAt) > new Date())
             .map((item) => (
               <div
@@ -369,38 +390,19 @@ export function CoachReservationsScreen() {
                       size="sm"
                       variant="secondary"
                       isPending={rescheduleSession.isPending}
-                      onPress={() => {
-                        const value = window.prompt(
-                          "تاریخ شمسی و ساعت تهران، مثل ۱۴۰۵/۰۶/۲۱ ۱۸:۳۰:",
-                          iranDateInputValue(
-                            tehranLocalValue(item.startAt),
-                            true,
-                          ),
-                        );
-                        if (!value) return;
-                        const start = tehranLocalDate(
-                          parseIranDateInput(value, true) ?? "",
-                        );
-                        const duration =
-                          new Date(item.endAt).getTime() -
-                          new Date(item.startAt).getTime();
-                        if (Number.isNaN(start.getTime())) {
-                          toast.danger("زمان واردشده معتبر نیست");
-                          return;
-                        }
-                        void rescheduleSession
-                          .mutateAsync({
-                            sessionId: item.id,
-                            startAt: start.toISOString(),
-                            endAt: new Date(
-                              start.getTime() + duration,
-                            ).toISOString(),
-                          })
-                          .then(() => toast.success("زمان سانس تغییر کرد"))
-                          .catch(() =>
-                            toast.danger("تغییر زمان سانس انجام نشد"),
-                          );
-                      }}
+                      onPress={() => textAction.open({
+                        title: "تغییر زمان جلسه",
+                        description: "تاریخ شمسی و ساعت تهران، مثل ۱۴۰۵/۰۶/۲۱ ۱۸:۳۰",
+                        initialValue: iranDateInputValue(tehranLocalValue(item.startAt), true),
+                        maxLength: 30,
+                        onSubmit: async (value) => {
+                          const start = tehranLocalDate(parseIranDateInput(value, true) ?? "");
+                          if (Number.isNaN(start.getTime())) throw new Error("زمان واردشده معتبر نیست");
+                          const duration = new Date(item.endAt).getTime() - new Date(item.startAt).getTime();
+                          await rescheduleSession.mutateAsync({ sessionId: item.id, startAt: start.toISOString(), endAt: new Date(start.getTime() + duration).toISOString() });
+                          toast.success("زمان جلسه تغییر کرد");
+                        },
+                      })}
                     >
                       تغییر زمان
                     </Button>
@@ -485,7 +487,7 @@ export function CoachReservationsScreen() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-bold">
-                        {athleteName || "ورزشکار Gym4Me"}
+                        {athleteName || "ورزشکار Club4Me"}
                       </p>
                       <p className="mt-1 text-xs text-muted" dir="ltr">
                         {item.athlete?.phone ?? "شماره ثبت نشده"}
@@ -635,7 +637,7 @@ export function CoachReservationsScreen() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-bold">
-                        {athleteName || "ورزشکار Gym4Me"}
+                        {athleteName || "ورزشکار Club4Me"}
                       </p>
                       <p className="mt-1 text-xs text-muted" dir="ltr">
                         {item.athlete?.phone ?? "شماره ثبت نشده"}
@@ -760,7 +762,8 @@ export function CoachReservationsScreen() {
           درخواست‌ها و رزروها
         </Typography>
         <div className="mt-3 flex flex-col gap-3">
-          {(bookings.data?.items ?? []).map((item) => (
+          {bookingBrowser.controls}
+          {bookingBrowser.items.map((item) => (
             <Card
               key={item.id}
               className="rounded-2xl bg-surface p-4 shadow-none"

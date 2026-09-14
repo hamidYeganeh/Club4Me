@@ -2,7 +2,8 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
 
 export type ServiceReviewTarget = "coach" | "class";
-export type ServiceReviewTargetSource = "coach" | "coach_class" | "business_class";
+export type ServiceReviewTargetSource =
+  "coach" | "coach_class" | "business_class";
 
 @Schema({ collection: "service_reviews", timestamps: true })
 export class ServiceReview {
@@ -60,4 +61,9 @@ ServiceReviewSchema.index(
   { targetType: 1, targetId: 1, userId: 1 },
   { unique: true },
 );
-ServiceReviewSchema.index({ targetType: 1, targetId: 1, status: 1, createdAt: -1 });
+ServiceReviewSchema.index({
+  targetType: 1,
+  targetId: 1,
+  status: 1,
+  createdAt: -1,
+});

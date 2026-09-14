@@ -1,6 +1,6 @@
 import { SessionsService } from "./sessions.service";
 import { createConnection, Connection, Types } from "mongoose";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "../../../../test/mongo-memory";
 import { atomicOperation } from "../../../infrastructure/database/atomic-operation";
 import {
   CoachPackagePurchase,

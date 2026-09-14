@@ -124,7 +124,7 @@ export function CoachAvailabilityScreen() {
                       return (
                         <div
                           key={detailKey}
-                          className="space-y-3 rounded-2xl border border-border p-3"
+                          className="space-y-3 rounded-2xl p-3"
                         >
                           <p className="text-sm font-bold">
                             {label} · {range.start} تا {range.end}

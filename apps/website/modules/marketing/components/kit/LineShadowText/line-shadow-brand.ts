@@ -1,7 +1,7 @@
-export const BRAND_NAME = "Gym4Me" as const;
+export const BRAND_NAME = "Club4Me" as const;
 
 /** Splits copy while keeping the brand token as its own segment. */
-export const BRAND_NAME_SPLIT = /(Gym4Me)/g;
+export const BRAND_NAME_SPLIT = /(Club4Me)/g;
 
 export const lineShadowShadowColors = {
   foreground: "color-mix(in oklab, var(--foreground) 25%, transparent)",

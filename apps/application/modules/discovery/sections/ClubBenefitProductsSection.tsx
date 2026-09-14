@@ -1,5 +1,7 @@
 "use client";
 
+import { ShoppingCart, Check, X } from "lucide-react";
+import styles from "./club-pricing.module.css";
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { ClubEmptyState } from "@modules/discovery/components/ClubEmptyState";
 
@@ -36,6 +38,10 @@ export function ClubBenefitProductsSection({
     amount: number;
   } | null>(null);
   const [completed, setCompleted] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected =
+    products.data?.items.find((item) => item.id === selectedId) ??
+    products.data?.items[0];
   async function resolve(
     result: "approve" | "reject",
     accepted?: PaymentIntent,
@@ -122,9 +128,47 @@ export function ClubBenefitProductsSection({
           </span>
         </label>
       )}
-      <div className="grid gap-3 sm:grid-cols-2">
-        {(products.data?.items ?? []).map((item) => (
-          <Card key={item.id} className="app-card rounded-3xl p-5 shadow-none">
+      {!!products.data?.items.length && (
+        <>
+          <div className={styles.planTabs} aria-label="انتخاب بسته">
+            {products.data.items.map((item) => (
+              <button
+                type="button"
+                key={item.id}
+                aria-pressed={selected?.id === item.id}
+                onClick={() => setSelectedId(item.id)}
+              >
+                {item.title}
+              </button>
+            ))}
+          </div>
+          <div className={styles.carousel} aria-label="بسته‌های باشگاه">
+            {products.data.items.map((item) => (
+              <button
+                type="button"
+                key={item.id}
+                className={styles.compact}
+                aria-pressed={selected?.id === item.id}
+                onClick={() => setSelectedId(item.id)}
+              >
+                <span className={styles.planTitle}>{item.title}</span>
+                <span className={styles.price}>
+                  {item.price.toLocaleString("fa-IR")} <small>ریال</small>
+                </span>
+                <span className={styles.period}>
+                  {item.validityDays.toLocaleString("fa-IR")} روز اعتبار
+                </span>
+                <span className={styles.cart}>
+                  <ShoppingCart size={26} aria-hidden="true" />
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <div className={styles.details}>
+        {(selected ? [selected] : []).map((item) => (
+          <Card key={item.id} className={styles.fullCard}>
             <Chip size="sm" variant="soft">
               {item.type === "session_pack" ? "بسته جلسه" : "عضویت زمانی"}
             </Chip>
@@ -140,7 +184,7 @@ export function ClubBenefitProductsSection({
                   {item.accessClubs.map((club) => (
                     <Link
                       key={club.id}
-                      className="inline-flex min-h-11 items-center rounded-xl border border-border px-3 text-accent"
+                      className="inline-flex min-h-11 items-center rounded-xl px-3 text-accent"
                       href={`/discovery/clubs/${club.id}/slots`}
                     >
                       {club.name} ←
@@ -149,14 +193,12 @@ export function ClubBenefitProductsSection({
                 </div>
               </div>
             )}
-            <h3 className="mt-3 font-bold">{item.title}</h3>
-            <p className="mt-2 text-xs leading-6 text-muted">
-              {item.description}
+            <h3 className={styles.planTitle}>{item.title}</h3>
+            <p className={styles.price}>
+              {item.price.toLocaleString("fa-IR")} <small>ریال</small>
             </p>
-            <p className="mt-1 text-xs leading-6 text-muted">
-              {item.type === "session_pack"
-                ? `${item.sessionCount} جلسه با ${item.validityDays} روز اعتبار`
-                : `هفته‌ای ${item.weeklyLimit} مرتبه تا ${item.validityDays} روز`}
+            <p className="my-3 text-base leading-8 text-muted">
+              {item.description}
             </p>
             {item.type === "time_membership" && (
               <p className="mt-1 text-xs text-muted">
@@ -165,16 +207,43 @@ export function ClubBenefitProductsSection({
                   : "هفته از دوشنبه تا یکشنبه، UTC (قرارداد قبلی)"}
               </p>
             )}
-            <p className="mt-1 text-xs text-muted">
-              {item.maxPauseDays
-                ? `تا ${item.maxPauseDays.toLocaleString("fa-IR")} روز توقف طبق قرارداد`
-                : "این قرارداد امکان توقف ندارد"}
-            </p>
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <strong>{item.price.toLocaleString("fa-IR")} ریال</strong>
+            <dl className={styles.features}>
+              <div>
+                <dt>نوع بسته</dt>
+                <dd>
+                  {item.type === "session_pack" ? "بسته جلسه" : "عضویت زمانی"}
+                </dd>
+              </div>
+              <div>
+                <dt>اعتبار</dt>
+                <dd>{item.validityDays.toLocaleString("fa-IR")} روز</dd>
+              </div>
+              <div>
+                <dt>
+                  {item.type === "session_pack" ? "تعداد جلسات" : "سقف هفتگی"}
+                </dt>
+                <dd>
+                  {(item.type === "session_pack"
+                    ? item.sessionCount
+                    : item.weeklyLimit
+                  )?.toLocaleString("fa-IR")}
+                </dd>
+              </div>
+              <div>
+                <dt>امکان توقف</dt>
+                <dd>
+                  {item.maxPauseDays ? (
+                    <Check aria-label="دارد" size={20} />
+                  ) : (
+                    <X aria-label="ندارد" size={20} />
+                  )}
+                </dd>
+              </div>
+            </dl>
+            <div className={styles.purchase}>
               <Button
-                size="sm"
-                variant="primary"
+                className="min-h-14 w-full rounded-[24px] border border-foreground bg-transparent text-foreground"
+                variant="secondary"
                 isPending={purchase.isPending}
                 isDisabled={Boolean(checkout)}
                 onPress={async () => {
@@ -194,12 +263,46 @@ export function ClubBenefitProductsSection({
                   }
                 }}
               >
-                {renewedFromId ? "خرید تمدید" : "خرید"}
+                {renewedFromId ? "خرید تمدید" : "خرید بسته"}
+                <ShoppingCart size={22} aria-hidden="true" />
               </Button>
             </div>
           </Card>
         ))}
       </div>
+      {selected && (
+        <dl className={styles.comparison} aria-label="جزئیات بسته انتخاب‌شده">
+          <div>
+            <dt>بسته انتخاب‌شده</dt>
+            <dd>{selected.title}</dd>
+          </div>
+          <div>
+            <dt>اعتبار بسته</dt>
+            <dd>{selected.validityDays.toLocaleString("fa-IR")} روز</dd>
+          </div>
+          <div>
+            <dt>
+              {selected.type === "session_pack"
+                ? "تعداد جلسات"
+                : "جلسه در هفته"}
+            </dt>
+            <dd>
+              {(selected.type === "session_pack"
+                ? selected.sessionCount
+                : selected.weeklyLimit
+              )?.toLocaleString("fa-IR")}
+            </dd>
+          </div>
+          <div>
+            <dt>توقف عضویت</dt>
+            <dd>
+              {selected.maxPauseDays
+                ? `${selected.maxPauseDays.toLocaleString("fa-IR")} روز`
+                : "ندارد"}
+            </dd>
+          </div>
+        </dl>
+      )}
       {completed ? (
         <Link
           href="/athlete/memberships"

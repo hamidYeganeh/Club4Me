@@ -69,7 +69,7 @@ export function CoachReservationSuccessScreen({
                   sizes="80px"
                   className="object-cover"
                 />
-                <span className="absolute bottom-0 end-0 grid size-6 place-items-center rounded-full border-2 border-surface bg-success text-success-foreground">
+                <span className="absolute bottom-0 end-0 grid size-6 place-items-center rounded-full bg-success text-success-foreground">
                   <Icon name="check" size={12} />
                 </span>
               </div>

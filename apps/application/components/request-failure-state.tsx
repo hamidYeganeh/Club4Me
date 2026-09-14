@@ -39,7 +39,7 @@ export function RequestFailureState({
       aria-live="polite"
       data-state={failure.kind}
       className={cn(
-        "flex flex-col items-center justify-center rounded-[1.5rem] border border-danger/20 bg-danger/7 px-5 text-center",
+        "flex flex-col items-center justify-center rounded-[1.5rem] bg-danger/7 px-5 text-center",
         compact ? "gap-2 py-5" : "gap-3 py-10",
         className,
       )}

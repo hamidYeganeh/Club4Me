@@ -6,7 +6,7 @@ export const quickActionCardVariants = tv({
     root: [
       "group !flex h-full w-full min-w-0 whitespace-normal shadow-none",
       "transition-transform duration-fast ease-app",
-      "data-[pressed=true]:scale-[0.97]",
+      "",
       "outline-none",
     ].join(" "),
     tile: [

@@ -9,6 +9,6 @@ export const accountAuthForgotPasswordFormStyles = tv({
     inputGroup: "h-16 w-full rounded-2xl border border-border bg-surface shadow-none",
     input: "min-w-0 flex-1 px-4 text-start text-base font-medium tracking-wide",
     actions: "mt-6 w-full",
-    button: "h-16 w-full active:scale-[0.98]",
+    button: "h-16 w-full",
   },
 });

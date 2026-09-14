@@ -77,10 +77,10 @@ export function RescheduleCoachBookingForm({
                 type="button"
                 aria-pressed={selected}
                 onClick={() => setSessionId(item.id)}
-                className={`min-h-16 rounded-2xl border px-4 text-start transition ${
+                className={`min-h-16 rounded-2xl px-4 text-start transition ${
                   selected
-                    ? "border-accent bg-accent/8 text-accent"
-                    : "border-border bg-surface"
+                    ? "bg-accent/8 text-accent"
+                    : "bg-surface"
                 }`}
               >
                 <span className="block font-bold">{item.title}</span>

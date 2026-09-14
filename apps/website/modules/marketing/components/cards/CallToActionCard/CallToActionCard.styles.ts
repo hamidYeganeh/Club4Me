@@ -12,7 +12,7 @@ export const callToActionCardVariants = tv({
       "mt-2 h-7 w-fit max-w-full border-0 px-3 [&_.chip__label]:text-xs [&_.chip__label]:font-bold",
     actionRing: "hidden",
     action:
-      "shrink-0 transition-opacity duration-fast ease-app outline-none data-[pressed=true]:scale-[0.97]",
+      "shrink-0 transition-opacity duration-fast ease-app outline-none",
   },
   variants: {
     variant: {
@@ -22,7 +22,7 @@ export const callToActionCardVariants = tv({
         subtitle: "text-accent-foreground/95",
       },
       outlined: {
-        root: "border border-accent/70 bg-transparent text-accent",
+        root: "bg-transparent text-accent",
         title: "text-accent",
         subtitle: "text-accent/95",
       },
@@ -38,7 +38,7 @@ export const callToActionCardVariants = tv({
         badge: "rounded-full",
         actionRing: [
           "flex size-[88px] shrink-0 items-center justify-center rounded-full",
-          "border border-dashed border-foreground/70",
+          "",
         ].join(" "),
         action:
           "size-11 rounded-full bg-foreground text-background hover:opacity-90",
@@ -62,7 +62,7 @@ export const callToActionCardVariants = tv({
         action: [
           "h-14 shrink-0 rounded-2xl px-6 font-bold shadow-none",
           "transition-opacity duration-fast ease-app",
-          "data-[pressed=true]:scale-[0.98]",
+          "",
         ].join(" "),
       },
     },

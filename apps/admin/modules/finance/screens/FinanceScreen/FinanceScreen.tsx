@@ -1,4 +1,6 @@
 "use client";
+import { AdminUserPicker } from "@/components/admin-user-picker";
+import { PanelSectionSwitcher } from "@repo/ui/panel-section-switcher";
 
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput } from "@heroui/react";
@@ -29,6 +31,7 @@ const inputClass =
   "h-11 rounded-xl border border-border bg-surface px-3 text-sm outline-none focus:border-primary";
 
 export function FinanceScreen() {
+  const [section, setSection] = useState("payouts");
   const [status, setStatus] = useState("requested");
   const [selected, setSelected] = useState<Payout | null>(null);
   const [payoutAction, setPayoutAction] = useState<{
@@ -98,7 +101,12 @@ export function FinanceScreen() {
 
   const submitCredit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    if (!data.get("userId")) {
+      toast.danger("ابتدا کاربر دریافت‌کننده اعتبار را انتخاب کنید");
+      return;
+    }
     try {
       await credit.mutateAsync({
         userId: String(data.get("userId")).trim(),
@@ -108,7 +116,7 @@ export function FinanceScreen() {
         note: String(data.get("note") ?? "").trim(),
         expiresAt: null,
       });
-      event.currentTarget.reset();
+      form.reset();
       toast.success("اعتبار کیف پول ثبت شد");
     } catch {
       toast.danger("ثبت اعتبار ناموفق بود");
@@ -117,7 +125,8 @@ export function FinanceScreen() {
 
   const submitDiscount = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const data = new FormData(form);
     const now = new Date();
     const nextMonth = new Date(now);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -137,7 +146,7 @@ export function FinanceScreen() {
         startsAt: now.toISOString(),
         endsAt: nextMonth.toISOString(),
       });
-      event.currentTarget.reset();
+      form.reset();
       toast.success("کمپین تخفیف ساخته شد");
     } catch {
       toast.danger("ساخت کمپین ناموفق بود");
@@ -153,6 +162,27 @@ export function FinanceScreen() {
             تأیید دستی پرداخت بانکی، تطبیق تراکنش‌ها و مدیریت اعتبار
           </p>
         </div>
+      </div>
+
+      <PanelSectionSwitcher
+        label="بخش مالی"
+        value={section}
+        onChange={setSection}
+        items={[
+          { value: "payouts", label: "تسویه‌ها" },
+          { value: "credit", label: "اعتبار کیف پول" },
+          { value: "discount", label: "کمپین تخفیف" },
+          { value: "reconciliation", label: "تطبیق تراکنش‌ها" },
+        ]}
+      />
+      <section
+        hidden={section !== "reconciliation"}
+        className="rounded-2xl bg-surface p-5"
+      >
+        <h2 className="font-bold">تطبیق تراکنش‌ها</h2>
+        <p className="my-3 text-sm text-muted">
+          وضعیت تراکنش‌ها و مغایرت‌های مالی را بررسی کنید.
+        </p>{" "}
         <Button
           variant="secondary"
           isPending={reconciliation.isPending}
@@ -167,11 +197,13 @@ export function FinanceScreen() {
             }
           }}
         >
-          اجرای Reconciliation
+          تطبیق تراکنش‌ها
         </Button>
-      </div>
-
-      <Card className="rounded-[1.75rem] border border-border bg-surface p-5">
+      </section>
+      <Card
+        hidden={section !== "payouts"}
+        className="rounded-[1.75rem] bg-surface p-5"
+      >
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">درخواست‌های تسویه</h2>
           <FormSelect
@@ -278,28 +310,14 @@ export function FinanceScreen() {
         )}
       </Card>
 
-      <div className="grid gap-5 xl:grid-cols-2">
-        <Card className="rounded-[1.75rem] border border-border bg-surface p-5">
+      <div className="grid gap-5">
+        <Card
+          hidden={section !== "credit"}
+          className="max-w-2xl rounded-[1.75rem] bg-surface p-5"
+        >
           <h2 className="text-lg font-semibold">افزایش اعتبار کیف پول</h2>
           <form className="mt-4 grid gap-3" onSubmit={submitCredit}>
-            <div className="grid gap-1.5">
-              <label htmlFor="wallet-user-id" className="text-sm font-medium">
-                شناسه کاربر
-              </label>
-              <HeroInput
-                id="wallet-user-id"
-                required
-                name="userId"
-                minLength={24}
-                maxLength={24}
-                pattern="[a-fA-F0-9]{24}"
-                title="شناسه کاربر باید ۲۴ نویسه و شامل اعداد یا حروف انگلیسی A تا F باشد."
-                dir="ltr"
-                autoComplete="off"
-                className={inputClass}
-                placeholder="مثلاً 64f..."
-              />
-            </div>
+            <AdminUserPicker />
             <div className="grid gap-1.5">
               <label htmlFor="wallet-amount" className="text-sm font-medium">
                 مبلغ (ریال)
@@ -339,7 +357,10 @@ export function FinanceScreen() {
             </Button>
           </form>
         </Card>
-        <Card className="rounded-[1.75rem] border border-border bg-surface p-5">
+        <Card
+          hidden={section !== "discount"}
+          className="max-w-3xl rounded-[1.75rem] bg-surface p-5"
+        >
           <h2 className="text-lg font-semibold">کمپین تخفیف یک‌ماهه</h2>
           <form
             className="mt-4 grid gap-3 sm:grid-cols-2"
@@ -382,7 +403,7 @@ export function FinanceScreen() {
                 نوع تخفیف
               </label>
               <FormSelect
-                aria-label="kind"
+                aria-label="نوع تخفیف"
                 id="discount-kind"
                 name="kind"
                 className={inputClass}

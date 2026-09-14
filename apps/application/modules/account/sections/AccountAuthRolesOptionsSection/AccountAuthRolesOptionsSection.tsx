@@ -190,7 +190,7 @@ export function AccountAuthRolesOptionsSection({
       </div>
       <Link
         href="/auth/roles/requests"
-        className="rounded-2xl border border-border p-4 text-center text-sm font-bold"
+        className="rounded-2xl p-4 text-center text-sm font-bold"
       >
         پیگیری درخواست‌های نقش
       </Link>

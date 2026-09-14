@@ -99,7 +99,7 @@ function SortSheetForm<TValue extends string>({
           <Radio
             key={option.value}
             value={option.value}
-            className="group mt-0! w-full rounded-[1.35rem] border border-border bg-surface-secondary/70 shadow-sm transition-[border-color,background-color,transform] data-[selected=true]:border-accent data-[selected=true]:bg-accent/8 active:scale-[0.99]"
+            className="group mt-0! w-full rounded-[1.35rem] border border-border bg-surface-secondary/70 shadow-sm transition-[border-color,background-color,transform] data-[selected=true]:border-accent data-[selected=true]:bg-accent/8"
           >
             <Radio.Content className="flex min-h-20 w-full flex-row-reverse gap-4 px-5 py-4 text-base font-bold">
               <Icon

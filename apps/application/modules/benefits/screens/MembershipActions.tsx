@@ -57,7 +57,7 @@ export function MembershipActions({ item }: { item: UserEntitlement }) {
     }
   };
   return (
-    <div className="space-y-4 border-t border-border pt-4">
+    <div className="space-y-4 pt-4">
       {paused ? (
         <div className="space-y-3">
           <p>
@@ -130,7 +130,7 @@ export function MembershipActions({ item }: { item: UserEntitlement }) {
           </summary>
           <ul className="space-y-3 text-sm">
             {item.changes.map((change, index) => (
-              <li key={index} className="border-t border-border pt-3">
+              <li key={index} className="pt-3">
                 {
                   (
                     {

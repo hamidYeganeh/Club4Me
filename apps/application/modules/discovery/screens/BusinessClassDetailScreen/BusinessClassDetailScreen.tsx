@@ -1,4 +1,6 @@
 "use client";
+
+import { DetailTimeCard } from "../../components/DetailTimeCard";
 import { useNow } from "@/lib/use-now";
 import { ClassTrainingGroups } from "../../components/ClassTrainingGroups";
 import { FormSelect, FormOption } from "@repo/ui/form-select";
@@ -6,9 +8,10 @@ import { Input as HeroInput } from "@heroui/react";
 import { DetailSocialSection } from "../../components/DetailSocialSection";
 import { RelatedBusinessClasses } from "../../components/RelatedBusinessClasses";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { Button, Card, Chip, toast } from "@heroui/react";
 import {
+  trackDiscoveryEntityViewed,
   useAthleteClubClasses,
   useAthleteClassCheckIn,
   useCancelClubClassEnrollment,
@@ -28,6 +31,8 @@ import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { MockPaymentGateway } from "@modules/payments/components/MockPaymentGateway";
 import { QrScannerButton } from "@/components/qr-scanner-button";
 import { DetailPageSkeleton } from "@/components/loading-skeletons";
+import { VisualEmptyState } from "@/components/ui/clarity";
+import { ButtonLink } from "@/components/button-link";
 import { DetailFaqSection } from "@modules/discovery/components/DetailFaqSection";
 
 const modelLabel: Record<string, string> = {
@@ -60,20 +65,38 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
     null,
   );
   const item = query.data;
+  const viewed = useRef("");
+  useEffect(() => {
+    if (item?.id && viewed.current !== item.id) {
+      viewed.current = item.id;
+      trackDiscoveryEntityViewed({
+        entity_type: "class",
+        entity_id: item.id,
+        club_id: item.clubId,
+      });
+    }
+  }, [item]);
   const current = enrollments.data?.items.find(
     (entry) => entry.classId === classId,
   );
 
   if (getQueryFailure(query.error, query.fetchStatus) && !item)
     return <DiscoveryQueryPage title="کلاس" query={query} />;
-  if (query.isPending) return <DetailPageSkeleton />;
-  if (!item)
+  if (classId && query.isPending) return <DetailPageSkeleton />;
+  if (!classId || !item)
     return (
       <main className="app-page">
         <SecondaryHeader title="کلاس" />
-        <Card className="app-card p-6 text-center shadow-none">
-          این کلاس در دسترس نیست.
-        </Card>
+        <VisualEmptyState
+          icon="calendar-check"
+          title="این کلاس در دسترس نیست."
+          description="از فهرست کلاس‌ها، یک کلاس مناسب برنامه‌ات پیدا کن."
+          action={
+            <ButtonLink href="/discovery/classes" variant="primary">
+              مشاهده کلاس‌ها
+            </ButtonLink>
+          }
+        />
       </main>
     );
 
@@ -292,6 +315,12 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
         </Card>
       ) : null}
 
+      {item.sessions[0] && (
+        <DetailTimeCard
+          title="مدت جلسه"
+          value={`${Math.max(0, Math.round((new Date(item.sessions[0].endsAt).getTime() - new Date(item.sessions[0].startsAt).getTime()) / 60000)).toLocaleString("fa-IR")} دقیقه`}
+        />
+      )}
       <Card className="app-card rounded-3xl p-5 shadow-none">
         <Card.Title>جلسات پیش رو</Card.Title>
         <div className="mt-4 flex flex-col gap-2">
@@ -403,7 +432,7 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
       <DetailSocialSection items={item.socialMedia} />
       <RelatedBusinessClasses excludeId={item.id} clubId={item.clubId} />
       <section
-        className="space-y-3 rounded-3xl border border-border bg-surface p-5"
+        className="space-y-3 rounded-3xl bg-surface p-5"
         id="class-first-session"
         aria-label="راهنمای جلسه اول"
       >

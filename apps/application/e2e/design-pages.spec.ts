@@ -134,7 +134,7 @@ for (const theme of ["light", "dark"] as const) {
           page.getByRole("heading", { name: heading!, exact: true }).first(),
         ).toBeVisible();
         await expect(
-          page.getByRole("status", { name: "Gym4Me", exact: true }),
+          page.getByRole("status", { name: "Club4Me", exact: true }),
         ).toHaveCount(0);
         await page.evaluate(() => document.fonts.ready);
         if (name === "reservations")

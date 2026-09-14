@@ -89,7 +89,7 @@ export function ActivityLogScreen() {
         </div>
         <Card
           variant="transparent"
-          className="mt-4 overflow-hidden rounded-[1.75rem] border border-border bg-surface"
+          className="mt-4 overflow-hidden rounded-[1.75rem] bg-surface"
         >
           {logs.isPending ? (
             <div className="flex justify-center py-16">

@@ -39,7 +39,7 @@ export function NetworkStatus() {
   if (!offline) return null;
   return (
     <div
-      className="pointer-events-none fixed inset-x-3 top-[calc(env(safe-area-inset-top)+0.5rem)] z-[1200] mx-auto w-[calc(100%_-_1.5rem)] max-w-lg rounded-2xl border border-warning/30 bg-warning/95 px-4 py-3 text-center text-sm font-semibold text-black shadow-xl"
+      className="pointer-events-none fixed inset-x-3 top-[calc(env(safe-area-inset-top)+0.5rem)] z-[1200] mx-auto w-[calc(100%_-_1.5rem)] max-w-lg rounded-2xl bg-warning/95 px-4 py-3 text-center text-sm font-semibold text-black shadow-xl"
       role="status"
     >
       اینترنت قطع است؛ بعضی اطلاعات ممکن است به‌روز نباشند.

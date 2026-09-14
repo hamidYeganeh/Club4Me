@@ -1,4 +1,3 @@
-import { BusinessPageIntro } from "@/components/business-page-intro";
 import { PanelFrame } from "@ui/panel-frame";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
@@ -111,7 +110,6 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
       }
     >
       <PanelBreadcrumbsSection />
-      <BusinessPageIntro />
       {children}
     </PanelFrame>
   );

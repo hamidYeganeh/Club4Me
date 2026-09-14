@@ -49,7 +49,7 @@ export function DiscoveryHomeExploreSection() {
                 href={item.href}
                 className="app-card group flex w-22 shrink-0 flex-col items-center gap-2 p-4 text-center text-xs font-bold text-foreground no-underline"
               >
-                <span className="grid size-11 place-items-center rounded-[1rem] bg-accent text-accent-foreground transition-transform duration-500 ease-out group-hover:scale-105">
+                <span className="grid size-11 place-items-center rounded-[1rem] bg-accent text-accent-foreground transition-transform duration-500 ease-out">
                   <Icon name={item.icon} size={22} />
                 </span>
                 {item.title}

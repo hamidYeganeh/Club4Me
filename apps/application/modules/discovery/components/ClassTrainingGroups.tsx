@@ -53,7 +53,7 @@ export function ClassTrainingGroups({
   return (
     <section
       id="class-training-group"
-      className="scroll-mt-24 space-y-3 rounded-3xl border border-border bg-surface p-5"
+      className="scroll-mt-24 space-y-3 rounded-3xl bg-surface p-5"
       aria-label="هم‌تمرینی در این کلاس"
     >
       <h2 className="text-lg font-bold">با هم ادامه بدهیم</h2>
@@ -166,7 +166,7 @@ export function ClassTrainingGroups({
               </div>
             </div>
           ))}
-          <details className="rounded-2xl border border-border p-3">
+          <details className="rounded-2xl p-3">
             <summary className="min-h-11 cursor-pointer text-sm font-semibold">
               ساخت گروه یا پذیرش دعوت
             </summary>
@@ -225,7 +225,7 @@ export function ClassTrainingGroups({
                 </Button>
               </form>
               <form
-                className="space-y-3 border-t border-border pt-3"
+                className="space-y-3 pt-3"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const current = new URL(

@@ -1,6 +1,8 @@
 "use client";
+import { useAccumulatedQuery } from "@modules/discovery/hooks/use-accumulated-query";
 
-import { useState } from "react";
+import { useDiscoveryList } from "../../hooks/use-discovery-list";
+import { DiscoverySearchField } from "../../components/DiscoverySearchField";
 import { DiscoveryPagination } from "../../components/DiscoveryPagination";
 
 import { DiscoveryQueryPage } from "../../components/DiscoveryQueryPage";
@@ -20,18 +22,25 @@ export function DiscoveryProvinceScreen({
 }: {
   provinceId: string;
 }) {
-  const [page, setPage] = useState(1);
+  const { query, setQuery, q, page, setPage } = useDiscoveryList();
   const provinces = usePublicCatalogResource("location", "province", {
     search: provinceId,
   });
   const province = provinces.data?.items.find(
     (item) => item.slug === provinceId || item.id === provinceId,
   );
-  const cities = usePublicCatalogResource(
+  const citiesPage = usePublicCatalogResource(
     "location",
     "city",
-    province ? { parentId: province.id, page, limit: 50 } : undefined,
+    province
+      ? { parentId: province.id, search: q, page, limit: 50 }
+      : undefined,
     Boolean(province),
+  );
+  const cities = useAccumulatedQuery(
+    citiesPage,
+    page,
+    JSON.stringify([provinceId, q]),
   );
 
   if (
@@ -72,6 +81,11 @@ export function DiscoveryProvinceScreen({
         }
         eyebrow="کشف استان"
       />
+      <DiscoverySearchField
+        value={query}
+        onChange={setQuery}
+        placeholder="جست‌وجو در این منطقه"
+      />
       <DiscoveryQueryState query={cities} />
       {cities.isLoading ? <CityCatalogSkeleton /> : null}
       {items.length ? (
@@ -91,6 +105,8 @@ export function DiscoveryProvinceScreen({
         limit={50}
         onChange={setPage}
         pending={cities.isFetching}
+        failed={cities.isError}
+        onRetry={() => void cities.refetch()}
       />
     </main>
   );

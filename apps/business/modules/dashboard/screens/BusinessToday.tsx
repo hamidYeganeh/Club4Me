@@ -29,7 +29,7 @@ export function BusinessToday({
   });
   return (
     <section
-      className="mt-6 rounded-3xl border border-accent/20 bg-surface p-5"
+      className="mt-6 rounded-3xl bg-surface p-5"
       aria-label="کارهای امروز باشگاه"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">

@@ -193,10 +193,14 @@ export class AuthService {
   }
 
   async loginUserById(userId: string): Promise<ClientAuthResult> {
-    return this.toClientAuth(await this.issueAuth(await this.usersService.findById(userId)));
+    return this.toClientAuth(
+      await this.issueAuth(await this.usersService.findById(userId)),
+    );
   }
 
-  async deleteAccount(userId: string): Promise<{ success: true; deletedAt: string; receiptId: string }> {
+  async deleteAccount(
+    userId: string,
+  ): Promise<{ success: true; deletedAt: string; receiptId: string }> {
     await this.sessions.revokeUserSessions(userId);
     const receipt = await this.usersService.deleteAccount(userId);
     return { success: true, ...receipt };

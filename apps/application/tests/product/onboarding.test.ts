@@ -18,10 +18,10 @@ test("first-time visitors reach shared club and payment links without losing the
     "/welcome",
   );
 });
-test("OTP-only athlete can reach their account while owner setup still requires password", () => {
+test("every OTP-only account sets a password before entering the app", () => {
   assert.equal(
     getPostAuthPath({ roles: ["athlete"], hasPassword: false }),
-    "/athlete",
+    "/auth/set-password",
   );
   assert.equal(
     getPostAuthPath({ roles: ["owner"], hasPassword: false }),

@@ -20,11 +20,8 @@ import {
   useIdentity,
   useTrainingData,
 } from "./shared";
-import {
-  FeatureBadge,
-  HistoryBars,
-  featureCardStyles,
-} from "@/components/ui/feature-cards";
+import { CheckCircle2, Dumbbell } from "lucide-react";
+import workoutStyles from "./workout-cards.module.css";
 import { useWorkouts } from "./useWorkouts";
 export function TrainingProgress() {
   const identity = useIdentity();
@@ -179,34 +176,43 @@ function TrainingProgressSession() {
         </p>
       )}
       {sessions.map((s) => (
-        <Card key={s.clientId} className={featureCardStyles.history}>
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <FeatureBadge>
-                {s.status === "completed"
-                  ? "کامل‌شده"
-                  : s.status === "active"
-                    ? "ناتمام"
-                    : "لغوشده"}
-              </FeatureBadge>
-              <Card.Title className="mt-2 text-base">
+        <Card key={s.clientId} className={`app-card ${workoutStyles.history}`}>
+          <div className={workoutStyles.historyRow}>
+            <span className={workoutStyles.thumbnail} aria-hidden="true">
+              <Dumbbell size={28} strokeWidth={1.5} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <Card.Title className={workoutStyles.historyTitle}>
                 {s.snapshot.title}
               </Card.Title>
-              <p className="mt-1 text-xs text-muted">{date(s.startedAt)}</p>
+              <p className={workoutStyles.metadata}>
+                {date(s.startedAt)} ·{" "}
+                {number(s.sets.filter((set) => set.done).length)} از{" "}
+                {number(s.sets.length)} ست
+              </p>
+              <progress
+                className={workoutStyles.progress}
+                value={s.sets.filter((set) => set.done).length}
+                max={Math.max(1, s.sets.length)}
+                aria-label={`ست‌های انجام‌شده ${s.snapshot.title}`}
+              />
+              <p className={workoutStyles.status}>
+                {s.status === "completed" ? (
+                  <>
+                    کامل‌شده{" "}
+                    <CheckCircle2
+                      size={16}
+                      className={workoutStyles.complete}
+                      aria-hidden="true"
+                    />
+                  </>
+                ) : s.status === "discarded" ? (
+                  "لغوشده"
+                ) : (
+                  `${number(Math.round((s.sets.filter((set) => set.done).length / Math.max(1, s.sets.length)) * 100))}٪ انجام‌شده`
+                )}
+              </p>
             </div>
-            {s.sets.some((set) => set.done) && (
-              <div className="text-accent">
-                <HistoryBars
-                  values={s.sets
-                    .filter((set) => set.done)
-                    .map((set) => set.reps)}
-                  label={`تکرار ست‌های ثبت‌شده: ${s.sets
-                    .filter((set) => set.done)
-                    .map((set) => number(set.reps))
-                    .join("، ")}`}
-                />
-              </div>
-            )}
           </div>
           <Card.Content>
             <SessionReview session={s} />

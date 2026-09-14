@@ -34,6 +34,7 @@ export function createMockApiState(searchMode: SearchMode = "success") {
 
   return {
     searchMode,
+    onSitePaymentMethods: [] as Array<"cash" | "pos">,
     startsAt: startsAt.toISOString(),
     endsAt: endsAt.toISOString(),
     reservation: null as ReturnType<typeof reservationFixture> | null,
@@ -188,6 +189,7 @@ export async function installApiMock(page: Page, state: MockApiState) {
       const session = sessionFixture(state.startsAt, state.endsAt);
       return success(route, {
         sessionId: session.id,
+        availablePaymentMethods: ["online", ...state.onSitePaymentMethods],
         currency: session.currency,
         pricingUnit: session.pricingUnit,
         participantCount: 1,
@@ -207,6 +209,9 @@ export async function installApiMock(page: Page, state: MockApiState) {
         "reserved",
         "pending",
       );
+      const method = (request.postDataJSON() as { paymentMethod?: "online" | "cash" | "pos" }).paymentMethod ?? "online";
+      state.reservation.paymentMethod = method;
+      if (method !== "online") { state.reservation.paymentStatus = "pay_on_arrival"; state.reservation.paymentExpiresAt = null; }
       return success(route, state.reservation, 201);
     }
 
@@ -468,10 +473,12 @@ export function reservationFixture(
   startsAt = new Date().toISOString(),
   endsAt = new Date().toISOString(),
   status: "reserved" | "cancelled" = "reserved",
-  paymentStatus: "pending" | "paid" | "refunded" = "pending",
+  paymentStatus: "pending" | "pay_on_arrival" | "paid" | "refunded" = "pending",
 ) {
   return {
     id: RESERVATION_ID,
+    paymentMethod: "online" as "online" | "cash" | "pos",
+    paymentExpiresAt: null as string | null,
     clubId: CLUB_ID,
     sessionId: SESSION_ID,
     userId: "66d100000000000000000001",

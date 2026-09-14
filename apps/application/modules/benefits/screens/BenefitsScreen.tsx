@@ -1,4 +1,5 @@
 "use client";
+import { useRecordBrowser } from "@/components/record-browser";
 
 import { Icon } from "@theme/icon";
 import { VisualEmptyState, clarityStyles } from "@/components/ui/clarity";
@@ -15,6 +16,10 @@ import { usePathname } from "next/navigation";
 
 export function BenefitsScreen() {
   const wallet = useBenefitsWallet();
+  const browser = useRecordBrowser(wallet.data?.transactions ?? [], {
+    label: "تراکنش‌ها",
+    text: (item) => `${item.note ?? ""} ${item.amount}`,
+  });
   const referral = useReferralCode();
   const redeem = useRedeemReferral();
   const [code, setCode] = useState("");
@@ -149,7 +154,8 @@ export function BenefitsScreen() {
         <Card className={`${clarityStyles.surface} p-5`}>
           <Card.Title>گردش اعتبار</Card.Title>
           <div className="mt-4 divide-y divide-border">
-            {wallet.data.transactions.map((item) => (
+            {browser.controls}
+            {browser.items.map((item) => (
               <div
                 key={item.id}
                 className={styles.transaction}

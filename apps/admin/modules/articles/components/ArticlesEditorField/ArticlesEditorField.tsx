@@ -21,7 +21,7 @@ export function ArticlesEditorField({
   const apiKey = process.env.NEXT_PUBLIC_TINYMCE_API_KEY;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+    <div className="overflow-hidden rounded-2xl bg-surface">
       <Editor
         id={id}
         {...(apiKey

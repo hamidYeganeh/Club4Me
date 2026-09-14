@@ -1,4 +1,15 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
@@ -7,7 +18,10 @@ import { RolesGuard } from "../auth/guards/roles.guard";
 import type { AuthTokenPayload } from "../auth/services/token.service";
 import { AppError } from "../../common/errors/app.exception";
 import { RespondToClubReviewDto } from "./dto/create-club-review.dto";
-import { CreateServiceReviewDto, ModerateServiceReviewDto } from "./dto/service-review.dto";
+import {
+  CreateServiceReviewDto,
+  ModerateServiceReviewDto,
+} from "./dto/service-review.dto";
 import { ServiceReviewsService } from "./service-reviews.service";
 import type { ServiceReviewTarget } from "./schemas/service-review.schema";
 
@@ -15,7 +29,10 @@ import type { ServiceReviewTarget } from "./schemas/service-review.schema";
 export class PublicServiceReviewsController {
   constructor(private readonly reviews: ServiceReviewsService) {}
   @Get(":type/:targetId")
-  list(@Param("type") type: ServiceReviewTarget, @Param("targetId") targetId: string) {
+  list(
+    @Param("type") type: ServiceReviewTarget,
+    @Param("targetId") targetId: string,
+  ) {
     return this.reviews.list(assertType(type), targetId);
   }
 }
@@ -44,7 +61,13 @@ export class ServiceReviewsController {
     @Param("reviewId") reviewId: string,
     @Body() body: RespondToClubReviewDto,
   ) {
-    return this.reviews.respond(user.sub, assertType(type), targetId, reviewId, body);
+    return this.reviews.respond(
+      user.sub,
+      assertType(type),
+      targetId,
+      reviewId,
+      body,
+    );
   }
 }
 
@@ -54,15 +77,24 @@ export class ServiceReviewsController {
 export class AdminServiceReviewsController {
   constructor(private readonly reviews: ServiceReviewsService) {}
   @Get()
-  list(@Query("status") status?: string) { return this.reviews.adminList(status); }
+  list(@Query("status") status?: string) {
+    return this.reviews.adminList(status);
+  }
   @Patch(":reviewId")
-  moderate(@Param("reviewId") reviewId: string, @Body() body: ModerateServiceReviewDto) {
+  moderate(
+    @Param("reviewId") reviewId: string,
+    @Body() body: ModerateServiceReviewDto,
+  ) {
     return this.reviews.moderate(reviewId, body);
   }
 }
 
 function assertType(value: string): ServiceReviewTarget {
   if (value !== "coach" && value !== "class")
-    throw new AppError(404, "REVIEW_TARGET_NOT_FOUND", "Review target not found");
+    throw new AppError(
+      404,
+      "REVIEW_TARGET_NOT_FOUND",
+      "Review target not found",
+    );
   return value;
 }

@@ -127,7 +127,13 @@ export class BusinessClassesController {
     @Param("sessionId") sessionId: string,
     @Body() body: UpdateClassSessionDto,
   ) {
-    return this.service.previewSessionChange(user.sub, clubId, classId, sessionId, body);
+    return this.service.previewSessionChange(
+      user.sub,
+      clubId,
+      classId,
+      sessionId,
+      body,
+    );
   }
 
   @Get(":classId/enrollments") enrollments(

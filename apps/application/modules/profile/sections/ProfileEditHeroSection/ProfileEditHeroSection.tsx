@@ -28,7 +28,7 @@ export function ProfileEditHeroSection({ role }: ProfileEditHeroSectionProps) {
           <Link
             href={`/${role}/profile/image`}
             aria-label={t("changeImage")}
-            className="mt-4 inline-flex items-center gap-3 rounded-2xl border border-white/30 bg-black/30 p-2 text-white"
+            className="mt-4 inline-flex items-center gap-3 rounded-2xl bg-black/30 p-2 text-white"
           >
             <Avatar className="size-12">
               <Avatar.Image src={me.data?.avatarUrl ?? undefined} alt={name} />

@@ -23,7 +23,7 @@ export function ClubCardSkeleton({
       aria-busy="true"
       aria-live="polite"
       className={slots.root({
-        className: ["border border-border bg-surface", className]
+        className: ["bg-surface", className]
           .filter(Boolean)
           .join(" "),
       })}

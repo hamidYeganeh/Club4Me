@@ -58,7 +58,7 @@
 }
 .eyebrow, .detail { font-size: .75rem; line-height: 1.8; color: var(--muted); }
 .title { font-size: .875rem; font-weight: 700; line-height: 1.8; overflow-wrap: anywhere; }
-.day { padding-block: 1rem; border-top: 1px solid var(--border); }
+.day { padding-block: 1rem; }
 .day ul { margin-top: .85rem; }
 .history { border-radius: 1.5rem; background: var(--surface); padding: 1rem; }
 .history summary { cursor: pointer; min-height: 2.75rem; align-content: center; }

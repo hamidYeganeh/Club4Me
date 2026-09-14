@@ -39,6 +39,12 @@ export class CoachGeo {
   cityRegionIds: Types.ObjectId[];
 }
 
+@Schema({ _id: false })
+export class CoachLocation {
+  @Prop({ type: String, enum: ["Point"], required: true }) type: "Point";
+  @Prop({ type: [Number], required: true }) coordinates: [number, number];
+}
+
 @Schema({ collection: "coaches", timestamps: true })
 export class Coach {
   @Prop({ type: ProfessionalProfileSchema, default: () => ({}) })
@@ -104,6 +110,8 @@ export class Coach {
   @Prop({ type: Number, min: 0, max: 120 }) minAcceptedAge?: number;
   @Prop({ type: Number, min: 0, max: 120 }) maxAcceptedAge?: number;
   @Prop({ type: CoachGeo }) geo?: CoachGeo;
+  @Prop({ type: CoachLocation, default: undefined })
+  location?: { type: "Point"; coordinates: [number, number] } | null;
   @Prop({ min: 0, max: 1000, default: 0 }) travelRadiusKm: number;
   @Prop({ type: SchemaTypes.Mixed, default: {} }) contact: Record<
     string,
@@ -122,6 +130,7 @@ export class Coach {
 }
 export type CoachDocument = HydratedDocument<Coach>;
 export const CoachSchema = SchemaFactory.createForClass(Coach);
+CoachSchema.index({ location: "2dsphere" });
 CoachSchema.index({ reviewStatus: 1, visibility: 1, "geo.cityId": 1 });
 CoachSchema.index({ "professionalProfile.credentials.mediaId": 1 });
 
@@ -458,7 +467,12 @@ export class SessionAttendance {
   status: AttendanceStatus;
   @Prop({ type: Date }) checkedInAt?: Date | null;
   @Prop({ type: Date }) checkedOutAt?: Date | null;
-  @Prop({ type: [Object], default: [] }) changes: Array<{actorId: string; at: Date; before: string; after: string}>;
+  @Prop({ type: [Object], default: [] }) changes: Array<{
+    actorId: string;
+    at: Date;
+    before: string;
+    after: string;
+  }>;
   @Prop({ type: String, trim: true, maxlength: 1000 }) note?: string;
   @Prop({ type: Types.ObjectId, ref: "User", required: true })
   recordedBy: Types.ObjectId;

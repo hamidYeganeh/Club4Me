@@ -76,7 +76,7 @@ export function LandingDownloadPhoneMockup({
     <InViewRise delayIn={180} fromY={28} className={slots.stage()}>
       <div className={`${slots.floatingBadge()} -start-2 top-10 lg:-start-8`}>
         <div
-          className={`${slots.badgeIcon()} border border-accent/30 bg-accent/15`}
+          className={`${slots.badgeIcon()} bg-accent/15`}
         >
           <Fire1 size={16} className="text-accent" />
         </div>
@@ -293,7 +293,7 @@ export function LandingDownloadPhoneMockup({
 
       <div className={`${slots.floatingBadge()} -end-2 bottom-16 lg:-end-8`}>
         <div
-          className={`${slots.badgeIcon()} border border-border bg-background`}
+          className={`${slots.badgeIcon()} bg-background`}
         >
           <Calendar1 size={16} className="text-foreground" />
         </div>

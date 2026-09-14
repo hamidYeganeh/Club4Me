@@ -23,7 +23,7 @@ const featureFlagLabels: Record<string, string> = {
 const emptyRelease: SaveAppRelease = {
   latestVersion: "1.0.0",
   minimumSupportedVersion: "1.0.0",
-  title: "نسخه جدید Gym4Me",
+  title: "نسخه جدید Club4Me",
   releaseNotes: [],
   storeUrl: "",
   active: false,
@@ -104,7 +104,7 @@ export function AppReleasesScreen() {
               دارد مشخص کنید.
             </p>
           </div>
-          <div className="flex rounded-2xl border border-border bg-surface p-1">
+          <div className="flex rounded-2xl bg-surface p-1">
             {(["android", "ios"] as const).map((item) => (
               <Button
                 key={item}
@@ -125,7 +125,7 @@ export function AppReleasesScreen() {
         ) : releases.isError ? (
           <Card
             variant="transparent"
-            className="mt-6 rounded-[1.75rem] border border-danger/30 bg-danger/5 p-8 text-center"
+            className="mt-6 rounded-[1.75rem] bg-danger/5 p-8 text-center"
           >
             <p>دریافت تنظیمات نسخه ناموفق بود.</p>
             <Button
@@ -143,7 +143,7 @@ export function AppReleasesScreen() {
           >
             <Card
               variant="transparent"
-              className="rounded-[1.75rem] border border-border bg-surface p-5 lg:p-7"
+              className="rounded-[1.75rem] bg-surface p-5 lg:p-7"
             >
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="آخرین نسخه منتشرشده" hint="مثلاً 2.4.0">
@@ -221,7 +221,7 @@ export function AppReleasesScreen() {
                   />
                 </Field>
               </div>
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-4 pt-6">
                 <div>
                   <p className="font-medium">فعال‌سازی سیاست نسخه</p>
                   <p className="mt-1 text-xs text-muted">
@@ -234,7 +234,7 @@ export function AppReleasesScreen() {
                   aria-label="فعال‌سازی سیاست نسخه"
                 />
               </div>
-              <div className="mt-6 space-y-4 border-t border-border pt-6">
+              <div className="mt-6 space-y-4 pt-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <p className="font-medium">حالت تعمیرات</p>
@@ -279,7 +279,7 @@ export function AppReleasesScreen() {
                   </div>
                 ) : null}
               </div>
-              <div className="mt-6 border-t border-border pt-6">
+              <div className="mt-6 pt-6">
                 <p className="font-medium">Feature flags</p>
                 <p className="mt-1 text-xs text-muted">
                   قابلیت‌ها را بدون انتشار نسخه جدید روشن یا خاموش کنید.
@@ -288,7 +288,7 @@ export function AppReleasesScreen() {
                   {Object.entries(featureFlagLabels).map(([key, label]) => (
                     <label
                       key={key}
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-border p-3"
+                      className="flex items-center justify-between gap-3 rounded-2xl p-3"
                     >
                       <span className="text-sm">{label}</span>
                       <Switch
@@ -318,7 +318,7 @@ export function AppReleasesScreen() {
             <aside className="space-y-4">
               <Card
                 variant="transparent"
-                className="rounded-[1.75rem] border border-border bg-surface p-5"
+                className="rounded-[1.75rem] bg-surface p-5"
               >
                 <p className="text-sm font-semibold">رفتار فعلی</p>
                 <div className="mt-4 space-y-4 text-sm leading-6">
@@ -341,7 +341,7 @@ export function AppReleasesScreen() {
               </Card>
               <Card
                 variant="transparent"
-                className="rounded-[1.75rem] border border-accent/25 bg-accent/5 p-5 text-sm leading-7"
+                className="rounded-[1.75rem] bg-accent/5 p-5 text-sm leading-7"
               >
                 فورس آپدیت را فقط زمانی منتشر کنید که نسخه جدید واقعاً در
                 فروشگاه در دسترس باشد؛ در غیر این صورت کاربر راهی برای ورود به

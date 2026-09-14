@@ -35,7 +35,7 @@ export const sportCardStyles = tv({
   variants: {
     hasBackground: {
       true: {
-        root: "border border-white/10 bg-surface-secondary",
+        root: "bg-surface-secondary",
         icon: "text-white",
         iconFallback: "text-white",
         value: "text-white",
@@ -43,7 +43,7 @@ export const sportCardStyles = tv({
         supporting: "text-white/70",
       },
       false: {
-        root: "border border-border bg-surface text-surface-foreground",
+        root: "bg-surface text-surface-foreground",
         icon: "text-foreground",
         iconFallback: "text-foreground",
         value: "text-foreground",

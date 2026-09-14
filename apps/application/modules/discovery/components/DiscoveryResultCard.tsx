@@ -32,11 +32,11 @@ export function DiscoveryResultCard({
           fill
           unoptimized
           sizes="88px"
-          className="object-cover transition-transform duration-300 ease-out group-hover:scale-105 motion-reduce:transition-none"
+          className="object-cover transition-transform duration-300 ease-out motion-reduce:transition-none"
           onError={onError}
         />
         {badge ? (
-          <span className="absolute right-2 bottom-2 rounded-full border border-white/10 bg-background/75 px-2 py-1 text-[10px] font-bold text-foreground backdrop-blur-md">
+          <span className="absolute right-2 bottom-2 rounded-full bg-background/75 px-2 py-1 text-[10px] font-bold text-foreground backdrop-blur-md">
             {badge}
           </span>
         ) : null}

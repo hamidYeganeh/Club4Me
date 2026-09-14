@@ -86,6 +86,19 @@ export class DiscoveryFeedService {
         { tags: pattern },
       ];
     }
+    const budget = catalogBudget(query);
+    if (budget) {
+      const clubIds = await this.clubs.db
+        .collection("reservable_sessions")
+        .distinct("clubId", {
+          status: "active",
+          startsAt: { $gt: new Date() },
+          currency: "IRR",
+          basePrice: budget,
+          $expr: { $lt: ["$reservedCount", "$capacity"] },
+        });
+      filter._id = { $in: clubIds };
+    }
     const geo = catalogGeo(query);
     if (geo)
       filter.location = {
@@ -116,7 +129,43 @@ export class DiscoveryFeedService {
         .lean(),
       this.clubs.countDocuments(countFilter),
     ]);
-    const items = await this.hydrateMedia(documents.map(publicClub));
+    const offers =
+      budget && documents.length
+        ? await this.clubs.db
+            .collection("reservable_sessions")
+            .aggregate([
+              {
+                $match: {
+                  clubId: { $in: documents.map((item) => item._id) },
+                  status: "active",
+                  startsAt: { $gt: new Date() },
+                  currency: "IRR",
+                  basePrice: budget,
+                  $expr: { $lt: ["$reservedCount", "$capacity"] },
+                },
+              },
+              { $sort: { basePrice: 1, _id: 1 } },
+              { $group: { _id: "$clubId", amount: { $first: "$basePrice" } } },
+            ])
+            .toArray()
+        : [];
+    const prices = new Map(
+      offers.map((item) => [
+        String(item._id),
+        {
+          amount: item.amount,
+          currency: "IRR",
+          unit: "per_session",
+          sessionCount: 1,
+        },
+      ]),
+    );
+    const items = await this.hydrateMedia(
+      documents.map((item) => ({
+        ...publicClub(item),
+        catalogPrice: prices.get(String(item._id)) ?? null,
+      })),
+    );
     return { items, page, limit, total, totalPages: Math.ceil(total / limit) };
   }
 
@@ -199,18 +248,93 @@ export class DiscoveryFeedService {
       });
       filter._id = { $in: coachIds };
     }
+    const budget = catalogBudget(query);
+    if (budget) {
+      const ids = await this.coaches.db
+        .collection("coach_services")
+        .distinct("coachId", {
+          status: "published",
+          "price.currency": "IRR",
+          "price.amount": budget,
+          ...(query.serviceMode ? { deliveryModes: query.serviceMode } : {}),
+        });
+      filter.$and = [{ _id: { $in: ids } }];
+    }
+    const geo = catalogGeo(query);
+    if (geo)
+      filter.location = {
+        $near: {
+          $geometry: { type: "Point", coordinates: geo.coordinates },
+          $maxDistance: geo.radiusMeters,
+        },
+      };
+    const countFilter = { ...filter };
+    if (geo)
+      countFilter.location = {
+        $geoWithin: {
+          $centerSphere: [geo.coordinates, geo.radiusMeters / 6378137],
+        },
+      };
     const [documents, total] = await Promise.all([
       this.coaches
         .find(filter)
         .sort(
-          query.sort === "rating" ? { averageRating: -1 } : { updatedAt: -1 },
+          query.sort === "rating"
+            ? { averageRating: -1, _id: 1 }
+            : query.sort === "newest" || !geo
+              ? { updatedAt: -1, _id: 1 }
+              : {},
         )
         .skip(skip)
         .limit(limit)
         .lean(),
-      this.coaches.countDocuments(filter),
+      this.coaches.countDocuments(countFilter),
     ]);
-    const items = await this.hydrateMedia(documents.map(publicCoach));
+    const offers =
+      budget && documents.length
+        ? await this.coaches.db
+            .collection("coach_services")
+            .aggregate([
+              {
+                $match: {
+                  coachId: { $in: documents.map((item) => item._id) },
+                  status: "published",
+                  "price.currency": "IRR",
+                  "price.amount": budget,
+                  ...(query.serviceMode
+                    ? { deliveryModes: query.serviceMode }
+                    : {}),
+                },
+              },
+              { $sort: { "price.amount": 1, _id: 1 } },
+              {
+                $group: {
+                  _id: "$coachId",
+                  amount: { $first: "$price.amount" },
+                  unit: { $first: "$pricingType" },
+                  sessionCount: { $first: "$sessionCount" },
+                },
+              },
+            ])
+            .toArray()
+        : [];
+    const prices = new Map(
+      offers.map((item) => [
+        String(item._id),
+        {
+          amount: item.amount,
+          currency: "IRR",
+          unit: item.unit,
+          sessionCount: item.sessionCount ?? null,
+        },
+      ]),
+    );
+    const items = await this.hydrateMedia(
+      documents.map((item) => ({
+        ...publicCoach(item),
+        catalogPrice: prices.get(String(item._id)) ?? null,
+      })),
+    );
     return { items, page, limit, total, totalPages: Math.ceil(total / limit) };
   }
 
@@ -435,6 +559,8 @@ export class DiscoveryFeedService {
         capacity: item.capacity,
         enrollmentCount: item.activeEnrollmentCount,
         price: { amount: item.price, currency: item.currency },
+        pricingModel: item.pricingModel,
+        packageSessionCount: item.packageSessionCount ?? null,
         imageMediaId: item.coverMediaId ? String(item.coverMediaId) : null,
         galleryMediaIds: (item.galleryMediaIds ?? []).map(String),
         prerequisites: item.prerequisites ?? [],
@@ -1086,6 +1212,7 @@ function publicClub(item: Record<string, any>) {
 }
 function publicCoach(item: Record<string, any>) {
   return {
+    location: item.location ?? null,
     id: String(item._id),
     slug: item.slug,
     displayName: item.displayName,
@@ -1307,7 +1434,12 @@ function catalogGeo(query: Record<string, string | undefined>) {
   if (query.latitude == null && query.longitude == null) return null;
   const latitude = coordinate(query.latitude ?? "", -90, 90, "latitude");
   const longitude = coordinate(query.longitude ?? "", -180, 180, "longitude");
-  if (!query.latitude || !query.longitude)
+  if (
+    query.latitude == null ||
+    query.longitude == null ||
+    query.latitude === "" ||
+    query.longitude === ""
+  )
     throw new AppError(
       400,
       "INVALID_COORDINATES",
@@ -1316,4 +1448,34 @@ function catalogGeo(query: Record<string, string | undefined>) {
   const radiusMeters =
     coordinate(query.radiusKm ?? "25", 0.1, 500, "radiusKm") * 1000;
   return { coordinates: [longitude, latitude], radiusMeters };
+}
+
+function catalogBudget(query: Record<string, string | undefined>) {
+  if (query.minPrice === undefined && query.maxPrice === undefined) return null;
+  const price: Record<string, number> = {};
+  for (const [key, operator] of [
+    ["minPrice", "$gte"],
+    ["maxPrice", "$lte"],
+  ] as const) {
+    if (query[key] === undefined) continue;
+    const amount = Number(query[key]);
+    if (!query[key]?.trim() || !Number.isSafeInteger(amount) || amount < 0)
+      throw new AppError(
+        400,
+        "INVALID_PRICE_FILTER",
+        "بودجه باید عدد صحیح نامنفی به ریال باشد",
+      );
+    price[operator] = amount;
+  }
+  if (
+    price.$gte !== undefined &&
+    price.$lte !== undefined &&
+    price.$gte > price.$lte
+  )
+    throw new AppError(
+      400,
+      "INVALID_PRICE_FILTER",
+      "حداقل بودجه از حداکثر بیشتر است",
+    );
+  return price;
 }

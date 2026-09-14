@@ -1,5 +1,6 @@
 "use client";
 
+import { DetailTimeCard } from "../../components/DetailTimeCard";
 import { RelatedArticles } from "../../components/RelatedContent";
 import { SaveButton } from "@/components/save-button";
 import { SecondaryHeader } from "../../components/SecondaryHeader";
@@ -49,12 +50,12 @@ export function DiscoveryArticleDetailScreen({
             imageUrl={article.coverImageUrl || "/profile/cover.jpg"}
             imageClassName="object-cover object-center"
             title={article.title}
-            eyebrow="مجله جیم‌فورمی"
+            eyebrow="مجله کلاب‌فورمی"
             description={article.excerpt}
           />
         </div>
         <div className="px-5">
-          <div className="border-b border-border py-5">
+          <div className="py-5">
             <p className="text-sm font-bold">{article.authorName}</p>
             {article.publishedAt ? (
               <p className="mt-1 text-xs text-muted">
@@ -62,6 +63,21 @@ export function DiscoveryArticleDetailScreen({
               </p>
             ) : null}
           </div>
+          <DetailTimeCard
+            title="زمان مطالعه"
+            value={`حدود ${(
+              article.readTimeMinutes ||
+              Math.max(
+                1,
+                Math.ceil(
+                  article.bodyHtml
+                    .replace(/<[^>]*>/g, " ")
+                    .trim()
+                    .split(/\s+/).length / 200,
+                ),
+              )
+            ).toLocaleString("fa-IR")} دقیقه`}
+          />
           <div
             className="mx-auto max-w-[42rem] py-7 text-[1.04rem] leading-8 text-foreground/88 [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-black [&_p]:my-4"
             dangerouslySetInnerHTML={{ __html: article.bodyHtml }}

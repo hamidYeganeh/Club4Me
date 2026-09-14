@@ -1,11 +1,16 @@
 "use client";
 
 import { FormSelect, FormOption } from "@repo/ui/form-select";
+import { useTextActionDialog } from "@repo/ui/text-action-dialog";
 import { Input as HeroInput } from "@heroui/react";
 import { useSelectedClub } from "@/lib/use-selected-club";
 
 import { Button, Chip, toast } from "@heroui/react";
-import { type ClubReview, useClubReviews, useRespondToClubReview } from "@api";
+import {
+  type ClubReview,
+  useBusinessClubReviews,
+  useRespondToClubReview,
+} from "@api";
 import Image from "next/image";
 import { useMemo, useState } from "react";
 
@@ -22,7 +27,9 @@ const reviewColumnHelper = createListColumnHelper<ClubReview>();
 
 export function BusinessReviewsScreen() {
   const { clubs, clubId, setClubId: setPicked } = useSelectedClub();
-  const reviews = useClubReviews(clubId);
+  const responseDialog = useTextActionDialog();
+  const [pagination, setPagination] = useState({ clubId: "", page: 1 });
+  const page = pagination.clubId === clubId ? pagination.page : 1;
   const respond = useRespondToClubReview(clubId);
   const [draftFilters, setDraftFilters] = useState({
     query: "",
@@ -33,19 +40,13 @@ export function BusinessReviewsScreen() {
     hasResponse: "" as "" | "yes" | "no",
   });
 
-  const items = useMemo(() => reviews.data?.items ?? [], [reviews.data?.items]);
-  const filtered = useMemo(() => {
-    const query = filters.query.trim().toLowerCase();
-    return items.filter((review) => {
-      if (filters.hasResponse === "yes" && !review.ownerResponse) return false;
-      if (filters.hasResponse === "no" && review.ownerResponse) return false;
-      if (!query) return true;
-      return (
-        (review.title ?? "").toLowerCase().includes(query) ||
-        review.body.toLowerCase().includes(query)
-      );
-    });
-  }, [filters, items]);
+  const reviews = useBusinessClubReviews(clubId, {
+    page,
+    limit: 20,
+    q: filters.query,
+    hasResponse: filters.hasResponse,
+  });
+  const filtered = reviews.data?.items ?? [];
 
   const filterActiveCount =
     (filters.query.trim() ? 1 : 0) + (filters.hasResponse ? 1 : 0);
@@ -109,12 +110,15 @@ export function BusinessReviewsScreen() {
                 variant="secondary"
                 isPending={respond.isPending}
                 onPress={() => {
-                  const body = window.prompt("پاسخ باشگاه را بنویسید:")?.trim();
-                  if (!body) return;
-                  void respond
-                    .mutateAsync({ reviewId: review.id, body })
-                    .then(() => toast.success("پاسخ ثبت شد"))
-                    .catch(() => toast.danger("ثبت پاسخ انجام نشد"));
+                  responseDialog.open({
+                    title: "پاسخ باشگاه",
+                    description: review.body,
+                    onSubmit: async (body) => {
+                      await respond.mutateAsync({ reviewId: review.id, body });
+                      setPagination({ clubId, page: 1 });
+                      toast.success("پاسخ ثبت شد");
+                    },
+                  });
                 }}
               >
                 ثبت پاسخ
@@ -123,11 +127,12 @@ export function BusinessReviewsScreen() {
           },
         }),
       ]),
-    [respond],
+    [respond, responseDialog, clubId],
   );
 
   return (
     <main className="min-w-0 flex-1 overflow-auto p-4 lg:p-6">
+      {responseDialog.dialog}
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -151,14 +156,18 @@ export function BusinessReviewsScreen() {
         </div>
         <ListPagePanel
           title="فهرست نظرها"
-          description={`${filtered.length.toLocaleString("fa-IR")} نظر`}
+          description={`${(reviews.data?.total ?? 0).toLocaleString("fa-IR")} نظر`}
           filterActiveCount={filterActiveCount}
           filterTitle="فیلتر نظرها"
-          onFilterApply={() => setFilters(draftFilters)}
+          onFilterApply={() => {
+            setFilters(draftFilters);
+            setPagination({ clubId, page: 1 });
+          }}
           onFilterReset={() => {
             const empty = { query: "", hasResponse: "" as const };
             setDraftFilters(empty);
             setFilters(empty);
+            setPagination({ clubId, page: 1 });
           }}
           filterContent={
             <>
@@ -197,31 +206,75 @@ export function BusinessReviewsScreen() {
             </>
           }
         >
-          <DataTable
-            ariaLabel="فهرست نظرهای باشگاه"
-            data={filtered}
-            columns={columns}
-            getRowId={(row) => row.id}
-            rowHeaderColumnId="title"
-            isLoading={reviews.isPending}
-            emptyContent={
-              <div className="flex min-h-72 flex-col items-center justify-center p-8 text-center">
-                <Image
-                  src="/reviews/empty.png"
-                  alt=""
-                  width={750}
-                  height={516}
-                  className="h-auto w-48 max-w-[70%] object-contain drop-shadow-xl"
-                />
-                <p className="mt-4 font-semibold text-foreground">
-                  هنوز نظری ثبت نشده است.
-                </p>
-                <p className="mt-2 text-sm text-muted">
-                  نظرهای ورزشکاران پس از ثبت، اینجا نمایش داده می‌شوند.
-                </p>
-              </div>
-            }
-          />
+          {reviews.isError || clubs.isError ? (
+            <div role="alert" className="p-6 text-center space-y-3">
+              <p>دریافت نظرها انجام نشد. دوباره تلاش کنید.</p>
+              <Button
+                onPress={() => {
+                  void reviews.refetch();
+                  void clubs.refetch();
+                }}
+              >
+                تلاش دوباره
+              </Button>
+            </div>
+          ) : (
+            <DataTable
+              ariaLabel="فهرست نظرهای باشگاه"
+              pageSize={20}
+              data={filtered}
+              columns={columns}
+              getRowId={(row) => row.id}
+              rowHeaderColumnId="title"
+              isLoading={reviews.isPending}
+              emptyContent={
+                <div className="flex min-h-72 flex-col items-center justify-center p-8 text-center">
+                  <Image
+                    src="/reviews/empty.png"
+                    alt=""
+                    width={750}
+                    height={516}
+                    className="h-auto w-48 max-w-[70%] object-contain drop-shadow-xl"
+                  />
+                  <p className="mt-4 font-semibold text-foreground">
+                    {filterActiveCount
+                      ? "نظری مطابق فیلترها پیدا نشد."
+                      : "هنوز نظری ثبت نشده است."}
+                  </p>
+                  <p className="mt-2 text-sm text-muted">
+                    نظرهای ورزشکاران پس از ثبت، اینجا نمایش داده می‌شوند.
+                  </p>
+                </div>
+              }
+            />
+          )}
+          {!reviews.isError && (reviews.data?.totalPages ?? 0) > 1 ? (
+            <nav
+              aria-label="صفحه‌های نظرها"
+              className="flex items-center justify-center gap-4 p-4"
+            >
+              <Button
+                variant="secondary"
+                isDisabled={page <= 1 || reviews.isFetching}
+                onPress={() => setPagination({ clubId, page: page - 1 })}
+              >
+                صفحه قبل
+              </Button>
+              <span>
+                {page.toLocaleString("fa-IR")} از{" "}
+                {(reviews.data?.totalPages ?? 1).toLocaleString("fa-IR")}
+              </span>
+              <Button
+                variant="secondary"
+                isDisabled={
+                  page >= (reviews.data?.totalPages ?? 1) || reviews.isFetching
+                }
+                onPress={() => setPagination({ clubId, page: page + 1 })}
+              >
+                صفحه بعد
+              </Button>
+            </nav>
+          ) : null}
         </ListPagePanel>
       </div>
     </main>

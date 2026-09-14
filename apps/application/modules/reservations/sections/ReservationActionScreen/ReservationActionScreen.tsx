@@ -208,7 +208,7 @@ export function ReservationActionScreen({
             {reservation.changeTimeHref ? (
               <Link
                 href={reservation.changeTimeHref}
-                className="flex h-16 w-full items-center justify-center rounded-2xl bg-accent font-bold text-accent-foreground transition-transform active:scale-[.98]"
+                className="flex h-16 w-full items-center justify-center rounded-2xl bg-accent font-bold text-accent-foreground transition-transform"
               >
                 مشاهده زمان‌های موجود
               </Link>

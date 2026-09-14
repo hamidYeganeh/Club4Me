@@ -218,6 +218,14 @@ export const ClubFieldsObjectSchema = z
     name: z.string().trim().min(2).max(120),
     profile: ClubProfileSchema.optional(),
     trialBookingEnabled: z.boolean().optional(),
+    onSitePaymentMethods: z
+      .array(z.enum(["cash", "pos"]))
+      .max(2)
+      .refine(
+        (items) => new Set(items).size === items.length,
+        "Duplicate payment methods",
+      )
+      .optional(),
     busyHours: BusyHoursSchema.optional(),
     shortDescription: z.string().trim().max(300).optional(),
     description: z.string().trim().max(5000).optional(),

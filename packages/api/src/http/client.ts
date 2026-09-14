@@ -1,3 +1,4 @@
+import { reportProductRequest } from "./request-observer";
 import axios, {
   type AxiosInstance,
   type InternalAxiosRequestConfig,
@@ -15,6 +16,7 @@ let refreshPromise: Promise<void> | undefined;
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
   _authRetry?: boolean;
+  _analyticsStartedAt?: number;
   expectedSessionIdentity?: string;
 };
 
@@ -106,6 +108,7 @@ function ensureClient(): AxiosInstance {
   });
 
   httpClient.interceptors.request.use(async (request) => {
+    (request as RetriableRequestConfig)._analyticsStartedAt = Date.now();
     const expectedIdentity = (request as RetriableRequestConfig)
       .expectedSessionIdentity;
     if (
@@ -152,12 +155,25 @@ function ensureClient(): AxiosInstance {
   });
 
   httpClient.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      reportProductRequest(
+        response.config.url,
+        response.status,
+        (response.config as RetriableRequestConfig)._analyticsStartedAt,
+      );
+      return response;
+    },
     async (error: unknown) => {
       const apiError = toApiError(error);
       const request = axios.isAxiosError(error)
         ? (error.config as RetriableRequestConfig | undefined)
         : undefined;
+      if (apiError.status !== 401)
+        reportProductRequest(
+          request?.url,
+          apiError.status ?? 0,
+          request?._analyticsStartedAt,
+        );
       const config = runtime.config;
 
       if (
@@ -271,7 +287,7 @@ export const http = {
 /** Replay remains bound to its original account, including after an auth refresh. */
 export async function sessionRequest<T>(
   identity: string,
-  method: "PUT" | "DELETE",
+  method: "PUT" | "DELETE" | "POST",
   url: string,
   data?: unknown,
 ): Promise<T> {

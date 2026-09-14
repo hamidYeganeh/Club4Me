@@ -1,4 +1,5 @@
 "use client";
+import { BusinessAnalyticsSection } from "./BusinessAnalyticsSection";
 
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { BusinessToday } from "./BusinessToday";
@@ -187,7 +188,7 @@ export function BusinessDashboardOverview() {
           </p>
           <Link
             href="/clubs/new"
-            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-medium text-accent-foreground transition active:scale-[0.98]"
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-medium text-accent-foreground transition"
           >
             <Icon name="plus-fat" size={16} />
             ساخت باشگاه
@@ -228,7 +229,7 @@ export function BusinessDashboardOverview() {
         </header>
 
         {activation.data && !activation.data.ready ? (
-          <Card className="mt-5 rounded-[1.5rem] border border-warning/35 bg-warning/8 p-5 shadow-none">
+          <Card className="mt-5 rounded-[1.5rem] bg-warning/8 p-5 shadow-none">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="font-semibold">
@@ -272,13 +273,14 @@ export function BusinessDashboardOverview() {
             clubs.data.items.find((club) => club.id === clubId)?.name ?? ""
           }
         />
+        <BusinessAnalyticsSection key={`analytics-${clubId}`} clubId={clubId} />
 
         {summary.isPending ? (
           <div className="flex justify-center py-24">
             <Spinner />
           </div>
         ) : summary.isError ? (
-          <Card className="mt-6 rounded-2xl border border-danger/30 bg-danger/5 p-6 text-center shadow-none">
+          <Card className="mt-6 rounded-2xl bg-danger/5 p-6 text-center shadow-none">
             <p>دریافت آمار باشگاه انجام نشد.</p>
             <Button
               className="mt-3"
@@ -545,7 +547,7 @@ export function BusinessDashboardOverview() {
                     <Link
                       key={action.href}
                       href={action.href}
-                      className="group flex min-w-0 items-center gap-3 rounded-2xl border border-border/60 bg-surface/45 p-3 transition-colors hover:border-accent/40 hover:bg-accent/5 active:scale-[0.99]"
+                      className="group flex min-w-0 items-center gap-3 rounded-2xl bg-surface/45 p-3 transition-colors hover:bg-accent/5"
                     >
                       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface text-accent">
                         <Icon name={action.icon} size={18} />

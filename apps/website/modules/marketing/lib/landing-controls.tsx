@@ -36,7 +36,7 @@ export function LandingPillButton({
         variant === "solid" &&
           "bg-accent text-accent-foreground hover:opacity-90",
         variant === "outline" &&
-          "border border-border bg-transparent text-foreground hover:border-foreground hover:bg-foreground hover:text-background",
+          "bg-transparent text-foreground hover:bg-foreground hover:text-background",
         className,
       )}
       onClick={onPress}
@@ -73,11 +73,11 @@ export function LandingArrowButton({
       type="button"
       aria-label={label}
       className={cn(
-        "grid size-12 place-items-center rounded-full border transition-colors duration-moderate ease-app sm:size-14",
+        "grid size-12 place-items-center rounded-full transition-colors duration-moderate ease-app sm:size-14",
         variant === "outline" &&
-          "border-border bg-surface text-foreground hover:border-foreground",
+          "bg-surface text-foreground",
         variant === "solid" &&
-          "border-foreground bg-foreground text-background hover:bg-accent hover:text-accent-foreground hover:border-accent",
+          "bg-foreground text-background hover:bg-accent hover:text-accent-foreground",
       )}
       onClick={onPress}
       onPointerEnter={() => hover && setScale(1.12)}

@@ -26,7 +26,7 @@ export function ReviewersCard({
               aria-hidden
             >
               {!count ? (
-                <span className="flex size-11 items-center justify-center rounded-full border-2 border-surface bg-accent/12 text-accent">
+                <span className="flex size-11 items-center justify-center rounded-full bg-accent/12 text-accent">
                   <Icon name="star-full" size={18} />
                 </span>
               ) : null}

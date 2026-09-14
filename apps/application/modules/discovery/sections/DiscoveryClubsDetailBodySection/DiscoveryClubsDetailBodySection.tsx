@@ -282,7 +282,7 @@ export function DiscoveryClubsDetailBodySection({
             </div>
           </div>
         ) : (
-          <p className="rounded-2xl border border-border p-4 text-sm text-muted">
+          <p className="rounded-2xl p-4 text-sm text-muted">
             موقعیت دقیق ثبت نشده؛ پیش از مراجعه نشانی را با باشگاه هماهنگ کنید.
           </p>
         )}
@@ -291,7 +291,8 @@ export function DiscoveryClubsDetailBodySection({
       <BottomSheet
         open={listKind !== null}
         onOpenChange={(open) => !open && setListKind(null)}
-        snapPoints={[0.85]}
+        snapPoints={["auto"]}
+        className="max-h-[92dvh]"
         title={listTitle}
       >
         <div className={styles.facilityList()}>
@@ -314,7 +315,8 @@ export function DiscoveryClubsDetailBodySection({
       <BottomSheet
         open={detailItem !== null}
         onOpenChange={(open) => !open && setDetailItem(null)}
-        snapPoints={[0.85]}
+        snapPoints={["auto"]}
+        className="max-h-[92dvh]"
         title={detailItem?.title ?? ""}
       >
         {detailItem?.backgroundImage ? (

@@ -19,7 +19,7 @@ export function CoachTrainingStylesSection({ items }: { items: CoachTrainingStyl
         <div className="divide-y divide-white/7">
           {items.map((item, index) => (
             <div key={`${item.title}-${index}`} className="flex items-center gap-4 py-4">
-              <div className="relative size-24 shrink-0 overflow-hidden rounded-[1.25rem] border border-white/8 bg-surface-secondary">
+              <div className="relative size-24 shrink-0 overflow-hidden rounded-[1.25rem] bg-surface-secondary">
                 <FallbackImage src={item.imageUrl} alt={item.title} fill unoptimized sizes="96px" className="object-cover" />
               </div>
               <div className="min-w-0">

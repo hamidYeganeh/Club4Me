@@ -16,7 +16,7 @@ export function AuthScreen({ children, title, subtitle }: AuthScreenProps) {
 
   return (
     <main className="grid min-h-full flex-1 bg-background lg:grid-cols-[minmax(20rem,42%)_1fr]">
-      <aside className="relative hidden overflow-hidden border-e border-border bg-surface-secondary lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-14">
+      <aside className="relative hidden overflow-hidden bg-surface-secondary lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-14">
         <Logo size={72} label={t("appName")} />
         <div className="max-w-sm">
           <Typography

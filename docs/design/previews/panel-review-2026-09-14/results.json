@@ -1,0 +1,474 @@
+[
+  {
+    "app": "admin",
+    "path": "/users",
+    "w": 375,
+    "h": 812,
+    "layout": {
+      "overflow": false,
+      "headings": [
+        "مدیریت کاربران"
+      ],
+      "nav": [
+        {
+          "name": "بخش‌های مدیریت",
+          "width": 299,
+          "scrollWidth": 764,
+          "links": 16
+        }
+      ],
+      "body": "مدیریت کاربران\nکاربر\tموبایل\tنقش‌ها\tوضعیت\tعملیات\nنگار احمدی\t09121234567\tadmin\t\nفعال\n\t\nجزئیات\nتعلیق"
+    },
+    "errors": [],
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              "#react-aria483671318-_r_1_-react-aria-3"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.18 (foreground color: #727272, background color: #efefef, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "app": "admin",
+    "path": "/users",
+    "w": 1440,
+    "h": 900,
+    "layout": {
+      "overflow": false,
+      "headings": [
+        "مدیریت کاربران"
+      ],
+      "nav": [
+        {
+          "name": "بخش‌های مدیریت",
+          "width": 60,
+          "scrollWidth": 60,
+          "links": 16
+        }
+      ],
+      "body": "مدیریت کاربران\nکاربر\tموبایل\tنقش‌ها\tوضعیت\tعملیات\nنگار احمدی\t09121234567\tadmin\t\nفعال\n\t\nجزئیات\nتعلیق"
+    },
+    "errors": [],
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              "#react-aria382098266-_r_1_-react-aria-3"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.18 (foreground color: #727272, background color: #efefef, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "app": "admin",
+    "path": "/finance",
+    "w": 375,
+    "h": 812,
+    "layout": {
+      "overflow": false,
+      "headings": [
+        "مالی، تسویه و مزایا"
+      ],
+      "nav": [
+        {
+          "name": "بخش‌های مدیریت",
+          "width": 299,
+          "scrollWidth": 764,
+          "links": 16
+        }
+      ],
+      "body": "مالی، تسویه و مزایا\n\nتأیید دستی پرداخت بانکی، تطبیق تراکنش‌ها و مدیریت اعتبار\n\nاجرای Reconciliation\nدرخواست‌های تسویه\nدر انتظار\n \nهمه\nدر انتظار\nدر حال بررسی\nپرداخت‌شده\nردشده\n\nدرخواستی وجود ندارد.\n\nافزایش اعتبار کیف پول\nشناسه کاربر\nمبلغ (ریال)\nعلت افزایش اعتبار\nثبت اعتبار\nکمپین تخفیف یک‌ماهه\nکد تخفیف\nعنوان کمپین\nنوع تخفیف\nدرصدی\n \nدرصدی\nمبلغ ثابت\nدرصد تخفیف\nسقف مبلغ تخفیف\nحداقل خرید\nبودجه کل\nسقف استفاده هر کاربر\nساخت کمپین"
+    },
+    "errors": [],
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              ".mt-1"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #727272, background color: #f5f5f5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+          },
+          {
+            "target": [
+              "#react-aria3052997396-_r_0_"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.3 (foreground color: #33b255, background color: #ebebeb, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "app": "admin",
+    "path": "/finance",
+    "w": 1440,
+    "h": 900,
+    "layout": {
+      "overflow": false,
+      "headings": [
+        "مالی، تسویه و مزایا"
+      ],
+      "nav": [
+        {
+          "name": "بخش‌های مدیریت",
+          "width": 60,
+          "scrollWidth": 60,
+          "links": 16
+        }
+      ],
+      "body": "مالی، تسویه و مزایا\n\nتأیید دستی پرداخت بانکی، تطبیق تراکنش‌ها و مدیریت اعتبار\n\nاجرای Reconciliation\nدرخواست‌های تسویه\nدر انتظار\n \nهمه\nدر انتظار\nدر حال بررسی\nپرداخت‌شده\nردشده\n\nدرخواستی وجود ندارد.\n\nافزایش اعتبار کیف پول\nشناسه کاربر\nمبلغ (ریال)\nعلت افزایش اعتبار\nثبت اعتبار\nکمپین تخفیف یک‌ماهه\nکد تخفیف\nعنوان کمپین\nنوع تخفیف\nدرصدی\n \nدرصدی\nمبلغ ثابت\nدرصد تخفیف\nسقف مبلغ تخفیف\nحداقل خرید\nبودجه کل\nسقف استفاده هر کاربر\nساخت کمپین"
+    },
+    "errors": [],
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              ".mt-1"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #727272, background color: #f5f5f5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+          },
+          {
+            "target": [
+              "#react-aria8496794099-_r_0_"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.3 (foreground color: #33b255, background color: #ebebeb, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "app": "admin",
+    "path": "/clubs",
+    "w": 375,
+    "h": 812,
+    "layout": {
+      "overflow": false,
+      "headings": [
+        "باشگاه‌های پلتفرم"
+      ],
+      "nav": [
+        {
+          "name": "بخش‌های مدیریت",
+          "width": 299,
+          "scrollWidth": 764,
+          "links": 16
+        }
+      ],
+      "body": "باشگاه‌های پلتفرم\nباشگاه\tمالک\tوضعیت\tآخرین تغییر\tعملیات\nباشگاه نمونه\tمالک در دسترس نیست\t\nتأییدشده\n\t۱۰ شهریور ۱۴۰۵، ۳:۳۰\t\nجزئیات\nتأیید هویت\nتأیید مدارک\nتأیید بازدید حضوری\nتأیید تازگی\nتوقف عرضه"
+    },
+    "errors": [],
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              "#react-aria3165887367-_r_1_-react-aria-2"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.18 (foreground color: #727272, background color: #efefef, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "app": "admin",
+    "path": "/clubs",
+    "w": 1440,
+    "h": 900,
+    "layout": {
+      "overflow": false,
+      "headings": [
+        "باشگاه‌های پلتفرم"
+      ],
+      "nav": [
+        {
+          "name": "بخش‌های مدیریت",
+          "width": 60,
+          "scrollWidth": 60,
+          "links": 16
+        }
+      ],
+      "body": "باشگاه‌های پلتفرم\nباشگاه\tمالک\tوضعیت\tآخرین تغییر\tعملیات\nباشگاه نمونه\tمالک در دسترس نیست\t\nتأییدشده\n\t۱۰ شهریور ۱۴۰۵، ۳:۳۰\t\nجزئیات\nتأیید هویت\nتأیید مدارک\nتأیید بازدید حضوری\nتأیید تازگی\nتوقف عرضه"
+    },
+    "errors": [],
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              "#react-aria8560314994-_r_1_-react-aria-2"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.18 (foreground color: #727272, background color: #efefef, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+          },
+          {
+            "target": [
+              "#react-aria8560314994-_r_j_"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.3 (foreground color: #33b255, background color: #ebebeb, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+          },
+          {
+            "target": [
+              "#react-aria8560314994-_r_l_"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.3 (foreground color: #33b255, background color: #ebebeb, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+          },
+          {
+            "target": [
+              "#react-aria8560314994-_r_n_"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.3 (foreground color: #33b255, background color: #ebebeb, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "app": "admin",
+    "path": "/support",
+    "w": 375,
+    "h": 812,
+    "layout": {
+      "overflow": false,
+      "headings": [
+        "تیکت‌های پشتیبانی"
+      ],
+      "nav": [
+        {
+          "name": "بخش‌های مدیریت",
+          "width": 299,
+          "scrollWidth": 764,
+          "links": 16
+        }
+      ],
+      "body": "تیکت‌های پشتیبانی\n\nپاسخ درون‌برنامه‌ای یا پیگیری تلفنی\n\nباز\n \nهمه\nباز\nدر حال پیگیری\nمنتظر کاربر\nحل‌شده\nبسته\n\nتیکتی وجود ندارد.\n\nدرخواست‌های فرم سایت\n\nسرنخ‌های ثبت‌شده همراه با رضایت تماس\n\nدرخواستی ثبت نشده است.\n\nنظرات مربی و کلاس\n\nبازبینی نظرات دارای حضور تأییدشده\n\nنظری ثبت نشده است."
+    },
+    "errors": [],
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              "div:nth-child(1) > .mt-1.text-sm"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #727272, background color: #f5f5f5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+          },
+          {
+            "target": [
+              "section:nth-child(3) > .mt-1.text-sm"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #727272, background color: #f5f5f5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "app": "admin",
+    "path": "/support",
+    "w": 1440,
+    "h": 900,
+    "layout": {
+      "overflow": false,
+      "headings": [
+        "تیکت‌های پشتیبانی"
+      ],
+      "nav": [
+        {
+          "name": "بخش‌های مدیریت",
+          "width": 60,
+          "scrollWidth": 60,
+          "links": 16
+        }
+      ],
+      "body": "تیکت‌های پشتیبانی\n\nپاسخ درون‌برنامه‌ای یا پیگیری تلفنی\n\nباز\n \nهمه\nباز\nدر حال پیگیری\nمنتظر کاربر\nحل‌شده\nبسته\n\nتیکتی وجود ندارد.\n\nدرخواست‌های فرم سایت\n\nسرنخ‌های ثبت‌شده همراه با رضایت تماس\n\nدرخواستی ثبت نشده است.\n\nنظرات مربی و کلاس\n\nبازبینی نظرات دارای حضور تأییدشده\n\nنظری ثبت نشده است."
+    },
+    "errors": [],
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              "div:nth-child(1) > .mt-1.text-sm"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #727272, background color: #f5f5f5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+          },
+          {
+            "target": [
+              "section:nth-child(3) > .mt-1.text-sm"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #727272, background color: #f5f5f5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "app": "business",
+    "path": "/students",
+    "w": 375,
+    "h": 812,
+    "layout": {
+      "overflow": false,
+      "headings": [
+        "شاگردها"
+      ],
+      "nav": [
+        {
+          "name": "افزودن",
+          "width": 0,
+          "scrollWidth": 0,
+          "links": 14
+        },
+        {
+          "name": "دسترسی سریع",
+          "width": 375,
+          "scrollWidth": 375,
+          "links": 4
+        }
+      ],
+      "body": "شاگردها\n\nپرونده شاگردها، رشته و وضعیت عضویت را مدیریت کنید\n\nباشگاه\nباشگاه نمونه\n \nباشگاه نمونه تهران\nافزودن شاگرد\nفهرست شاگردها\n\n۱ نفر\n\nفیلتر\nمرتب‌سازی\nترتیب پیش‌فرض\n \nترتیب پیش‌فرض\nشاگرد\nتماس\nرشته\nوضعیت\nشاگرد\nنگار احمدی\nتماس\n09121234567\nرشته\n—\nعضویت\n—\nتا ثبت نشده\nوضعیت\nفعال\nعملیات\nجزئیات\nغیرفعال کردن"
+    },
+    "errors": [],
+    "violations": []
+  },
+  {
+    "app": "business",
+    "path": "/students",
+    "w": 1440,
+    "h": 900,
+    "layout": {
+      "overflow": false,
+      "headings": [
+        "شاگردها"
+      ],
+      "nav": [
+        {
+          "name": "افزودن",
+          "width": 56,
+          "scrollWidth": 56,
+          "links": 14
+        },
+        {
+          "name": "دسترسی سریع",
+          "width": 0,
+          "scrollWidth": 0,
+          "links": 4
+        }
+      ],
+      "body": "شاگردها\n\nپرونده شاگردها، رشته و وضعیت عضویت را مدیریت کنید\n\nباشگاه\nباشگاه نمونه\n \nباشگاه نمونه تهران\nافزودن شاگرد\nفهرست شاگردها\n\n۱ نفر\n\nفیلتر\nشاگرد\n\t\nتماس\n\t\nرشته\n\tعضویت\t\nوضعیت\n\tعملیات\nنگار احمدی\t09121234567\t—\t\n—\nتا ثبت نشده\n\t\nفعال\n\t\nجزئیات\nغیرفعال کردن"
+    },
+    "errors": [],
+    "violations": []
+  },
+  {
+    "app": "business",
+    "path": "/payments",
+    "w": 375,
+    "h": 812,
+    "layout": {
+      "overflow": false,
+      "headings": [
+        "پرداخت‌ها"
+      ],
+      "nav": [
+        {
+          "name": "افزودن",
+          "width": 0,
+          "scrollWidth": 0,
+          "links": 14
+        },
+        {
+          "name": "دسترسی سریع",
+          "width": 375,
+          "scrollWidth": 375,
+          "links": 4
+        }
+      ],
+      "body": "پرداخت‌ها\n\nشهریه، هزینه سانس و سایر دریافت‌های حضوری را ثبت کنید\n\nباشگاه\nباشگاه نمونه\n \nباشگاه نمونه تهران\nثبت پرداخت\nحساب شهریه و رسیدها\n\nماندهٔ هر ثبت‌نام، رسیدهای مرتبط و اصلاحات حساب در یک جا.\n\nحساب شاگرد\nانتخاب شاگرد\n \nانتخاب شاگرد\nنگار احمدی 09121234567\n\nموجودی قابل برداشت\n\nپرداخت و تسویه آزمایشی است؛ انتقال بانکی انجام نمی‌شود.\n\n۰ ریال\n\nدر انتظار تسویه: ۰ ریال\n\nدرخواست برداشت\nآخرین تسویه‌ها\n\nهنوز تسویه‌ای ثبت نشده است.\n\nفهرست پرداخت‌ها\n\n۰ پرداخت\n\nفیلتر\nپرداختی ثبت نشده\n\nپس از دریافت وجه، آن را به‌عنوان پرداخت‌شده ثبت کنید"
+    },
+    "errors": [],
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              ".text-warning"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.43 (foreground color: #a16207, background color: #f3f3f4, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "app": "business",
+    "path": "/payments",
+    "w": 1440,
+    "h": 900,
+    "layout": {
+      "overflow": false,
+      "headings": [
+        "پرداخت‌ها"
+      ],
+      "nav": [
+        {
+          "name": "افزودن",
+          "width": 56,
+          "scrollWidth": 56,
+          "links": 14
+        },
+        {
+          "name": "دسترسی سریع",
+          "width": 0,
+          "scrollWidth": 0,
+          "links": 4
+        }
+      ],
+      "body": "پرداخت‌ها\n\nشهریه، هزینه سانس و سایر دریافت‌های حضوری را ثبت کنید\n\nباشگاه\nباشگاه نمونه\n \nباشگاه نمونه تهران\nثبت پرداخت\nحساب شهریه و رسیدها\n\nماندهٔ هر ثبت‌نام، رسیدهای مرتبط و اصلاحات حساب در یک جا.\n\nحساب شاگرد\nانتخاب شاگرد\n \nانتخاب شاگرد\nنگار احمدی 09121234567\n\nموجودی قابل برداشت\n\nپرداخت و تسویه آزمایشی است؛ انتقال بانکی انجام نمی‌شود.\n\n۰ ریال\n\nدر انتظار تسویه: ۰ ریال\n\nدرخواست برداشت\nآخرین تسویه‌ها\n\nهنوز تسویه‌ای ثبت نشده است.\n\nفهرست پرداخت‌ها\n\n۰ پرداخت\n\nفیلتر\nپرداختی ثبت نشده\n\nپس از دریافت وجه، آن را به‌عنوان پرداخت‌شده ثبت کنید"
+    },
+    "errors": [],
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              ".text-warning"
+            ],
+            "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.43 (foreground color: #a16207, background color: #f3f3f4, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
+  }
+]

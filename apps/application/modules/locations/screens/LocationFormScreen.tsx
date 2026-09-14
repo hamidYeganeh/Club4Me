@@ -25,6 +25,8 @@ import {
 } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
+import { VisualEmptyState } from "@/components/ui/clarity";
+import { ButtonLink } from "@/components/button-link";
 
 import { NeshanMap, type GeoPoint } from "@/components/maps/neshan-map";
 import { BottomSheet } from "@/components/motion/bottom-sheet";
@@ -180,13 +182,37 @@ export function LocationFormScreen({ role, locationId }: Props) {
   if (locationId && locations.isLoading) return <FormPageSkeleton fields={7} />;
   if (locationId && !existing)
     return (
-      <main className="p-8 text-center">
-        <Typography type="body" className="mb-4 text-danger">
-          لوکیشن پیدا نشد.
-        </Typography>
-        <Button variant="secondary" onPress={() => void locations.refetch()}>
-          تلاش دوباره
-        </Button>
+      <main className="app-page gap-6">
+        <SecondaryHeader
+          title="ویرایش لوکیشن"
+          showFilter={false}
+          backHref={`/${role}/profile/locations`}
+        />
+        <VisualEmptyState
+          icon="map-pin-1"
+          title={
+            locations.isError ? "دریافت لوکیشن انجام نشد." : "لوکیشن پیدا نشد."
+          }
+          description={
+            locations.isError
+              ? "ارتباط را بررسی کنید و دوباره تلاش کنید."
+              : "ممکن است این نشانی حذف شده باشد؛ یک لوکیشن دیگر انتخاب کنید."
+          }
+          action={
+            locations.isError ? (
+              <Button
+                variant="secondary"
+                onPress={() => void locations.refetch()}
+              >
+                تلاش دوباره
+              </Button>
+            ) : (
+              <ButtonLink variant="primary" href={`/${role}/profile/locations`}>
+                لوکیشن‌های من
+              </ButtonLink>
+            )
+          }
+        />
       </main>
     );
 
@@ -262,7 +288,7 @@ export function LocationFormScreen({ role, locationId }: Props) {
             marker={selectedPoint}
             followCenter={false}
             onPointChange={setPoint}
-            className="h-72 overflow-hidden rounded-[1.6rem] border border-white/7"
+            className="h-72 overflow-hidden rounded-[1.6rem]"
           />
           <Typography
             type="body-xs"

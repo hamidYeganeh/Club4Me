@@ -1,4 +1,8 @@
 "use client";
+import { DiscoveryVirtualItems } from "@modules/discovery/components/DiscoveryViewport";
+import { useAccumulatedQuery } from "@modules/discovery/hooks/use-accumulated-query";
+
+import { BottomSheet } from "@/components/motion/bottom-sheet";
 import { DiscoveryImageHero } from "../../components/DiscoveryImageHero";
 
 import { useDiscoveryList } from "../../hooks/use-discovery-list";
@@ -61,12 +65,16 @@ export function DiscoveryClubsScreen({
   const styles = discoveryClubsScreenStyles();
   const { query, setQuery, q, page, setPage } = useDiscoveryList();
   const [sortOpen, setSortOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const { active } = useActiveLocation();
   const coords = getActiveCoordinates(active);
   const [filters, setFilters] = useState<PublicCatalogParams>(
     () => initialFilters ?? browseToFilters(browse, coords),
   );
   const showRails =
+    !q &&
+    !filtersOpen &&
+    Object.keys(filters).length === 0 &&
     layout === "rails" &&
     !browse?.sort &&
     !browse?.sportId &&
@@ -98,9 +106,14 @@ export function DiscoveryClubsScreen({
   const effectiveFilters = selectedClubType
     ? { ...filters, clubTypeId: selectedClubType.id }
     : filters;
-  const clubs = useCatalogClubs(
+  const clubsPage = useCatalogClubs(
     { ...effectiveFilters, q, page, limit: 20 },
     !showRails && !isResolvingClubType,
+  );
+  const clubs = useAccumulatedQuery(
+    clubsPage,
+    page,
+    JSON.stringify([q, effectiveFilters]),
   );
   const selectedTypeName = selectedClubType?.name;
   const visible = clubs.data?.items ?? [];
@@ -180,6 +193,7 @@ export function DiscoveryClubsScreen({
     <main className={styles.root()}>
       <SecondaryHeader
         title={title ?? selectedTypeName ?? t("title")}
+        onFilterPress={() => setFiltersOpen(true)}
         action={
           <ButtonLink
             isIconOnly
@@ -209,63 +223,57 @@ export function DiscoveryClubsScreen({
         value={query}
         onChange={setQuery}
         placeholder={t("searchPlaceholder")}
-        href={showRails ? "/discovery/search?kind=club" : undefined}
       />
       {showRails ? (
         <DiscoveryClubsCatalogSections showHero />
       ) : (
         <>
-          <div className="app-chip-row app-reveal">
-            <Button
-              size="sm"
-              variant={
-                Object.keys(filters).length === 0 ? "primary" : "secondary"
-              }
-              className="shrink-0"
-              onPress={clearFilters}
-            >
-              {t("allFilter")}
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="shrink-0"
-              onPress={nearby}
-            >
-              {t("nearbyFilter")}
-            </Button>
-            {(regions.data?.items ?? []).slice(0, 4).map((filter) => (
+          <Button
+            variant="secondary"
+            aria-haspopup="dialog"
+            aria-expanded={filtersOpen}
+            onPress={() => setFiltersOpen(true)}
+          >
+            <Icon name="funnel-1" size={20} />
+            فیلترها
+          </Button>
+          <BottomSheet
+            open={filtersOpen}
+            onOpenChange={setFiltersOpen}
+            title="فیلترهای باشگاه"
+            snapPoints={[0.5, 0.85]}
+          >
+            <div className="flex flex-wrap gap-2">
               <Button
-                key={filter.id}
                 size="sm"
                 variant={
-                  filters.cityRegionId === filter.id ? "primary" : "secondary"
+                  Object.keys(filters).length === 0 ? "primary" : "secondary"
                 }
                 className="shrink-0"
-                onPress={() => {
-                  setFilters((current) => ({
-                    ...current,
-                    cityRegionId: filter.id,
-                  }));
-                  setPage(1);
-                }}
+                onPress={clearFilters}
               >
-                {filter.name}
+                {t("allFilter")}
               </Button>
-            ))}
-            {!browse?.sportId &&
-              sportFilters.slice(0, 6).map((filter) => (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="shrink-0"
+                onPress={nearby}
+              >
+                {t("nearbyFilter")}
+              </Button>
+              {(regions.data?.items ?? []).slice(0, 4).map((filter) => (
                 <Button
                   key={filter.id}
                   size="sm"
                   variant={
-                    filters.sportId === filter.id ? "primary" : "secondary"
+                    filters.cityRegionId === filter.id ? "primary" : "secondary"
                   }
                   className="shrink-0"
                   onPress={() => {
                     setFilters((current) => ({
                       ...current,
-                      sportId: filter.id,
+                      cityRegionId: filter.id,
                     }));
                     setPage(1);
                   }}
@@ -273,7 +281,36 @@ export function DiscoveryClubsScreen({
                   {filter.name}
                 </Button>
               ))}
-          </div>
+              {!browse?.sportId &&
+                sportFilters.slice(0, 6).map((filter) => (
+                  <Button
+                    key={filter.id}
+                    size="sm"
+                    variant={
+                      filters.sportId === filter.id ? "primary" : "secondary"
+                    }
+                    className="shrink-0"
+                    onPress={() => {
+                      setFilters((current) => ({
+                        ...current,
+                        sportId: filter.id,
+                      }));
+                      setPage(1);
+                    }}
+                  >
+                    {filter.name}
+                  </Button>
+                ))}
+            </div>
+            <Button
+              fullWidth
+              className="mt-5"
+              variant="primary"
+              onPress={() => setFiltersOpen(false)}
+            >
+              نمایش نتایج
+            </Button>
+          </BottomSheet>
           <DiscoveryQueryState query={clubTypes} />
           <div className={styles.resultsBar()}>
             {clubs.isPending ? (
@@ -316,17 +353,19 @@ export function DiscoveryClubsScreen({
                 icon="building-1"
               />
             ) : null}
-            {visible.map((club) => (
-              <DiscoveryResultCard
-                key={club.id}
-                title={club.name}
-                subtitle={club.address || club.shortDescription}
-                meta={`${club.averageRating.toLocaleString("fa-IR")} ★`}
-                imageUrl={club.imageUrl}
-                href={`/discovery/clubs/${club.slug}`}
-                badge={t("title")}
-              />
-            ))}
+            <DiscoveryVirtualItems>
+              {visible.map((club) => (
+                <DiscoveryResultCard
+                  key={club.id}
+                  title={club.name}
+                  subtitle={club.address || club.shortDescription}
+                  meta={`${club.averageRating.toLocaleString("fa-IR")} ★`}
+                  imageUrl={club.imageUrl}
+                  href={`/discovery/clubs/${club.slug}`}
+                  badge={t("title")}
+                />
+              ))}
+            </DiscoveryVirtualItems>
           </div>
         </>
       )}
@@ -338,6 +377,8 @@ export function DiscoveryClubsScreen({
           limit={20}
           onChange={setPage}
           pending={clubs.isFetching}
+          failed={clubs.isError}
+          onRetry={() => void clubs.refetch()}
         />
       ) : null}
       <SortBottomSheet

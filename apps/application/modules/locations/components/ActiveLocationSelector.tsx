@@ -59,7 +59,7 @@ export function ActiveLocationSelector({
         aria-expanded={open}
         className={
           variant === "search"
-            ? "flex h-16 w-full items-center gap-3 rounded-[1.15rem] border border-border bg-surface px-5 text-base font-semibold text-foreground shadow-sm"
+            ? "flex h-16 w-full items-center gap-3 rounded-[1.15rem] bg-surface px-5 text-base font-semibold text-foreground shadow-sm"
             : "flex max-w-52 items-center gap-2 rounded-full bg-surface-secondary px-4 py-2.5 text-sm font-semibold text-foreground"
         }
       >
@@ -84,7 +84,7 @@ export function ActiveLocationSelector({
           type="button"
           onClick={close}
           aria-label="بستن"
-          className="absolute end-5 top-6 flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-secondary hover:text-foreground active:scale-95"
+          className="absolute end-5 top-6 flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-secondary hover:text-foreground"
         >
           <Icon name="close-x" size={24} />
         </button>
@@ -116,7 +116,7 @@ export function ActiveLocationSelector({
               return (
                 <Radio key={location.id} value={location.id} aria-label={`${location.title}، ${location.address}`}>
                   <Radio.Content
-                  className={`flex min-h-28 items-center gap-4 rounded-[1.5rem] border p-4 text-start transition-[border-color,background-color,transform,box-shadow] active:scale-[0.99] ${
+                  className={`flex min-h-28 items-center gap-4 rounded-[1.5rem] border p-4 text-start transition-[border-color,background-color,transform,box-shadow] ${
                     isSelected
                       ? "border-accent bg-accent/7"
                       : "border-border bg-surface-secondary/55"
@@ -157,7 +157,7 @@ export function ActiveLocationSelector({
           type="button"
           onClick={updateLocation}
           disabled={!selected || locations.isLoading}
-          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent font-bold text-accent-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
+          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent font-bold text-accent-foreground transition-transform disabled:opacity-50"
         >
           به‌روزرسانی <Icon name="check" size={20} />
         </button>

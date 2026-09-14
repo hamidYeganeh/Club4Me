@@ -9,7 +9,7 @@ import {
   TextField,
   toast,
 } from "@heroui/react";
-import NumberFlow from "@number-flow/react";
+import { AnimatedCounter } from "@/components/motion/animated-counter";
 import { AccountAuthOtpCopySection } from "@modules/account/sections/AccountAuthOtpCopySection";
 import { AccountAuthOtpHeroSection } from "@modules/account/sections/AccountAuthOtpHeroSection";
 import {
@@ -441,7 +441,7 @@ export function ProfileEditFieldSheet({
                 title={tOtpConfirm("title")}
                 cue={false}
               />
-              <div className="mt-1 mb-4 flex items-center justify-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5">
+              <div className="mt-1 mb-4 flex items-center justify-center gap-2 rounded-full bg-surface px-3 py-1.5">
                 <span
                   dir="ltr"
                   className="text-sm font-medium tracking-wide text-foreground tabular-nums"
@@ -493,9 +493,8 @@ export function ProfileEditFieldSheet({
                   {resendCooldown > 0 ? (
                     <span className={otpStyles.resendTimer()}>
                       {t("resendIn")}{" "}
-                      <NumberFlow
+                      <AnimatedCounter
                         value={resendCooldown}
-                        trend={-1}
                         className={otpStyles.resendSeconds()}
                       />
                     </span>
@@ -522,7 +521,7 @@ export function ProfileEditFieldSheet({
           size="lg"
           className={cn(
             "mt-2 w-full font-bold",
-            isIdCardField && "h-16 rounded-2xl active:scale-[0.98]",
+            isIdCardField && "h-16 rounded-2xl",
           )}
           isPending={isPending}
           isDisabled={
@@ -561,7 +560,7 @@ function ChoiceState({
   }
   if (isError) {
     return (
-      <div className="rounded-[1.35rem] border border-danger/25 bg-danger/8 p-4 text-sm text-danger">
+      <div className="rounded-[1.35rem] bg-danger/8 p-4 text-sm text-danger">
         {t("choicesError")}
         <Button
           type="button"
@@ -597,8 +596,8 @@ function GenderChoice({
       isDisabled={disabled}
       onPress={() => onSelect(choice.value)}
       className={cn(
-        "!h-28 min-w-0 flex-1 flex-col gap-2 rounded-[1.35rem] border border-border bg-surface-secondary px-2 text-foreground shadow-sm",
-        selected && "!border-accent !bg-accent/8 !text-accent",
+        "!h-28 min-w-0 flex-1 flex-col gap-2 rounded-[1.35rem] bg-surface-secondary px-2 text-foreground shadow-sm",
+        selected && "!bg-accent/8 !text-accent",
       )}
     >
       <Icon name={GENDER_ICONS[choice.value]} size={30} />
@@ -626,8 +625,8 @@ function ActivityChoice({
       isDisabled={disabled}
       onPress={() => onSelect(choice.value)}
       className={cn(
-        "!h-auto min-h-24 w-full justify-start gap-4 rounded-[1.35rem] border border-border bg-surface-secondary px-4 py-4 text-start text-foreground shadow-sm",
-        selected && "border-accent bg-accent/8",
+        "!h-auto min-h-24 w-full justify-start gap-4 rounded-[1.35rem] bg-surface-secondary px-4 py-4 text-start text-foreground shadow-sm",
+        selected && "bg-accent/8",
       )}
     >
       <Icon
@@ -646,8 +645,8 @@ function ActivityChoice({
       <span
         aria-hidden
         className={cn(
-          "grid size-7 shrink-0 place-items-center rounded-lg border border-border text-transparent",
-          selected && "border-accent bg-accent text-accent-foreground",
+          "grid size-7 shrink-0 place-items-center rounded-lg text-transparent",
+          selected && "bg-accent text-accent-foreground",
         )}
       >
         <Icon name="check" size={17} />

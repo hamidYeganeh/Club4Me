@@ -11,7 +11,6 @@ import Link from "@/components/app-link";
 import { Icon } from "@theme/icon";
 import {
   CONTROL_TRANSITION,
-  FADE_TRANSITION,
   REDUCED_TRANSITION,
   MOTION_STAGGER,
 } from "@/lib/ease";
@@ -71,56 +70,33 @@ export function OnboardingChecklist({
               {expanded ? "بستن" : "تکمیل"}
             </span>
           </span>
-          <motion.span
-            layout={!reduced}
-            className={`mt-5 flex items-center gap-2 ${expanded ? "justify-between" : ""}`}
-            role="progressbar"
-            aria-label="میزان تکمیل پروفایل"
-            aria-valuemin={0}
-            aria-valuemax={steps.length}
-            aria-valuenow={completed}
-          >
-            {steps.map((step, index) => (
-              <motion.span
-                layout={!reduced}
-                transition={{
-                  ...transition,
-                  delay: reduced ? 0 : Math.min(index, 5) * MOTION_STAGGER,
-                }}
-                key={step.id}
-                className={`grid place-items-center rounded-full ${
-                  expanded ? "size-7 flex-none" : "h-1.5 flex-1"
-                } ${
-                  step.isCompleted
-                    ? "bg-accent text-accent-foreground"
-                    : expanded
-                      ? "bg-surface-tertiary text-foreground"
-                      : "bg-surface-tertiary"
-                }`}
-              >
-                <AnimatePresence initial={false}>
-                  {expanded ? (
-                    <motion.span
-                      key="step-number"
-                      initial={reduced ? false : { opacity: 0, scale: 0.55 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.55 }}
-                      transition={{
-                        ...(reduced ? REDUCED_TRANSITION : FADE_TRANSITION),
-                        delay: reduced
-                          ? 0
-                          : 0.12 + Math.min(index, 5) * MOTION_STAGGER,
-                      }}
-                      className="text-[11px] font-bold leading-none"
-                      aria-hidden="true"
-                    >
-                      {(index + 1).toLocaleString("fa-IR")}
-                    </motion.span>
-                  ) : null}
-                </AnimatePresence>
-              </motion.span>
-            ))}
-          </motion.span>
+          {!expanded && (
+            <motion.span
+              layout={!reduced}
+              className="mt-5 flex items-center justify-between gap-2"
+              role="progressbar"
+              aria-label="میزان تکمیل پروفایل"
+              aria-valuemin={0}
+              aria-valuemax={steps.length}
+              aria-valuenow={completed}
+            >
+              {steps.map((step, index) => (
+                <motion.span
+                  key={step.id}
+                  layoutId={`${uid}-step-${step.id}`}
+                  transition={
+                    reduced
+                      ? REDUCED_TRANSITION
+                      : { duration: 0.48, ease: [0.32, 0.72, 0, 1] }
+                  }
+                  className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold ${step.isCompleted ? "bg-accent text-accent-foreground" : "bg-surface-tertiary text-foreground"}`}
+                  aria-hidden="true"
+                >
+                  {(index + 1).toLocaleString("fa-IR")}
+                </motion.span>
+              ))}
+            </motion.span>
+          )}
         </button>
         <AnimatePresence initial={false}>
           {expanded && (
@@ -136,7 +112,7 @@ export function OnboardingChecklist({
                 {remaining.map((step, index) => (
                   <motion.div
                     key={step.id}
-                    initial={{ opacity: 0, x: reduced ? 0 : 16 }}
+                    initial={false}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{
                       ...transition,
@@ -147,9 +123,20 @@ export function OnboardingChecklist({
                       href={step.href}
                       className="flex min-h-14 items-center gap-3 rounded-2xl px-3 py-3 text-sm no-underline outline-none transition-colors hover:bg-surface-secondary focus-visible:ring-2 focus-visible:ring-focus"
                     >
-                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-bold text-accent">
-                        {(index + 1).toLocaleString("fa-IR")}
-                      </span>
+                      <motion.span
+                        layoutId={`${uid}-step-${step.id}`}
+                        transition={
+                          reduced
+                            ? REDUCED_TRANSITION
+                            : { duration: 0.48, ease: [0.32, 0.72, 0, 1] }
+                        }
+                        className="relative z-10 grid size-7 shrink-0 place-items-center rounded-full bg-accent/15 text-xs font-bold text-accent"
+                        aria-hidden="true"
+                      >
+                        {(
+                          steps.findIndex((item) => item.id === step.id) + 1
+                        ).toLocaleString("fa-IR")}
+                      </motion.span>
                       <span className="flex-1">{step.title}</span>
                       <Icon
                         name="chevron-left"

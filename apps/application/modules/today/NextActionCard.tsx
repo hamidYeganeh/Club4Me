@@ -35,7 +35,7 @@ export function NextActionCard({
       </p>
       <Link
         href={href}
-        className="mt-6 flex min-h-12 items-center justify-between gap-3 rounded-2xl bg-accent px-4 py-3 text-sm font-bold text-accent-foreground transition active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
+        className="mt-6 flex min-h-12 items-center justify-between gap-3 rounded-2xl bg-accent px-4 py-3 text-sm font-bold text-accent-foreground transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
       >
         <span>{action}</span>
         <Icon name="arrow-left" size={20} />

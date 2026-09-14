@@ -7,13 +7,12 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { Roles } from "../auth/decorators/roles.decorator";
-import { RolesGuard } from "../auth/guards/roles.guard";
 import type { AuthTokenPayload } from "../auth/services/token.service";
 import { ClubReviewsService } from "./club-reviews.service";
 import { CreateClubReviewDto } from "./dto/create-club-review.dto";
@@ -24,8 +23,11 @@ export class PublicClubReviewsController {
   constructor(private readonly service: ClubReviewsService) {}
 
   @Get()
-  list(@Param("clubId") clubId: string) {
-    return this.service.list(clubId);
+  list(
+    @Param("clubId") clubId: string,
+    @Query() query: Record<string, string | undefined>,
+  ) {
+    return this.service.list(clubId, query);
   }
 }
 
@@ -46,10 +48,18 @@ export class ClubReviewsController {
 }
 
 @Controller("api/v1/business/clubs/:clubId/reviews")
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles("owner")
+@UseGuards(JwtAuthGuard)
 export class BusinessClubReviewsController {
   constructor(private readonly service: ClubReviewsService) {}
+
+  @Get()
+  list(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Query() query: Record<string, string | undefined>,
+  ) {
+    return this.service.listForBusiness(user.sub, clubId, query);
+  }
 
   @Patch(":reviewId/response")
   respond(

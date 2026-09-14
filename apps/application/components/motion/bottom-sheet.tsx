@@ -221,7 +221,7 @@ export function BottomSheet({
             transition={reduceMotion ? REDUCED_TRANSITION : CONTROL_TRANSITION}
             style={heightStyle}
             className={cn(
-              "fixed inset-x-0 bottom-[var(--keyboard-inset,0px)] z-[1001] mx-auto flex w-full max-w-xl translate-z-0 flex-col contain-paint rounded-t-[2.25rem] bg-surface text-surface-foreground shadow-[0_-16px_60px_-24px_rgba(0,0,0,0.45)] outline-none will-change-transform",
+              "fixed inset-x-0 bottom-[var(--keyboard-inset,0px)] z-[1001] mx-auto flex w-full max-w-xl translate-z-0 flex-col contain-paint rounded-t-[2.25rem] bg-surface text-surface-foreground  outline-none will-change-transform",
               className,
             )}
             role="dialog"

@@ -1,4 +1,9 @@
 "use client";
+import { useState } from "react";
+import type { PublicCatalogParams } from "@api/discovery";
+import { DiscoveryCatalogFilters } from "@modules/discovery/components/DiscoveryCatalogFilters";
+import { DiscoveryVirtualItems } from "@modules/discovery/components/DiscoveryViewport";
+import { useAccumulatedQuery } from "@modules/discovery/hooks/use-accumulated-query";
 import { DiscoveryImageHero } from "../../components/DiscoveryImageHero";
 
 import { useDiscoveryList } from "../../hooks/use-discovery-list";
@@ -14,12 +19,18 @@ import { ArticleListSkeleton } from "@/components/loading-skeletons";
 
 export function DiscoveryArticlesScreen() {
   const { query, setQuery, q, page, setPage } = useDiscoveryList();
-  const result = useCatalogArticles({ q, page, limit: 20 });
+  const [filters, setFilters] = useState<PublicCatalogParams>({});
+  const resultPage = useCatalogArticles({ ...filters, q, page, limit: 20 });
+  const result = useAccumulatedQuery(
+    resultPage,
+    page,
+    JSON.stringify([q, filters]),
+  );
   const articles = result.data?.items ?? [];
 
   return (
     <main className="app-page gap-7">
-      <SecondaryHeader title="مجله جیم‌فورمی" showFilter={false} />
+      <SecondaryHeader title="مجله کلاب‌فورمی" showFilter={false} />
 
       <DiscoveryImageHero
         imageUrl="/profile/cover.jpg"
@@ -33,6 +44,14 @@ export function DiscoveryArticlesScreen() {
         onChange={setQuery}
         placeholder="جست‌وجو در مقاله‌ها"
       />
+      <DiscoveryCatalogFilters
+        kind="article"
+        value={filters}
+        onChange={(value) => {
+          setFilters(value);
+          setPage(1);
+        }}
+      />
       {result.isLoading ? <ArticleListSkeleton count={4} /> : null}
       <DiscoveryQueryState query={result} />
       {result.isSuccess && articles.length === 0 ? (
@@ -44,21 +63,23 @@ export function DiscoveryArticlesScreen() {
       ) : null}
 
       <section className="grid gap-3" aria-label="همه مقاله‌ها">
-        {articles.map((article) => (
-          <ArticleCard
-            key={article.id}
-            title={article.title}
-            description={article.excerpt}
-            coverImageUrl={article.coverImageUrl}
-            authorName={article.authorName}
-            readTime={estimatedReadTime(article.readTimeMinutes)}
-            tags={[]}
-            orientation="horizontal"
-            outlined
-            href={`/discovery/articles/${article.slug}`}
-            className="max-w-none! transition-transform active:scale-[0.99]"
-          />
-        ))}
+        <DiscoveryVirtualItems>
+          {articles.map((article) => (
+            <ArticleCard
+              key={article.id}
+              title={article.title}
+              description={article.excerpt}
+              coverImageUrl={article.coverImageUrl}
+              authorName={article.authorName}
+              readTime={estimatedReadTime(article.readTimeMinutes)}
+              tags={[]}
+              orientation="horizontal"
+              outlined
+              href={`/discovery/articles/${article.slug}`}
+              className="max-w-none! transition-transform"
+            />
+          ))}
+        </DiscoveryVirtualItems>
       </section>
       <DiscoveryPagination
         page={page}
@@ -66,6 +87,8 @@ export function DiscoveryArticlesScreen() {
         limit={20}
         onChange={setPage}
         pending={result.isFetching}
+        failed={result.isError}
+        onRetry={() => void result.refetch()}
       />
     </main>
   );

@@ -1,4 +1,6 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import { useTranslations } from "next-intl";
 import { ScrollShadow } from "@heroui/react";
@@ -6,7 +8,7 @@ import { LocationCard } from "@ui/location-card";
 import { discoveryCitiesProvinceSectionStyles } from "./DiscoveryCitiesProvinceSection.styles";
 import type { DiscoveryCitiesProvinceSectionProps } from "./DiscoveryCitiesProvinceSection.types";
 
-export function DiscoveryCitiesProvinceSection({
+function DiscoveryCitiesProvinceSectionContent({
   province,
 }: DiscoveryCitiesProvinceSectionProps) {
   const styles = discoveryCitiesProvinceSectionStyles();
@@ -52,4 +54,8 @@ export function DiscoveryCitiesProvinceSection({
       </ScrollShadow>
     </section>
   );
+}
+
+export function DiscoveryCitiesProvinceSection(props: ComponentProps<typeof DiscoveryCitiesProvinceSectionContent>) {
+ return <DiscoveryViewport><DiscoveryCitiesProvinceSectionContent {...props} /></DiscoveryViewport>;
 }

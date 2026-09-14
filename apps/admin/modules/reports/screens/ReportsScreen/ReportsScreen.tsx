@@ -111,7 +111,7 @@ export function ReportsScreen() {
       </div>
       <Card
         variant="transparent"
-        className="mt-5 overflow-hidden rounded-[1.75rem] border border-border bg-surface"
+        className="mt-5 overflow-hidden rounded-[1.75rem] bg-surface"
       >
         {reports.isPending ? (
           <div className="flex justify-center py-16">

@@ -1,0 +1,169 @@
+/* Shared only by the admin and business entrypoints. */
+:root {
+  --panel-action-text: #176b34;
+  --panel-muted: #565b61;
+  --panel-warning: #854d0e;
+}
+.dark {
+  --panel-action-text: #79efa0;
+  --panel-muted: #b6bbc3;
+  --panel-warning: #f4c76b;
+}
+:is(.admin-panel, .business-panel) {
+  --muted: var(--panel-muted);
+  --focus: var(--panel-action-text);
+}
+:is(.admin-panel, .business-panel) .text-accent {
+  color: var(--panel-action-text);
+}
+:is(.admin-panel, .business-panel) .text-warning {
+  color: var(--panel-warning);
+}
+:is(.admin-panel, .business-panel) .button--secondary {
+  color: var(--panel-action-text);
+}
+:is(.admin-panel, .business-panel)
+  :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--panel-action-text);
+  outline-offset: 3px;
+  scroll-margin-block: 6rem;
+}
+:is(.admin-panel, .business-panel) :is(button, .button) {
+  min-height: 44px;
+}
+:is(.admin-panel, .business-panel) input {
+  font-size: 16px;
+}
+.panel-skip-link {
+  position: fixed;
+  top: 8px;
+  inset-inline-start: 12px;
+  transform: translateY(-180%);
+  z-index: 100;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--foreground);
+}
+.panel-skip-link:focus {
+  transform: none;
+}
+.panel-sidebar {
+  display: none;
+}
+.panel-nav-group {
+  margin-bottom: 12px;
+}
+.panel-nav-group-label {
+  padding: 8px 12px 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.panel-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--foreground);
+  position: relative;
+}
+.panel-nav-link:hover {
+  background: var(--surface-secondary);
+}
+.panel-nav-link[aria-current="page"] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 700;
+}
+.panel-nav-link > i {
+  flex-shrink: 0;
+}
+.panel-nav-tooltip {
+  display: none;
+}
+.panel-sidebar[data-collapsed="true"]
+  .panel-nav-link:is(:hover, :focus)
+  .panel-nav-tooltip {
+  display: block;
+  position: fixed;
+  inset-inline-start: 72px;
+  background: var(--foreground);
+  color: var(--background);
+  padding: 8px 12px;
+  border-radius: 8px;
+  z-index: 80;
+  white-space: nowrap;
+}
+.panel-section-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 16px;
+}
+.panel-section-tabs button {
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: var(--surface-secondary);
+}
+.panel-section-tabs button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 700;
+}
+@media (min-width: 1024px) {
+  .panel-sidebar {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    width: 228px;
+    padding: 12px;
+    background: var(--surface);
+    border-inline-end: 1px solid var(--border);
+    z-index: 45;
+  }
+  .panel-sidebar[data-collapsed="true"] {
+    width: 76px;
+  }
+  .panel-sidebar-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 52px;
+    gap: 4px;
+  }
+  .panel-sidebar-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-block: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.admin-panel, .business-panel) * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+:is(.admin-panel, .business-panel) [hidden] {
+  display: none !important;
+}
+.admin-panel .select {
+  max-width: 100%;
+}
+.admin-panel main > .card > .flex .select {
+  width: 100%;
+  max-width: 20rem;
+}
+.business-bottom-nav :is(a, button) {
+  font-size: 12px;
+}
+
+.panel-nav-link[data-tooltip-dismissed="true"] .panel-nav-tooltip {
+  display: none !important;
+}

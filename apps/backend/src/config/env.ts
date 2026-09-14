@@ -40,6 +40,14 @@ const envSchema = z
     SUPPORT_SLA_NORMAL_MINUTES: z.coerce.number().int().min(5).default(480),
     SUPPORT_SLA_HIGH_MINUTES: z.coerce.number().int().min(5).default(120),
     SUPPORT_SLA_URGENT_MINUTES: z.coerce.number().int().min(5).default(30),
+    POSTHOG_PROJECT_TOKEN: z.string().trim().optional(),
+    POSTHOG_HOST: z
+      .url()
+      .regex(/^https:\/\//)
+      .default("https://eu.i.posthog.com"),
+    POSTHOG_ENVIRONMENT: z
+      .enum(["development", "production", "test"])
+      .optional(),
     APP_RELEASE: z.string().default("development"),
     SENTRY_DSN: z.string().url().optional().or(z.literal("")),
     FIREBASE_PROJECT_ID: z.string().optional(),
@@ -97,6 +105,17 @@ const envSchema = z
       .transform((value) => value === "true"),
   })
   .superRefine((value, context) => {
+    if (
+      value.POSTHOG_PROJECT_TOKEN &&
+      value.POSTHOG_ENVIRONMENT !== value.NODE_ENV
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["POSTHOG_ENVIRONMENT"],
+        message:
+          "Must match NODE_ENV; use a separate PostHog project for each environment",
+      });
+    }
     if (value.EXPORT_STORAGE_DRIVER === "gcs" && !value.EXPORT_GCS_BUCKET) {
       context.addIssue({
         code: "custom",

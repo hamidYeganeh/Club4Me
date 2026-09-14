@@ -1,5 +1,7 @@
 "use client";
+import { useAccumulatedQuery } from "@modules/discovery/hooks/use-accumulated-query";
 
+import { Button } from "@heroui/react";
 import { useMemo } from "react";
 import { usePublicCatalogResource } from "@api/discovery";
 import { SecondaryHeader } from "../../components/SecondaryHeader";
@@ -19,11 +21,12 @@ export function DiscoveryCitiesScreen() {
   const provinces = usePublicCatalogResource("location", "province", {
     limit: 100,
   });
-  const cities = usePublicCatalogResource("location", "city", {
+  const citiesPage = usePublicCatalogResource("location", "city", {
     search: q,
     page,
     limit: 50,
   });
+  const cities = useAccumulatedQuery(citiesPage, page, JSON.stringify([q]));
   const groups = useMemo(() => {
     const names = new Map(
       (provinces.data?.items ?? []).map((province) => [
@@ -95,15 +98,28 @@ export function DiscoveryCitiesScreen() {
           placeholder="جست‌وجوی نام شهر"
         />
       </div>
+      {cities.isSuccess ? (
+        <p role="status" className="text-sm text-muted">
+          {(cities.data?.total ?? 0).toLocaleString("fa-IR")} شهر · برای دیدن
+          باشگاه‌ها، شهر را انتخاب کن.
+        </p>
+      ) : null}
       <DiscoveryQueryState query={provinces} />
       <DiscoveryQueryState query={cities} />
       {cities.isLoading ? <CityCatalogSkeleton /> : null}
       {cities.isSuccess && groups.length === 0 ? (
-        <DiscoveryEmptySection
-          title="شهری پیدا نشد"
-          subtitle="نام شهر دیگری را جست‌وجو کن."
-          icon="pin-1"
-        />
+        <div className="space-y-4 text-center">
+          <DiscoveryEmptySection
+            title="شهری پیدا نشد"
+            subtitle="نام شهر دیگری را جست‌وجو کن."
+            icon="pin-1"
+          />
+          {query ? (
+            <Button variant="secondary" onPress={() => setQuery("")}>
+              پاک‌کردن جست‌وجو
+            </Button>
+          ) : null}
+        </div>
       ) : null}
       <div className="flex flex-col gap-6">
         {groups.map((province) => (
@@ -119,6 +135,8 @@ export function DiscoveryCitiesScreen() {
         limit={50}
         onChange={setPage}
         pending={cities.isFetching}
+        failed={cities.isError}
+        onRetry={() => void cities.refetch()}
       />
     </main>
   );

@@ -112,9 +112,14 @@ export function classTimeFilter(query: Record<string, string | undefined>) {
   const from = query.timeFrom;
   const to = query.timeTo;
   if (!from && !to) return undefined;
-  const valid = (value?: string) => !value || /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+  const valid = (value?: string) =>
+    !value || /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
   if (!valid(from) || !valid(to) || (from && to && from > to)) {
-    throw new AppError(400, "INVALID_TIME_FILTER", "بازه ساعت کلاس معتبر نیست.");
+    throw new AppError(
+      400,
+      "INVALID_TIME_FILTER",
+      "بازه ساعت کلاس معتبر نیست.",
+    );
   }
   return {
     ...(from ? { $gte: from } : {}),

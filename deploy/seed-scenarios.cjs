@@ -2,7 +2,7 @@
 const { createHash } = require("node:crypto");
 const mongoose = require("/app/node_modules/mongoose");
 const { MongoClient } = mongoose.mongo;
-const SEED = "scenarios-2026-09-v1";
+const SEED = "scenarios-2026-09-13-v2";
 const seedId = (key) =>
   new mongoose.Types.ObjectId(
     createHash("sha256").update(`${SEED}:${key}`).digest("hex").slice(0, 24),
@@ -79,7 +79,7 @@ const openDay = (date) => {
   if (date.getUTCDay() === 5) date.setUTCDate(date.getUTCDate() + 1);
   return date;
 };
-const title = (s) => `سناریو | ${s}`;
+const title = (s) => `نمونه | ${s}`;
 const policy = {
   title: "لغو انعطاف‌پذیر سناریویی",
   tiers: [
@@ -94,8 +94,8 @@ async function main() {
   const client = new MongoClient(process.env.MONGODB_URL);
   await client.connect();
   try {
-    const db = client.db();
-    if (db.databaseName !== "gym4me") throw Error("Expected gym4me database");
+    const db = client.db(process.env.SEED_DATABASE || "gym4me");
+    if (!["gym4me", "gym4me_seed_20260913"].includes(db.databaseName)) throw Error("Expected gym4me database");
     const oldRun = await db
       .collection("scenario_seed_runs")
       .findOne({ _id: SEED });
@@ -293,8 +293,8 @@ async function main() {
           name: title(name),
           normalizedName: title(name),
           slug: `scenario-${type.toLowerCase().replaceAll("_", "-")}`,
-          shortDescription: `${note} ${ref("sports", sport).name}`,
-          description: `${note}\n${name}؛ برای بررسی فیلتر رشته، شهر، مخاطب، امکانات و وضعیت پذیرش.`,
+          shortDescription: `تمرین ${ref("sports", sport).name} در ${ref("cities", city).name}؛ سانس یک‌ساعته، کمد و دوش، رزرو آنلاین.`,
+          description: `${name} برای تمرین ${ref("sports", sport).name}، کلاس‌های گروهی و رزرو سانس فعالیت می‌کند. مدت هر سانس ۶۰ دقیقه است. بسته هشت‌جلسه‌ای و عضویت سی‌روزه با قیمت کمتر از خرید تکی ارائه می‌شود. ساعت پذیرش و ظرفیت هر سانس را پیش از رزرو بررسی کنید.\n${note}`,
           geo: geo(city),
           address: `${ref("cities", city).name}؛ نشانی سناریویی، قابل مراجعه نیست`,
           timezone: "Asia/Tehran",
@@ -411,7 +411,7 @@ async function main() {
           userId: user._id,
           displayName: title(name),
           slug: `scenario-coach-${i + 1}`,
-          shortBio: `${note} ${name}`,
+          shortBio: `${name}؛ آموزش تکنیک، برنامه هفتگی و پیگیری پیشرفت برای ${i === 4 ? "کودکان" : "بزرگسالان"}.`,
           bio: note,
           geo: clubs[clubIndex].geo,
           experienceYears: years,
@@ -434,8 +434,8 @@ async function main() {
             audience: i === 4 ? "کودکان ۷ تا ۱۴ سال" : "بزرگسالان",
             goals: ["یادگیری تکنیک", "آمادگی جسمانی"],
             levels: i === 8 ? ["beginner"] : ["beginner", "intermediate"],
-            firstSession: "ارزیابی اولیه سناریویی",
-            planning: "برنامه هفتگی سناریویی",
+            firstSession: "گفت‌وگو درباره هدف و ارزیابی سطح اولیه",
+            planning: "برنامه هفتگی متناسب با سطح و زمان آزاد",
             followUp: "ثبت بازخورد جلسه",
             progressTracking: "ثبت جلسات و بررسی پیشرفت",
           },
@@ -637,9 +637,21 @@ async function main() {
     );
     // Session occupancy is backed by corresponding no-payment reservations.
     for (let i = 0; i < 10; i++)
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < 29; j++) {
         const full = i === 0 && j === 1,
-          past = j === 2;
+          lastSpot = i === 1 && j === 2,
+          cancelled = j === 3,
+          past = j === 28;
+        const slotDay = openDay(at(-2, 5 + (i % 3)));
+        if (!past) {
+          slotDay.setTime(at(1, 5 + (i % 3)).getTime());
+          openDay(slotDay);
+          for (let day = 0; day < j; day++) {
+            slotDay.setUTCDate(slotDay.getUTCDate() + 1);
+            openDay(slotDay);
+          }
+        }
+        const slotEnd = new Date(slotDay.getTime() + 60 * 60 * 1000);
         const slot = add("ReservableSession", `slot-${i}-${j}`, {
           clubId: clubs[i]._id,
           courtId: courts[i]._id,
@@ -648,19 +660,19 @@ async function main() {
               ? "سانس پایان‌یافته"
               : full
                 ? "سانس رایگان تکمیل"
-                : "سانس قابل رزرو",
+                : lastSpot ? "سانس آشنایی؛ یک جای خالی" : cancelled ? "سانس لغوشده" : "سانس قابل رزرو",
           ),
-          startsAt: openDay(at(past ? -2 : j + 1, 9 + (i % 3))),
-          endsAt: openDay(at(past ? -2 : j + 1, 10 + (i % 3))),
+          startsAt: slotDay,
+          endsAt: slotEnd,
           capacity: full ? 2 : 12,
-          reservedCount: full ? 2 : 0,
-          basePrice: full || past ? 0 : 600000 + i * 100000,
+          reservedCount: full ? 2 : lastSpot ? 11 : 0,
+          basePrice: full || lastSpot || past ? 0 : 600000 + i * 100000,
           pricingUnit: i === 6 || i === 7 ? "per_court" : "per_participant",
-          status: past ? "completed" : "active",
+          status: past ? "completed" : cancelled ? "cancelled" : "active",
           cancellationPolicy: policy,
         });
-        if (full)
-          for (let k = 0; k < 2; k++)
+        if (full || lastSpot)
+          for (let k = 0; k < (full ? 2 : 11); k++)
             add("Reservation", `slot-reservation-${i}-${j}-${k}`, {
               clubId: clubs[i]._id,
               sessionId: slot._id,
@@ -713,7 +725,7 @@ async function main() {
               title: title(k ? "عضویت سی‌روزه" : "بسته هشت‌جلسه‌ای"),
               description: note,
               type: k ? "time_membership" : "session_pack",
-              price: k ? 15000000 : 8000000,
+              price: Math.round((600000 + i * 100000) * (k ? 12 * 0.8 : 8 * 0.85) / 10000) * 10000,
               sessionCount: k ? null : 8,
               validityDays: k ? 30 : 60,
               maxPauseDays: k ? 7 : 0,
@@ -857,11 +869,15 @@ async function main() {
             ],
           ),
           slug: `scenario-article-${i + 1}`,
-          authorName: "تیم سناریو",
+          authorName: "تحریریه نمونه کلاب‌فورمی",
           categoryId:
             refs.article_categories[i % refs.article_categories.length]._id,
-          excerpt: note,
-          bodyHtml: `<p>${note}</p><p>این محتوا برای بررسی فهرست، جزئیات و وضعیت انتشار مقاله ایجاد شده است.</p>`,
+          excerpt: ["مقایسه ساعت کاری، مسیر رفت‌وآمد و هزینه واقعی هر جلسه پیش از انتخاب باشگاه.", "چطور هدف، زمان آزاد و شیوه برگزاری را با خدمات مربی هماهنگ کنیم؟", "یک برنامه ساده برای نگهداری سوابق رزرو و جلسات باقی‌مانده."][i],
+          bodyHtml: [
+            `<h2>باشگاهی متناسب با برنامه روزانه</h2><p>پیش از انتخاب، ساعت کاری باشگاه را با زمان آزاد خود مقایسه کنید. فاصله خانه یا محل کار، زمان رفت‌وآمد و دسترسی به سانس‌های موردنظر را در کنار هم بسنجید.</p><h2>هزینه تکی و بسته را مقایسه کنید</h2><p>قیمت بسته را بر تعداد جلسات تقسیم کنید و سپس اعتبار بسته، محدودیت هفتگی و شرایط لغو را بخوانید. بسته‌ای که پیش از پایان اعتبار استفاده می‌شود می‌تواند انتخاب بهتری باشد.</p><h2>ظرفیت و امکانات را ببینید</h2><p>وجود ظرفیت در تاریخ انتخابی، امکانات موردنیاز و قوانین پذیرش را در صفحه باشگاه بررسی کنید. قبل از نهایی‌کردن رزرو، تاریخ و ساعت را دوباره کنترل کنید.</p><p>${note}</p>`,
+            `<h2>هدف و روش برگزاری</h2><p>ابتدا مشخص کنید کلاس خصوصی می‌خواهید یا گروهی و حضور در باشگاه برای شما مناسب‌تر است یا برگزاری آنلاین. رشته و سطح اعلام‌شده را با پروفایل مربی مقایسه کنید.</p><h2>زمان‌بندی قابل تکرار</h2><p>به‌جای انتخاب صرفاً نزدیک‌ترین جلسه، ساعت‌هایی را بررسی کنید که در هفته‌های بعد نیز برای شما قابل حضور باشند. مدت جلسه و فاصله میان جلسات را در تقویم خود ثبت کنید.</p><h2>جزئیات پیش از ثبت‌نام</h2><p>تعداد جلسات، هزینه کل، ظرفیت باقی‌مانده و شرایط تغییر زمان را بخوانید. اگر ثبت‌نام نیاز به تأیید مربی دارد، وضعیت درخواست را از فهرست کلاس‌های خود پیگیری کنید.</p><p>${note}</p>`,
+            `<h2>ثبت برنامه هفتگی</h2><p>رزروهای آینده و تاریخ انقضای بسته‌ها را در یک فهرست نگه دارید. بعد از هر جلسه تعداد جلسات باقی‌مانده را بررسی کنید.</p><p>${note}</p>`,
+          ][i],
           status: i === 2 ? "draft" : "published",
           publishedAt: i === 2 ? null : anchor,
         });

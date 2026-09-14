@@ -48,7 +48,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
 RUN if [ -n "$BUILD_FILTER" ]; then \
       npx turbo run build --filter="${BUILD_FILTER}..." --concurrency=1; \
     else \
-      npm run build; \
+      npx turbo run build --concurrency=1; \
     fi
 
 FROM node:24-bookworm-slim AS next-runtime

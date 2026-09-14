@@ -179,3 +179,5 @@ export class SettlementAccount {
 export type SettlementAccountDocument = HydratedDocument<SettlementAccount>;
 export const SettlementAccountSchema =
   SchemaFactory.createForClass(SettlementAccount);
+
+PaymentIntentSchema.index({ updatedAt: 1, _id: 1 });

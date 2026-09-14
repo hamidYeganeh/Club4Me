@@ -15,11 +15,19 @@ import type {
   ServiceReviewTarget,
 } from "./clubs.dto";
 
+export type ClubReviewFilters = {
+  page?: number;
+  limit?: number;
+  q?: string;
+  rating?: string;
+  hasResponse?: "" | "yes" | "no";
+};
+
 export const publicClubsClient = {
   get: (clubId: string) =>
     http.get<PublicClubDetails>(`/public/clubs/${clubId}`),
-  reviews: (clubId: string) =>
-    http.get<ClubReviewsResponse>(`/public/clubs/${clubId}/reviews`),
+  reviews: (clubId: string, query: ClubReviewFilters = {}) =>
+    http.get<ClubReviewsResponse>(`/public/clubs/${clubId}/reviews`, query),
   createReview: (clubId: string, payload: CreateClubReviewPayload) =>
     http.post<ClubReview>(`/clubs/${clubId}/reviews`, payload),
 };
@@ -32,10 +40,22 @@ export function usePublicClub(clubId: string) {
   });
 }
 
-export function useClubReviews(clubId: string) {
+export function useClubReviews(clubId: string, query: ClubReviewFilters = {}) {
   return useQuery({
-    queryKey: ["public", "clubs", clubId, "reviews"],
-    queryFn: () => publicClubsClient.reviews(clubId),
+    queryKey: ["public", "clubs", clubId, "reviews", query],
+    queryFn: () => publicClubsClient.reviews(clubId, query),
+    enabled: /^[a-f\d]{24}$/i.test(clubId),
+  });
+}
+
+export function useBusinessClubReviews(
+  clubId: string,
+  query: ClubReviewFilters = {},
+) {
+  return useQuery({
+    queryKey: ["business", "clubs", clubId, "reviews", query],
+    queryFn: () =>
+      http.get<ClubReviewsResponse>(`/business/clubs/${clubId}/reviews`, query),
     enabled: /^[a-f\d]{24}$/i.test(clubId),
   });
 }
@@ -66,10 +86,16 @@ export function useRespondToClubReview(clubId: string) {
         `/business/clubs/${clubId}/reviews/${reviewId}/response`,
         { body },
       ),
-    onSuccess: async () =>
-      queryClient.invalidateQueries({
-        queryKey: ["public", "clubs", clubId, "reviews"],
-      }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["public", "clubs", clubId, "reviews"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["business", "clubs", clubId, "reviews"],
+        }),
+      ]);
+    },
   });
 }
 

@@ -28,7 +28,7 @@ export const defaultDiscoveryLayouts: DiscoverySectionLayout[] = [
     key: "top-rated-clubs",
     type: "clubs",
     title: "باشگاه‌های محبوب",
-    subtitle: "انتخاب کاربران جیم‌فورمی",
+    subtitle: "انتخاب کاربران کلاب‌فورمی",
     layout: "editorial",
     position: 1,
     viewAllLabel: "مشاهده همه",

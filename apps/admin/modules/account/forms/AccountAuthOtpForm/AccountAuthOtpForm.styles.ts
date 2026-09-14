@@ -16,6 +16,6 @@ export const accountAuthOtpFormStyles = tv({
     trigger: "w-auto gap-1 px-0 shadow-none",
     flag: "size-5 overflow-hidden rounded-sm",
     actions: "w-full",
-    button: "active:scale-[0.98]",
+    button: "",
   },
 });

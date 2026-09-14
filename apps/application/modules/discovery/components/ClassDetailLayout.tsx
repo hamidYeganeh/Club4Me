@@ -1,8 +1,10 @@
 "use client";
 
+import { DetailTimeCard } from "./DetailTimeCard";
 import { DetailSocialSection } from "./DetailSocialSection";
 import { RelatedClasses } from "./RelatedContent";
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@heroui/react";
 import type { PublicCatalogClass } from "@api/discovery";
 import { Icon, type IconName } from "@theme/icon";
@@ -45,6 +47,12 @@ export function ClassDetailLayout({
   reviewsCount: number;
   children: ReactNode;
 }) {
+  const portalTarget = useSyncExternalStore(
+    subscribeToHydration,
+    () => document.body,
+    () => null,
+  );
+
   const filled =
     item.capacity > 0
       ? Math.min(100, Math.max(0, (item.enrollmentCount / item.capacity) * 100))
@@ -61,7 +69,7 @@ export function ClassDetailLayout({
   const classStats = [
     {
       id: "working-days",
-      title: "روزهای کاری",
+      title: "مدت دوره",
       value: `${courseDays.toLocaleString("fa-IR")} روز`,
       icon: ({ size }: { size?: number }) => <Icon name="clock" size={size} />,
       description: `دوره از ${dateLabel(item.courseStartAt)} تا ${dateLabel(item.courseEndAt)} برگزار می‌شود.`,
@@ -116,13 +124,13 @@ export function ClassDetailLayout({
               href={galleryHref}
               size="sm"
               variant="secondary"
-              className="mt-4 border border-white/30 bg-black/50 text-white"
+              className="mt-4 bg-black/50 text-white"
             >
               <Icon name="image-1" size={18} /> گالری کلاس
             </ButtonLink>
           </DiscoveryImageHero>
           <div className="p-5 sm:p-6">
-            <div className="mt-5 flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center justify-between gap-3 text-xs">
               <span className="font-semibold">
                 {remaining.toLocaleString("fa-IR")} جای خالی
               </span>
@@ -150,6 +158,10 @@ export function ClassDetailLayout({
         </section>
 
         <MinimalCarousel cards={classStats} />
+        <DetailTimeCard
+          title="زمان جلسات"
+          value="ساعت دقیق جلسات اعلام نشده است"
+        />
 
         <section aria-label="مشخصات دوره" className="grid grid-cols-2 gap-3">
           <ClassFact
@@ -187,33 +199,38 @@ export function ClassDetailLayout({
           params={{ sportId: item.sportId }}
         />
       </div>
-      <aside
-        aria-label="ثبت‌نام کلاس"
-        className="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-xl flex-wrap items-center justify-between gap-3 rounded-t-[2rem] border-t border-border bg-background px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-8px_32px_#0000000d]"
-      >
-        <div className="min-w-0">
-          <p className="mb-1 text-xs text-muted">شهریه دوره</p>
-          <p className="text-lg font-extrabold tabular-nums">
-            {item.price.amount > 0
-              ? item.price.amount.toLocaleString("fa-IR")
-              : "رایگان"}
-            {item.price.amount > 0 ? (
-              <span className="ms-1 text-xs font-normal text-muted">
-                {currency}
-              </span>
-            ) : null}
-          </p>
-        </div>
-        <Button
-          variant="primary"
-          className="min-w-36 flex-1 text-sm font-bold sm:max-w-64"
-          isDisabled={actionDisabled || !onAction}
-          isPending={actionPending}
-          onPress={onAction}
-        >
-          {actionLabel}
-        </Button>
-      </aside>
+      {portalTarget
+        ? createPortal(
+            <aside
+              aria-label="ثبت‌نام کلاس"
+              className="app-bottom-fade fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-xl flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+            >
+              <div className="min-w-0">
+                <p className="mb-1 text-xs text-muted">شهریه دوره</p>
+                <p className="text-lg font-extrabold tabular-nums">
+                  {item.price.amount > 0
+                    ? item.price.amount.toLocaleString("fa-IR")
+                    : "رایگان"}
+                  {item.price.amount > 0 ? (
+                    <span className="ms-1 text-xs font-normal text-muted">
+                      {currency}
+                    </span>
+                  ) : null}
+                </p>
+              </div>
+              <Button
+                variant="primary"
+                className="min-w-36 flex-1 text-sm font-bold sm:max-w-64"
+                isDisabled={actionDisabled || !onAction}
+                isPending={actionPending}
+                onPress={onAction}
+              >
+                {actionLabel}
+              </Button>
+            </aside>,
+            portalTarget,
+          )
+        : null}
     </main>
   );
 }
@@ -239,3 +256,5 @@ function ClassFact({
     </div>
   );
 }
+
+const subscribeToHydration = () => () => {};

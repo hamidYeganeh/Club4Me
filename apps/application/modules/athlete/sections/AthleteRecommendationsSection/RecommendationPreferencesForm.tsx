@@ -32,7 +32,7 @@ export function RecommendationPreferencesForm({
   const mutation = useSaveRecommendationPreferences();
   return (
     <form
-      className="mt-4 space-y-4 rounded-2xl border border-border bg-surface p-4"
+      className="mt-4 space-y-4 rounded-2xl bg-surface p-4"
       onSubmit={async (e) => {
         e.preventDefault();
         try {

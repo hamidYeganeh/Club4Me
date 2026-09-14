@@ -1,3 +1,5 @@
+import { EVENTS } from "./events";
+import { PRIVACY_POLICY_VERSION } from "../auth/privacy.service";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
@@ -33,7 +35,21 @@ export class TelemetryService {
     });
   }
 
-  group(actor: AuthTokenPayload, body: GroupTelemetryDto) {
+  async group(actor: AuthTokenPayload, body: GroupTelemetryDto) {
+    const clubId =
+      body.groupType === "club"
+        ? body.groupId
+        : String(body.traits.parent_group_id);
+    const club = await this.telemetry.db.collection("clubs").findOne({
+      _id: new Types.ObjectId(clubId),
+      ownerId: new Types.ObjectId(actor.sub),
+    });
+    if (!club)
+      throw new AppError(
+        403,
+        "GROUP_ACCESS_DENIED",
+        "Group does not belong to this owner",
+      );
     return this.persist(actor, body, {
       kind: "group",
       groupType: body.groupType,
@@ -43,6 +59,17 @@ export class TelemetryService {
   }
 
   track(actor: AuthTokenPayload, body: TrackTelemetryDto) {
+    // Older clients can still send these, but only committed server records count.
+    if (
+      [
+        EVENTS.RESERVATION_CREATED,
+        EVENTS.RESERVATION_CANCELLED,
+        EVENTS.PAYMENT_SUCCEEDED,
+        EVENTS.PAYMENT_STARTED,
+        EVENTS.PAYMENT_FAILED,
+      ].some((event) => event === body.event)
+    )
+      return Promise.resolve({ accepted: true as const });
     const group = deriveGroup(body.event, body.properties);
     return this.persist(actor, body, {
       kind: "track",
@@ -54,114 +81,33 @@ export class TelemetryService {
 
   trackAnonymous(body: TrackTelemetryDto) {
     if (!body.anonymousId)
-      throw new AppError(400, "ANONYMOUS_ID_REQUIRED", "Anonymous identity is required");
-    if (!["search.performed", "discovery.club_viewed", "checkout.started"].includes(body.event))
-      throw new AppError(403, "ANONYMOUS_EVENT_NOT_ALLOWED", "This event requires authentication");
-    const group = deriveGroup(body.event, body.properties);
-    return this.persist(null, body, { kind: "track", event: body.event, properties: body.properties, ...group });
-  }
-
-  async productAnalytics(daysInput?: string) {
-    const days = Math.min(180, Math.max(7, Number(daysInput) || 30));
-    const since = new Date(Date.now() - days * 86_400_000);
-    const [events, identityLinks] = await Promise.all([this.telemetry
-      .find({
-        kind: "track",
-        occurredAt: { $gte: since },
-        event: {
-          $in: [
-            "search.performed",
-            "discovery.club_viewed",
-            "checkout.started",
-            "reservation.created",
-            "payment.succeeded",
-          ],
-        },
-      })
-      .select("+anonymousHash actorId event occurredAt properties")
-      .sort({ occurredAt: 1 })
-      .lean(), this.telemetry.find({ actorId: { $ne: null }, anonymousHash: { $ne: null } }).select("+anonymousHash actorId").lean()]);
-    const stages = [
-      ["discovery", "کشف", ["search.performed", "discovery.club_viewed"]],
-      ["checkout", "شروع رزرو", ["checkout.started"]],
-      ["reservation", "ثبت رزرو", ["reservation.created"]],
-      ["payment", "پرداخت موفق", ["payment.succeeded"]],
-    ] as const;
-    const aliases = new Map<string, string>();
-    for (const event of identityLinks) if (event.actorId && event.anonymousHash) aliases.set(event.anonymousHash, String(event.actorId));
-    const identity = (event: typeof events[number]) => event.actorId ? String(event.actorId) : event.anonymousHash ? aliases.get(event.anonymousHash) ?? `anon:${event.anonymousHash}` : `event:${event._id}`;
-    const funnel = stages.map(([key, label, names]) => {
-      const actors = new Set(
-        events
-          .filter((event) => names.includes(event.event as never))
-          .map(identity),
+      throw new AppError(
+        400,
+        "ANONYMOUS_ID_REQUIRED",
+        "Anonymous identity is required",
       );
-      return { key, label, users: actors.size };
+    if (
+      ![
+        EVENTS.REQUEST_COMPLETED,
+        EVENTS.APP_OPENED,
+        EVENTS.SEARCH_PERFORMED,
+        EVENTS.DISCOVERY_CLUB_VIEWED,
+        EVENTS.DISCOVERY_ENTITY_VIEWED,
+        EVENTS.CHECKOUT_STARTED,
+      ].some((event) => event === body.event)
+    )
+      throw new AppError(
+        403,
+        "ANONYMOUS_EVENT_NOT_ALLOWED",
+        "This event requires authentication",
+      );
+    const group = deriveGroup(body.event, body.properties);
+    return this.persist(null, body, {
+      kind: "track",
+      event: body.event,
+      properties: body.properties,
+      ...group,
     });
-    const base = funnel[0]?.users ?? 0;
-    const reservations = events.filter(
-      (event) => event.event === "reservation.created",
-    );
-    const activityByActor = new Map<string, Set<string>>();
-    for (const event of reservations) {
-      const actorId = identity(event);
-      const weeks = activityByActor.get(actorId) ?? new Set<string>();
-      weeks.add(weekStart(event.occurredAt).toISOString());
-      activityByActor.set(actorId, weeks);
-    }
-    const cohorts = new Map<string, Array<Set<string>>>();
-    for (const [actorId, activeWeeks] of activityByActor) {
-      const first = [...activeWeeks].sort()[0];
-      if (!first) continue;
-      const buckets =
-        cohorts.get(first) ??
-        Array.from({ length: 5 }, () => new Set<string>());
-      const firstTime = new Date(first).getTime();
-      for (const activeWeek of activeWeeks) {
-        const offset = Math.floor(
-          (new Date(activeWeek).getTime() - firstTime) / (7 * 86_400_000),
-        );
-        if (offset >= 0 && offset < buckets.length)
-          buckets[offset]?.add(actorId);
-      }
-      cohorts.set(first, buckets);
-    }
-    const breakdown = (property: string) => [...events.reduce((map, event) => {
-      const value = event.properties?.[property];
-      if (typeof value === "string" && value) map.set(value, (map.get(value) ?? 0) + 1);
-      return map;
-    }, new Map<string, number>())].sort((a, b) => b[1] - a[1]).slice(0, 20).map(([key, count]) => ({ key, count }));
-    return {
-      days,
-      funnel: funnel.map((stage) => ({
-        ...stage,
-        conversionPercent: base
-          ? Math.round((stage.users / base) * 1000) / 10
-          : 0,
-      })),
-      cohorts: [...cohorts.entries()]
-        .sort(([a], [b]) => b.localeCompare(a))
-        .slice(0, 8)
-        .map(([week, buckets]) => ({
-          week: week.slice(0, 10),
-          users: buckets[0]?.size ?? 0,
-          retention: buckets.map((bucket) =>
-            buckets[0]?.size
-              ? Math.round((bucket.size / buckets[0].size) * 1000) / 10
-              : 0,
-          ),
-        })),
-      breakdowns: {
-        acquisitionChannel: breakdown("acquisition_channel"),
-        sport: breakdown("sport_id"),
-        serviceType: breakdown("service_type"),
-      },
-      definitions: {
-        discovery: "کاربر یا نصب یکتایی که جست‌وجو یا صفحه باشگاه را دیده است",
-        conversion: "نسبت هویت‌های یکتای هر مرحله به مرحله کشف در بازه انتخابی",
-        retention: "بازگشت همان هویت برای رزرو در هفته‌های بعد؛ رویداد تکراری با eventId حذف می‌شود",
-      },
-    };
   }
 
   private async persist(
@@ -175,11 +121,32 @@ export class TelemetryService {
     },
     payload: Partial<ProductTelemetry>,
   ) {
-    if (actor?.roles.includes("admin")) {
+    if (actor?.roles.some((role) => ["admin", "system"].includes(role))) {
       return { accepted: true as const };
     }
 
-    const expiresAt = new Date();
+    if (actor) {
+      const consent = await this.telemetry.db
+        .collection("data_consents")
+        .findOne({
+          userId: new Types.ObjectId(actor.sub),
+          purpose: "analytics",
+          version: PRIVACY_POLICY_VERSION,
+          granted: true,
+        });
+      if (!consent) return { accepted: true as const };
+    }
+    const occurredAt = new Date(body.occurredAt);
+    if (
+      occurredAt.getTime() > Date.now() + 300_000 ||
+      occurredAt.getTime() < Date.now() - 180 * 86400_000
+    )
+      throw new AppError(
+        400,
+        "INVALID_EVENT_TIME",
+        "Event timestamp is outside the accepted window",
+      );
+    const expiresAt = new Date(occurredAt);
     expiresAt.setUTCDate(expiresAt.getUTCDate() + RETENTION_DAYS);
 
     try {
@@ -187,8 +154,13 @@ export class TelemetryService {
         ...payload,
         eventId: body.eventId,
         actorId: actor ? new Types.ObjectId(actor.sub) : null,
-        anonymousHash: body.anonymousId ? createHmac("sha256", this.config.env.JWT_SECRET).update(body.anonymousId).digest("hex") : null,
+        anonymousHash: body.anonymousId
+          ? createHmac("sha256", this.config.env.JWT_SECRET)
+              .update(body.anonymousId)
+              .digest("hex")
+          : null,
         roles: actor?.roles ?? [],
+        consentVersion: PRIVACY_POLICY_VERSION,
         occurredAt: new Date(body.occurredAt),
         platform: body.platform,
         appVersion: body.appVersion,
@@ -204,22 +176,13 @@ export class TelemetryService {
   }
 }
 
-function weekStart(value: Date) {
-  const result = new Date(
-    Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()),
-  );
-  const day = result.getUTCDay() || 7;
-  result.setUTCDate(result.getUTCDate() - day + 1);
-  return result;
-}
-
 function deriveGroup(event: string, properties: Record<string, unknown>) {
   if (
     [
-      "reservation.created",
-      "reservation.cancelled",
-      "session.published",
-    ].includes(event) &&
+      EVENTS.RESERVATION_CREATED,
+      EVENTS.RESERVATION_CANCELLED,
+      EVENTS.SESSION_PUBLISHED,
+    ].some((name) => name === event) &&
     typeof properties.session_id === "string"
   ) {
     return {

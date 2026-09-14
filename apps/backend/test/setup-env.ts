@@ -8,3 +8,7 @@ process.env.JWT_EXPIRES_IN = "15m";
 process.env.JWT_REFRESH_EXPIRES_IN = "30d";
 process.env.KAVENEGAR_OTP_TEMPLATE = "verify";
 process.env.CORS_ORIGINS = "http://localhost:7080";
+
+// Tests must never inherit delivery credentials or the developer environment.
+process.env.POSTHOG_ENVIRONMENT = "test";
+process.env.POSTHOG_PROJECT_TOKEN = "";

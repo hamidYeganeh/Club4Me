@@ -1,5 +1,6 @@
 import {
   Body,
+  Param,
   Controller,
   Get,
   HttpCode,
@@ -20,6 +21,8 @@ import {
   IdentifyTelemetryDto,
   TrackTelemetryDto,
 } from "./dto/telemetry.dto";
+import { AnalyticsReportService } from "./analytics-report.service";
+import { BusinessPortalGuard } from "../auth/guards/business-portal.guard";
 import { TelemetryService } from "./telemetry.service";
 
 @Controller("api/v1/telemetry")
@@ -72,10 +75,25 @@ export class PublicTelemetryController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles("admin")
 export class AdminTelemetryController {
-  constructor(private readonly telemetry: TelemetryService) {}
+  constructor(private readonly analytics: AnalyticsReportService) {}
 
   @Get("product")
-  product(@Query("days") days?: string) {
-    return this.telemetry.productAnalytics(days);
+  product(@Query("days") days?: string, @Query("end") end?: string) {
+    return this.analytics.report(days, end);
+  }
+}
+
+@Controller("api/v1/business/clubs/:clubId/analytics")
+@UseGuards(JwtAuthGuard, BusinessPortalGuard)
+export class BusinessAnalyticsController {
+  constructor(private readonly analytics: AnalyticsReportService) {}
+  @Get()
+  report(
+    @CurrentUser() actor: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Query("days") days?: string,
+    @Query("end") end?: string,
+  ) {
+    return this.analytics.business(actor.sub, clubId, days, end);
   }
 }

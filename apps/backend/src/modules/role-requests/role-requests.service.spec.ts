@@ -1,6 +1,6 @@
 import { MongooseModule, getModelToken } from "@nestjs/mongoose";
 import { Test } from "@nestjs/testing";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "../../../test/mongo-memory";
 import { Model } from "mongoose";
 
 import { User, type UserDocument } from "../users/schemas/user.schema";

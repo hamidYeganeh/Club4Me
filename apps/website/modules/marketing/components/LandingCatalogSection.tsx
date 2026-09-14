@@ -56,7 +56,7 @@ export function LandingCatalogSection({
           <a
             key={item.id}
             href={`${appUrl.replace(/\/$/, "")}${item.href}`}
-            className="overflow-hidden rounded-2xl border border-border bg-surface focus-visible:outline-2 focus-visible:outline-accent"
+            className="overflow-hidden rounded-2xl bg-surface focus-visible:outline-2 focus-visible:outline-accent"
           >
             {item.imageUrl ? (
               <CoverImage

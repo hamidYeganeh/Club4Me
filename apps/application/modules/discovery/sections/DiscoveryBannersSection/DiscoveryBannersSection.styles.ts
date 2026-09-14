@@ -8,7 +8,7 @@ export const discoveryBannersSectionStyles = tv({
     slide: "h-auto",
     card: "group relative block w-full overflow-hidden rounded-[1.5rem] bg-surface outline-none focus-visible:ring-2 focus-visible:ring-focus",
     image:
-      "object-cover saturate-75 contrast-110 transition-transform duration-700 ease-out group-hover:scale-105 group-hover:saturate-100",
+      "object-cover saturate-75 contrast-110 transition-transform duration-700 ease-out group-hover:saturate-100",
     overlay:
       "absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent",
     content: "absolute inset-x-0 bottom-0 z-[1] flex flex-col gap-1 p-4 text-white",

@@ -2,7 +2,7 @@ import { AccountAuthForgotPasswordScreen } from "@modules/account/screens/Accoun
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "فراموشی رمز عبور | جیم فور می",
+  title: "فراموشی رمز عبور | کلاب‌فورمی",
 };
 
 export default function AuthForgotPasswordPage() {

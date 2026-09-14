@@ -357,3 +357,29 @@ export function useQuoteReservation() {
       http.post<ReservationQuote>("/reservations/quote", payload),
   });
 }
+
+export function useRecordOnSiteReservationPayment(clubId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...body
+    }: {
+      id: string;
+      action: "collect" | "refund";
+      expectedAmount: number;
+      receipt?: string;
+    }) =>
+      http.post<SessionReservation>(
+        `/business/clubs/${clubId}/reservations/${id}/on-site-payment`,
+        body,
+      ),
+    onSuccess: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["reservations"] }),
+        client.invalidateQueries({ queryKey: ["business"] }),
+        client.invalidateQueries({ queryKey: ["public"] }),
+      ]);
+    },
+  });
+}

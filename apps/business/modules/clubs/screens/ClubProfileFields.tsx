@@ -59,7 +59,7 @@ export function ClubProfileFields({
           return (
             <div
               key={index}
-              className="rounded-2xl border border-border p-4 space-y-3"
+              className="rounded-2xl p-4 space-y-3"
             >
               <div className="grid gap-3 sm:grid-cols-2">
                 <label>
@@ -300,7 +300,7 @@ export function ClubProfileFields({
           {visit.requiredItemIds?.map((id, index) => (
             <span
               key={id}
-              className="rounded-xl border border-border p-2 text-sm"
+              className="rounded-xl p-2 text-sm"
             >
               {itemLabels[id] ??
                 resourceLabels[id]?.name ??

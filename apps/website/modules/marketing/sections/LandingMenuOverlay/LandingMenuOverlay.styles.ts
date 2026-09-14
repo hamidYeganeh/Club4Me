@@ -17,7 +17,7 @@ export const landingMenuOverlayStyles = tv({
       "transition-colors duration-fast ease-app hover:text-accent sm:text-4xl md:text-6xl",
     ],
     bottom: [
-      "flex flex-col gap-6 border-t border-(--glass-border) px-6 pt-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]",
+      "flex flex-col gap-6 px-6 pt-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]",
       "text-(--on-brand) sm:flex-row sm:items-center sm:justify-between sm:px-10",
     ],
     social:

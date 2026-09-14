@@ -1,4 +1,5 @@
 "use client";
+import { useRecordBrowser } from "@/components/record-browser";
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
 import Link from "@/components/app-link";
@@ -54,6 +55,11 @@ export function SupportTicketsScreen({
     [type, id],
   );
   const tickets = useSupportTickets();
+  const browser = useRecordBrowser(tickets.data?.items ?? [], {
+    label: "تیکت‌ها",
+    text: (item) => `${item.subject}`,
+    status: (item) => item.status,
+  });
   const failure = getQueryFailure(tickets.error, tickets.fetchStatus);
   const create = useCreateSupportTicket();
   const reply = useReplySupportTicket();
@@ -98,6 +104,7 @@ export function SupportTicketsScreen({
         showFilter={false}
         backHref={view === "list" ? `/${role}/settings` : base}
       />
+      {view === "list" && browser.controls}
       {view === "new" ? (
         <div className="px-1 pt-4">
           <h1 className="text-xl font-bold">چطور می‌توانیم کمک کنیم؟</h1>
@@ -119,7 +126,7 @@ export function SupportTicketsScreen({
           </Link>
         ) : null}
         {view === "new" ? (
-          <Card className="rounded-[var(--app-radius-feature,24px)] border border-border bg-surface p-4 sm:p-5">
+          <Card className="rounded-[var(--app-radius-feature,24px)] bg-surface p-4 sm:p-5">
             <form className="space-y-4" onSubmit={submit}>
               {reference ? (
                 <div className="rounded-xl bg-accent/10 p-3 text-sm">
@@ -240,7 +247,7 @@ export function SupportTicketsScreen({
           </section>
         ) : null}
         {view === "list"
-          ? tickets.data?.items.map((ticket) => (
+          ? browser.items.map((ticket) => (
               <Link
                 key={ticket.id}
                 href={`${base}/${ticket.id}`}

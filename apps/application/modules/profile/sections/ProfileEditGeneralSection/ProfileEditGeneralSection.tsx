@@ -122,6 +122,7 @@ export function ProfileEditGeneralSection() {
             <ProfileEditFieldRow
               field="id-card"
               onPress={() => setActiveField("id-card")}
+              disabled={Boolean(idCard)}
               label={t("editIdCard")}
               value={idCard}
               emptyLabel={t("editEmpty")}
@@ -190,7 +191,7 @@ export function ProfileEditGeneralSection() {
         ) : null}
       </div>
 
-      {activeField ? (
+      {activeField && !(activeField === "id-card" && idCard) ? (
         <ProfileEditFieldSheet
           field={activeField}
           open
@@ -212,6 +213,7 @@ function ProfileEditFieldRow({
   suffix,
   valueDir,
   field,
+  disabled = false,
 }: ProfileEditFieldRowProps) {
   const styles = profileEditGeneralSectionStyles();
   const t = useTranslations("profile");
@@ -227,8 +229,9 @@ function ProfileEditFieldRow({
         variant="secondary"
         fullWidth
         onPress={onPress}
+        isDisabled={disabled}
         aria-label={t("editFieldAria", { field: label })}
-        className={styles.row()}
+        className={cn(styles.row(), disabled && "cursor-not-allowed opacity-65")}
       >
         {prefixIcon ? (
           <Icon

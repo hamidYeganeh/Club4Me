@@ -1,4 +1,6 @@
 "use client";
+import { useSearchParams } from "next/navigation";
+import { useRecordBrowser } from "@/components/record-browser";
 
 import { Button, Card, Chip, Typography } from "@heroui/react";
 import { useAthleteClubClasses } from "@api";
@@ -18,11 +20,20 @@ export function AthleteClubClassesSection({
 }: {
   compact?: boolean;
 }) {
+  const selectedClassId = useSearchParams().get("classId");
   const query = useAthleteClubClasses();
-  const items = (query.data?.items ?? []).slice(0, compact ? 2 : undefined);
+  const records = (query.data?.items ?? []).filter((item) => compact || !selectedClassId || item.classId === selectedClassId);
+  const items = records.slice(0, compact ? 2 : undefined);
+  const browser = useRecordBrowser(records, {
+    label: "کلاس‌های من",
+    text: (item) => `${item.title} ${item.sport ?? ""}`,
+    status: (item) => item.status,
+  });
 
   return (
     <section aria-labelledby="athlete-club-classes-title">
+      {!compact && selectedClassId ? <ButtonLink href="/athlete/classes" variant="ghost">همه کلاس‌های من</ButtonLink> : null}
+      {!compact && browser.controls}
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <Typography id="athlete-club-classes-title" type="h4" weight="bold">
@@ -48,7 +59,7 @@ export function AthleteClubClassesSection({
         </Card>
       ) : null}
       <div className="flex flex-col gap-3">
-        {items.map((item) => (
+        {browser.items.slice(0, compact ? 2 : undefined).map((item) => (
           <div key={item.id} className="space-y-2">
             <ButtonLink
               href={`/discovery/business-class?classId=${item.classId}`}
@@ -78,7 +89,7 @@ export function AthleteClubClassesSection({
                     {statusLabel[item.status] ?? item.status}
                   </Chip>
                 </div>
-                <div className="mt-3 flex items-center justify-between border-t border-white/7 pt-3 text-xs text-muted">
+                <div className="mt-3 flex items-center justify-between pt-3 text-xs text-muted">
                   <span>
                     {{
                       paid: "شهریه پرداخت شده",

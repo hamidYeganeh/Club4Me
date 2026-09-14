@@ -17,6 +17,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import type { AuthTokenPayload } from "../auth/services/token.service";
 import {
+  RecordOnSitePaymentDto,
   UpdateReservationCheckInDto,
   CreateCourtDto,
   UpdateCourtDto,
@@ -84,6 +85,14 @@ export class BusinessReservationsController {
     @Param("sessionId") sessionId: string,
   ) {
     return this.service.cancelSessionByOwner(user.sub, clubId, sessionId);
+  }
+  @Post("reservations/:reservationId/on-site-payment") recordOnSitePayment(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("reservationId") id: string,
+    @Body() body: RecordOnSitePaymentDto,
+  ) {
+    return this.service.recordOnSitePayment(user.sub, clubId, id, body);
   }
   @Patch("reservations/:reservationId/check-in") checkIn(
     @CurrentUser() user: AuthTokenPayload,

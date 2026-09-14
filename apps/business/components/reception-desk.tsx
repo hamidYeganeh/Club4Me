@@ -108,7 +108,7 @@ function Metric({
   helper: string;
 }) {
   return (
-    <div className="rounded-[1.25rem] border border-border/70 bg-surface-secondary/55 p-4">
+    <div className="rounded-[1.25rem] bg-surface-secondary/55 p-4">
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs font-medium text-muted">{label}</span>
         <Icon name={icon} size="lg" className="text-muted" />
@@ -144,7 +144,7 @@ function EmptyState({
   description: string;
 }) {
   return (
-    <div className="mt-5 rounded-[1.25rem] border border-dashed border-border p-6 text-center">
+    <div className="mt-5 rounded-[1.25rem] p-6 text-center">
       <Icon name={icon} size={26} className="text-muted" />
       <p className="mt-2 text-sm font-bold">{title}</p>
       <p className="mt-1 text-xs leading-5 text-muted">{description}</p>
@@ -186,7 +186,7 @@ export function ReceptionDeskScreen() {
         </header>
 
         {clubs.isError ? (
-          <Card className={`${card} border-danger/25 bg-danger/5 p-5`}>
+          <Card className={`${card} bg-danger/5 p-5`}>
             <p role="alert" className="text-sm text-danger">
               فهرست باشگاه‌ها قابل دریافت نیست.
             </p>
@@ -254,7 +254,7 @@ export function ReceptionDesk({
     <section className="space-y-5" aria-label="جست‌وجو و پذیرش ورزشکار">
       <div className="grid gap-5 xl:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)]">
         <Card className={`${card} overflow-hidden`}>
-          <div className="border-b border-border/70 bg-accent/8 p-5 sm:p-6">
+          <div className="bg-accent/8 p-5 sm:p-6">
             <SectionHeading
               icon="scan-1"
               title="پذیرش سریع"
@@ -394,7 +394,7 @@ export function ReceptionDesk({
                 {result.data.accountMismatch ? (
                   <p
                     role="alert"
-                    className="mt-4 rounded-[1rem] border border-warning/25 bg-warning/10 p-3 text-sm leading-6 text-warning"
+                    className="mt-4 rounded-[1rem] bg-warning/10 p-3 text-sm leading-6 text-warning"
                   >
                     شماره پرونده و حساب به تطبیق مالک نیاز دارد. قرارداد حساب
                     نمایش داده نمی‌شود.
@@ -486,7 +486,7 @@ function Memberships({ items }: { items: ReceptionResult["memberships"] }) {
           {items.map((item) => (
             <article
               key={item.id}
-              className="border-b border-border/70 py-4 last:border-b-0"
+              className="py-4 last:border-b-0"
             >
               <div className="flex items-start justify-between gap-3">
                 <h3 className="font-bold">{item.title}</h3>
@@ -536,7 +536,7 @@ function Enrollments({
         description="ثبت‌نام‌ها و مانده حساب کلاس"
       />
       {unallocatedReceiptCount > 0 ? (
-        <p className="mt-4 rounded-[1rem] border border-warning/25 bg-warning/10 p-3 text-sm leading-6 text-warning">
+        <p className="mt-4 rounded-[1rem] bg-warning/10 p-3 text-sm leading-6 text-warning">
           رسید دستی بدون اتصال به قرارداد وجود دارد. مانده شهریه باید توسط مالی
           تطبیق داده شود.
         </p>
@@ -546,7 +546,7 @@ function Enrollments({
           {items.map((item) => (
             <article
               key={item.id}
-              className="border-b border-border/70 py-4 last:border-b-0"
+              className="py-4 last:border-b-0"
             >
               <div className="flex items-start justify-between gap-3">
                 <h3 className="font-bold">{item.title}</h3>
@@ -630,7 +630,7 @@ function ReservationCheckIn({
   };
 
   return (
-    <article className="rounded-[1.25rem] border border-border/70 bg-surface-secondary/45 p-4 sm:p-5">
+    <article className="rounded-[1.25rem] bg-surface-secondary/45 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-extrabold">{item.title}</h3>
@@ -709,7 +709,7 @@ function ReservationCheckIn({
           <summary className="cursor-pointer py-2 font-medium text-foreground">
             سابقه ورود
           </summary>
-          <ol className="space-y-2 border-r border-border pr-3">
+          <ol className="space-y-2 pr-3">
             {item.changes.map((change, index) => (
               <li key={`${change.at}-${index}`} className="leading-6">
                 {when(change.at)} <span className="mx-2 text-border">|</span>

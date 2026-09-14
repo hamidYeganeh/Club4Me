@@ -1,4 +1,5 @@
 "use client";
+import { useConfirmActionDialog } from "@repo/ui/confirm-action-dialog";
 
 import { useState } from "react";
 import { Button, Card, Chip, Spinner, Table, toast } from "@heroui/react";
@@ -12,6 +13,7 @@ import { EntityDetailsModal } from "@ui/entity-details-modal";
 import { useTranslations } from "next-intl";
 
 export function RoleRequestsScreen() {
+  const confirmation = useConfirmActionDialog();
   const t = useTranslations("roleRequestsPage");
   const requests = useAdminRoleRequests();
   const review = useReviewRoleRequest();
@@ -26,7 +28,10 @@ export function RoleRequestsScreen() {
     requestId: string,
     status: Exclude<RoleRequestStatus, "pending">,
   ) => {
-    if (review.isPending || !window.confirm(t(`${status}Confirm`))) {
+    if (
+      review.isPending ||
+      !(await confirmation.confirm(t(`${status}Confirm`)))
+    ) {
       return;
     }
 
@@ -44,10 +49,11 @@ export function RoleRequestsScreen() {
 
   return (
     <main className="flex-1 overflow-auto p-4 lg:p-6">
+      {confirmation.dialog}
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
       <Card
         variant="transparent"
-        className="mt-5 overflow-hidden rounded-[1.75rem] border border-border bg-surface"
+        className="mt-5 overflow-hidden rounded-[1.75rem] bg-surface"
       >
         {requests.isPending ? (
           <div className="flex justify-center py-16">

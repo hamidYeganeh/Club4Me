@@ -21,7 +21,7 @@ export function NotificationDeliverySection() {
   return (
     <section
       aria-label="گزارش ارسال اعلان"
-      className="mt-6 rounded-2xl border border-border bg-surface p-5"
+      className="mt-6 rounded-2xl bg-surface p-5"
     >
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">ارسال اعلان‌ها</h2>

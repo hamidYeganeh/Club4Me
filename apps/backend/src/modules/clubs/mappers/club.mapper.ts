@@ -2,6 +2,7 @@ import type { ClubDocument } from "../schemas/club.schema";
 import type { ClubProfile, ClubBusyHour } from "../dto/club-profile.dto";
 
 export type PublicClub = {
+  onSitePaymentMethods: Array<"cash" | "pos">;
   profileResources?: Record<string, { name: string; isActive: boolean }>;
   profile: ClubProfile;
   trialBookingEnabled: boolean;
@@ -226,6 +227,7 @@ export function toPublicClub(club: ClubDocument): PublicClub {
     ...(club.maxAge === undefined ? {} : { maxAge: club.maxAge }),
     currency: club.currency ?? "IRR",
     taxPercent: club.taxPercent ?? 0,
+    onSitePaymentMethods: club.onSitePaymentMethods ?? [],
     averageRating: club.averageRating ?? 0,
     reviewsCount: club.reviewsCount ?? 0,
     operationalStatus: club.operationalStatus ?? "active",

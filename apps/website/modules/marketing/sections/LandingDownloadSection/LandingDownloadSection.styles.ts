@@ -30,7 +30,7 @@ export const landingDownloadSectionStyles = tv({
     ].join(" "),
     storeGhost: [
       "group h-auto w-full justify-center gap-3 rounded-full",
-      "border border-accent-foreground/25 bg-transparent px-6 py-3.5",
+      "bg-transparent px-6 py-3.5",
       "text-accent-foreground transition-opacity duration-moderate ease-app hover:opacity-80",
       "sm:w-auto sm:min-w-[11.5rem]",
     ].join(" "),
@@ -65,7 +65,7 @@ export const landingDownloadSectionStyles = tv({
     phoneIdentity: "flex min-w-0 flex-1 items-center gap-2",
     phoneAvatar: "size-9 shrink-0",
     phoneNotify:
-      "size-9 min-w-9 rounded-full border border-border bg-surface text-foreground",
+      "size-9 min-w-9 rounded-full bg-surface text-foreground",
     phoneSpotlight: "!min-h-0 shrink-0 !rounded-[1.15rem] !p-3 !shadow-none",
     phoneMetrics: "grid grid-cols-1 gap-2.5",
     phoneMetric: "!min-h-0 !rounded-[1.15rem] !p-2.5 !shadow-none",
@@ -73,13 +73,13 @@ export const landingDownloadSectionStyles = tv({
     phoneQuickLabel:
       "px-0.5 text-start text-[0.65rem] font-semibold tracking-wide text-muted",
     phoneQuick:
-      "grid grid-cols-3 gap-2 rounded-[1.15rem] border border-border bg-surface p-2.5",
+      "grid grid-cols-3 gap-2 rounded-[1.15rem] bg-surface p-2.5",
     phoneQuickItem: "!min-h-0 !gap-1.5 !p-0",
     phoneTodo: "!min-h-0 !gap-2 !rounded-[1.15rem] !p-3",
     homeIndicator:
       "pointer-events-none absolute bottom-2 left-1/2 z-20 h-1 w-24 -translate-x-1/2 rounded-full bg-foreground/20",
     floatingBadge:
-      "absolute z-20 hidden items-center gap-2 rounded-2xl border border-border bg-surface p-2.5 text-surface-foreground sm:flex",
+      "absolute z-20 hidden items-center gap-2 rounded-2xl bg-surface p-2.5 text-surface-foreground sm:flex",
     badgeIcon: "flex size-8 shrink-0 items-center justify-center rounded-full",
   },
 });

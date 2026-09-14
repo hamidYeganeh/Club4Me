@@ -455,7 +455,7 @@ export function WheelPicker({
     return (
       <div className={sharedClassName} style={{ height }}>
         <div
-          className="pointer-events-none absolute inset-x-1 top-1/2 z-10 -translate-y-1/2 rounded-xl border border-accent/20 bg-accent/10"
+          className="pointer-events-none absolute inset-x-1 top-1/2 z-10 -translate-y-1/2 rounded-xl"
           style={{ height: itemHeight }}
         />
         <ul
@@ -483,7 +483,7 @@ export function WheelPicker({
                   onClick={() => emit(index)}
                   className={cn(
                     "flex w-full items-center justify-center text-sm font-medium tabular-nums",
-                    selected ? "text-foreground" : "text-muted",
+                    selected ? "font-bold text-accent" : "text-muted",
                   )}
                   style={{ height: itemHeight }}
                 >
@@ -540,7 +540,7 @@ export function WheelPicker({
         ))}
       </ul>
       <div
-        className="pointer-events-none absolute inset-x-1 top-1/2 z-10 -translate-y-1/2 overflow-hidden rounded-xl border border-accent/20 bg-accent/10"
+        className="pointer-events-none absolute inset-x-1 top-1/2 z-10 -translate-y-1/2 overflow-hidden rounded-xl"
         style={{ height: itemHeight, perspective: 1000 }}
       >
         <ul
@@ -555,7 +555,7 @@ export function WheelPicker({
               data-index={index}
               role="option"
               aria-selected={optionValue(option) === currentValue}
-              className="absolute inset-x-0 flex items-center justify-center text-sm font-bold text-foreground tabular-nums"
+              className="absolute inset-x-0 flex items-center justify-center text-sm font-bold text-accent tabular-nums"
               style={{
                 top: -itemHeight / 2,
                 height: itemHeight,

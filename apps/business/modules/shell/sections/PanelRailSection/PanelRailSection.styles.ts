@@ -4,12 +4,12 @@ export const panelRailSectionStyles = tv({
   slots: {
     root: [
       "z-40 hidden shrink-0 lg:flex items-center justify-between gap-3",
-      "border-b border-border/60 bg-accent px-3 py-3 text-accent-foreground",
+      "bg-accent px-3 py-3 text-accent-foreground",
       "lg:sticky lg:top-3 lg:my-3 lg:ms-3 lg:h-[calc(100dvh-1.5rem)] lg:w-[4.5rem]",
-      "lg:flex-col lg:rounded-[2rem] lg:border lg:border-accent/30 lg:px-2 lg:py-5",
+      "lg:flex-col lg:rounded-[2rem] lg:px-2 lg:py-5",
       "lg:shadow-[0_18px_48px_-24px_oklch(0_0_0_/_0.45)]",
-      "dark:bg-surface dark:text-foreground dark:border-white/8",
-      "dark:lg:border-white/10",
+      "dark:bg-surface dark:text-foreground",
+      "",
     ].join(" "),
     add: [
       "size-11 rounded-[1.15rem] bg-accent-foreground text-accent shadow-none",
@@ -30,8 +30,8 @@ export const panelRailSectionStyles = tv({
       "pointer-events-none absolute start-0 top-1/2 hidden h-5 w-1 -translate-y-1/2 rounded-full bg-accent-foreground lg:block dark:bg-accent",
     avatarWrap: "shrink-0",
     avatarBtn: [
-      "rounded-[1rem] border border-accent-foreground/25 bg-accent-foreground/10 p-0",
-      "dark:border-white/15 dark:bg-surface-secondary",
+      "rounded-[1rem] bg-accent-foreground/10 p-0",
+      "dark:bg-surface-secondary",
     ].join(" "),
   },
 });

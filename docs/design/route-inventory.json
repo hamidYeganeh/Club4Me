@@ -17,6 +17,7 @@
     "/athlete/profile/locations",
     "/athlete/profile/locations/[locationId]/edit",
     "/athlete/profile/locations/new",
+    "/athlete/recommendations",
     "/athlete/reservations",
     "/athlete/reservations/[reservationId]",
     "/athlete/settings",

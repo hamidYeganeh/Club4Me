@@ -1,4 +1,5 @@
 "use client";
+import { useRecordBrowser } from "@/components/record-browser";
 
 import { Checkbox as HeroCheckbox } from "@heroui/react";
 import { TextArea as HeroTextArea } from "@heroui/react";
@@ -22,12 +23,9 @@ import {
   useTrainingData,
   weekdays,
 } from "./shared";
-import {
-  ExerciseRow,
-  FeatureBadge,
-  featureCardStyles,
-} from "@/components/ui/feature-cards";
-import { Play } from "lucide-react";
+import { ExerciseRow } from "@/components/ui/feature-cards";
+import { Dumbbell, Layers3, Play } from "lucide-react";
+import workoutStyles from "./workout-cards.module.css";
 import { useWorkouts } from "./useWorkouts";
 
 export function AthleteTraining() {
@@ -40,6 +38,10 @@ function AthleteTrainingSession() {
     trainingApi.assignments,
     true,
   );
+  const browser = useRecordBrowser(assignments.data?.items ?? [], {
+    label: "برنامه‌های تمرین",
+    text: (item) => item.snapshot.title,
+  });
   const exercises = useTrainingData("exercises", trainingApi.exercises, true);
   const logs = useWorkouts();
   const [message, setMessage] = useState("");
@@ -303,10 +305,7 @@ function AthleteTrainingSession() {
                 </Card.Content>
               </Card>
             ))}
-          <fieldset
-            disabled={logs.busy}
-            className="space-y-3 rounded-2xl border border-border p-4"
-          >
+          <fieldset disabled={logs.busy} className="space-y-3 rounded-2xl p-4">
             <legend className="px-2 text-sm font-semibold">
               بازخورد برای مربی · اختیاری
             </legend>
@@ -435,7 +434,8 @@ function AthleteTrainingSession() {
           شاگردان برایت برنامه بسازد.
         </Notice>
       )}
-      {assignments.data?.items.map((a) => (
+      {browser.controls}
+      {browser.items.map((a) => (
         <Card key={a.id} className="p-5">
           <Card.Header>
             <p className="text-xs text-muted">
@@ -474,53 +474,78 @@ function AthleteTrainingSession() {
                 قطع اشتراک نتایج با مربی
               </Button>
             )}
-            {a.snapshot.days.map((day) => (
-              <div key={day.id} className={featureCardStyles.day}>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h3 className="font-semibold">
-                      <FeatureBadge>{weekdays[day.weekday]}</FeatureBadge>
-                      <span className="mt-2 block">{day.title}</span>
-                    </h3>
-                    <p className="text-xs text-muted">
-                      {number(day.exercises.length)} حرکت
-                    </p>
+            <div className={workoutStyles.grid}>
+              {a.snapshot.days.map((day) => (
+                <div
+                  key={day.id}
+                  className={`app-card ${workoutStyles.workout}`}
+                >
+                  <div className={workoutStyles.cover}>
+                    <span className={workoutStyles.badge}>
+                      {weekdays[day.weekday]}
+                    </span>
+                    <Dumbbell size={64} strokeWidth={1} aria-hidden="true" />
                   </div>
-                  <Button
-                    variant="primary"
-                    isDisabled={
-                      !logs.ready ||
-                      logs.busy ||
-                      !!active ||
-                      !a.available ||
-                      !a.consentAt ||
-                      assignments.stale ||
-                      Date.parse(a.startsAt) > now ||
-                      Date.parse(a.endsAt) <= now
-                    }
-                    onPress={() => void start(a, day.id)}
-                  >
-                    <Play size={16} fill="currentColor" aria-hidden="true" />
-                    شروع تمرین
-                  </Button>
+                  <div className={workoutStyles.workoutBody}>
+                    <h3 className={workoutStyles.title}>{day.title}</h3>
+                    <div className={workoutStyles.metrics}>
+                      <span>
+                        <Dumbbell size={20} aria-hidden="true" />
+                        <strong>{number(day.exercises.length)}</strong>
+                        <small>حرکت</small>
+                      </span>
+                      <span>
+                        <Layers3 size={20} aria-hidden="true" />
+                        <strong>
+                          {number(
+                            day.exercises.reduce(
+                              (sum, exercise) => sum + exercise.sets,
+                              0,
+                            ),
+                          )}
+                        </strong>
+                        <small>ست</small>
+                      </span>
+                    </div>
+                    <Button
+                      variant="primary"
+                      isDisabled={
+                        !logs.ready ||
+                        logs.busy ||
+                        !!active ||
+                        !a.available ||
+                        !a.consentAt ||
+                        assignments.stale ||
+                        Date.parse(a.startsAt) > now ||
+                        Date.parse(a.endsAt) <= now
+                      }
+                      onPress={() => void start(a, day.id)}
+                    >
+                      <Play size={16} fill="currentColor" aria-hidden="true" />
+                      شروع تمرین
+                    </Button>
+                  </div>
+                  <details className={workoutStyles.exerciseDetails}>
+                    <summary>حرکت‌های این تمرین</summary>
+                    <ul className="space-y-2 text-sm text-muted">
+                      {day.exercises.map((e, i) => (
+                        <li key={i}>
+                          <ExerciseRow
+                            index={i + 1}
+                            title={
+                              exercises.data?.items.find(
+                                (x) => x.id === e.exerciseId,
+                              )?.name ?? e.exerciseId
+                            }
+                            detail={`${number(e.sets)} × ${number(e.reps)} · ${number(e.weight)} کیلوگرم`}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
                 </div>
-                <ul className="space-y-2 text-sm text-muted">
-                  {day.exercises.map((e, i) => (
-                    <li key={i}>
-                      <ExerciseRow
-                        index={i + 1}
-                        title={
-                          exercises.data?.items.find(
-                            (x) => x.id === e.exerciseId,
-                          )?.name ?? e.exerciseId
-                        }
-                        detail={`${number(e.sets)} × ${number(e.reps)} · ${number(e.weight)} کیلوگرم`}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+              ))}
+            </div>
           </Card.Content>
         </Card>
       ))}

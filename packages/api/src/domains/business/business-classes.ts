@@ -77,6 +77,7 @@ export type BusinessCalendarClassSession = BusinessClassSession & {
   classTitle: string;
 };
 export type BusinessClassEnrollment = Base & {
+  transferRequiresRefund?: boolean;
   studentName?: string;
   classId: string;
   studentId: string;

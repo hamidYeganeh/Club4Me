@@ -1,7 +1,6 @@
 "use client";
 
 import { type ReactNode, useEffect, useSyncExternalStore } from "react";
-import { Button } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { tokenStore } from "@api/http";
 import { useAccountMe } from "@api/account";
@@ -27,8 +26,7 @@ export function AuthGate({ children }: AuthGateProps) {
   const me = useAccountMe(hasToken === true);
   const sessionExpired =
     me.error instanceof ApiError && me.error.status === 401;
-  const needsPassword =
-    me.data && !me.data.hasPassword && !me.data.roles.includes("athlete");
+  const needsPassword = me.data && !me.data.hasPassword;
   const failure = getQueryFailure(me.error, me.fetchStatus);
 
   useEffect(() => {
@@ -60,18 +58,10 @@ export function AuthGate({ children }: AuthGateProps) {
     return (
       <main className="app-page justify-center">
         <RequestFailureState
+          compact
           error={failure}
           onRetry={() => void me.refetch()}
         />
-        <Button
-          variant="secondary"
-          onPress={() => {
-            tokenStore.clear();
-            router.replace(AUTH_PATH);
-          }}
-        >
-          ورود دوباره به حساب
-        </Button>
       </main>
     );
   }

@@ -7,8 +7,9 @@ import {
 
 async function ready(page: Page) {
   await expect(page.locator("[data-auth-intro]")).toBeVisible();
+  await expect(page.locator("[data-auth-card]")).toBeVisible();
   await expect(page.locator("header:visible")).toHaveCount(1);
-  await expect(page.locator("[data-hero-scrim]:visible")).toHaveCount(1);
+  await expect(page.locator("[data-hero-scrim]:visible")).toHaveCount(0);
   await expect(page.locator('[role="status"].bg-accent')).toHaveCount(0);
   await page.evaluate(async () => {
     await document.fonts.ready;

@@ -1,6 +1,6 @@
-export const siteName = "Gym4Me";
+export const siteName = "Club4Me";
 
-export const siteTitle = "Gym4Me | باشگاه، مربی و کلاس ورزشی";
+export const siteTitle = "Club4Me | باشگاه، مربی و کلاس ورزشی";
 
 export const siteDescription =
   "باشگاه‌ها، مربی‌ها و کلاس‌های ورزشی نزدیکت را پیدا کن، مقایسه کن و آنلاین رزرو کن.";

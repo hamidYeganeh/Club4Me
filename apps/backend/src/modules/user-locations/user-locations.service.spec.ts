@@ -1,6 +1,6 @@
 import { MongooseModule, getModelToken } from "@nestjs/mongoose";
 import { Test } from "@nestjs/testing";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "../../../test/mongo-memory";
 import { Model, Types } from "mongoose";
 
 import type { CreateUserLocationDto } from "./dto/create-user-location.dto";
@@ -83,6 +83,7 @@ describe("UserLocationsService", () => {
       results.filter((result) => result.status === "fulfilled"),
     ).toHaveLength(5);
     expect(await model.countDocuments({})).toBe(5);
+    expect(await model.countDocuments({ isDefault: true })).toBe(1);
   });
 
   it("does not expose or mutate another user's location", async () => {

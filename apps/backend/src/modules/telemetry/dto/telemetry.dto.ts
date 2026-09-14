@@ -1,3 +1,4 @@
+import { EVENTS } from "../events";
 import { z } from "zod";
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i);
@@ -12,7 +13,45 @@ const context = {
 const trackSchemas = [
   z.object({
     ...context,
-    event: z.literal("user.signed_up"),
+    event: z.literal(EVENTS.REQUEST_COMPLETED),
+    properties: z
+      .object({
+        category: z.enum(["discovery", "reservation", "payment"]),
+        status: z.number().int().min(0).max(599),
+        duration_ms: z.number().int().min(0).max(120000),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...context,
+    event: z.literal(EVENTS.APP_OPENED),
+    properties: z
+      .object({
+        screen: z.enum([
+          "discovery",
+          "athlete",
+          "coach",
+          "reservations",
+          "profile",
+          "other",
+        ]),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...context,
+    event: z.literal(EVENTS.DISCOVERY_ENTITY_VIEWED),
+    properties: z
+      .object({
+        entity_type: z.enum(["class", "coach"]),
+        entity_id: objectId,
+        club_id: objectId.optional(),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...context,
+    event: z.literal(EVENTS.USER_SIGNED_UP),
     properties: z
       .object({
         signup_method: z.enum(["otp", "password"]),
@@ -22,14 +61,14 @@ const trackSchemas = [
   }),
   z.object({
     ...context,
-    event: z.literal("onboarding.completed"),
+    event: z.literal(EVENTS.ONBOARDING_COMPLETED),
     properties: z
       .object({ selected_role: z.enum(["athlete", "coach", "owner"]) })
       .strict(),
   }),
   z.object({
     ...context,
-    event: z.literal("search.performed"),
+    event: z.literal(EVENTS.SEARCH_PERFORMED),
     properties: z
       .object({
         result_type: z.enum(["all", "club", "coach", "class"]),
@@ -43,24 +82,24 @@ const trackSchemas = [
   }),
   z.object({
     ...context,
-    event: z.literal("discovery.club_viewed"),
+    event: z.literal(EVENTS.DISCOVERY_CLUB_VIEWED),
     properties: z.object({ club_id: objectId }).strict(),
   }),
   z.object({
     ...context,
-    event: z.literal("checkout.started"),
+    event: z.literal(EVENTS.CHECKOUT_STARTED),
     properties: z.object({ club_id: objectId, session_id: objectId }).strict(),
   }),
   z.object({
     ...context,
-    event: z.literal("payment.succeeded"),
+    event: z.literal(EVENTS.PAYMENT_SUCCEEDED),
     properties: z
       .object({ reservation_id: objectId, club_id: objectId })
       .strict(),
   }),
   z.object({
     ...context,
-    event: z.literal("favorite.added"),
+    event: z.literal(EVENTS.FAVORITE_ADDED),
     properties: z
       .object({
         favorite_type: z.enum(["club", "coach", "class", "article"]),
@@ -71,7 +110,7 @@ const trackSchemas = [
   }),
   z.object({
     ...context,
-    event: z.literal("review.submitted"),
+    event: z.literal(EVENTS.REVIEW_SUBMITTED),
     properties: z
       .object({
         review_target_type: z.enum(["club", "coach", "class"]),
@@ -82,7 +121,7 @@ const trackSchemas = [
   }),
   z.object({
     ...context,
-    event: z.literal("reservation.created"),
+    event: z.literal(EVENTS.RESERVATION_CREATED),
     properties: z
       .object({
         reservation_id: objectId,
@@ -95,7 +134,7 @@ const trackSchemas = [
   }),
   z.object({
     ...context,
-    event: z.literal("reservation.cancelled"),
+    event: z.literal(EVENTS.RESERVATION_CANCELLED),
     properties: z
       .object({
         reservation_id: objectId,
@@ -107,7 +146,7 @@ const trackSchemas = [
   }),
   z.object({
     ...context,
-    event: z.literal("session.published"),
+    event: z.literal(EVENTS.SESSION_PUBLISHED),
     properties: z
       .object({
         club_id: objectId,
@@ -118,7 +157,7 @@ const trackSchemas = [
   }),
   z.object({
     ...context,
-    event: z.literal("notification_preference.changed"),
+    event: z.literal(EVENTS.NOTIFICATION_PREFERENCE_CHANGED),
     properties: z
       .object({
         preference_name: z.enum([
@@ -134,7 +173,7 @@ const trackSchemas = [
   }),
   z.object({
     ...context,
-    event: z.literal("account.deleted"),
+    event: z.literal(EVENTS.ACCOUNT_DELETED),
     properties: z.object({ had_active_roles: z.boolean() }).strict(),
   }),
 ] as const;

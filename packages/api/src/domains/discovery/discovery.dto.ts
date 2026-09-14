@@ -1,3 +1,9 @@
+export type CatalogPrice = {
+  amount: number;
+  currency: string;
+  unit: string;
+  sessionCount?: number | null;
+};
 import type { CoachProfessionalProfile } from "../coaching/professional-profile";
 export type Club = {
   id: string;
@@ -202,6 +208,7 @@ export type PublicCatalogSearchParams = PublicCatalogParams & {
 };
 
 export type PublicCatalogClub = DiscoveryClubItem & {
+  catalogPrice?: CatalogPrice | null;
   imageUrl: string | null;
   address: string;
   geo: {
@@ -236,6 +243,8 @@ export type PublicCatalogClubTypesResponse = {
 };
 
 export type PublicCatalogCoach = DiscoveryCoachItem & {
+  catalogPrice?: CatalogPrice | null;
+  location?: { type: "Point"; coordinates: [number, number] } | null;
   serviceArea?: Array<{ type: string; name: string }>;
   travelRadiusKm?: number | null;
   bio?: string;
@@ -304,6 +313,8 @@ export type PublicCatalogPage<T> = {
 export type PublicCatalogSearchResponse = {
   businessClasses?: Array<{
     startDate: string;
+    pricingModel?: string;
+    packageSessionCount?: number | null;
     id: string;
     title: string;
     description: string;

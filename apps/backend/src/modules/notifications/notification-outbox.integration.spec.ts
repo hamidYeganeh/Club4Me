@@ -1,5 +1,5 @@
 import { createConnection, type Connection, Types } from "mongoose";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "../../../test/mongo-memory";
 import { atomicOperation } from "../../infrastructure/database/atomic-operation";
 import { NotificationOutboxService } from "./notification-outbox.service";
 import { NotificationsService } from "./notifications.service";

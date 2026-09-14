@@ -1,4 +1,5 @@
 "use client";
+import { useRecordBrowser } from "@/components/record-browser";
 
 import { Card, Chip, Typography } from "@heroui/react";
 import { useCoachClubClasses } from "@api";
@@ -15,8 +16,14 @@ const statusLabel: Record<string, string> = {
 
 export function CoachClubClassesSection() {
   const query = useCoachClubClasses();
+  const browser = useRecordBrowser(query.data?.items ?? [], {
+    label: "کلاس‌های مربی",
+    text: (item) => `${item.title} ${item.club.name}`,
+    status: (item) => item.status,
+  });
   return (
     <section aria-labelledby="assigned-club-classes">
+      {browser.controls}
       <div className="mb-3 flex items-end justify-between gap-3">
         <div>
           <Typography id="assigned-club-classes" type="h4" weight="bold">
@@ -32,7 +39,7 @@ export function CoachClubClassesSection() {
       </div>
       {query.isPending ? <CompactCardListSkeleton count={2} /> : null}
       <div className="flex flex-col gap-3">
-        {(query.data?.items ?? []).map((item) => (
+        {browser.items.map((item) => (
           <ButtonLink
             key={item.id}
             href={`/coach/club-classes?classId=${item.id}`}

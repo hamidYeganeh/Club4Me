@@ -9,9 +9,9 @@ export const accountAuthOtpHeaderSectionStyles = tv({
   variants: {
     overlay: {
       true: {
-        root: "pointer-events-none border-transparent bg-transparent shadow-none backdrop-blur-none",
+        root: "pointer-events-none bg-transparent shadow-none backdrop-blur-none",
         spacer: "hidden",
-        back: "pointer-events-auto border-white/8 bg-surface/72 text-foreground backdrop-blur-xl",
+        back: "pointer-events-auto bg-surface/72 text-foreground backdrop-blur-xl",
       },
     },
     transparent: {

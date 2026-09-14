@@ -36,18 +36,14 @@ export function AmenityCard({
       type={type}
       onClick={onPress}
       className={cn(
-        "relative isolate flex max-w-full overflow-hidden border text-start",
+        "relative isolate flex max-w-full overflow-hidden text-start",
         variant === "default" && "h-16 w-fit items-center rounded-[18px] p-4",
         variant === "equipment" &&
-          "h-[88px] w-[min(82vw,340px)] items-center rounded-3xl p-4",
+          "h-23 w-fit items-center rounded-[30px] px-16 py-8",
         variant === "amenity" &&
-          "h-[166px] w-[162px] items-end rounded-[2rem] p-3",
-        hasBackground
-          ? "border-white/10 bg-surface-secondary"
-          : "border-border bg-surface",
-        onPress
-          ? "cursor-pointer transition-transform active:scale-[0.98]"
-          : "cursor-default",
+          "h-46 w-fit min-w-40 max-w-64 items-end rounded-[40px] p-6",
+        hasBackground ? "bg-surface-secondary" : "bg-surface",
+        onPress ? "cursor-pointer transition-transform" : "cursor-default",
         className,
       )}
       {...buttonProps}
@@ -78,7 +74,11 @@ export function AmenityCard({
           <span
             className={cn(
               "grid shrink-0 place-items-center",
-              variant === "default" ? "contents" : "size-16 rounded-[21px]",
+              variant === "default"
+                ? "contents"
+                : variant === "equipment"
+                  ? "size-7"
+                  : "size-16 rounded-[21px]",
               variant !== "default" &&
                 (hasBackground
                   ? "bg-white/90 text-neutral-900"

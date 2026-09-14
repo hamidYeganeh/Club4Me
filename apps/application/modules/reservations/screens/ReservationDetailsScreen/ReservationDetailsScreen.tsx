@@ -34,7 +34,14 @@ type ReservationDetail = {
   checkedInParticipants?: number;
   status:
     "pending" | "rejected" | "reserved" | "cancelled" | "completed" | "no_show";
-  paymentStatus: "not_required" | "pending" | "paid" | "refunded" | "failed";
+  paymentStatus:
+    | "not_required"
+    | "pending"
+    | "pay_on_arrival"
+    | "paid"
+    | "refunded"
+    | "failed";
+  paymentMethod?: "online" | "cash" | "pos";
   amount: number;
   currency: string;
   bookedAt: string;
@@ -111,7 +118,7 @@ export function ReservationDetailsScreen({
             </p>
             <Link
               href="/athlete/reservations"
-              className="mt-6 flex min-h-12 items-center justify-center rounded-2xl bg-accent px-6 font-bold text-accent-foreground active:scale-[0.98]"
+              className="mt-6 flex min-h-12 items-center justify-center rounded-2xl bg-accent px-6 font-bold text-accent-foreground"
             >
               بازگشت به رزروها
             </Link>
@@ -213,6 +220,28 @@ function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
       <DetailSection title="پرداخت" icon="wallet">
         <div className="grid gap-4">
           <DetailRow label="وضعیت پرداخت" value={payment} icon="credit-card" />
+          {detail.paymentMethod && (
+            <DetailRow
+              label="روش پرداخت"
+              value={
+                {
+                  online: "آنلاین",
+                  cash: "پرداخت نقدی",
+                  pos: "کارت‌خوان در محل",
+                }[detail.paymentMethod]
+              }
+              icon="wallet"
+            />
+          )}
+          {detail.paymentMethod &&
+          detail.paymentMethod !== "online" &&
+          detail.status === "cancelled" &&
+          detail.paymentStatus === "paid" &&
+          (detail.refundAmount ?? 0) > 0 ? (
+            <p className="text-sm text-muted">
+              بازپرداخت در پذیرش باشگاه انجام می‌شود؛ هنوز ثبت نشده است.
+            </p>
+          ) : null}
           <DetailRow
             label="مبلغ رزرو"
             value={formatMoney(detail.amount, detail.currency)}
@@ -231,7 +260,7 @@ function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
 
       <Link
         href={`/athlete/support/new?referenceType=${detail.source === "coach" ? "coach_booking" : detail.source === "class" ? "class_enrollment" : "reservation"}&referenceId=${detail.id}`}
-        className="flex min-h-12 items-center justify-center rounded-2xl border border-border px-4 font-bold text-accent"
+        className="flex min-h-12 items-center justify-center rounded-2xl px-4 font-bold text-accent"
       >
         پیگیری این رزرو از پشتیبانی
       </Link>
@@ -258,7 +287,7 @@ function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
       {rescheduling && (
         <button
           type="button"
-          className="min-h-12 rounded-xl border border-border px-4"
+          className="min-h-12 rounded-xl px-4"
           onClick={() => setRescheduling(false)}
         >
           انصراف از تغییر زمان
@@ -281,17 +310,18 @@ function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
       {detail.status === "reserved" &&
       !(detail.checkedInParticipants ?? 0) &&
       !rescheduling ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-xl border-t border-border bg-background/95 px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-xl">
+        <div className="app-bottom-fade fixed inset-x-0 bottom-0 z-30 mx-auto max-w-xl px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <div className="grid grid-cols-2 gap-3">
             <Link
               href="/athlete/reservations"
-              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-danger/25 bg-danger/8 px-4 font-bold text-danger active:scale-[0.98]"
+              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-danger/8 px-4 font-bold text-danger"
             >
               مدیریت رزرو
               <Icon name="calendar-1" size={19} />
             </Link>
             {["club", "coach"].includes(detail.source) &&
-            ["paid", "not_required"].includes(detail.paymentStatus) ? (
+            ["paid", "not_required"].includes(detail.paymentStatus) &&
+            (!detail.paymentMethod || detail.paymentMethod === "online") ? (
               <button
                 type="button"
                 className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-accent px-4 font-bold text-accent-foreground"
@@ -303,7 +333,7 @@ function ReservationDetailsContent({ detail }: { detail: ReservationDetail }) {
             ) : (
               <Link
                 href={detail.changeTimeHref ?? "/discovery"}
-                className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-accent px-4 font-bold text-accent-foreground active:scale-[0.98]"
+                className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-accent px-4 font-bold text-accent-foreground"
               >
                 تغییر زمان
                 <Icon name="calendar-plus" size={19} />
@@ -463,6 +493,7 @@ function getReservationDetail({
     checkedInParticipants: item.checkedInParticipants ?? 0,
     status: item.status,
     paymentStatus: item.paymentStatus,
+    paymentMethod: item.paymentMethod ?? "online",
     amount: item.totalPrice,
     currency: item.currency ?? "IRR",
     bookedAt: item.createdAt,
@@ -542,6 +573,7 @@ const STATUS_PRESENTATION: Record<
 const PAYMENT_LABELS: Record<ReservationDetail["paymentStatus"], string> = {
   not_required: "بدون نیاز به پرداخت",
   pending: "در انتظار پرداخت",
+  pay_on_arrival: "قابل پرداخت در پذیرش",
   paid: "پرداخت‌شده",
   refunded: "بازپرداخت‌شده",
   failed: "پرداخت ناموفق",

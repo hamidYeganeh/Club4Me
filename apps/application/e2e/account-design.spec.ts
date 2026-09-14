@@ -124,7 +124,7 @@ for (const theme of ["light", "dark"] as const) {
           page.getByRole("heading", { name: heading!, exact: true }).first(),
         ).toBeVisible({ timeout: 20_000 });
         await expect(
-          page.getByRole("status", { name: "Gym4Me", exact: true }),
+          page.getByRole("status", { name: "Club4Me", exact: true }),
         ).toHaveCount(0);
         await page.evaluate(() => document.fonts.ready);
         if (name === "favorites")
@@ -177,7 +177,7 @@ for (const theme of ["light", "dark"] as const) {
     await expect(
       page.getByText("ارزیابی و تمرین اختصاصی", { exact: true }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "ادامه", exact: true }).click();
+    await page.getByRole("button", { name: "انتخاب سانس", exact: true }).click();
     await expect(
       page.getByRole("heading", { name: "مرور رزرو", exact: true }),
     ).toBeVisible();

@@ -2,7 +2,7 @@ import { AccountAuthSetPasswordScreen } from "@modules/account/screens/AccountAu
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "تنظیم رمز عبور | جیم فور می",
+  title: "تنظیم رمز عبور | کلاب‌فورمی",
 };
 
 export default function AuthSetPasswordPage() {

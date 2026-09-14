@@ -1,4 +1,9 @@
 "use client";
+import { useState } from "react";
+import type { PublicCatalogParams } from "@api/discovery";
+import { DiscoveryCatalogFilters } from "@modules/discovery/components/DiscoveryCatalogFilters";
+import { DiscoveryVirtualItems } from "@modules/discovery/components/DiscoveryViewport";
+import { useAccumulatedQuery } from "@modules/discovery/hooks/use-accumulated-query";
 import { useSearchParams } from "next/navigation";
 import { DiscoveryImageHero } from "../../components/DiscoveryImageHero";
 
@@ -7,7 +12,7 @@ import { DiscoveryPagination } from "../../components/DiscoveryPagination";
 import { DiscoveryQueryState } from "../../components/DiscoveryQueryState";
 import { DiscoveryEmptySection } from "../../components/DiscoveryEmptySection";
 
-import { Skeleton } from "@heroui/react";
+import { Button, Skeleton } from "@heroui/react";
 import { useCoachSections, useCoaches } from "@api/discovery";
 import { useTranslations } from "next-intl";
 
@@ -25,32 +30,63 @@ export function DiscoveryPeopleScreen() {
   const sportId = useSearchParams().get("sportId") || undefined;
   const t = useTranslations("discovery.coaches");
   const { query, setQuery, q, page, setPage } = useDiscoveryList();
+  const [filters, setFilters] = useState<PublicCatalogParams>({});
   const sections = useCoachSections();
-  const result = useCoaches({ q, page, limit: 20, sportId });
+  const resultPage = useCoaches({
+    ...filters,
+    q,
+    page,
+    limit: 20,
+    sportId: sportId ?? filters.sportId,
+  });
+  const result = useAccumulatedQuery(
+    resultPage,
+    page,
+    JSON.stringify([q, sportId, filters]),
+  );
   const coaches = result.data?.items ?? [];
+  const hasFilters = Object.values(filters).some(
+    (value) => value !== undefined && value !== "",
+  );
+  const showRecommendations = !q && !sportId && !hasFilters;
 
   return (
     <main className="app-page gap-6">
       <SecondaryHeader title={t("title")} showFilter={false} />
       <DiscoveryImageHero
+        compact
         imageUrl="/profile/avatar.jpg"
         title="همراه مسیر ورزشی تو"
         description="تجربه، تخصص و شیوه تمرین مربی‌ها را ببین و مربی مناسب خودت را انتخاب کن."
-        eyebrow="مربی‌های جیم‌فورمی"
+        eyebrow="مربی‌های کلاب‌فورمی"
       />
       <DiscoverySearchField
         value={query}
         onChange={setQuery}
         placeholder={t("searchPlaceholder")}
       />
+      <DiscoveryCatalogFilters
+        kind="coach"
+        value={filters}
+        resultCount={
+          result.isSuccess && !result.isFetching
+            ? result.data?.total
+            : undefined
+        }
+        onChange={(value) => {
+          setFilters(value);
+          setPage(1);
+        }}
+      />
 
-      {!q &&
-        !sportId &&
+      {showRecommendations &&
         sections.data?.map((section) => (
           <DiscoveryDynamicSection key={section.id} section={section} />
         ))}
-      {sections.isLoading ? <SectionSkeleton cards={2} /> : null}
-      <DiscoveryQueryState query={sections} />
+      {showRecommendations && sections.isLoading ? (
+        <SectionSkeleton cards={2} />
+      ) : null}
+      {showRecommendations ? <DiscoveryQueryState query={sections} /> : null}
 
       {result.isLoading ? (
         <div
@@ -66,7 +102,9 @@ export function DiscoveryPeopleScreen() {
         </div>
       ) : (
         <DiscoverySectionHeader
-          title="همه مربی‌ها"
+          title={
+            q || hasFilters || sportId ? "نتیجه جست‌وجوی مربی" : "همه مربی‌ها"
+          }
           subtitle={t("resultsCount", {
             count: (result.data?.total ?? coaches.length).toLocaleString(
               "fa-IR",
@@ -76,17 +114,19 @@ export function DiscoveryPeopleScreen() {
         />
       )}
       <div className="flex flex-col gap-3">
-        {coaches.map((coach) => (
-          <DiscoveryResultCard
-            key={coach.id}
-            title={coach.displayName}
-            subtitle={coach.shortBio}
-            meta={`${coach.averageRating.toLocaleString("fa-IR")} ★ · ${coach.experienceYears.toLocaleString("fa-IR")} ${t("yearsExperience")}`}
-            imageUrl={coach.imageUrl}
-            href={`/discovery/coaches/${coach.slug}`}
-            badge={t("badge")}
-          />
-        ))}
+        <DiscoveryVirtualItems>
+          {coaches.map((coach) => (
+            <DiscoveryResultCard
+              key={coach.id}
+              title={coach.displayName}
+              subtitle={coach.shortBio}
+              meta={`${coach.reviewsCount > 0 ? `${coach.averageRating.toLocaleString("fa-IR", { maximumFractionDigits: 1 })} ★ · ${coach.reviewsCount.toLocaleString("fa-IR")} نظر` : "بدون نظر"} · ${coach.experienceYears.toLocaleString("fa-IR")} ${t("yearsExperience")}`}
+              imageUrl={coach.imageUrl}
+              href={`/discovery/coaches/${coach.slug}`}
+              badge={t("badge")}
+            />
+          ))}
+        </DiscoveryVirtualItems>
       </div>
       {result.isLoading ? <DiscoveryResultCardSkeleton count={4} /> : null}
       <DiscoveryQueryState query={result} />
@@ -96,13 +136,29 @@ export function DiscoveryPeopleScreen() {
         limit={20}
         onChange={setPage}
         pending={result.isFetching}
+        failed={result.isError}
+        onRetry={() => void result.refetch()}
       />
       {result.isSuccess && coaches.length === 0 ? (
-        <DiscoveryEmptySection
-          title="مربی‌ای پیدا نشد"
-          subtitle="نام یا تخصص دیگری را جست‌وجو کن."
-          icon="medal"
-        />
+        <div className="space-y-4 text-center">
+          <DiscoveryEmptySection
+            title="مربی‌ای پیدا نشد"
+            subtitle="نام یا تخصص دیگری را جست‌وجو کن."
+            icon="medal"
+          />
+          {query || hasFilters ? (
+            <Button
+              variant="secondary"
+              onPress={() => {
+                setQuery("");
+                setFilters({});
+                setPage(1);
+              }}
+            >
+              پاک‌کردن جست‌وجو و فیلترها
+            </Button>
+          ) : null}
+        </div>
       ) : null}
     </main>
   );

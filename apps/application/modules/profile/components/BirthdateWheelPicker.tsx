@@ -60,7 +60,10 @@ function daysInMonth(year: number, month: number) {
   return parseIranDateInput(`${year}/12/30`) ? 30 : 29;
 }
 
-function toOption(value: number, label = value.toLocaleString("fa-IR")) {
+function toOption(
+  value: number,
+  label = value.toLocaleString("fa-IR", { useGrouping: false }),
+) {
   return { value: String(value), label } satisfies WheelPickerOption;
 }
 
@@ -142,7 +145,7 @@ export function BirthdateWheelPicker({
   }, [initial, onValueChange, value]);
 
   return (
-    <div className="app-card w-full overflow-hidden p-3 active:scale-100">
+    <div className="w-full overflow-hidden p-3">
       <div className="mb-2 grid grid-cols-[0.8fr_1.35fr_1fr] gap-2 px-1 text-center text-xs font-medium text-muted">
         <span>{t("birthdateDay")}</span>
         <span>{t("birthdateMonth")}</span>
@@ -159,7 +162,7 @@ export function BirthdateWheelPicker({
           onValueChange={(day) => update({ day: Number(day) })}
           aria-label={t("birthdateDay")}
           disabled={disabled}
-          className="border-0 bg-surface-secondary/70"
+          className="border-0 bg-transparent"
         />
         <WheelPicker
           options={monthOptions}
@@ -167,7 +170,7 @@ export function BirthdateWheelPicker({
           onValueChange={(month) => update({ month: Number(month) })}
           aria-label={t("birthdateMonth")}
           disabled={disabled}
-          className="border-0 bg-surface-secondary/70"
+          className="border-0 bg-transparent"
         />
         <WheelPicker
           options={yearOptions}
@@ -175,7 +178,7 @@ export function BirthdateWheelPicker({
           onValueChange={(year) => update({ year: Number(year) })}
           aria-label={t("birthdateYear")}
           disabled={disabled}
-          className="border-0 bg-surface-secondary/70"
+          className="border-0 bg-transparent"
         />
       </div>
       <p className="mt-3 text-center text-sm text-muted">

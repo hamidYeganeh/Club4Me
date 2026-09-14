@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@heroui/react";
 import { tokenStore } from "@api/http/token-store";
 import { createOfflineStorage } from "@api/offline/storage";
@@ -114,6 +115,13 @@ export function TrainingFrame({
   coach?: boolean;
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const base = coach ? "/coach/training" : "/athlete/training";
+  const destinations = [
+    { href: base, label: coach ? "برنامه‌های شاگردان" : "برنامه من" },
+    { href: `${base}/exercises`, label: "کتابخانه حرکات" },
+    ...(!coach ? [{ href: `${base}/progress`, label: "روند پیشرفت" }] : []),
+  ];
   return (
     <main
       className="app-page gap-6 [&_.button]:min-h-11 [&_.button]:rounded-3xl [&_.card]:rounded-3xl"
@@ -128,26 +136,17 @@ export function TrainingFrame({
           بازگشت به خانه
         </ButtonLink>
       </header>
-      <nav aria-label="بخش تمرین" className="flex flex-wrap gap-2">
-        <ButtonLink
-          variant="secondary"
-          href={coach ? "/coach/training" : "/athlete/training"}
-        >
-          {coach ? "برنامه‌های شاگردان" : "برنامه من"}
-        </ButtonLink>
-        <ButtonLink
-          variant="tertiary"
-          href={
-            coach ? "/coach/training/exercises" : "/athlete/training/exercises"
-          }
-        >
-          کتابخانه حرکات
-        </ButtonLink>
-        {!coach && (
-          <ButtonLink variant="tertiary" href="/athlete/training/progress">
-            روند پیشرفت
+      <nav aria-label="بخش تمرین" className="training-navigation">
+        {destinations.map((item) => (
+          <ButtonLink
+            key={item.href}
+            variant="ghost"
+            href={item.href}
+            aria-current={pathname === item.href ? "page" : undefined}
+          >
+            {item.label}
           </ButtonLink>
-        )}
+        ))}
       </nav>
       {children}
     </main>
@@ -157,7 +156,7 @@ export function Notice({ children }: { children: React.ReactNode }) {
   return (
     <p
       role="status"
-      className="rounded-xl border border-border bg-surface-secondary p-4 text-sm leading-7"
+      className="rounded-xl bg-surface-secondary p-4 text-sm leading-7"
     >
       {children}
     </p>

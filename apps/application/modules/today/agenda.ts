@@ -3,7 +3,7 @@ import type { CoachBooking } from "@api/domains/coaching/coaching";
 
 export type AgendaItem = {
   id: string;
-  source: "club" | "coach";
+  source: "club" | "coach" | "coach_class" | "business_class";
   title: string;
   startsAt: string;
   endsAt: string;

@@ -94,7 +94,7 @@ export function ResourcesDashboardScreen() {
         {groups.map((group) => (
           <Card
             key={group.id}
-            className="items-stretch rounded-[1.5rem] border border-border"
+            className="items-stretch rounded-[1.5rem]"
             variant="transparent"
           >
             <Card.Header className="flex-row items-center justify-between">

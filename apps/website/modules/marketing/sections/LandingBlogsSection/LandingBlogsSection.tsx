@@ -60,7 +60,7 @@ export function LandingBlogsSection({ className }: LandingBlogsSectionProps) {
           <Reveal delay={0.2}>
             <Typography className={slots.sub()} type="body">
               <TextWithBrand>
-                گرم‌کردن، تغذیه و ریکاوری. همان کارت مقاله کشف Gym4Me، برای
+                گرم‌کردن، تغذیه و ریکاوری. همان کارت مقاله کشف Club4Me، برای
                 تمرین هوشمندانه‌تر.
               </TextWithBrand>
             </Typography>

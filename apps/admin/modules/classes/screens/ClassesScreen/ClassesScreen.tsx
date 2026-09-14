@@ -1,4 +1,5 @@
 "use client";
+import { useConfirmActionDialog } from "@repo/ui/confirm-action-dialog";
 
 import { useDeferredValue, useState } from "react";
 import {
@@ -28,6 +29,7 @@ const statuses = {
 } as const;
 
 export function ClassesScreen() {
+  const confirmation = useConfirmActionDialog();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const deferredSearch = useDeferredValue(search);
@@ -36,7 +38,8 @@ export function ClassesScreen() {
   const [selected, setSelected] = useState<CoachClass | null>(null);
 
   const disableClass = async (classId: string) => {
-    if (!window.confirm("نمایش عمومی این کلاس غیرفعال شود؟")) return;
+    if (!(await confirmation.confirm("نمایش عمومی این کلاس غیرفعال شود؟")))
+      return;
     try {
       await disable.mutateAsync(classId);
       toast.success("کلاس غیرفعال شد");
@@ -47,6 +50,7 @@ export function ClassesScreen() {
 
   return (
     <main className="flex-1 overflow-auto p-4 lg:p-6">
+      {confirmation.dialog}
       <h1 className="text-2xl font-semibold">مدیریت کلاس‌ها</h1>
       <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_14rem]">
         <Input
@@ -87,7 +91,7 @@ export function ClassesScreen() {
       </div>
       <Card
         variant="transparent"
-        className="mt-4 overflow-hidden rounded-[1.75rem] border border-border bg-surface"
+        className="mt-4 overflow-hidden rounded-[1.75rem] bg-surface"
       >
         {classes.isPending ? (
           <div className="flex justify-center py-16">
@@ -196,7 +200,8 @@ export function ClassesScreen() {
                     { label: "شناسه کلاس", value: selected.id, dir: "ltr" },
                     {
                       label: "مربی مالک",
-                      value: selected.ownerCoach?.displayName ?? "در دسترس نیست",
+                      value:
+                        selected.ownerCoach?.displayName ?? "در دسترس نیست",
                       dir: "ltr",
                     },
                     {
@@ -245,7 +250,10 @@ export function ClassesScreen() {
                     {
                       label: "مربی‌ها",
                       value: selected.coachAssignments
-                        .map((item) => `${item.coach?.displayName || "مربی در دسترس نیست"} (${item.role === "primary" ? "اصلی" : "دستیار"})`)
+                        .map(
+                          (item) =>
+                            `${item.coach?.displayName || "مربی در دسترس نیست"} (${item.role === "primary" ? "اصلی" : "دستیار"})`,
+                        )
                         .join("، "),
                       wide: true,
                     },

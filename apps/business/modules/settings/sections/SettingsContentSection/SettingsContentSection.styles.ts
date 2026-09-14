@@ -4,7 +4,7 @@ export const settingsContentSectionStyles = tv({
   slots: {
     root: "flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4 lg:flex-row lg:p-6",
     rail: [
-      "flex w-full shrink-0 flex-col gap-4 rounded-[1.75rem] border border-border/60",
+      "flex w-full shrink-0 flex-col gap-4 rounded-[1.75rem]",
       "bg-surface/70 p-4 lg:w-[17.5rem] dark:bg-surface/40",
     ].join(" "),
     brand: "flex items-center gap-2 px-1 text-lg font-semibold tracking-tight",
@@ -21,10 +21,10 @@ export const settingsContentSectionStyles = tv({
     promo:
       "relative mt-auto rounded-[1.25rem] bg-danger/10 p-4 text-sm text-foreground",
     promoClose: "absolute end-2 top-2 text-muted",
-    userRow: "flex items-center gap-3 border-t border-border/60 pt-4",
+    userRow: "flex items-center gap-3 pt-4",
     stage: "min-w-0 flex-1",
     panel:
-      "overflow-hidden rounded-[1.75rem] border border-border/60 bg-surface/80 dark:bg-surface/40",
+      "overflow-hidden rounded-[1.75rem] bg-surface/80 dark:bg-surface/40",
     cover: "relative h-44 overflow-hidden",
     coverImage: "size-full object-cover",
     edit: "app-icon-button absolute end-4 top-4",
@@ -35,11 +35,11 @@ export const settingsContentSectionStyles = tv({
     email: "text-sm text-muted",
     actions: "flex gap-2",
     body: "space-y-5 p-5 pt-2",
-    card: "rounded-[1.35rem] border border-border/50 bg-background/70 p-5 dark:bg-surface-secondary/40",
+    card: "rounded-[1.35rem] bg-background/70 p-5 dark:bg-surface-secondary/40",
     grid: "mt-5 grid gap-4 md:grid-cols-2",
     field:
       "flex items-center gap-3 rounded-[1.15rem] border border-border/60 bg-surface/80 px-4 py-3",
     payout:
-      "mt-4 flex items-center justify-between rounded-[1.15rem] border border-border/60 bg-surface/80 px-4 py-3",
+      "mt-4 flex items-center justify-between rounded-[1.15rem] bg-surface/80 px-4 py-3",
   },
 });

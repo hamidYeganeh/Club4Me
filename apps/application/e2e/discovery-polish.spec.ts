@@ -21,7 +21,7 @@ test("role header and safe-area clearance; profile checklist opens the matching 
   await page.goto("/athlete");
   const header = page.locator("header").first();
   await expect(header.getByRole("link", { name: "پروفایل من" })).toBeVisible();
-  await expect(header.getByRole("link", { name: "جیم‌فورمی" })).toBeVisible();
+  await expect(header.getByRole("link", { name: "کلاب‌فورمی" })).toBeVisible();
   await expect(header.getByRole("link", { name: "اعلان‌ها" })).toBeVisible();
   await expect(header.getByText("خانه", { exact: true })).toHaveCount(0);
   await page.evaluate(() => {

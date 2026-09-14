@@ -72,7 +72,7 @@ test("کشف تا رزرو، پرداخت، اعلان، لغو و refund", asyn
   });
   await expect(reservation).toBeVisible();
   await expect(
-    page.getByRole("status", { name: "Gym4Me", exact: true }),
+    page.getByRole("status", { name: "Club4Me", exact: true }),
   ).toHaveCount(0);
 
   await page.getByRole("button", { name: "لغو سانس تست باشگاه", exact: true }).click();

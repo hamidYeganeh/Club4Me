@@ -21,7 +21,7 @@ export const biometricAuth = {
   },
   authenticate() {
     return nativeBiometricAuth.authenticate({
-      title: "ورود به Gym4Me",
+      title: "ورود به Club4Me",
       subtitle: "برای ورود، هویت خود را تأیید کنید",
       cancelButtonText: "ورود با رمز عبور",
     });

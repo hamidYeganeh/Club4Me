@@ -19,7 +19,7 @@ export function AthleteQuickActionsSection() {
         <Link
           key={action.href}
           href={action.href}
-          className="flex min-h-24 flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-surface p-2 text-center transition hover:bg-surface-secondary active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="flex min-h-24 flex-col items-center justify-center gap-3 rounded-2xl bg-surface p-2 text-center transition hover:bg-surface-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           <span className="grid size-10 place-items-center rounded-xl bg-accent/8 text-accent">
             <Icon name={action.icon} size={23} />

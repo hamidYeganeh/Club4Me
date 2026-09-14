@@ -100,21 +100,36 @@ for (const theme of ["light", "dark"] as const) {
         page.getByRole("heading", { level: 1, name: classFixture.title }),
       ).toBeVisible();
       await expect(
-        page.getByRole("status", { name: "Gym4Me", exact: true }),
+        page.getByRole("status", { name: "Club4Me", exact: true }),
       ).toHaveCount(0);
       await page.evaluate(() => document.fonts.ready);
+      // Compare rendered colors; browsers may serialize tokens as lab or oklch.
       expect(
-        await page.evaluate(() =>
-          getComputedStyle(document.documentElement)
-            .getPropertyValue("--accent")
-            .match(/[\d.]+/g)
-            ?.map(Number),
-        ),
-      ).toEqual(
-        theme === "light"
-          ? [87.44, 0.2457, 148.29]
-          : [87.414, 0.24723, 148.054],
-      );
+        await page.evaluate((mode) => {
+          const sample = document.createElement("span");
+          document.body.append(sample);
+          sample.style.color = "var(--accent)";
+          const actual = getComputedStyle(sample).color;
+          sample.style.color =
+            mode === "light"
+              ? "oklch(87.44% 0.2457 148.29)"
+              : "oklch(87.414% 0.24723 148.054)";
+          const expected = getComputedStyle(sample).color;
+          sample.remove();
+          // Normalize both through sRGB so equivalent color spaces compare equally.
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d")!;
+          ctx.fillStyle = actual;
+          ctx.fillRect(0, 0, 1, 1);
+          const actualRgb = Array.from(ctx.getImageData(0, 0, 1, 1).data);
+          ctx.fillStyle = expected;
+          ctx.fillRect(0, 0, 1, 1);
+          return actualRgb.every(
+            (value, index) =>
+              Math.abs(value - ctx.getImageData(0, 0, 1, 1).data[index]!) <= 1,
+          );
+        }, theme),
+      ).toBe(true);
       expect(
         await page
           .locator(".class-detail")
@@ -124,9 +139,7 @@ for (const theme of ["light", "dark"] as const) {
         "aria-valuenow",
         "12",
       );
-      await expect(
-        page.getByText("روزهای کاری", { exact: true }),
-      ).toBeVisible();
+      await expect(page.getByText("مدت دوره", { exact: true })).toBeVisible();
       await expect(page.getByText("وضعیت", { exact: true })).toBeVisible();
       await expect(page.getByText("امتیاز", { exact: true })).toBeVisible();
       await expect(
@@ -157,3 +170,39 @@ for (const theme of ["light", "dark"] as const) {
     expect(enrollment).toMatchObject({ paymentStatus: "paid" });
   });
 }
+
+test("class enrollment bar stays at the viewport bottom while scrolling", async ({
+  page,
+}) => {
+  await installApiMock(page, createMockApiState());
+  await setBrowserSession(page, true);
+  await page.route(
+    "**/api/v1/discovery/catalog/classes/sandow-strength",
+    (route) => route.fulfill({ json: { data: classFixture } }),
+  );
+  await page.goto("/discovery/classes/sandow-strength");
+  const bar = page.getByRole("complementary", {
+    name: "ثبت‌نام کلاس",
+    exact: true,
+  });
+  await expect(bar).toBeVisible();
+  for (const viewport of [
+    { width: 375, height: 812 },
+    { width: 1440, height: 900 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.locator(".app-scroll-root").evaluate((element) => {
+      element.scrollTop = 500;
+    });
+    await expect
+      .poll(async () => {
+        const box = await bar.boundingBox();
+        return box ? Math.abs(box.y + box.height - viewport.height) : Infinity;
+      })
+      .toBeLessThanOrEqual(1);
+    expect(
+      await bar.evaluate((element) => element.parentElement === document.body),
+    ).toBe(true);
+    await expect(bar).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  }
+});

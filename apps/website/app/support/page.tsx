@@ -3,14 +3,14 @@ import { LegalPage } from "@/components/legal-page";
 
 export const metadata = pageMetadata(
   "پشتیبانی",
-  "روش‌های تماس با پشتیبانی Gym4Me و راهنمای پیگیری مشکلات حساب و رزرو.",
+  "روش‌های تماس با پشتیبانی Club4Me و راهنمای پیگیری مشکلات حساب و رزرو.",
   "/support",
 );
 
 export default function SupportPage() {
   return (
     <LegalPage
-      title="پشتیبانی Gym4Me"
+      title="پشتیبانی Club4Me"
       lead="برای پیگیری سریع‌تر، نسخه اپ و شرح کوتاهی از مشکل را همراه پیام ارسال کنید."
     >
       <section>

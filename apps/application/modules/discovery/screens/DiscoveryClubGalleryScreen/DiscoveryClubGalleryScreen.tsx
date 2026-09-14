@@ -1,5 +1,4 @@
 "use client";
-import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 
 import { useState } from "react";
@@ -17,6 +16,15 @@ import "swiper/css";
 import "swiper/css/pagination";
 
 import type { DiscoveryClubGalleryScreenProps } from "./DiscoveryClubGalleryScreen.types";
+
+const GALLERY_CATEGORIES = [
+  { value: "", label: "همه عکس‌ها" },
+  { value: "training", label: "فضای تمرین" },
+  { value: "equipment", label: "تجهیزات" },
+  { value: "changing_room", label: "رختکن" },
+  { value: "entrance", label: "نمای ورودی" },
+  { value: "other", label: "سایر" },
+] as const;
 
 function GallerySkeleton() {
   return (
@@ -99,26 +107,32 @@ export function DiscoveryClubGalleryScreen({
         }
       />
 
-      <label className="mt-3 text-sm">
-        دسته عکس
-        <FormSelect
-          aria-label="دسته عکس"
-          className="ms-3 rounded-xl border border-border bg-surface p-2"
-          value={category}
-          onChange={(e) => {
-            setCategory(e);
-            setActiveIndex(0);
-            swiper?.slideTo(0);
-          }}
-        >
-          <FormOption value="">همه عکس‌ها</FormOption>
-          <FormOption value="training">فضای تمرین</FormOption>
-          <FormOption value="equipment">تجهیزات</FormOption>
-          <FormOption value="changing_room">رختکن</FormOption>
-          <FormOption value="entrance">نمای ورودی</FormOption>
-          <FormOption value="other">سایر</FormOption>
-        </FormSelect>
-      </label>
+      <div
+        className="mt-3 flex shrink-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="group"
+        aria-label="دسته عکس"
+      >
+        {GALLERY_CATEGORIES.map((item) => (
+          <Button
+            key={item.value || "all"}
+            size="sm"
+            variant="ghost"
+            aria-pressed={category === item.value}
+            className={`h-10 shrink-0 rounded-full px-4 font-bold ${
+              category === item.value
+                ? "bg-accent text-accent-foreground"
+                : "bg-surface-secondary text-foreground"
+            }`}
+            onPress={() => {
+              setCategory(item.value);
+              setActiveIndex(0);
+              swiper?.slideTo(0);
+            }}
+          >
+            {item.label}
+          </Button>
+        ))}
+      </div>
       {gallery[activeIndex]?.takenOn && (
         <p className="mt-2 text-xs text-muted">
           تاریخ عکس (اعلام باشگاه):{" "}
@@ -172,7 +186,7 @@ export function DiscoveryClubGalleryScreen({
                 instance.slideTo(activeIndex, 0);
               }}
               onSlideChange={(instance) => setActiveIndex(instance.realIndex)}
-              className="h-full overflow-hidden rounded-[2rem] border border-border bg-surface-secondary [&_.swiper-pagination-bullet]:bg-white/80 [&_.swiper-pagination-bullet-active]:w-7 [&_.swiper-pagination-bullet-active]:rounded-full [&_.swiper-pagination-bullet-active]:bg-accent"
+              className="h-full overflow-hidden rounded-[2rem] bg-surface-secondary [&_.swiper-pagination-bullet]:bg-white/80 [&_.swiper-pagination-bullet-active]:w-7 [&_.swiper-pagination-bullet-active]:rounded-full [&_.swiper-pagination-bullet-active]:bg-accent"
             >
               {slides.map((src, index) => (
                 <SwiperSlide
@@ -227,7 +241,7 @@ export function DiscoveryClubGalleryScreen({
                 type="button"
                 aria-label={`نمایش تصویر ${index + 1}`}
                 data-active={index === activeIndex}
-                className="relative aspect-square h-full shrink-0 overflow-hidden rounded-[1.1rem] border-2 border-border bg-surface-secondary outline-none transition data-[active=true]:border-accent"
+                className="relative aspect-square h-full shrink-0 overflow-hidden rounded-[1.1rem] bg-surface-secondary outline-none transition"
                 onClick={() => swiper?.slideTo(index)}
               >
                 <FallbackImage

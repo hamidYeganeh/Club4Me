@@ -1,11 +1,14 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
+import { useAccumulatedQuery } from "@modules/discovery/hooks/use-accumulated-query";
 
 import { usePublicClubClasses } from "@api";
 import { useState } from "react";
 import { DiscoveryPagination } from "@modules/discovery/components/DiscoveryPagination";
 import { CoachCard } from "@ui/coach-card";
 
-export function ClubCoachesContextSection({
+function ClubCoachesContextSectionContent({
   clubId,
   timezone,
 }: {
@@ -13,7 +16,8 @@ export function ClubCoachesContextSection({
   timezone: string;
 }) {
   const [page, setPage] = useState(1);
-  const classes = usePublicClubClasses({ clubId, page, limit: 20 });
+  const classesPage = usePublicClubClasses({ clubId, page, limit: 20 });
+  const classes = useAccumulatedQuery(classesPage, page, clubId);
   const items = classes.data?.items ?? [];
   const coaches = [
     ...new Map(
@@ -73,8 +77,10 @@ export function ClubCoachesContextSection({
                   : undefined
               }
               supportingText={
-                teaching.map((item) => item.sport).filter(Boolean).join("، ") ||
-                "مربی فعال باشگاه"
+                teaching
+                  .map((item) => item.sport)
+                  .filter(Boolean)
+                  .join("، ") || "مربی فعال باشگاه"
               }
               stats={[
                 {
@@ -95,7 +101,13 @@ export function ClubCoachesContextSection({
         limit={20}
         onChange={setPage}
         pending={classes.isFetching}
+        failed={classes.isError}
+        onRetry={() => void classes.refetch()}
       />
     </section>
   );
+}
+
+export function ClubCoachesContextSection(props: ComponentProps<typeof ClubCoachesContextSectionContent>) {
+ return <DiscoveryViewport><ClubCoachesContextSectionContent {...props} /></DiscoveryViewport>;
 }

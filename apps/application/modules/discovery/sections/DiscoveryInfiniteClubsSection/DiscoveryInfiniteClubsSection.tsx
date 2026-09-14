@@ -1,4 +1,5 @@
 "use client";
+import { DiscoveryVirtualItems } from "@modules/discovery/components/DiscoveryViewport";
 
 import { useEffect, useRef } from "react";
 import { Button, Skeleton, Spinner } from "@heroui/react";
@@ -68,16 +69,18 @@ export function DiscoveryInfiniteClubsSection() {
       ) : null}
 
       <div className="flex flex-col gap-4">
-        {items.map((club) => (
-          <ClubCard
-            key={club.id}
-            variant="compact"
-            title={club.name}
-            location={club.city}
-            href={`/discovery/clubs/${club.slug}`}
-            className="!aspect-[16/9] !w-full"
-          />
-        ))}
+        <DiscoveryVirtualItems>
+          {items.map((club) => (
+            <ClubCard
+              key={club.id}
+              variant="compact"
+              title={club.name}
+              location={club.city}
+              href={`/discovery/clubs/${club.slug}`}
+              className="!aspect-[16/9] !w-full"
+            />
+          ))}
+        </DiscoveryVirtualItems>
       </div>
 
       {clubs.isError && items.length > 0 ? (

@@ -222,23 +222,21 @@ export class BusinessOperationsService {
     if (!(await this.students.exists({ _id: oid(studentId), clubId: club })))
       throw new AppError(404, "STUDENT_NOT_FOUND", "عضو پیدا نشد");
     const contactedAt = new Date();
-    await this.students.db
-      .collection("club_member_follow_ups")
-      .updateOne(
-        { _id: oid(studentId), clubId: club },
-        {
-          $set: {
-            clubId: club,
-            note: input.note,
-            contactedAt,
-            nextFollowUpAt: new Date(
-              +contactedAt + input.remindInDays * 86400000,
-            ),
-            recordedBy: oid(ownerId),
-          },
+    await this.students.db.collection("club_member_follow_ups").updateOne(
+      { _id: oid(studentId), clubId: club },
+      {
+        $set: {
+          clubId: club,
+          note: input.note,
+          contactedAt,
+          nextFollowUpAt: new Date(
+            +contactedAt + input.remindInDays * 86400000,
+          ),
+          recordedBy: oid(ownerId),
         },
-        { upsert: true },
-      );
+      },
+      { upsert: true },
+    );
     return { saved: true };
   }
 

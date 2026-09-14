@@ -96,6 +96,27 @@ export class UserLocationsRepository {
     return toPublicUserLocation(current);
   }
 
+  /** Initial creation elects one default without clearing another concurrent winner. */
+  async ensureDefault(
+    userId: string,
+    locationId: string,
+  ): Promise<PublicUserLocation> {
+    try {
+      const updated = await this.model.findOneAndUpdate(
+        { _id: toLocationObjectId(locationId), userId: toObjectId(userId) },
+        { $set: { isDefault: true } },
+        { new: true },
+      );
+      if (!updated) throw locationNotFound();
+      return toPublicUserLocation(updated);
+    } catch (error) {
+      if (!isDuplicateKey(error)) throw error;
+      return toPublicUserLocation(
+        await this.findOwnedDocument(userId, locationId),
+      );
+    }
+  }
+
   async setDefault(
     userId: string,
     locationId: string,

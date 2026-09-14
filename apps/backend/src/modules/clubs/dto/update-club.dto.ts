@@ -16,6 +16,7 @@ export class UpdateClubDto implements Partial<ClubFields> {
   name?: ClubFields["name"];
   profile?: ClubFields["profile"];
   trialBookingEnabled?: boolean;
+  onSitePaymentMethods?: ClubFields["onSitePaymentMethods"];
   busyHours?: ClubFields["busyHours"];
   shortDescription?: ClubFields["shortDescription"];
   description?: ClubFields["description"];

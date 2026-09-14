@@ -72,8 +72,13 @@ export class BusinessClassesService {
 
   private async present<T extends Record<string, unknown>>(rows: T[]) {
     const items = await withReferenceSummaries(this.classes.db, rows, [
-      ...classDisplayReferences.filter(ref => ref.field !== "sportId"),
-      {field: "classId", as: "trainingClass", collection: "business_training_classes", fields: ["title"]},
+      ...classDisplayReferences.filter((ref) => ref.field !== "sportId"),
+      {
+        field: "classId",
+        as: "trainingClass",
+        collection: "business_training_classes",
+        fields: ["title"],
+      },
     ]);
     return this.media ? withMediaReferences(this.media, items) : items;
   }
@@ -641,6 +646,7 @@ export class BusinessClassesService {
     const id = await this.club(ownerId, clubId, "enrollments.write");
     await this.classDocument(id, classId);
     const target = await this.classDocument(id, targetClassId);
+    if (target.status !== "active") throw invalid("TARGET_CLASS_NOT_ACTIVE");
     const source = await this.enrollments.findOne({
       _id: oid(enrollmentId),
       classId: oid(classId),
@@ -648,7 +654,7 @@ export class BusinessClassesService {
     });
     if (!source) throw notFound("CLASS_ENROLLMENT_NOT_FOUND");
     if (
-      source.paymentExpiresAt &&
+      (source.paymentExpiresAt || source.paymentSeatHeld) &&
       ["paid", "partial", "waived"].includes(source.paymentStatus)
     )
       throw invalid("PAID_CLASS_TRANSFER_REQUIRES_REFUND");
@@ -732,7 +738,8 @@ export class BusinessClassesService {
     await this.assertSession(id, classId, sessionId);
     const items = await this.attendance.find({ sessionId: oid(sessionId) });
     return {
-      items: await withReferenceSummaries(this.classes.db,
+      items: await withReferenceSummaries(
+        this.classes.db,
         items.map(attendanceDto),
         [
           studentDisplayReference,
@@ -1097,6 +1104,10 @@ function sessionDto(item: BusinessClassSessionDocument) {
 }
 function enrollmentDto(item: BusinessClassEnrollmentDocument) {
   return {
+    transferRequiresRefund: Boolean(
+      (item.paymentExpiresAt || item.paymentSeatHeld) &&
+      ["paid", "partial", "waived"].includes(item.paymentStatus),
+    ),
     ...base(item),
     classId: String(item.classId),
     studentId: String(item.studentId),

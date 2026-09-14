@@ -50,7 +50,7 @@ export const landingAboutUsSectionStyles = tv({
       "px-0 py-1.5 ps-5 pe-1.5 shadow-none",
       "text-accent-foreground transition-all duration-moderate ease-app",
       "hover:bg-foreground hover:text-background",
-      "data-[pressed=true]:scale-[0.98]",
+      "",
     ].join(" "),
     ctaLabel: [
       "text-[13px] font-bold tracking-[0.06em]",

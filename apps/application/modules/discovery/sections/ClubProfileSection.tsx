@@ -67,7 +67,7 @@ export function ClubProfileSection({ club }: { club: PublicClubDetails }) {
           ) : null,
         )}
       </div>
-      <div className="space-y-4 rounded-2xl border border-border p-4">
+      <div className="space-y-4 rounded-2xl p-4">
         <h2 className="text-xl font-bold">شرایط مراجعه و ساعت کاری</h2>
         {club.audience?.length ? (
           <p className="text-sm">

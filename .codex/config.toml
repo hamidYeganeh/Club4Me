@@ -1,0 +1,3 @@
+[mcp_servers.Mobbin]
+url = "https://api.mobbin.com/mcp"
+http_headers = {}

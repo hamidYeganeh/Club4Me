@@ -21,9 +21,9 @@ export const reservationsTimelineSectionStyles = tv({
     emptyTitle: "text-balance text-2xl leading-9 font-black text-foreground",
     emptyDescription: "max-w-[28ch] text-sm leading-6 text-muted",
     explore:
-      "mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent px-5 text-base font-black text-accent-foreground transition-transform active:scale-[0.985]",
+      "mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-[1.15rem] bg-accent px-5 text-base font-black text-accent-foreground transition-transform",
     skeleton:
-      "h-[4.75rem] rounded-[1.35rem] border border-white/7 bg-surface/72",
+      "h-[4.75rem] rounded-[1.35rem] bg-surface/72",
   },
 });
 
@@ -32,11 +32,11 @@ export const reservationTimelineRowStyles = tv({
     root: "relative z-[1] flex min-h-[7.5rem] items-stretch gap-2",
     timeRail:
       "relative flex w-12 shrink-0 items-center justify-center self-stretch",
-    time: "z-[1] h-auto min-h-8 shrink-0 rounded-[0.7rem] border border-border bg-surface px-2.5 py-1 text-[0.72rem] font-bold text-muted shadow-none",
+    time: "z-[1] h-auto min-h-8 shrink-0 rounded-[0.7rem] bg-surface px-2.5 py-1 text-[0.72rem] font-bold text-muted shadow-none",
     timeLabel: "flex flex-col items-center leading-4",
     timeDate: "text-[0.58rem] font-medium text-muted",
     timeIcon: "text-muted",
-    card: "relative flex min-w-0 flex-1 overflow-hidden flex-col rounded-3xl border border-border/50 bg-surface p-4",
+    card: "relative flex min-w-0 flex-1 overflow-hidden flex-col rounded-3xl bg-surface p-4",
     cardButton:
       "h-auto min-h-0 min-w-0 w-full flex-1 items-start justify-start gap-3 rounded-[inherit] p-0 text-start hover:bg-transparent",
     iconBox:
@@ -53,7 +53,7 @@ export const reservationTimelineRowStyles = tv({
   variants: {
     selected: {
       true: {
-        card: "border-foreground/18",
+        card: "",
       },
       false: {},
     },

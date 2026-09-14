@@ -52,12 +52,18 @@ export type ClubLocation = {
 };
 
 export type BusinessClub = {
-  owner?: {id: string; firstName?: string; lastName?: string; phone?: string} | null;
+  owner?: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  } | null;
   permissions?: string[];
   isOwner?: boolean;
   profileResources?: Record<string, { name: string; isActive: boolean }>;
   profile?: ClubProfile;
   trialBookingEnabled?: boolean;
+  onSitePaymentMethods?: Array<"cash" | "pos">;
   busyHours?: ClubBusyHour[];
   busyHoursSource?: "owner_reported";
   busyHoursUpdatedAt?: string | null;
@@ -151,6 +157,7 @@ export type ClubResourceQuantityPayload = {
 export type CreateBusinessClubPayload = {
   profile?: ClubProfile;
   trialBookingEnabled?: boolean;
+  onSitePaymentMethods?: Array<"cash" | "pos">;
   busyHours?: ClubBusyHour[];
   name: string;
   shortDescription?: string;

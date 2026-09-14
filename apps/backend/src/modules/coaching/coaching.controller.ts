@@ -348,6 +348,11 @@ export class AthleteCoachingController {
     return this.purchases.create(user.sub, offeringId, body.idempotencyKey);
   }
 
+  @Get("class-agenda")
+  classAgenda(@CurrentUser() user: AuthTokenPayload) {
+    return this.enrollments.agendaForAthlete(user.sub);
+  }
+
   @Get("enrollments")
   listEnrollments(@CurrentUser() user: AuthTokenPayload) {
     return this.enrollments.listForAthlete(user.sub);

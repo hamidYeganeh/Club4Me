@@ -9,8 +9,8 @@ export const panelHeaderSectionStyles = tv({
     actions: "flex items-center gap-2",
     iconBtn: "app-icon-button",
     notifyBtn:
-      "app-icon-button bg-accent text-accent-foreground hover:bg-accent/90 border-transparent",
-    drawerDialog: "app-surface w-[min(90vw,22rem)] max-w-full border-s border-white/7 bg-surface/90",
+      "app-icon-button bg-accent text-accent-foreground hover:bg-accent/90",
+    drawerDialog: "app-surface w-[min(90vw,22rem)] max-w-full bg-surface/90",
     drawerNav: "flex flex-col gap-1",
     drawerItem:
       "flex w-full items-center gap-3 min-h-12 rounded-2xl px-3 py-3 text-sm text-muted transition-colors duration-200 hover:bg-surface-secondary/80 hover:text-foreground",

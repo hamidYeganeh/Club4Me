@@ -56,10 +56,32 @@ export class Reservation {
   @Prop({ type: Number, default: 0, min: 0 }) entitlementCoveredAmount: number;
   @Prop({
     type: String,
-    enum: ["not_required", "pending", "paid", "failed", "refunded"],
+    enum: [
+      "not_required",
+      "pending",
+      "pay_on_arrival",
+      "paid",
+      "failed",
+      "refunded",
+    ],
     default: "not_required",
   })
-  paymentStatus: "not_required" | "pending" | "paid" | "failed" | "refunded";
+  paymentStatus:
+    | "not_required"
+    | "pending"
+    | "pay_on_arrival"
+    | "paid"
+    | "failed"
+    | "refunded";
+  @Prop({ type: String, enum: ["online", "cash", "pos"], default: "online" })
+  paymentMethod: "online" | "cash" | "pos";
+  @Prop({ type: Date, default: null }) collectedOnSiteAt: Date | null;
+  @Prop({ type: Types.ObjectId, default: null })
+  collectedOnSiteBy: Types.ObjectId | null;
+  @Prop({ type: String, default: "" }) onSiteReceipt: string;
+  @Prop({ type: Date, default: null }) refundedOnSiteAt: Date | null;
+  @Prop({ type: Types.ObjectId, default: null })
+  refundedOnSiteBy: Types.ObjectId | null;
   @Prop({ type: SessionCancellationPolicy, required: true })
   cancellationPolicy: SessionCancellationPolicy;
   @Prop({ type: Number, default: null }) refundPercent: number | null;
@@ -114,3 +136,5 @@ ReservationSchema.index(
 );
 
 ReservationSchema.index({ paymentStatus: 1, status: 1, paymentExpiresAt: 1 });
+
+ReservationSchema.index({ updatedAt: 1, _id: 1 });

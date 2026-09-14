@@ -16,7 +16,7 @@ export function resolveLogoSize(size: LogoSize = "lg"): number {
 
 export function LogoMark({
   size = "lg",
-  title = "Gym4Me",
+  title = "Club4Me",
   instanceId = "gym4me",
   color = LOGO_COLOR,
   shadow = true,

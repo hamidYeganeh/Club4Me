@@ -1,4 +1,6 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import type { DiscoverySportItem } from "@api/discovery";
 import { ScrollShadow } from "@heroui/react";
@@ -17,7 +19,7 @@ const SPORT_FALLBACK_IMAGES = [
   "/welcome/hero-iran-v2.png",
 ] as const;
 
-export function DiscoverySportsRailSection({
+function DiscoverySportsRailSectionContent({
   isLoading = false,
   skeletonCount = 3,
   id,
@@ -34,7 +36,7 @@ export function DiscoverySportsRailSection({
   subtitle?: string;
   items: DiscoverySportItem[];
   seeAllLabel?: string;
-  seeAllHref?: string;
+  seeAllHref?: string | null;
 }) {
   const titleId = `discovery-sports-${id}`;
 
@@ -45,7 +47,7 @@ export function DiscoverySportsRailSection({
         subtitle={subtitle}
         icon="soccer"
         viewAllLabel={seeAllLabel}
-        viewAllUrl={seeAllHref}
+        viewAllUrl={seeAllHref ?? undefined}
       />
     );
   }
@@ -59,7 +61,7 @@ export function DiscoverySportsRailSection({
         subtitle={subtitle}
         icon="soccer"
         viewAllLabel={seeAllLabel}
-        viewAllUrl={seeAllHref}
+        viewAllUrl={seeAllHref ?? undefined}
       />
       <ScrollShadow
         hideScrollBar
@@ -101,5 +103,15 @@ export function DiscoverySportsRailSection({
         </div>
       </ScrollShadow>
     </section>
+  );
+}
+
+export function DiscoverySportsRailSection(
+  props: ComponentProps<typeof DiscoverySportsRailSectionContent>,
+) {
+  return (
+    <DiscoveryViewport>
+      <DiscoverySportsRailSectionContent {...props} />
+    </DiscoveryViewport>
   );
 }

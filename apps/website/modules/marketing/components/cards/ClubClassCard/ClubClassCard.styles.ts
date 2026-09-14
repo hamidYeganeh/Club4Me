@@ -24,7 +24,7 @@ export const clubClassCardVariants = tv({
     metaIcon: "shrink-0 opacity-60",
     action: [
       "flex shrink-0 items-center justify-center",
-      "data-[pressed=true]:scale-[0.97]",
+      "",
     ].join(" "),
   },
   variants: {

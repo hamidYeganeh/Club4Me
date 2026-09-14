@@ -249,9 +249,9 @@ export function ResourceListScreen({
       </div>
       <Card
         variant="transparent"
-        className="mt-5 items-stretch overflow-hidden rounded-[1.75rem] border border-border bg-surface"
+        className="mt-5 items-stretch overflow-hidden rounded-[1.75rem] bg-surface"
       >
-        <div className="flex flex-wrap gap-3 border-b border-border p-4 [&>label]:min-w-60 [&>label]:flex-1">
+        <div className="flex flex-wrap gap-3 p-4 [&>label]:min-w-60 [&>label]:flex-1">
           <label>
             <span className="sr-only">{t("search")}</span>
             <Input
@@ -489,7 +489,7 @@ export function ResourceListScreen({
           </Table>
         )}
         {(list.data?.totalPages ?? 0) > 1 && (
-          <div className="flex items-center justify-between border-t border-border p-4">
+          <div className="flex items-center justify-between p-4">
             <Button
               size="sm"
               variant="secondary"

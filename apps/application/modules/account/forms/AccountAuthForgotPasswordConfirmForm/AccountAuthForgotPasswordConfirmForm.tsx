@@ -11,7 +11,7 @@ import {
 } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useConfirmForgotPassword, useForgotPassword } from "@api/account";
-import NumberFlow from "@number-flow/react";
+import { AnimatedCounter } from "@/components/motion/animated-counter";
 import { OTPInput } from "@repo/ui/otp-input";
 import { Icon } from "@theme/icon";
 import { useTranslations } from "next-intl";
@@ -212,9 +212,8 @@ export function AccountAuthForgotPasswordConfirmForm({
                   {cooldown > 0 ? (
                     <span className={styles.resendTimer()}>
                       {resendInPrefix}{" "}
-                      <NumberFlow
+                      <AnimatedCounter
                         value={cooldown}
-                        trend={-1}
                         className={styles.resendSeconds()}
                       />{" "}
                       {resendInSuffix}

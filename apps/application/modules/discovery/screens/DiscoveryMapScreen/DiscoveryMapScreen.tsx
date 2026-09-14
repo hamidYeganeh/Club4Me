@@ -1,16 +1,18 @@
 "use client";
+import { useDiscoveryList } from "../../hooks/use-discovery-list";
+import { useAccumulatedQuery } from "../../hooks/use-accumulated-query";
+import { Button } from "@heroui/react";
+import { Virtual } from "swiper/modules";
 import { SecondaryHeader } from "../../components/SecondaryHeader";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperType } from "swiper";
 import "swiper/css";
-import { Icon } from "@theme/icon";
 import { ClubCard } from "@ui/club-card";
 import { useCatalogClubs } from "@api/discovery";
 import { useTranslations } from "next-intl";
 
-import { ButtonLink } from "@/components/button-link";
 import { NeshanMap, type NeshanMapMarker } from "@/components/maps/neshan-map";
 import { RequestFailureState } from "@/components/request-failure-state";
 import { MapResultsSkeleton } from "@/components/loading-skeletons";
@@ -29,16 +31,29 @@ export function DiscoveryMapScreen() {
   const styles = discoveryMapScreenStyles();
   const { active } = useActiveLocation();
   const coords = getActiveCoordinates(active);
-  const clubs = useCatalogClubs({
-    limit: 100,
+  const { q, page, setPage } = useDiscoveryList();
+  const radiusKm = 25;
+  const clubsPage = useCatalogClubs({
+    q,
+    page,
+    limit: 20,
     ...(coords
       ? {
           latitude: coords.latitude,
           longitude: coords.longitude,
-          radiusKm: 25,
+          radiusKm,
         }
       : {}),
   });
+  const clubs = useAccumulatedQuery(
+    clubsPage,
+    page,
+    JSON.stringify([q, radiusKm, coords]),
+  );
+  const hasMore = page * 20 < (clubs.data?.total ?? 0);
+  const loadMore = () => {
+    if (hasMore && !clubs.isFetching && !clubs.isError) setPage(page + 1);
+  };
   const failure = getQueryFailure(clubs.error, clubs.fetchStatus);
   const mappable = useMemo(
     () =>
@@ -72,20 +87,7 @@ export function DiscoveryMapScreen() {
 
   return (
     <main className={styles.root()}>
-      <SecondaryHeader
-        title={t("title")}
-        showFilter={false}
-        action={
-          <ButtonLink
-            isIconOnly
-            variant="secondary"
-            aria-label={t("listAria")}
-            href="/discovery/clubs"
-          >
-            <Icon name="list-two-bullet" size={22} />
-          </ButtonLink>
-        }
-      />
+      <SecondaryHeader title={t("title")} showFilter={false} />
       <div className={styles.mapWrap()}>
         <NeshanMap
           center={center}
@@ -112,6 +114,9 @@ export function DiscoveryMapScreen() {
         {selected ? (
           <div className={styles.rail()}>
             <Swiper
+              modules={[Virtual]}
+              virtual
+              onReachEnd={loadMore}
               dir="rtl"
               slidesPerView={1.12}
               spaceBetween={12}
@@ -122,8 +127,8 @@ export function DiscoveryMapScreen() {
                 setSelectedId(mappable[swiper.activeIndex]?.id)
               }
             >
-              {mappable.map((club) => (
-                <SwiperSlide key={club.id}>
+              {mappable.map((club, index) => (
+                <SwiperSlide key={club.id} virtualIndex={index}>
                   <ClubCard
                     variant="compact"
                     title={club.name}
@@ -137,6 +142,18 @@ export function DiscoveryMapScreen() {
                 </SwiperSlide>
               ))}
             </Swiper>
+            {hasMore || clubs.isError ? (
+              <Button
+                className="mt-2 w-full"
+                variant="secondary"
+                isPending={clubs.isFetching}
+                onPress={() =>
+                  clubs.isError ? void clubs.refetch() : loadMore()
+                }
+              >
+                {clubs.isError ? "تلاش دوباره" : "باشگاه‌های بیشتر"}
+              </Button>
+            ) : null}
           </div>
         ) : null}
       </div>

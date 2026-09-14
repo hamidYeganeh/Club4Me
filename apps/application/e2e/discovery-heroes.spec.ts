@@ -21,7 +21,7 @@ for (const theme of ["light", "dark"] as const) {
       title: "ریکاوری؛ بخش مهم برنامه تمرین",
       excerpt: "بعد از یک تمرین خوب، به بدن فرصت بازسازی بده.",
       coverImageUrl: "/profile/cover.jpg",
-      authorName: "تحریریه جیم‌فورمی",
+      authorName: "تحریریه کلاب‌فورمی",
       readTimeMinutes: 4,
       bodyHtml:
         "<h2>با آرامش ادامه بده</h2><p>خواب کافی و استراحت بخشی از برنامه تمرین هستند.</p>",
@@ -105,7 +105,7 @@ for (const theme of ["light", "dark"] as const) {
           page.getByRole("heading", { name: title!, exact: true }),
         ).toBeVisible();
         await expect(
-          page.getByRole("status", { name: "Gym4Me", exact: true }),
+          page.getByRole("status", { name: "Club4Me", exact: true }),
         ).toHaveCount(0);
         await page.evaluate(() => document.fonts.ready);
         await page.evaluate(() => {

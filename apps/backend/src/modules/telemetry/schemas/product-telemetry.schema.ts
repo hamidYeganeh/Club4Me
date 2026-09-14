@@ -33,6 +33,12 @@ export class ProductTelemetry {
   @Prop({ required: true, enum: ["development", "production", "test"] })
   environment: "development" | "production" | "test";
   @Prop({ required: true }) expiresAt: Date;
+  @Prop({ type: String, enum: ["client", "server"], default: "client" })
+  source: "client" | "server";
+  @Prop({ type: Date, default: null }) posthogDeliveredAt: Date | null;
+  @Prop({ type: Date, default: null }) posthogRetryAt: Date | null;
+  @Prop({ type: Number, default: 0 }) posthogAttempts: number;
+  @Prop({ type: String, default: "" }) consentVersion: string;
   receivedAt: Date;
 }
 
@@ -41,3 +47,11 @@ export const ProductTelemetrySchema =
   SchemaFactory.createForClass(ProductTelemetry);
 ProductTelemetrySchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 ProductTelemetrySchema.index({ event: 1, occurredAt: -1 });
+ProductTelemetrySchema.index({
+  environment: 1,
+  posthogDeliveredAt: 1,
+  posthogRetryAt: 1,
+});
+ProductTelemetrySchema.index({ "properties.club_id": 1, occurredAt: -1 });
+
+ProductTelemetrySchema.index({ environment: 1, kind: 1, anonymousHash: 1 });

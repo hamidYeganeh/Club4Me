@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useClassAgenda } from "./use-class-agenda";
 import { Button } from "@heroui/react";
 import { useMyReservations, useMyCoachBookings, useMyEntitlements, useAccountMe } from "@api";
 import { trainingApi } from "@api/domains/training";
@@ -15,15 +16,16 @@ import { upcomingAgenda, tehranDay, sessionDate, sessionTime } from "./agenda";
 export function AthleteToday() {
   const account = useAccountMe();
   const reservations = useMyReservations();
+  const classAgenda = useClassAgenda();
   const bookings = useMyCoachBookings();
   const entitlements = useMyEntitlements();
   const assignments = useTrainingData("assignments", trainingApi.assignments, true);
   const workouts = useWorkouts();
   const now = useNow();
   const [dayOffset, setDayOffset] = useState(0);
-  const queries = [reservations, bookings, entitlements];
+  const queries = [reservations, bookings, entitlements, classAgenda.coach, classAgenda.business];
   const loading = now === null || queries.some((query) => query.isPending);
-  const agenda = now === null ? [] : upcomingAgenda(reservations.data?.items ?? [], bookings.data?.items ?? [], now);
+  const agenda = now === null ? [] : [...upcomingAgenda(reservations.data?.items ?? [], bookings.data?.items ?? [], now), ...classAgenda.items.filter((item) => Date.parse(item.endsAt) > now)].sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
   const activeWorkout = workouts.workouts.find((item) => item.session.status === "active");
   const payment = agenda.find((item) => item.paymentPending);
   const next = agenda.find((item) => !item.paymentPending);
@@ -62,7 +64,7 @@ export function AthleteToday() {
   return <div className="space-y-6">
     <div><p className="text-xs text-muted">{now === null ? "امروز" : sessionDate(now)}</p><h1 className="mt-2 text-2xl font-bold leading-10">سلام{account.data?.firstName ? `، ${account.data.firstName}` : ""}</h1><p className="text-sm leading-7 text-muted">برنامه و قدم بعدی‌ات، همین‌جا.</p></div>
     {loading ? <div role="status" aria-label="دریافت برنامه امروز"><CompactCardListSkeleton count={1} /></div> : <NextActionCard {...action} />}
-    {failed ? <div role="alert" className="rounded-2xl border border-warning/30 bg-warning/5 p-4 text-sm leading-7"><p>بخشی از برنامه یا اعتبارها دریافت نشد؛ اطلاعات این صفحه ممکن است کامل نباشد.</p><Button size="sm" variant="ghost" onPress={() => { queries.forEach((query) => { if (query.isError) void query.refetch(); }); }}>تلاش دوباره</Button></div> : null}
+    {failed ? <div role="alert" className="rounded-2xl bg-warning/5 p-4 text-sm leading-7"><p>بخشی از برنامه یا اعتبارها دریافت نشد؛ اطلاعات این صفحه ممکن است کامل نباشد.</p><Button size="sm" variant="ghost" onPress={() => { queries.forEach((query) => { if (query.isError) void query.refetch(); }); }}>تلاش دوباره</Button></div> : null}
     {workouts.error || assignments.error ? <Link href="/athlete/training" className="block rounded-xl bg-surface-secondary p-3 text-xs leading-6 text-muted">وضعیت تمرین کامل دریافت نشد؛ برای بررسی ذخیره‌ها و تلاش مجدد وارد تمرین من شو.</Link> : null}
     <section aria-label="برنامه هفت روز آینده" className="space-y-4">
       <div className="flex items-center justify-between gap-3"><h2 className="text-base font-bold">برنامه من</h2><Link href="/athlete/reservations" className="inline-flex min-h-11 items-center text-xs font-semibold text-accent">همه رزروها</Link></div>
@@ -75,8 +77,8 @@ export function AthleteToday() {
           </button>;
         })}
       </div>
-      {visible.map((item) => <Link key={`${item.source}:${item.id}`} href={item.href} className="flex min-h-24 items-center gap-4 rounded-2xl bg-surface px-4 py-3 transition hover:bg-surface-secondary focus-visible:outline-2 focus-visible:outline-focus"><span className="border-l border-border pl-4 text-sm font-bold tabular-nums">{sessionTime(item.startsAt)}</span><span className="min-w-0 flex-1"><strong className="block text-sm leading-6">{item.title}</strong><span className="mt-1 block text-xs text-muted">{item.paymentPending ? "نیازمند تکمیل پرداخت" : item.source === "coach" ? "رزرو مربی · مشاهده وضعیت" : "رزرو باشگاه"}</span></span><span aria-hidden="true">←</span></Link>)}
-      {!loading && !visible.length ? <p className="rounded-2xl border border-dashed border-border p-4 text-sm leading-7 text-muted">{failed ? "برای نمایش کامل رزروهای این روز، دریافت اطلاعات را دوباره امتحان کن." : "برای این روز رزرو باشگاه یا جلسه مربی ثبت نشده."}</p> : null}
+      {visible.map((item) => <Link key={`${item.source}:${item.id}`} href={item.href} className="flex min-h-24 items-center gap-4 rounded-2xl bg-surface px-4 py-3 transition hover:bg-surface-secondary focus-visible:outline-2 focus-visible:outline-focus"><span className="pl-4 text-sm font-bold tabular-nums">{sessionTime(item.startsAt)}</span><span className="min-w-0 flex-1"><strong className="block text-sm leading-6">{item.title}</strong><span className="mt-1 block text-xs text-muted">{item.paymentPending ? "نیازمند تکمیل پرداخت" : item.source === "coach" ? "رزرو مربی · مشاهده وضعیت" : item.source === "coach_class" ? "جلسه دوره مربی" : item.source === "business_class" ? "جلسه کلاس باشگاه" : "رزرو باشگاه"}</span></span><span aria-hidden="true">←</span></Link>)}
+      {!loading && !visible.length ? <p className="rounded-2xl p-4 text-sm leading-7 text-muted">{failed ? "برای نمایش کامل رزروهای این روز، دریافت اطلاعات را دوباره امتحان کن." : "برای این روز رزرو یا جلسه کلاسی ثبت نشده."}</p> : null}
       <div className="flex flex-wrap gap-3"><Link href="/athlete/training" className="min-h-11 rounded-xl bg-surface-secondary px-4 py-3 text-xs font-semibold">برنامه و ثبت تمرین من</Link><Link href="/athlete/classes" className="min-h-11 rounded-xl bg-surface-secondary px-4 py-3 text-xs font-semibold">دوره‌ها و کلاس‌های من</Link></div>
     </section>
   </div>;

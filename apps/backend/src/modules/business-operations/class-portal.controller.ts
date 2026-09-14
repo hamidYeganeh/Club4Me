@@ -66,6 +66,11 @@ export class AthleteBusinessClassesController {
     return this.service.listForAthlete(user.sub);
   }
 
+  @Get("agenda")
+  agenda(@CurrentUser() user: AuthTokenPayload) {
+    return this.service.agendaForAthlete(user.sub);
+  }
+
   @Get(":classId/groups") groups(
     @CurrentUser() user: AuthTokenPayload,
     @Param("classId") classId: string,

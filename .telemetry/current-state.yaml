@@ -1,11 +1,24 @@
-# Current State: greenfield (no product analytics tracking detected)
-# Scanned: 2026-09-04
-# SDK: none
-
-events: []
-identity:
-  identify_calls: []
-  group_calls: []
-patterns:
-  naming_style: n/a
-  centralized: n/a
+# Updated 2026-09-13; code inspected and tested locally.
+implementation: typed_first_party_with_posthog_outbox
+language: TypeScript
+registry: packages/api/src/tracking/events.ts
+backend_registry: apps/backend/src/modules/telemetry/events.ts
+contracts: .telemetry/tracking-plan.yaml
+client: packages/api/src/tracking/tracking.ts
+identity: consent_versioned_identify_alias_and_account_reset
+groups: explicit_club_and_session_context
+backend: apps/backend/src/modules/telemetry
+posthog:
+  transport: batch_http
+  delivery: durable_retry
+  live_status: project_not_created
+reporting:
+  admin: /analytics
+  business: dashboard_with_server_club_scope
+  finance: database_and_ledger
+  behavioral: first_party_event_store
+limits:
+  local_retention_days: 180
+  client_queue: 100
+  sync_overlap_minutes: 5
+  replay_enabled: false

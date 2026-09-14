@@ -12,8 +12,12 @@ node_modules
 .env.test.local
 .env.production.local
 .env.production
+.env.posthog.production
 
 # Testing
+**/test-results/
+**/playwright-report/
+/test-results/
 coverage
 apps/business/test-results/
 apps/business/playwright-report/
@@ -26,7 +30,7 @@ apps/business/playwright-report/
 
 # Build Outputs
 .next/
-.next-competitive/
+.next-*/
 out/
 build
 dist

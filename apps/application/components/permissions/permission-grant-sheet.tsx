@@ -17,7 +17,7 @@ const COPY: Record<
     description: "از تغییرات رزرو، زمان کلاس و یادآوری‌های مهم جا نمانید.",
     note: "هر زمان بخواهید می‌توانید این دسترسی را از تنظیمات دستگاه تغییر دهید.",
     image: "/permissions/notifications.png",
-    alt: "نمایش اعلان جیم فور می روی موبایل",
+    alt: "نمایش اعلان کلاب‌فورمی روی موبایل",
   },
   location: {
     title: "دسترسی به موقعیت مکانی",
@@ -79,7 +79,7 @@ export function PermissionGrantSheet({
           {copy.description}
         </p>
 
-        <div className="mt-5 flex w-full items-start gap-3 border-t border-border/70 px-1 pt-5 text-start">
+        <div className="mt-5 flex w-full items-start gap-3 px-1 pt-5 text-start">
           <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-accent/12 text-accent">
             <Icon name="info-circle" size={18} />
           </span>

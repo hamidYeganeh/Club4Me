@@ -120,21 +120,38 @@ export class UsersRepository {
       profile.gender && profile.gender !== "other"
         ? { $set: profile, $unset: { genderDescription: 1 } }
         : { $set: profile };
-    const user = await this.userModel.findByIdAndUpdate(userId, update, {
-      new: true,
-    });
-    if (!user) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    const user = await this.userModel.findOneAndUpdate(
+      profile.idCard
+        ? { _id: userId, idCard: { $in: [null, profile.idCard] } }
+        : { _id: userId },
+      update,
+      { new: true },
+    );
+    if (!user) {
+      if (profile.idCard && (await this.userModel.exists({ _id: userId }))) {
+        throw new AppError(
+          409,
+          "ID_CARD_LOCKED",
+          "A verified national ID cannot be changed",
+        );
+      }
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
     return toPublicUser(user);
   }
 
-  async deleteAccount(userId: string): Promise<{ deletedAt: string; receiptId: string }> {
+  async deleteAccount(
+    userId: string,
+  ): Promise<{ deletedAt: string; receiptId: string }> {
     if (!Types.ObjectId.isValid(userId)) {
       throw new AppError(404, "USER_NOT_FOUND", "User not found");
     }
     const id = new Types.ObjectId(userId);
     const deletedAt = new Date();
     const receiptId = randomUUID();
-    const anonymousKey = createHash("sha256").update(`deleted-user:${userId}`).digest("hex");
+    const anonymousKey = createHash("sha256")
+      .update(`deleted-user:${userId}`)
+      .digest("hex");
     const cleanup: Array<[string, Record<string, unknown>]> = [
       ["user_locations", { userId: id }],
       ["favorites", { userId: id }],
@@ -170,7 +187,14 @@ export class UsersRepository {
     }
     await this.connection.collection("club_students").updateMany(
       { userId: id },
-      { $set: { firstName: "کاربر", lastName: "حذف‌شده", deletedUserKey: anonymousKey }, $unset: { userId: "", phone: "", email: "", notes: "" } },
+      {
+        $set: {
+          firstName: "کاربر",
+          lastName: "حذف‌شده",
+          deletedUserKey: anonymousKey,
+        },
+        $unset: { userId: "", phone: "", email: "", notes: "" },
+      },
     );
     const result = await this.userModel.updateOne(
       { _id: id },
@@ -196,7 +220,14 @@ export class UsersRepository {
     if (result.matchedCount === 0) {
       throw new AppError(404, "USER_NOT_FOUND", "User not found");
     }
-    await this.connection.collection("account_deletion_receipts").insertOne({ receiptId, anonymousKey, deletedAt, policyVersion: "2026-09-08", retainedCategories: ["financial", "reservation", "support"], status: "completed" });
+    await this.connection.collection("account_deletion_receipts").insertOne({
+      receiptId,
+      anonymousKey,
+      deletedAt,
+      policyVersion: "2026-09-08",
+      retainedCategories: ["financial", "reservation", "support"],
+      status: "completed",
+    });
     return { deletedAt: deletedAt.toISOString(), receiptId };
   }
 

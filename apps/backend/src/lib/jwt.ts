@@ -39,11 +39,7 @@ function isPayload(value: unknown): value is AuthTokenPayload {
   );
 }
 
-function sign(
-  env: Env,
-  payload: AuthTokenPayload,
-  expiresIn: string,
-): string {
+function sign(env: Env, payload: AuthTokenPayload, expiresIn: string): string {
   const options: SignOptions = {
     expiresIn: expiresIn as SignOptions["expiresIn"],
   };

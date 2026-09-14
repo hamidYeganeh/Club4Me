@@ -204,6 +204,9 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const [ageGroupId, setAgeGroupId] = useState("");
   const [currency, setCurrency] = useState("IRR");
   const [taxPercent, setTaxPercent] = useState(0);
+  const [onSitePaymentMethods, setOnSitePaymentMethods] = useState<
+    Array<"cash" | "pos">
+  >([]);
   const [operationalStatus, setOperationalStatus] = useState<
     "active" | "temporarily_closed" | "permanently_closed" | "under_maintenance"
   >("active");
@@ -369,6 +372,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
     setAudience(value.audience);
     setCurrency(value.currency);
     setTaxPercent(value.taxPercent);
+    setOnSitePaymentMethods(value.onSitePaymentMethods ?? []);
     setOperationalStatus(value.operationalStatus);
     setWeekAvailability(
       value.weeklyHours.length
@@ -652,6 +656,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
         maxAge: maximumAge,
         currency,
         taxPercent,
+        onSitePaymentMethods,
         operationalStatus,
         weeklyHours: weekAvailabilityToWeeklyHours(weekAvailability),
         ...(hasCompleteLocation
@@ -748,7 +753,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
           {clubId && (
             <Link
               href={`/clubs/${clubId}/reservations`}
-              className="rounded-xl border border-border px-4 py-2 text-sm font-medium transition hover:border-accent"
+              className="rounded-xl px-4 py-2 text-sm font-medium transition"
             >
               {t("manageReservations")}
             </Link>
@@ -765,7 +770,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
               id="club-form-error"
               role="alert"
               tabIndex={-1}
-              className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger outline-none"
+              className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger outline-none"
             >
               {formError}
             </p>
@@ -1023,10 +1028,10 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                           <img
                             src={previewUrl}
                             alt={item.altText || item.title || "gallery"}
-                            className="h-28 w-full rounded-xl border border-white/10 object-cover sm:h-24"
+                            className="h-28 w-full rounded-xl object-cover sm:h-24"
                           />
                         ) : (
-                          <div className="grid h-28 place-items-center rounded-xl border border-dashed border-white/10 text-xs text-muted sm:h-24">
+                          <div className="grid h-28 place-items-center rounded-xl text-xs text-muted sm:h-24">
                             {t("image")}
                           </div>
                         )}
@@ -1305,7 +1310,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                     {rulesFieldArray.fields.map((field, index) => (
                       <div
                         key={field.id}
-                        className="flex items-start gap-2 rounded-xl border border-border p-3"
+                        className="flex items-start gap-2 rounded-xl p-3"
                       >
                         <TextArea
                           {...dynamicForm.register(`rules.${index}.value`)}
@@ -1338,10 +1343,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 <Field label={t("faqs")} wide group>
                   <div className="space-y-3">
                     {faqsFieldArray.fields.map((field, index) => (
-                      <div
-                        key={field.id}
-                        className="space-y-3 rounded-xl border border-border p-3"
-                      >
+                      <div key={field.id} className="space-y-3 rounded-xl p-3">
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-medium">
                             {t("faqItemTitle", { index: index + 1 })}
@@ -1544,6 +1546,52 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
               </Section>
             </Tabs.Panel>
             <Tabs.Panel id="operations" className="min-w-0 space-y-5">
+              <Section title="روش‌های پرداخت رزرو">
+                <div className="space-y-4 md:col-span-2">
+                  <div className="rounded-2xl bg-surface-secondary p-4">
+                    <p className="font-bold">
+                      درگاه پرداخت اپلیکیشن · همیشه فعال
+                    </p>
+                    <p className="mt-1 text-sm text-muted">
+                      پرداخت آنلاین برای همه باشگاه‌ها فعال است و قابل
+                      غیرفعال‌کردن نیست.
+                    </p>
+                  </div>
+                  <p className="text-sm leading-6 text-muted">
+                    روش‌های حضوری را فقط در صورت پذیرش در باشگاه فعال کنید.
+                    تغییر این تنظیمات برای رزروهای جدید اعمال می‌شود.
+                  </p>
+                  {(
+                    [
+                      ["cash", "پرداخت نقدی"],
+                      ["pos", "کارت‌خوان در محل"],
+                    ] as const
+                  ).map(([method, label]) => (
+                    <Switch
+                      key={method}
+                      aria-label={label}
+                      isSelected={onSitePaymentMethods.includes(method)}
+                      onChange={(enabled) =>
+                        setOnSitePaymentMethods((current) =>
+                          enabled
+                            ? [
+                                ...current.filter((item) => item !== method),
+                                method,
+                              ]
+                            : current.filter((item) => item !== method),
+                        )
+                      }
+                    >
+                      <Switch.Content>
+                        <Switch.Control>
+                          <Switch.Thumb />
+                        </Switch.Control>
+                        {label}
+                      </Switch.Content>
+                    </Switch>
+                  ))}
+                </div>
+              </Section>
               <Section title={t("operations")}>
                 <Field label={t("operationalStatus")}>
                   <FormSelect
@@ -1695,7 +1743,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                 <Field label={t("weeklyHours")} wide group>
                   {activeStep === "operations" ? (
                     <AvailabilityScheduler
-                      className="max-w-none rounded-[1.15rem] border border-white/10 bg-surface/80/40 px-3"
+                      className="max-w-none rounded-[1.15rem] bg-surface/80/40 px-3"
                       value={weekAvailability}
                       onChange={setWeekAvailability}
                       step={30}
@@ -1712,7 +1760,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                   {socialMedia.map((item, index) => (
                     <div
                       key={index}
-                      className="flex min-w-0 flex-col gap-3 rounded-xl border border-border p-3"
+                      className="flex min-w-0 flex-col gap-3 rounded-xl p-3"
                     >
                       <Select
                         fullWidth
@@ -1823,10 +1871,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
 
               <Section title={t("cancellation")}>
                 {cancellationRules.map((rule, ruleIndex) => (
-                  <div
-                    key={ruleIndex}
-                    className="space-y-3 rounded-xl border border-border p-4"
-                  >
+                  <div key={ruleIndex} className="space-y-3 rounded-xl p-4">
                     <div className="flex gap-2">
                       <HeroInput
                         value={rule.title}
@@ -2230,8 +2275,7 @@ function CatalogScrollArea({
       size={48}
       orientation="vertical"
       className={
-        className ??
-        "h-80 min-w-0 max-w-full rounded-[1.15rem] border border-white/10 bg-surface/80"
+        className ?? "h-80 min-w-0 max-w-full rounded-[1.15rem] bg-surface/80"
       }
     >
       {children}
@@ -2474,7 +2518,7 @@ function CountedGrid({
             description={t("selectedFacilityEmptyHint")}
           />
         ) : (
-          <CatalogScrollArea className="max-h-96 min-w-0 max-w-full space-y-3 rounded-[1.15rem] border border-white/10 bg-surface/60 p-3">
+          <CatalogScrollArea className="max-h-96 min-w-0 max-w-full space-y-3 rounded-[1.15rem] bg-surface/60 p-3">
             <div className="space-y-3">
               {selectedItems.map((item) => {
                 const isNotesOpen =

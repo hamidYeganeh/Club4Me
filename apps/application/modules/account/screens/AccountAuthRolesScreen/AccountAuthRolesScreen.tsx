@@ -26,8 +26,7 @@ export function AccountAuthRolesScreen() {
   const [hasToken, setHasToken] = useState<boolean | null>(null);
   const me = useAccountMe(hasToken === true);
   const isFirstTime = searchParams.get("firstTime") === "1";
-  const needsPassword =
-    me.data && !me.data.hasPassword && !me.data.roles.includes("athlete");
+  const needsPassword = me.data && !me.data.hasPassword;
   const isManaging = searchParams.get("manage") === "1";
   const roles = useMemo(
     () => (me.data ? getApplicationRoles(me.data.roles) : []),

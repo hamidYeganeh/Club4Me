@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-export const alt = "Gym4Me — Discover, train, progress";
+export const alt = "Club4Me — Discover, train, progress";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export default function Image() {

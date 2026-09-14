@@ -1,4 +1,5 @@
 "use client";
+import { useRecordBrowser } from "@/components/record-browser";
 
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
@@ -64,6 +65,10 @@ function CoachTrainingSession() {
     "coach-assignments",
     trainingApi.coachAssignments,
   );
+  const browser = useRecordBrowser(plans.data?.items ?? [], {
+    label: "برنامه‌های مربی",
+    text: (item) => item.versions.at(-1)?.plan.title ?? "",
+  });
   const exercises = useTrainingData("exercises", trainingApi.exercises, true);
   const [draft, setDraft] = useState<TrainingPlan | null>(null);
   const [selected, setSelected] = useState<{
@@ -236,7 +241,7 @@ function CoachTrainingSession() {
             e.preventDefault();
             void save();
           }}
-          className="space-y-5 rounded-2xl border border-border bg-surface p-5"
+          className="space-y-5 rounded-2xl bg-surface p-5"
         >
           <div>
             <p className="text-xs text-muted">
@@ -269,10 +274,7 @@ function CoachTrainingSession() {
               />
             </label>
             {draft.days.map((day, dayIndex) => (
-              <section
-                key={day.id}
-                className="space-y-4 rounded-xl border border-border p-4"
-              >
+              <section key={day.id} className="space-y-4 rounded-xl p-4">
                 <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
                   <label>
                     نام جلسه
@@ -351,10 +353,7 @@ function CoachTrainingSession() {
                       ),
                     });
                   return (
-                    <div
-                      key={exerciseIndex}
-                      className="space-y-3 border-t border-border pt-4"
-                    >
+                    <div key={exerciseIndex} className="space-y-3 pt-4">
                       <div className="flex items-center gap-2">
                         <label className="flex-1">
                           حرکت {number(exerciseIndex + 1)}
@@ -513,8 +512,9 @@ function CoachTrainingSession() {
           </div>
         </form>
       )}
+      {browser.controls}
       <div className="grid gap-4 md:grid-cols-2">
-        {plans.data?.items.map((p) => (
+        {browser.items.map((p) => (
           <Card key={p.id} className="p-5">
             <Card.Header>
               <p className="text-xs text-muted">

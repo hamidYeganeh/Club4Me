@@ -53,7 +53,7 @@ for (const theme of ["light", "dark"] as const) {
       for (const [name, path, title] of [
         ["home", "/athlete", "هر روز، یک قدم جلوتر"],
         ["coach-home", "/coach", "همراه پیشرفت شاگردهایت"],
-        ["settings", "/athlete/settings", "جیم‌فورمی، به سلیقهٔ تو"],
+        ["settings", "/athlete/settings", "کلاب‌فورمی، به سلیقهٔ تو"],
         ["reservations", "/athlete/reservations", "برنامه تمرینت، یک‌جا"],
         ["notifications", "/athlete/notifications", "از برنامه‌ات باخبر بمان"],
         ["memberships", "/athlete/memberships", "مسیر تمرینت ادامه دارد"],
@@ -66,7 +66,7 @@ for (const theme of ["light", "dark"] as const) {
           page.getByRole("heading", { name: title!, exact: true }),
         ).toBeVisible();
         await expect(
-          page.getByRole("status", { name: "Gym4Me", exact: true }),
+          page.getByRole("status", { name: "Club4Me", exact: true }),
         ).toHaveCount(0);
         await expect(page.locator("header")).toHaveCount(1);
         await expect(page.locator("[data-hero-scrim]")).toHaveCount(1);

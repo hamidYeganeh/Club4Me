@@ -26,7 +26,7 @@ export const landingTestimonialsSectionStyles = tv({
     photoCard: "group cursor-pointer",
     photoImg: [
       "size-full object-cover transition-transform duration-500 ease-app",
-      "group-hover:scale-105",
+      "",
     ],
     reviewOverlay: [
       "pointer-events-none absolute inset-x-5 bottom-5 rounded-xl bg-(--brand-light)",
@@ -55,8 +55,8 @@ export const landingTestimonialsSectionStyles = tv({
     quoteTextDark: "text-background",
     authorRow: "mt-auto flex items-center gap-3",
     avatar: "size-11 rounded-full object-cover",
-    avatarLime: "border-2 border-accent-foreground",
-    avatarDark: "border-2 border-muted",
+    avatarLime: "",
+    avatarDark: "",
     authorMeta: "min-w-0 text-start",
     authorName: "text-[13px] font-extrabold tracking-[0.05em] uppercase",
     authorNameLime: "text-accent-foreground",

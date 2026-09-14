@@ -126,7 +126,7 @@ test("sports search and pagination reach results beyond the first page", async (
     page.getByRole("heading", { name: "بدنسازی", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("status", { name: "Gym4Me", exact: true }),
+    page.getByRole("status", { name: "Club4Me", exact: true }),
   ).toHaveCount(0);
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: testInfo.outputPath("sports.png") });
@@ -190,7 +190,7 @@ test("coach details render while sessions are still loading", async ({
     page.getByRole("link", { name: "مشاهده گالری", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("status", { name: "Gym4Me", exact: true }),
+    page.getByRole("status", { name: "Club4Me", exact: true }),
   ).toHaveCount(0);
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: testInfo.outputPath("coach-detail.png") });
@@ -247,7 +247,7 @@ test("class search reaches both sources and a failed source can retry independen
     )
     .toBe(true);
   await expect(
-    page.getByRole("status", { name: "Gym4Me", exact: true }),
+    page.getByRole("status", { name: "Club4Me", exact: true }),
   ).toHaveCount(0);
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: testInfo.outputPath("classes.png") });

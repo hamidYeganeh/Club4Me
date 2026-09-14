@@ -163,7 +163,7 @@ function RelationInput({
       {resources.isPending ? (
         <Spinner size="sm" />
       ) : multiple ? (
-        <div className="max-h-48 space-y-2 overflow-auto rounded-xl border border-border p-3">
+        <div className="max-h-48 space-y-2 overflow-auto rounded-xl p-3">
           {(resources.data?.items ?? []).map((item) => {
             const text = String(
               item.name ??

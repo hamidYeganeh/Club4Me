@@ -49,7 +49,7 @@ export function ThemeToggle({
         tabIndex={-1}
         aria-hidden
         className={cn(
-          "inline-flex size-10 items-center justify-center rounded-full border border-border bg-surface text-foreground",
+          "inline-flex size-10 items-center justify-center rounded-full bg-surface text-foreground",
           className,
         )}
       />
@@ -66,7 +66,7 @@ export function ThemeToggle({
       duration={duration}
       fromCenter={fromCenter}
       className={cn(
-        "inline-flex size-10 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-colors hover:bg-surface-secondary [&_.icon]:text-[16px]",
+        "inline-flex size-10 items-center justify-center rounded-full bg-surface text-foreground transition-colors hover:bg-surface-secondary [&_.icon]:text-[16px]",
         className,
       )}
     />

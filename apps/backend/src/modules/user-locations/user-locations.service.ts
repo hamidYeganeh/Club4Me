@@ -30,8 +30,9 @@ export class UserLocationsService {
     }
 
     const created = await this.repository.create(userId, input);
-    return count === 0 || input.isDefault
-      ? this.repository.setDefault(userId, created.id)
+    if (input.isDefault) return this.repository.setDefault(userId, created.id);
+    return count === 0
+      ? this.repository.ensureDefault(userId, created.id)
       : created;
   }
 

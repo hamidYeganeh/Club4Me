@@ -1,8 +1,10 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import { CoachCardSkeleton } from "../../components/skeletons/CoachCardSkeleton";
 import { useLocale, useTranslations } from "next-intl";
-import { FreeMode } from "swiper/modules";
+import { FreeMode, Virtual } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { CoachCard } from "@ui/coach-card";
 
@@ -23,7 +25,7 @@ const SERVICE_MODE_LABELS: Record<string, string> = {
   outdoor: "فضای باز",
 };
 
-export function DiscoveryCoachesRailSection({
+function DiscoveryCoachesRailSectionContent({
   id,
   title,
   subtitle,
@@ -67,9 +69,10 @@ export function DiscoveryCoachesRailSection({
 
       <Swiper
         dir={direction}
-        modules={[FreeMode]}
+        modules={[FreeMode, Virtual]}
+        virtual={!isLoading}
         freeMode
-        slidesPerView="auto"
+        slidesPerView={1.2}
         spaceBetween={12}
         watchOverflow
         className={styles.swiper()}
@@ -80,8 +83,12 @@ export function DiscoveryCoachesRailSection({
                 <CoachCardSkeleton type={cardType} />
               </SwiperSlide>
             ))
-          : items.map((coach) => (
-              <SwiperSlide key={coach.id} className={styles.slide()}>
+          : items.map((coach, index) => (
+              <SwiperSlide
+                key={coach.id}
+                virtualIndex={index}
+                className="h-auto!"
+              >
                 <CoachCard
                   type={cardType}
                   title={coach.displayName}
@@ -119,5 +126,15 @@ export function DiscoveryCoachesRailSection({
             ))}
       </Swiper>
     </section>
+  );
+}
+
+export function DiscoveryCoachesRailSection(
+  props: ComponentProps<typeof DiscoveryCoachesRailSectionContent>,
+) {
+  return (
+    <DiscoveryViewport>
+      <DiscoveryCoachesRailSectionContent {...props} />
+    </DiscoveryViewport>
   );
 }

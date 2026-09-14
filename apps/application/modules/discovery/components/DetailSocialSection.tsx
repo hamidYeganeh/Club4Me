@@ -98,7 +98,7 @@ export function DetailSocialSection({
   return (
     <section
       aria-labelledby={titleId}
-      className="flex w-full flex-col gap-5 py-5"
+      className="flex w-full flex-col gap-4 rounded-[32px] bg-surface p-6"
     >
       <div className="flex items-center justify-between gap-4 text-foreground">
         <Typography id={titleId} type="h5">
@@ -108,7 +108,7 @@ export function DetailSocialSection({
           <Icon name="share-2" size={24} />
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-2">
         {links.map(({ platform, href }, index) => (
           <Link
             key={`${platform}-${index}`}
@@ -116,12 +116,10 @@ export function DetailSocialSection({
             target="_blank"
             rel="noopener noreferrer"
             aria-label={labels[platform] ?? platform}
-            className="flex min-h-20 w-full items-center justify-center gap-3 px-3 rounded-[1.75rem] bg-surface-secondary text-foreground no-underline transition-colors hover:bg-accent/12 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
+            className="flex h-16 w-full items-center justify-center gap-3 px-3 rounded-[21px] bg-surface-secondary text-foreground no-underline transition-colors hover:bg-accent/12 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
           >
             <SocialIcon platform={platform} />
-            <span className="text-sm font-semibold">
-              {labels[platform] ?? platform}
-            </span>
+            <span className="sr-only">{labels[platform] ?? platform}</span>
           </Link>
         ))}
       </div>

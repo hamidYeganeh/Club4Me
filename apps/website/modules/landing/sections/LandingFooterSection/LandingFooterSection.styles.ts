@@ -2,7 +2,7 @@ import { tv } from "tailwind-variants";
 
 export const landingFooterSectionStyles = tv({
   slots: {
-    root: "border-t border-separator bg-surface px-4 py-16",
+    root: "bg-surface px-4 py-16",
     grid: "mx-auto grid max-w-6xl grid-cols-1 gap-10 md:grid-cols-12",
     brand: "md:col-span-5",
     brandRow: "flex items-center gap-2",

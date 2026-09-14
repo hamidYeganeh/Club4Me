@@ -1,4 +1,5 @@
 "use client";
+import { useRecordBrowser } from "@/components/record-browser";
 
 import { useMemo, useState } from "react";
 import { useNow } from "@/lib/use-now";
@@ -151,9 +152,14 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
     [selectedDateKey],
   );
 
+  const browser = useRecordBrowser(items, {
+    label: "رزروها",
+    text: (item) => item.sessionTitle,
+    status: (item) => item.status,
+  });
   const visibleItems = useMemo(() => {
     const relevantItems = filterReservationList(
-      items,
+      browser.items,
       listMode,
       selectedDateKey,
       now ?? Number.POSITIVE_INFINITY,
@@ -164,7 +170,7 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
         new Date(left.sessionStartsAt).getTime();
       return sortNewestFirst ? delta : -delta;
     });
-  }, [items, selectedDateKey, listMode, sortNewestFirst, now]);
+  }, [browser.items, selectedDateKey, listMode, sortNewestFirst, now]);
 
   const activeSelectedId =
     selectedId && visibleItems.some((item) => item.id === selectedId)
@@ -313,6 +319,7 @@ export function ReservationsScreen({ role }: ReservationsScreenProps) {
           </Button>
         ))}
       </div>
+      {browser.controls}
       <ReservationsTimelineSection
         title={listMode === "upcoming" ? "رزروهای پیش‌رو" : t("all")}
         newestFirstLabel={t("newestFirst")}

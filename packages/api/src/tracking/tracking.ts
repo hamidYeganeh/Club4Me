@@ -1,7 +1,13 @@
-import { http } from "../http/client";
+import {
+  observeProductRequests,
+  type RequestObservation,
+} from "../http/request-observer";
+import { sessionRequest } from "../http/client";
 import { tokenStore } from "../http/token-store";
 import { EVENTS, type TelemetryEventName } from "./events";
 import type {
+  AppOpenedEvent,
+  DiscoveryEntityViewedEvent,
   AccountDeletedEvent,
   ClubTraits,
   CheckoutStartedEvent,
@@ -27,10 +33,10 @@ declare const process: {
   };
 };
 
-const QUEUE_KEY = "gym4me.telemetry.queue.v1";
+const QUEUE_KEY = "gym4me.telemetry.queue.v2";
 const MAX_QUEUE_LENGTH = 100;
 const ANONYMOUS_KEY = "gym4me.telemetry.install-id.v1";
-const CONSENT_KEY = "gym4me.telemetry.consent.v1";
+const CONSENT_KEY = "gym4me.telemetry.consent.2026-09-13";
 
 type TelemetryContext = {
   platform: TelemetryPlatform;
@@ -39,6 +45,7 @@ type TelemetryContext = {
 
 type QueueItem = {
   method: "identify" | "groups" | "events";
+  identity?: string;
   payload: Record<string, unknown>;
 };
 
@@ -51,8 +58,21 @@ let initialized = false;
 
 export function configureTelemetryContext(next: TelemetryContext): void {
   context = next;
+  observeProductRequests(trackRequestCompleted);
   initializeQueue();
   void flushTelemetryQueue();
+}
+
+export function trackRequestCompleted(properties: RequestObservation): void {
+  track(EVENTS.REQUEST_COMPLETED, properties);
+}
+export function trackAppOpened(properties: AppOpenedEvent): void {
+  track(EVENTS.APP_OPENED, properties);
+}
+export function trackDiscoveryEntityViewed(
+  properties: DiscoveryEntityViewedEvent,
+): void {
+  track(EVENTS.DISCOVERY_ENTITY_VIEWED, properties);
 }
 
 export function identifyUser(traits: UserTraits): void {
@@ -131,27 +151,42 @@ export function trackAccountDeleted(properties: AccountDeletedEvent): void {
 
 export function resetTelemetryIdentity(): void {
   if (typeof window !== "undefined") {
-    window.localStorage.removeItem(QUEUE_KEY);
+    try {
+      window.localStorage.removeItem(QUEUE_KEY);
+      window.localStorage.removeItem(ANONYMOUS_KEY);
+    } catch { /* Telemetry must not interrupt the user action. */ }
   }
 }
 
 export function telemetryConsent(): boolean | null {
   if (typeof window === "undefined") return null;
-  const value = window.localStorage.getItem(CONSENT_KEY);
-  return value === "granted" ? true : value === "denied" ? false : null;
+  try {
+    const value = window.localStorage.getItem(CONSENT_KEY);
+    return value === "granted" ? true : value === "denied" ? false : null;
+  } catch {
+    return null;
+  }
 }
 
 export function setTelemetryConsent(granted: boolean): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(CONSENT_KEY, granted ? "granted" : "denied");
-  if (!granted) window.localStorage.removeItem(QUEUE_KEY);
+  try {
+    window.localStorage.setItem(CONSENT_KEY, granted ? "granted" : "denied");
+    if (!granted) {
+      window.localStorage.removeItem(QUEUE_KEY);
+      window.localStorage.removeItem(ANONYMOUS_KEY);
+    }
+  } catch { /* Telemetry must not interrupt the user action. */ }
+  window.dispatchEvent(new Event("telemetry-consent-changed"));
 }
 
 export function flushTelemetryQueue(): Promise<void> {
   initializeQueue();
-  flushPromise ??= deliverQueue().finally(() => {
-    flushPromise = undefined;
-  });
+  flushPromise ??= Promise.resolve()
+    .then(deliverQueue)
+    .finally(() => {
+      flushPromise = undefined;
+    });
   return flushPromise;
 }
 
@@ -166,44 +201,73 @@ function enqueue(
   method: QueueItem["method"],
   payload: Record<string, unknown>,
 ): void {
-  if (telemetryConsent() !== true) return;
-  initializeQueue();
-  const item: QueueItem = {
-    method,
-    payload: {
-      ...payload,
-      eventId: createEventId(),
-      occurredAt: new Date().toISOString(),
-      platform: context.platform,
-      appVersion: context.appVersion,
-      anonymousId: anonymousId(),
-    },
-  };
-  const queue = [...readQueue(), item].slice(-MAX_QUEUE_LENGTH);
-  writeQueue(queue);
-  void flushTelemetryQueue();
+  try {
+    if (
+      telemetryConsent() !== true ||
+      tokenStore.identity().startsWith("opaque:")
+    )
+      return;
+    initializeQueue();
+    const item: QueueItem = {
+      method,
+      identity: tokenStore.identity(),
+      payload: {
+        ...payload,
+        eventId: createEventId(),
+        occurredAt: new Date().toISOString(),
+        platform: context.platform,
+        appVersion: context.appVersion,
+        anonymousId: anonymousId(),
+      },
+    };
+    const queue = [...readQueue(), item].slice(-MAX_QUEUE_LENGTH);
+    writeQueue(queue);
+    void flushTelemetryQueue();
+  } catch {
+    /* Storage restrictions must not affect product actions. */
+  }
 }
 
 async function deliverQueue(): Promise<void> {
   if (typeof window === "undefined" || !navigator.onLine) return;
 
   let queue = readQueue();
-  while (queue.length > 0) {
+  while (queue.length > 0 && telemetryConsent() === true) {
     const item = queue[0];
     if (!item) return;
     try {
+      const currentIdentity = tokenStore.identity();
+      if (
+        item.identity &&
+        item.identity !== "guest" &&
+        item.identity !== currentIdentity
+      ) {
+        queue = readQueue().filter(
+          (entry) => entry.payload.eventId !== item.payload.eventId,
+        );
+        writeQueue(queue);
+        continue;
+      }
       const authenticated = Boolean(tokenStore.get());
       if (!authenticated && item.method !== "events") return;
-      await http.post<{ accepted: true }>(
-        authenticated ? `/telemetry/${item.method}` : "/public/telemetry/events",
+      await sessionRequest<{ accepted: true }>(
+        currentIdentity,
+        "POST",
+        authenticated
+          ? `/telemetry/${item.method}`
+          : "/public/telemetry/events",
         item.payload,
       );
-      queue = queue.slice(1);
+      queue = readQueue().filter(
+        (entry) => entry.payload.eventId !== item.payload.eventId,
+      );
       writeQueue(queue);
     } catch (error: unknown) {
       const status = readStatus(error);
       if (status && status >= 400 && status < 500 && status !== 429) {
-        queue = queue.slice(1);
+        queue = readQueue().filter(
+          (entry) => entry.payload.eventId !== item.payload.eventId,
+        );
         writeQueue(queue);
         continue;
       }
@@ -214,18 +278,29 @@ async function deliverQueue(): Promise<void> {
 
 function anonymousId(): string | undefined {
   if (typeof window === "undefined") return undefined;
-  let value = window.localStorage.getItem(ANONYMOUS_KEY);
-  if (!value) {
-    value = createEventId();
-    window.localStorage.setItem(ANONYMOUS_KEY, value);
+  try {
+    let value = window.localStorage.getItem(ANONYMOUS_KEY);
+    if (!value) {
+      value = createEventId();
+      window.localStorage.setItem(ANONYMOUS_KEY, value);
+    }
+    return value;
+  } catch {
+    return undefined;
   }
-  return value;
 }
 
 function initializeQueue(): void {
   if (initialized || typeof window === "undefined") return;
   initialized = true;
   window.addEventListener("online", () => void flushTelemetryQueue());
+  let previousIdentity = tokenStore.identity();
+  tokenStore.subscribe(() => {
+    const next = tokenStore.identity();
+    if (previousIdentity !== "guest" && previousIdentity !== next)
+      resetTelemetryIdentity();
+    previousIdentity = next;
+  });
 }
 
 function readQueue(): QueueItem[] {

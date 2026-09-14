@@ -1,4 +1,6 @@
 "use client";
+import { DiscoveryFilterSheet } from "@modules/discovery/components/DiscoveryFilterSheet";
+import { DiscoveryVirtualItems } from "@modules/discovery/components/DiscoveryViewport";
 
 import { useState } from "react";
 import Link from "@/components/app-link";
@@ -53,7 +55,7 @@ export function DiscoverySportsScreen() {
           isLoading={featured.isPending}
         />
       )}
-      <section aria-label="دسته‌بندی ورزش‌ها" className="space-y-3">
+      <DiscoveryFilterSheet title="دسته‌بندی ورزش‌ها">
         <h2 className="text-lg font-bold">دسته‌بندی ورزش‌ها</h2>
         <DiscoveryQueryState query={categories} />
         <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-2">
@@ -72,38 +74,41 @@ export function DiscoverySportsScreen() {
             </button>
           ))}
         </div>
-      </section>
+      </DiscoveryFilterSheet>
       <DiscoveryQueryState query={sports} />
       {sports.isLoading ? <DiscoveryResultCardSkeleton count={4} /> : null}
       <div className="grid grid-cols-2 gap-3">
-        {items.map((sport) => (
-          <Link
-            key={sport.id}
-            href={`/discovery/sports/${sport.slug || sport.id}`}
-            className="group flex min-w-0 flex-col gap-4 rounded-3xl bg-surface p-4 no-underline outline-none transition-colors hover:bg-surface-secondary focus-visible:ring-2 focus-visible:ring-focus active:bg-surface-secondary"
-          >
-            <span className="grid size-12 place-items-center rounded-2xl bg-accent/12 text-accent">
-              <Icon
-                name={resolveClubTypeIcon(
-                  typeof sport.code === "string" ? sport.code : undefined,
-                  typeof sport.icon === "string" ? sport.icon : undefined,
-                )}
-                size={28}
-              />
-            </span>
-            <div>
-              <h2 className="font-bold text-foreground">{sport.name}</h2>
-              <p className="mt-1 line-clamp-2 text-xs leading-6 text-muted">
-                {(typeof sport.description === "string" && sport.description) ||
-                  "باشگاه‌ها و محل‌های تمرین این رشته"}
-              </p>
-            </div>
-            <span className="mt-auto flex items-center justify-between text-xs font-bold text-accent">
-              دیدن باشگاه‌ها
-              <Icon name="arrow-left" size={16} />
-            </span>
-          </Link>
-        ))}
+        <DiscoveryVirtualItems>
+          {items.map((sport) => (
+            <Link
+              key={sport.id}
+              href={`/discovery/sports/${sport.slug || sport.id}`}
+              className="group flex min-w-0 flex-col gap-4 rounded-3xl bg-surface p-4 no-underline outline-none transition-colors hover:bg-surface-secondary focus-visible:ring-2 focus-visible:ring-focus active:bg-surface-secondary"
+            >
+              <span className="grid size-12 place-items-center rounded-2xl bg-accent/12 text-accent">
+                <Icon
+                  name={resolveClubTypeIcon(
+                    typeof sport.code === "string" ? sport.code : undefined,
+                    typeof sport.icon === "string" ? sport.icon : undefined,
+                  )}
+                  size={28}
+                />
+              </span>
+              <div>
+                <h2 className="font-bold text-foreground">{sport.name}</h2>
+                <p className="mt-1 line-clamp-2 text-xs leading-6 text-muted">
+                  {(typeof sport.description === "string" &&
+                    sport.description) ||
+                    "باشگاه‌ها و محل‌های تمرین این رشته"}
+                </p>
+              </div>
+              <span className="mt-auto flex items-center justify-between text-xs font-bold text-accent">
+                دیدن باشگاه‌ها
+                <Icon name="arrow-left" size={16} />
+              </span>
+            </Link>
+          ))}
+        </DiscoveryVirtualItems>
       </div>
       {sports.isSuccess && !items.length ? (
         <DiscoveryEmptySection

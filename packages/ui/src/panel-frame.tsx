@@ -22,10 +22,11 @@ export function PanelFrame({
         .filter(Boolean)
         .join(" ")}
     >
+      <a className="panel-skip-link" href="#panel-content">رفتن به محتوای اصلی</a>
       {rail}
       <div className="panel-frame-main flex min-w-0 flex-1 flex-col">
         {header}
-        <div className="panel-frame-body flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
+        <div id="panel-content" tabIndex={-1} className="panel-frame-body flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
           {children}
         </div>
       </div>

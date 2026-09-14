@@ -73,7 +73,7 @@ export function LandingContactModal({ className }: LandingContactModalProps) {
       });
       setSuccess(true);
     } catch {
-      window.location.href = `mailto:hello@gym4me.ir?subject=${encodeURIComponent("تماس با Gym4Me")}&body=${encodeURIComponent(`${name}\n${email}\n\n${note}`)}`;
+      window.location.href = `mailto:hello@gym4me.ir?subject=${encodeURIComponent("تماس با Club4Me")}&body=${encodeURIComponent(`${name}\n${email}\n\n${note}`)}`;
     } finally {
       setSending(false);
     }

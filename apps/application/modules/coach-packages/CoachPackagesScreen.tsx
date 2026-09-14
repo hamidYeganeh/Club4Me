@@ -1,4 +1,5 @@
 "use client";
+import { useRecordBrowser } from "@/components/record-browser";
 
 import { useRef, useState } from "react";
 import { Button, Card, toast } from "@heroui/react";
@@ -21,6 +22,15 @@ import { useNow } from "@/lib/use-now";
 export function CoachPackagesScreen({ coachSlug }: { coachSlug?: string }) {
   const offerings = usePublicCoachOfferings(coachSlug ?? "");
   const owned = useCoachPackages();
+  const offeringBrowser = useRecordBrowser(offerings.data?.items ?? [], {
+    label: "بسته‌های مربی",
+    text: (item) => item.title,
+  });
+  const ownedBrowser = useRecordBrowser(owned.data?.items ?? [], {
+    label: "بسته‌های خریداری‌شده",
+    text: (item) => item.title,
+    status: (item) => item.status,
+  });
   const purchase = usePurchaseCoachPackage();
   const payment = useMockPaymentDecision();
   const createPayment = useCreatePaymentIntent();
@@ -102,6 +112,7 @@ export function CoachPackagesScreen({ coachSlug }: { coachSlug?: string }) {
       <DiscoveryPageHeader
         title={coachSlug ? "خرید خدمات مربی" : "بسته‌های مربی من"}
       />
+      {coachSlug ? offeringBrowser.controls : ownedBrowser.controls}
       {error ? (
         <p
           role="alert"
@@ -150,7 +161,7 @@ export function CoachPackagesScreen({ coachSlug }: { coachSlug?: string }) {
                   این مربی بسته یا خدمت ماهانه فعالی ندارد.
                 </p>
               ) : (
-                offerings.data.items
+                offeringBrowser.items
                   .filter((item) => item.pricingType !== "per_session")
                   .map((item) => (
                     <Card
@@ -159,11 +170,20 @@ export function CoachPackagesScreen({ coachSlug }: { coachSlug?: string }) {
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <FeatureBadge>{item.pricingType === "per_month" ? "ماهانه" : "بسته جلسات"}</FeatureBadge>
-                          <Card.Title className="mt-2 text-base">{item.title}</Card.Title>
+                          <FeatureBadge>
+                            {item.pricingType === "per_month"
+                              ? "ماهانه"
+                              : "بسته جلسات"}
+                          </FeatureBadge>
+                          <Card.Title className="mt-2 text-base">
+                            {item.title}
+                          </Card.Title>
                         </div>
                         <p className="text-sm font-bold tabular-nums">
-                          {item.price.amount.toLocaleString("fa-IR")} <span className="text-xs font-normal text-muted">ریال</span>
+                          {item.price.amount.toLocaleString("fa-IR")}{" "}
+                          <span className="text-xs font-normal text-muted">
+                            ریال
+                          </span>
                         </p>
                       </div>
                       <p className="text-sm leading-7 text-muted">
@@ -204,11 +224,11 @@ export function CoachPackagesScreen({ coachSlug }: { coachSlug?: string }) {
                 کنید.
               </p>
             ) : (
-              owned.data.items.map((item) => {
+              ownedBrowser.items.map((item) => {
                 const expired = Boolean(
                   now !== null &&
-                    item.expiresAt &&
-                    new Date(item.expiresAt).getTime() <= now,
+                  item.expiresAt &&
+                  new Date(item.expiresAt).getTime() <= now,
                 );
                 const exhausted = item.remainingSessions === 0;
                 const payable =

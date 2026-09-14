@@ -63,7 +63,7 @@ export function WelcomeIntroduceCarouselSection({
             const shouldMountImage = Math.abs(index - activeIndex) <= 1;
 
             return (
-              <SwiperSlide key={slide.imageSrc} className={styles.slide()}>
+              <SwiperSlide key={slide.imageSrc} className={styles.slide()} aria-hidden={index !== activeIndex} inert={index !== activeIndex}>
                 {shouldMountImage ? (
                   <Image
                     src={slide.imageSrc}
@@ -103,7 +103,7 @@ export function WelcomeIntroduceCarouselSection({
       <div className={styles.footer()}>
         <button
           type="button"
-          aria-label={nextLabel}
+          aria-label={isLast ? "شروع" : nextLabel}
           className={styles.navNext()}
           onClick={() => {
             if (isLast) {
@@ -119,7 +119,7 @@ export function WelcomeIntroduceCarouselSection({
         <div
           className={styles.pagination()}
           dir={direction}
-          role="tablist"
+          role="group"
           aria-label={paginationLabel}
         >
           {slides.map((slide, index) => {
@@ -129,8 +129,7 @@ export function WelcomeIntroduceCarouselSection({
               <button
                 key={slide.imageSrc}
                 type="button"
-                role="tab"
-                aria-selected={active}
+                aria-pressed={active}
                 aria-label={slideLabels[index]}
                 className={styles.bullet()}
                 onClick={() => swiper?.slideTo(index)}

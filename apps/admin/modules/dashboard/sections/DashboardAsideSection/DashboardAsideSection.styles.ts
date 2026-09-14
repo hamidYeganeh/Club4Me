@@ -2,7 +2,7 @@ import { tv } from "tailwind-variants";
 
 export const dashboardAsideSectionStyles = tv({
   slots: {
-    root: "flex w-full flex-col gap-5 rounded-[1.75rem] border border-border bg-surface p-5 lg:w-[20rem] lg:shrink-0",
+    root: "flex w-full flex-col gap-5 rounded-[1.75rem] bg-surface p-5 lg:w-[20rem] lg:shrink-0",
     profile: "flex flex-col items-center text-center",
     name: "mt-3 text-lg font-semibold",
     role: "text-sm text-muted",
@@ -13,6 +13,6 @@ export const dashboardAsideSectionStyles = tv({
       "flex size-11 items-center justify-center rounded-2xl bg-accent/15 text-accent",
     itemTitle: "text-sm font-medium",
     itemMeta: "text-xs text-muted",
-    add: "mt-auto rounded-2xl border border-dashed border-accent/50 py-4 text-accent",
+    add: "mt-auto rounded-2xl py-4 text-accent",
   },
 });

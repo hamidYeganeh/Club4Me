@@ -30,7 +30,7 @@ export function ResourceNavigation() {
   );
 
   return (
-    <aside className="w-full shrink-0 border-b border-border bg-surface p-3 lg:h-full lg:w-72 lg:overflow-y-auto lg:border-b-0 lg:border-e">
+    <aside className="w-full shrink-0 bg-surface p-3 lg:h-full lg:w-72 lg:overflow-y-auto lg:border-b-0">
       <ButtonLink
         href="/resources"
         variant="ghost"
@@ -62,7 +62,7 @@ export function ResourceNavigation() {
             <details
               key={group.id}
               open={activeGroup || Boolean(normalized)}
-              className="group rounded-xl border border-border/70 bg-background/40"
+              className="group rounded-xl bg-background/40"
             >
               <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-semibold marker:hidden">
                 {group.title}
@@ -70,7 +70,7 @@ export function ResourceNavigation() {
                   {group.items.length}
                 </span>
               </summary>
-              <div className="space-y-1 border-t border-border/70 p-1.5">
+              <div className="space-y-1 p-1.5">
                 {group.items.map((item) => {
                   const href = resourcePagePath(group.segment, item.segment);
                   const active = pathname === href;

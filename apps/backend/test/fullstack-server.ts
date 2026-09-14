@@ -3,7 +3,7 @@ import "reflect-metadata";
 import { Test } from "@nestjs/testing";
 import { getConnectionToken } from "@nestjs/mongoose";
 import type { INestApplication } from "@nestjs/common";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "./mongo-memory";
 import { Connection, Types } from "mongoose";
 import { AppModule } from "../src/app.module";
 import { REDIS_CLIENT } from "../src/infrastructure/redis/redis.types";

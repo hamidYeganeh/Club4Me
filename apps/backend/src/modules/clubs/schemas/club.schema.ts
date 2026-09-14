@@ -269,6 +269,9 @@ export class Club {
   @Prop({ type: String, trim: true, uppercase: true, default: "IRR" })
   currency: string;
   @Prop({ type: Number, min: 0, max: 100, default: 0 }) taxPercent: number;
+
+  @Prop({ type: [String], enum: ["cash", "pos"], default: [] })
+  onSitePaymentMethods: Array<"cash" | "pos">;
   @Prop({ type: Number, min: 0, max: 5, default: 0 }) averageRating: number;
   @Prop({ type: Number, min: 0, default: 0 }) reviewsCount: number;
   @Prop({

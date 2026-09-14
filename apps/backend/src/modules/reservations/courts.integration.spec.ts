@@ -1,5 +1,5 @@
 import { createConnection, type Connection, Types } from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "../../../test/mongo-memory";
 import { ReservationsService } from "./reservations.service";
 import { CreateCourtDto, UpdateCourtDto } from "./dto/reservation.dto";
 import { Court, CourtSchema } from "./schemas/court.schema";

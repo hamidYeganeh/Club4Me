@@ -1,4 +1,6 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import Link from "@/components/app-link";
 import { ScrollShadow, Skeleton, Typography } from "@heroui/react";
@@ -26,7 +28,7 @@ function chunkTypes(items: DiscoveryClubTypeItem[], size: number) {
   return columns;
 }
 
-export function DiscoveryClubTypesSection({
+function DiscoveryClubTypesSectionContent({
   items,
   enabled = true,
   title,
@@ -163,4 +165,8 @@ export function DiscoveryClubTypesSection({
       ) : null}
     </section>
   );
+}
+
+export function DiscoveryClubTypesSection(props: ComponentProps<typeof DiscoveryClubTypesSectionContent>) {
+ return <DiscoveryViewport><DiscoveryClubTypesSectionContent {...props} /></DiscoveryViewport>;
 }

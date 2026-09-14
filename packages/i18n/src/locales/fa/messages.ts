@@ -1,6 +1,6 @@
 export const faMessages = {
   common: {
-    appName: "Gym4Me",
+    appName: "Club4Me",
     loading: "در حال بارگذاری...",
     error: "خطایی رخ داد",
     save: "ذخیره",
@@ -41,7 +41,7 @@ export const faMessages = {
       "ناحیه آپلود فایل. برای انتخاب فایل کلیک کنید یا فایل را رها کنید.",
   },
   profile: {
-    fallbackName: "عضو جیم فور می",
+    fallbackName: "عضو کلاب‌فورمی",
     plusBadge: "جیم پلاس",
     memberSince: "عضو از {date}",
     memberSinceFallback: "عضو باشگاه",
@@ -192,7 +192,7 @@ export const faMessages = {
       address: "تهران، خیابان کارگر شمالی",
       phone: "۰۲۱-۹۱۰۹۴۰۴۰",
       email: "hello@gym4me.ir",
-      rights: "جیم فور می. همه حقوق محفوظ است.",
+      rights: "کلاب‌فورمی. همه حقوق محفوظ است.",
     },
   },
   time: {
@@ -201,7 +201,7 @@ export const faMessages = {
     hoursAgo: "{count} ساعت پیش",
   },
   welcome: {
-    title: "به جیم فور می خوش آمدید!",
+    title: "به کلاب‌فورمی خوش آمدید!",
     subtitle: "تمرین هوشمند برای تقویت استقامت، هر زمان و هر مکان.",
     getStarted: "شروع کنید",
     alreadyHaveAccount: "حساب دارید؟",
@@ -221,9 +221,9 @@ export const faMessages = {
           imageAlt: "فضای داخلی باشگاه آماده تمرین",
         },
         score: {
-          title: "امتیاز تناسب اندام هوشمند شخصی‌سازی شده",
+          title: "برنامه تمرینت را همراه داشته باش",
           subtitle:
-            "امتیازی متناسب با سلامتی و سبک زندگی منحصر به فرد خودت بگیر.",
+            "برنامه مربی را مرور کن و ست‌ها و نتیجه هر تمرین را ثبت کن.",
           imageAlt: "ورزشکار در حال بررسی آمادگی بدنی",
         },
         book: {
@@ -233,7 +233,7 @@ export const faMessages = {
         },
         progress: {
           title: "پیشرفتت را هر روز ببین",
-          subtitle: "حضور، امتیاز، و مسیر تمرین همیشه همراهت است.",
+          subtitle: "سوابق حضور و نتیجه تمرین‌ها همیشه همراهت است.",
           imageAlt: "ورزشکار در حال وزنه زدن",
         },
       },
@@ -397,7 +397,7 @@ export const faMessages = {
     },
     panel: {
       adminTitle: "پنل مدیریت",
-      adminTagline: "برای دسترسی به پنل مدیریت جیم فور می وارد شوید.",
+      adminTagline: "برای دسترسی به پنل مدیریت کلاب‌فورمی وارد شوید.",
       businessTitle: "پنل باشگاه",
       businessTagline: "برای مدیریت باشگاه خود وارد شوید.",
     },
@@ -453,7 +453,7 @@ export const faMessages = {
       topRatedTitle: "محبوب‌ترین‌ها",
       topRatedSubtitle: "بر اساس امتیاز کاربران",
       newestTitle: "تازه‌ها",
-      newestSubtitle: "باشگاه‌هایی که تازه به جیم‌فورمی اضافه شده‌اند",
+      newestSubtitle: "باشگاه‌هایی که تازه به کلاب‌فورمی اضافه شده‌اند",
       locationsTitle: "مقاصد پرطرفدار",
       locationsSubtitle: "شهر، منطقه و استان با بیشترین باشگاه",
       bannersFeaturedTitle: "پیشنهادهای ویژه",
@@ -633,7 +633,7 @@ export const faMessages = {
     downloadApp: "دانلود اپ",
   },
   adminDashboard: {
-    scoreTitle: "امتیاز جیم فور می",
+    scoreTitle: "امتیاز کلاب‌فورمی",
     scoreValue: "۷۸٫۲۵",
     scoreUnit: "امتیاز",
     activityTitle: "فعالیت کلاس‌ها",

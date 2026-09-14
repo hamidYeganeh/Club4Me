@@ -15,15 +15,31 @@ export async function withReferenceSummaries<T extends Record<string, unknown>>(
   const targets: Record<string, unknown>[] = [];
   function copy(value: unknown): unknown {
     if (Array.isArray(value)) return Array.from(value, copy);
-    if (value && typeof value === "object" && "toObject" in value && typeof value.toObject === "function") return copy(value.toObject({versionKey: false}));
-    if (value && typeof value === "object" && !(value instanceof Date) && !(value instanceof Types.ObjectId)) {
-      const object = Object.fromEntries(Object.entries(value).map(([key, child]) => [key === "_id" ? "id" : key, copy(child)]));
+    if (
+      value &&
+      typeof value === "object" &&
+      "toObject" in value &&
+      typeof value.toObject === "function"
+    )
+      return copy(value.toObject({ versionKey: false }));
+    if (
+      value &&
+      typeof value === "object" &&
+      !(value instanceof Date) &&
+      !(value instanceof Types.ObjectId)
+    ) {
+      const object = Object.fromEntries(
+        Object.entries(value).map(([key, child]) => [
+          key === "_id" ? "id" : key,
+          copy(child),
+        ]),
+      );
       targets.push(object);
       return object;
     }
     return value;
   }
-  const result = rows.map(row => copy(row) as T & Record<string, unknown>);
+  const result = rows.map((row) => copy(row) as T & Record<string, unknown>);
   await Promise.all(
     references.map(async (reference) => {
       if (
@@ -63,8 +79,7 @@ export async function withReferenceSummaries<T extends Record<string, unknown>>(
         }),
       );
       targets.forEach((row) => {
-        if (!Object.prototype.hasOwnProperty.call(row, reference.field))
-          return;
+        if (!Object.prototype.hasOwnProperty.call(row, reference.field)) return;
         const value = row[reference.field];
         (row as Record<string, unknown>)[reference.as] = Array.isArray(value)
           ? value.map((id) => byId.get(String(id)) ?? null)

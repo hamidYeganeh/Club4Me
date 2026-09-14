@@ -1,4 +1,4 @@
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "../../../test/mongo-memory";
 import mongoose, { Connection } from "mongoose";
 
 import { resourceSeedData } from "./resources.seed-data";

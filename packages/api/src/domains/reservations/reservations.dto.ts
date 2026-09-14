@@ -64,7 +64,11 @@ export type ReservableSession = {
   cancellationPolicy: ClubCancellationRule;
   status: "active" | "cancelled" | "completed";
 };
+export type ReservationPaymentMethod = "online" | "cash" | "pos";
 export type SessionReservation = {
+  paymentMethod?: ReservationPaymentMethod;
+  collectedOnSiteAt?: string | null;
+  refundedOnSiteAt?: string | null;
   rescheduledFromId?: string | null;
   rescheduledToId?: string | null;
   isTrial?: boolean;
@@ -93,7 +97,13 @@ export type SessionReservation = {
   paymentExpiresAt?: string | null;
   entitlementId: string | null;
   entitlementCoveredAmount: number;
-  paymentStatus: "not_required" | "pending" | "paid" | "failed" | "refunded";
+  paymentStatus:
+    | "not_required"
+    | "pending"
+    | "pay_on_arrival"
+    | "paid"
+    | "failed"
+    | "refunded";
   cancellationPolicy: ClubCancellationRule;
   refundPercent: number | null;
   refundAmount: number | null;
@@ -156,6 +166,7 @@ export type CreateSessionPayload = {
   cancellationPolicy: ClubCancellationRule;
 };
 export type CreateReservationPayload = {
+  paymentMethod?: ReservationPaymentMethod;
   isTrial?: boolean;
   sessionId: string;
   expectedTotalPrice?: number;
@@ -166,6 +177,7 @@ export type CreateReservationPayload = {
 };
 
 export type ReservationQuote = {
+  availablePaymentMethods?: ReservationPaymentMethod[];
   sessionId: string;
   currency: string;
   pricingUnit: ReservableSession["pricingUnit"];

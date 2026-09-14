@@ -2,6 +2,15 @@ export type TelemetryPlatform = "android" | "web";
 export type ProductRole = "athlete" | "coach" | "owner";
 export type SessionType = "court" | "class" | "coached_session";
 
+export interface AppOpenedEvent {
+  screen:
+    "discovery" | "athlete" | "coach" | "reservations" | "profile" | "other";
+}
+export interface DiscoveryEntityViewedEvent {
+  entity_type: "class" | "coach";
+  entity_id: string;
+  club_id?: string;
+}
 export interface UserTraits {
   created_at: string;
   locale: string;

@@ -54,6 +54,11 @@ describe("professional club profile validation", () => {
     { verifications: { identity: { verifiedAt: new Date().toISOString() } } },
     { busyHoursSource: "live" },
     { trialBookingEnabled: "true" },
+    { onSitePaymentMethods: ["online"] },
+    { onSitePaymentMethods: ["cash", "cash"] },
+    { onSitePaymentMethods: ["bank_transfer"] },
+    { onSitePaymentMethods: null },
+    { onlinePaymentEnabled: false },
   ])("rejects invalid or owner-forged input %j", (input) => {
     expect(UpdateClubDto.schema.safeParse(input).success).toBe(false);
   });

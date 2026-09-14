@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function CatalogError({ reset }: { reset: () => void }) {
   return (
     <section
-      className="rounded-3xl border border-border bg-surface p-8"
+      className="rounded-3xl bg-surface p-8"
       role="alert"
     >
       <h1 className="text-2xl font-bold">دریافت اطلاعات ممکن نشد</h1>

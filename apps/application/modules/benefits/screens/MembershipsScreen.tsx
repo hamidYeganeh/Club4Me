@@ -1,4 +1,5 @@
 "use client";
+import { useRecordBrowser } from "@/components/record-browser";
 import { MembershipActions } from "./MembershipActions";
 import { useState } from "react";
 import Link from "@/components/app-link";
@@ -9,6 +10,8 @@ import {
   type UserEntitlement,
 } from "@api";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
+import { VisualEmptyState } from "@/components/ui/clarity";
+import { ButtonLink } from "@/components/button-link";
 const statusLabels = {
   active: "فعال",
   exhausted: "جلسات تمام شده",
@@ -33,6 +36,11 @@ export function MembershipsScreen({
       ? item.id === entitlementId
       : active(item) === (tab === "active"),
   );
+  const browser = useRecordBrowser(items, {
+    label: "عضویت‌ها",
+    text: (item) => `${item.title}`,
+    status: (item) => item.status,
+  });
   return (
     <main className="app-page gap-5">
       <SecondaryHeader
@@ -40,16 +48,19 @@ export function MembershipsScreen({
         showFilter={false}
         backHref={entitlementId ? "/athlete/memberships" : "/athlete"}
       />
+      {!entitlementId && browser.controls}
       {!entitlementId ? (
         <div className="flex gap-3">
           <Button
             variant={tab === "active" ? "primary" : "secondary"}
+            aria-pressed={tab === "active"}
             onPress={() => setTab("active")}
           >
             فعال
           </Button>
           <Button
             variant={tab === "history" ? "primary" : "secondary"}
+            aria-pressed={tab === "history"}
             onPress={() => setTab("history")}
           >
             سوابق
@@ -65,24 +76,44 @@ export function MembershipsScreen({
           <p role="alert">دریافت عضویت‌ها انجام نشد.</p>
           <Button onPress={() => void query.refetch()}>تلاش دوباره</Button>
         </Card>
-      ) : !items.length ? (
-        <Card className="p-5">
-          <p>
-            {entitlementId
-              ? "این عضویت در حساب شما در دسترس نیست."
-              : tab === "active"
-                ? "بسته یا عضویت فعالی ندارید."
-                : "سابقه‌ای وجود ندارد."}
-          </p>
-          <Link
-            href="/discovery/clubs"
-            className="mt-4 inline-flex min-h-11 items-center text-accent"
-          >
-            مشاهده باشگاه‌ها
-          </Link>
-        </Card>
+      ) : !browser.items.length ? (
+        <VisualEmptyState
+          icon="ticket"
+          title={
+            items.length
+              ? "عضویتی با این فیلتر پیدا نشد."
+              : entitlementId
+                ? "این عضویت در حساب شما در دسترس نیست."
+                : tab === "active"
+                  ? "بسته یا عضویت فعالی ندارید."
+                  : "سابقه‌ای وجود ندارد."
+          }
+          description={
+            items.length
+              ? "جست‌وجو یا فیلتر را تغییر دهید تا عضویت‌هایتان را ببینید."
+              : entitlementId
+                ? "به فهرست عضویت‌های خود برگردید و یک مورد دیگر را انتخاب کنید."
+                : "بعد از تهیه بسته یا عضویت، اعتبار و جلسات باقی‌مانده را اینجا می‌بینید."
+          }
+          action={
+            items.length ? (
+              <Button variant="secondary" onPress={browser.reset}>
+                پاک‌کردن جست‌وجو و فیلترها
+              </Button>
+            ) : (
+              <ButtonLink
+                variant="primary"
+                href={
+                  entitlementId ? "/athlete/memberships" : "/discovery/clubs"
+                }
+              >
+                {entitlementId ? "عضویت‌های من" : "مشاهده باشگاه‌ها"}
+              </ButtonLink>
+            )
+          }
+        />
       ) : (
-        items.map((item) => (
+        browser.items.map((item) => (
           <Card key={item.id} className="app-card space-y-4 p-5">
             <div className="flex items-start justify-between gap-3">
               <Card.Title>{item.title}</Card.Title>
@@ -162,7 +193,7 @@ export function MembershipsScreen({
                   {item.accessClubs.map((club) => (
                     <Link
                       key={club.id}
-                      className="inline-flex min-h-11 items-center rounded-xl border border-border px-3 text-accent"
+                      className="inline-flex min-h-11 items-center rounded-xl px-3 text-accent"
                       href={`/discovery/clubs/${club.id}/slots?entitlement=${item.id}`}
                     >
                       {club.name} ←
@@ -228,7 +259,7 @@ function MembershipUsage({ entitlementId }: { entitlementId: string }) {
                   {query.data.items.map((usage) => (
                     <li
                       key={usage.id}
-                      className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3"
+                      className="flex flex-wrap items-center justify-between gap-3 pt-3"
                     >
                       <div>
                         <time dateTime={usage.sessionStartsAt}>

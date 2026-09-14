@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { cityId } = await params;
   const canonical = new URL(`/discovery/city/${cityId}`, siteUrl).toString();
   const supply = await getDiscoveryEntity<{ total: number }>(`/discovery/catalog/clubs?cityId=${encodeURIComponent(cityId)}&limit=1`);
-  return { title: `باشگاه‌ها و کلاس‌های ورزشی شهر | Gym4Me`, description: "گزینه‌های فعال ورزشی شهر را مقایسه و رزرو کنید.", alternates: { canonical }, ...(supply?.total ? {} : { robots: { index: false, follow: true } }) };
+  return { title: `باشگاه‌ها و کلاس‌های ورزشی شهر | Club4Me`, description: "گزینه‌های فعال ورزشی شهر را مقایسه و رزرو کنید.", alternates: { canonical }, ...(supply?.total ? {} : { robots: { index: false, follow: true } }) };
 }
 
 export default async function CityDiscoveryPage({ params }: PageProps) {

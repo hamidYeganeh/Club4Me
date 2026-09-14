@@ -36,21 +36,21 @@ export const LANDING_ASSETS = {
   collection: [
     {
       src: `${ILLUSTRATIONS}/collection-1.png`,
-      brand: "Gym4Me",
+      brand: "Club4Me",
       title: "کلاس‌های باشگاه",
       cta: "مشاهده کلاس‌ها",
       alt: "تجهیزات تمرینی ویژه باشگاه",
     },
     {
       src: `${ILLUSTRATIONS}/collection-2.png`,
-      brand: "Gym4Me",
+      brand: "Club4Me",
       title: "باشگاه نزدیک تو",
       cta: "دیدن لیست",
       alt: "تمرین فضای باز در نور طلایی",
     },
     {
       src: `${ILLUSTRATIONS}/collection-3.png`,
-      brand: "Gym4Me",
+      brand: "Club4Me",
       title: "شروع مسیر",
       cta: "دانلود اپ",
       alt: "استودیو آرام برای شروع مسیر",

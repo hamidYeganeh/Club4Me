@@ -3,11 +3,14 @@
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { productionPosthogEnv } from "./posthog-env.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const inputDir = resolve(root, ".deploy-input");
 const target = resolve(root, ".env.production");
 const backendInput = readEnv(resolve(inputDir, "backend.env"));
+// Optional, ignored analytics-only settings for the next deployment.
+const posthogInput = readEnv(resolve(root, ".env.posthog.production"));
 const applicationInput = readEnv(resolve(inputDir, "application.env"));
 const adminInput = readEnv(resolve(inputDir, "admin.env"));
 const previous = existsSync(target) ? readEnv(target) : {};
@@ -30,6 +33,7 @@ const storageBucket = required(
 const values = {
   PORT: "7088",
   NODE_ENV: "production",
+  ...productionPosthogEnv({ ...backendInput, ...posthogInput }, previous),
   PAYMENT_MODE: "simulation",
   TRUST_PROXY: "true",
   MONGO_ROOT_USERNAME: mongoUser,

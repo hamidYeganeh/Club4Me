@@ -1,4 +1,6 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import { ClubEmptyState } from "@modules/discovery/components/ClubEmptyState";
 
@@ -10,7 +12,7 @@ import { DiscoveryResultCardSkeleton } from "@/components/loading-skeletons";
 import { ClassCard } from "@modules/discovery/components/ClassCard";
 import { DiscoverySectionHeader } from "@modules/discovery/components/DiscoverySectionHeader";
 
-export function ClubClassesSection({ clubId }: { clubId: string }) {
+function ClubClassesSectionContent({ clubId }: { clubId: string }) {
   const classes = useCatalogClasses({ clubId, limit: 6 });
   const businessClasses = usePublicClubClasses({ clubId, limit: 6 });
   const items = classes.data?.items ?? [];
@@ -117,4 +119,8 @@ export function ClubClassesSection({ clubId }: { clubId: string }) {
       ) : null}
     </section>
   );
+}
+
+export function ClubClassesSection(props: ComponentProps<typeof ClubClassesSectionContent>) {
+ return <DiscoveryViewport><ClubClassesSectionContent {...props} /></DiscoveryViewport>;
 }

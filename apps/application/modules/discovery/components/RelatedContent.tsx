@@ -20,11 +20,13 @@ type Props = {
   excludeId?: string;
   params?: PublicCatalogParams;
   title?: string;
+  showAll?: boolean;
 };
 export function RelatedClubs({
   excludeId,
   params,
   title = "باشگاه‌های مشابه",
+  showAll = true,
 }: Props) {
   const query = useCatalogClubs({ ...params, limit: 9 });
   return (
@@ -34,7 +36,11 @@ export function RelatedClubs({
         id={`related-${excludeId ?? "sport"}`}
         title={title}
         icon="weight"
-        seeAllHref={`/discovery/clubs${params?.sportId ? `?sportId=${params.sportId}` : ""}`}
+        seeAllHref={
+          showAll
+            ? `/discovery/clubs${params?.sportId ? `?sportId=${params.sportId}` : ""}`
+            : ""
+        }
         items={(query.data?.items ?? [])
           .filter((item) => item.id !== excludeId)
           .slice(0, 8)}
@@ -47,6 +53,7 @@ export function RelatedClasses({
   excludeId,
   params,
   title = "کلاس‌های مشابه",
+  showAll = true,
 }: Props) {
   const query = useCatalogClasses({ ...params, limit: 9 });
   return (
@@ -55,7 +62,11 @@ export function RelatedClasses({
       <DiscoveryClassesRailSection
         id={`related-${excludeId ?? "sport"}`}
         title={title}
-        seeAllHref={`/discovery/classes${params?.sportId ? `?sportId=${params.sportId}` : ""}`}
+        seeAllHref={
+          showAll
+            ? `/discovery/classes${params?.sportId ? `?sportId=${params.sportId}` : ""}`
+            : ""
+        }
         items={(query.data?.items ?? [])
           .filter((item) => item.id !== excludeId)
           .slice(0, 8)}
@@ -68,6 +79,7 @@ export function RelatedCoaches({
   excludeId,
   params,
   title = "مربی‌های مشابه",
+  showAll = true,
 }: Props) {
   const query = useCatalogCoaches({ ...params, limit: 9 });
   return (
@@ -76,7 +88,11 @@ export function RelatedCoaches({
       <DiscoveryCoachesRailSection
         id={`related-${excludeId ?? "sport"}`}
         title={title}
-        seeAllHref={`/discovery/coaches${params?.sportId ? `?sportId=${params.sportId}` : ""}`}
+        seeAllHref={
+          showAll
+            ? `/discovery/coaches${params?.sportId ? `?sportId=${params.sportId}` : ""}`
+            : ""
+        }
         items={(query.data?.items ?? [])
           .filter((item) => item.id !== excludeId)
           .slice(0, 8)}
@@ -104,9 +120,11 @@ export function RelatedArticles({ excludeId, params }: Props) {
 export function RelatedSports({
   excludeId,
   categoryId,
+  showAll = true,
 }: {
   excludeId: string;
   categoryId?: string;
+  showAll?: boolean;
 }) {
   const query = usePublicCatalogResource("sports", "sport", {
     parentId: categoryId,
@@ -118,6 +136,7 @@ export function RelatedSports({
       <DiscoverySportsRailSection
         id={`related-${excludeId}`}
         title="ورزش‌های مشابه"
+        seeAllHref={showAll ? "/discovery/sports" : null}
         items={
           (query.data?.items ?? [])
             .filter((item) => item.id !== excludeId)

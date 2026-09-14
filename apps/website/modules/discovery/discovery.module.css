@@ -4,7 +4,6 @@
   color: var(--foreground);
 }
 .header {
-  border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
 .headerInner {
@@ -110,7 +109,6 @@
 }
 .card,
 .panel {
-  border: 1px solid var(--border);
   border-radius: var(--app-radius-card);
   overflow: hidden;
   background:
@@ -221,7 +219,6 @@
   justify-content: space-between;
   gap: 1.5rem;
   padding-block: 0.9rem;
-  border-bottom: 1px solid var(--border);
   line-height: 1.8;
 }
 .facts dt {
@@ -238,7 +235,6 @@
 }
 .faq {
   padding-block: 1rem;
-  border-bottom: 1px solid var(--border);
 }
 .faq summary {
   cursor: pointer;
@@ -310,7 +306,6 @@
   text-decoration: underline;
 }
 .empty {
-  border: 1px dashed var(--border);
   border-radius: var(--app-radius-card);
   padding: 2rem;
   line-height: 2;
@@ -319,7 +314,6 @@
   max-width: 76rem;
   margin: auto;
   padding: 2rem 1.5rem;
-  border-top: 1px solid var(--border);
   display: flex;
   flex-wrap: wrap;
   gap: 1.5rem;

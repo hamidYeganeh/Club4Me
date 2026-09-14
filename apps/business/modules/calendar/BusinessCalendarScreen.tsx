@@ -16,12 +16,19 @@ import { Button, Card, toast } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { tehranLocalDate } from "@ui/iran-date";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
 import { ButtonLink } from "@/components/button-link";
 
 type EventSource = "class" | "reservable";
 type SourceFilter = "all" | EventSource;
+const subscribeScreen = (callback: () => void) => {
+  const media = window.matchMedia("(min-width:1024px)");
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+};
+const desktopScreen = () => window.matchMedia("(min-width:1024px)").matches;
+const serverScreen = () => false;
 type CalendarView = "month" | "week" | "day";
 type CalendarEvent = {
   id: string;
@@ -192,7 +199,7 @@ function EventCard({
   return (
     <Link
       href={event.href}
-      className="group block rounded-2xl border border-border/60 bg-surface-secondary/70 p-4 transition-[border-color,transform] hover:border-accent/45 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      className="group block rounded-2xl bg-surface-secondary/70 p-4 transition-[border-color,transform] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
     >
       <div className="flex items-start gap-3">
         <span
@@ -244,7 +251,13 @@ export function BusinessCalendarScreen() {
     civilDateKey(new Date()),
   );
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
-  const [view, setView] = useState<CalendarView>("month");
+  const desktop = useSyncExternalStore(
+    subscribeScreen,
+    desktopScreen,
+    serverScreen,
+  );
+  const [chosenView, setView] = useState<CalendarView | null>(null);
+  const view = chosenView ?? (desktop ? "month" : "day");
   const classSessions = useBusinessCalendarClassSessions(
     clubId,
     range.from,
@@ -473,7 +486,7 @@ export function BusinessCalendarScreen() {
 
         {conflictIds.size ? (
           <div
-            className="mt-4 rounded-2xl border border-danger/30 bg-danger/8 px-4 py-3 text-sm text-danger"
+            className="mt-4 rounded-2xl bg-danger/8 px-4 py-3 text-sm text-danger"
             role="alert"
           >
             {numberFormatter.format(conflictIds.size)} برنامه هم‌زمان شناسایی
@@ -483,7 +496,7 @@ export function BusinessCalendarScreen() {
 
         {hasDataError ? (
           <div
-            className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-warning/35 bg-warning/10 px-4 py-3 text-sm"
+            className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-warning/10 px-4 py-3 text-sm"
             role="status"
           >
             <span>
@@ -508,8 +521,8 @@ export function BusinessCalendarScreen() {
             <CalendarSkeleton />
           ) : (
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-              <Card className="overflow-hidden rounded-[1.75rem] border border-border/60 bg-surface p-0 shadow-none">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 p-4 sm:p-5">
+              <Card className="overflow-hidden rounded-[1.75rem] bg-surface p-0 shadow-none">
+                <div className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
                   <div>
                     <h2 className="text-xl font-semibold">
                       {monthTitleFormatter.format(cursor)}
@@ -544,7 +557,7 @@ export function BusinessCalendarScreen() {
                 </div>
 
                 {view !== "day" ? (
-                  <div className="grid grid-cols-7 border-b border-border/60 bg-surface-secondary/45 px-2 py-3 sm:px-4">
+                  <div className="grid grid-cols-7 bg-surface-secondary/45 px-2 py-3 sm:px-4">
                     {weekdays.map((day) => (
                       <span
                         key={day}
@@ -573,7 +586,7 @@ export function BusinessCalendarScreen() {
                 ) : (
                   <div
                     className="grid grid-cols-7 bg-border/60 gap-px"
-                    role="grid"
+                    role="group"
                     aria-label={monthTitleFormatter.format(cursor)}
                   >
                     {Array.from(
@@ -598,8 +611,7 @@ export function BusinessCalendarScreen() {
                         <button
                           key={key}
                           type="button"
-                          role="gridcell"
-                          aria-selected={selected}
+                          aria-pressed={selected}
                           aria-label={`${fullDateFormatter.format(date)}، ${numberFormatter.format(dayEvents.length)} برنامه`}
                           onClick={() => setSelectedDate(key)}
                           className={`group relative min-h-20 min-w-0 bg-surface p-1.5 text-start transition-colors hover:bg-accent/5 focus-visible:z-[1] focus-visible:outline-2 focus-visible:outline-focus sm:min-h-28 sm:p-2.5 ${selected ? "bg-accent/7 shadow-[inset_0_0_0_2px_var(--accent)]" : ""}`}
@@ -645,7 +657,7 @@ export function BusinessCalendarScreen() {
                     })}
                   </div>
                 )}
-                <div className="flex flex-wrap gap-x-5 gap-y-2 border-t border-border/60 px-4 py-3 text-xs text-muted sm:px-5">
+                <div className="flex flex-wrap gap-x-5 gap-y-2 px-4 py-3 text-xs text-muted sm:px-5">
                   <span className="inline-flex items-center gap-2">
                     <span className="size-2 rounded-full bg-accent" />
                     جلسهٔ کلاس
@@ -665,7 +677,7 @@ export function BusinessCalendarScreen() {
                 </div>
               </Card>
 
-              <Card className="rounded-[1.75rem] border border-border/60 bg-surface p-4 shadow-none lg:sticky lg:top-4 sm:p-5">
+              <Card className="rounded-[1.75rem] bg-surface p-4 shadow-none lg:sticky lg:top-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-medium text-accent">

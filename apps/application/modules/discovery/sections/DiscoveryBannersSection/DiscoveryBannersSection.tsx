@@ -1,4 +1,6 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import { BannerCardSkeleton } from "../../components/skeletons/BannerCardSkeleton";
 import Link from "@/components/app-link";
@@ -18,7 +20,7 @@ import "swiper/css";
 import "swiper/css/free-mode";
 import "swiper/css/pagination";
 
-export function DiscoveryBannersSection({
+function DiscoveryBannersSectionContent({
   id,
   title,
   subtitle,
@@ -154,4 +156,8 @@ export function DiscoveryBannersSection({
       </Swiper>
     </section>
   );
+}
+
+export function DiscoveryBannersSection(props: ComponentProps<typeof DiscoveryBannersSectionContent>) {
+ return <DiscoveryViewport><DiscoveryBannersSectionContent {...props} /></DiscoveryViewport>;
 }

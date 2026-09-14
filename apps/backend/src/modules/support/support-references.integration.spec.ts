@@ -1,5 +1,5 @@
 import { createConnection, type Connection, Types } from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "../../../test/mongo-memory";
 import { SupportReferencesService } from "./support-references.service";
 import { SupportService } from "./support.service";
 import { SupportTicketSchema } from "./support.schema";

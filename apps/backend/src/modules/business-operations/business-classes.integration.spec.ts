@@ -6,7 +6,7 @@ import {
 } from "./schemas/payment.schema";
 import { getModelToken, MongooseModule } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "../../../test/mongo-memory";
 import { Model, Types } from "mongoose";
 import { ClubsRepository } from "../clubs/clubs.repository";
 import { UsersRepository } from "../users/users.repository";
@@ -780,20 +780,18 @@ describe("BusinessClassesService integration", () => {
     ).toBe("present");
   });
   it("offers only available seats in queue order and moves to the next person after expiry without repeated offers", async () => {
-    const course = await students.db
-      .model(BusinessTrainingClass.name)
-      .create({
-        clubId: new Types.ObjectId(clubId),
-        title: "صف ظرفیت",
-        classModel: "group",
-        pricingModel: "course",
-        capacity: 1,
-        price: 0,
-        startDate: new Date(),
-        endDate: new Date(Date.now() + 86400000),
-        schedule: [],
-        status: "active",
-      });
+    const course = await students.db.model(BusinessTrainingClass.name).create({
+      clubId: new Types.ObjectId(clubId),
+      title: "صف ظرفیت",
+      classModel: "group",
+      pricingModel: "course",
+      capacity: 1,
+      price: 0,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 86400000),
+      schedule: [],
+      status: "active",
+    });
     const enrollments = students.db.model(BusinessClassEnrollment.name);
     const rows = [];
     for (let i = 0; i < 3; i++)

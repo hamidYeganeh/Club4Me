@@ -54,7 +54,7 @@ function AnimationSession({ id, name }: { id: string; name: string }) {
       )}
       <button
         type="button"
-        className="rounded-lg border border-border px-3 py-2 text-sm"
+        className="rounded-lg px-3 py-2 text-sm"
         onClick={() => {
           setError(false);
           setUrl("");

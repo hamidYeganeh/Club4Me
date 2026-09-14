@@ -3,7 +3,7 @@ import { LegalPage } from "@/components/legal-page";
 
 export const metadata = pageMetadata(
   "شرایط استفاده",
-  "شرایط استفاده از Gym4Me، رزرو خدمات و مسئولیت کاربران.",
+  "شرایط استفاده از Club4Me، رزرو خدمات و مسئولیت کاربران.",
   "/terms",
 );
 
@@ -11,7 +11,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="قوانین استفاده"
-      lead="استفاده از Gym4Me به معنی پذیرش این شرایط برای جست‌وجو، رزرو و مدیریت خدمات ورزشی است."
+      lead="استفاده از Club4Me به معنی پذیرش این شرایط برای جست‌وجو، رزرو و مدیریت خدمات ورزشی است."
     >
       <section>
         <h2>حساب کاربری</h2>

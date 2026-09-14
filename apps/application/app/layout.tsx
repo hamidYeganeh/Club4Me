@@ -25,13 +25,13 @@ export const metadata: Metadata = {
   metadataBase: siteUrl,
   title: {
     default: siteTitle,
-    template: "%s | Gym4Me",
+    template: "%s | Club4Me",
   },
   description: siteDescription,
   applicationName: siteName,
   keywords: [
-    "Gym4Me",
-    "جیم فور می",
+    "Club4Me",
+    "کلاب‌فورمی",
     "باشگاه ورزشی",
     "مربی ورزشی",
     "کلاس ورزشی",

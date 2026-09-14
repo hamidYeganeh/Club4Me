@@ -59,7 +59,7 @@ export const clubCardVariants = tv({
     statusDot: "size-1.5 shrink-0 rounded-full bg-foreground",
     titleRow: "flex w-full min-w-0 items-start justify-between gap-3",
     listingFeature: [
-      "h-7 max-w-full gap-1 border border-border/80 bg-background/90 px-2.5",
+      "h-7 max-w-full gap-1 bg-background/90 px-2.5",
       "[--chip-bg:transparent] [--chip-fg:var(--muted)]",
       "[&_.chip__label]:text-xs [&_.chip__label]:font-medium",
     ].join(" "),
@@ -68,7 +68,7 @@ export const clubCardVariants = tv({
       "[--button-bg:var(--foreground)] [--button-fg:var(--background)]",
     ].join(" "),
     favoriteButton:
-      "shrink-0 rounded-full border border-border/70 bg-background/85 backdrop-blur-md",
+      "shrink-0 rounded-full bg-background/85 backdrop-blur-md",
   },
   variants: {
     orientation: {
@@ -95,7 +95,7 @@ export const clubCardVariants = tv({
           "[--button-bg-hover:var(--accent)] [--button-bg-pressed:var(--accent)]",
           "bg-accent text-accent-foreground",
           "hover:opacity-90 data-[hovered=true]:opacity-90",
-          "data-[pressed=true]:scale-[0.97]",
+          "",
         ].join(" "),
       },
       fullWidth: {

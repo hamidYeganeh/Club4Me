@@ -22,7 +22,10 @@ import { SMS_PROVIDER } from "./providers/sms-provider.interface";
 import { AuthSessionsService } from "./services/auth-sessions.service";
 import { OtpService } from "./services/otp.service";
 import { TokenService } from "./services/token.service";
-import { SocialIdentity, SocialIdentitySchema } from "./schemas/social-identity.schema";
+import {
+  SocialIdentity,
+  SocialIdentitySchema,
+} from "./schemas/social-identity.schema";
 import { SocialAuthController } from "./social-auth.controller";
 import { SocialAuthService } from "./social-auth.service";
 import { DataConsent, DataConsentSchema } from "./schemas/data-consent.schema";

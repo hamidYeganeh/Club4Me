@@ -47,6 +47,11 @@ export type ClubReview = {
 };
 
 export type ClubReviewsResponse = {
+  page?: number;
+  limit?: number;
+  total?: number;
+  totalPages?: number;
+  distribution?: number[];
   criteria?: Array<{ id: string; name: string; icon?: string }>;
   criteriaSummary?: Array<{
     id: string;

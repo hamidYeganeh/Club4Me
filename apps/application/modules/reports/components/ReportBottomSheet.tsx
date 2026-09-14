@@ -154,7 +154,7 @@ export function ReportBottomSheet({
                       ))}
                     </div>
                   ) : reasons.isError ? (
-                    <div className="rounded-2xl border border-danger/25 bg-danger/8 p-4 text-sm text-danger">
+                    <div className="rounded-2xl bg-danger/8 p-4 text-sm text-danger">
                       دریافت دلایل گزارش انجام نشد.
                       <Button
                         type="button"
@@ -228,7 +228,7 @@ export function ReportBottomSheet({
                   کنید.
                 </div>
               )}
-              <div className="flex shrink-0 gap-2 border-t border-foreground/10 bg-surface px-5 pt-3 pb-[calc(0.75rem+var(--app-safe-bottom,0px))]">
+              <div className="flex shrink-0 gap-2 bg-surface px-5 pt-3 pb-[calc(0.75rem+var(--app-safe-bottom,0px))]">
                 <Button
                   type="button"
                   variant="secondary"

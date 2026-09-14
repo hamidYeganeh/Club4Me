@@ -49,3 +49,7 @@ None. No current event shapes exist.
 2. P0 server-side lifecycle and marketplace outcomes.
 3. P1 client/server engagement outcomes.
 4. P2 notification preference signal and daily aggregate snapshots.
+
+## 2026-09-13 — PostHog and internal analytics expansion
+
+Implemented a durable PostHog destination, committed server outcome synchronization, consent/version enforcement, ordered funnel, mature cohorts, tenant-scoped reporting, financial comparisons, health observations and in-panel dashboards. Added app.opened, request.completed, discovery.entity_viewed, and payment.started/payment.failed; reconciled existing discovery.club_viewed, checkout.started and payment.succeeded contracts. Existing registrations and engagement wrappers remain; outcomes from old clients are discarded. Live activation is pending creation of the user's PostHog project. See docs/posthog-analytics-fa.md for exact coverage and operational constraints.

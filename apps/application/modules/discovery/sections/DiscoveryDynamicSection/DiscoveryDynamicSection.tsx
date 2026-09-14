@@ -1,4 +1,6 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import type {
   DiscoveryArticleItem,
@@ -39,7 +41,7 @@ const sectionIcons = {
   articles: "book-open",
 } as const;
 
-export function DiscoveryDynamicSection({
+function DiscoveryDynamicSectionContent({
   section,
   isLoading = false,
   skeletonCount = 3,
@@ -217,5 +219,15 @@ export function DiscoveryDynamicSection({
         outlined: section.layout.includes("outline"),
       }}
     />
+  );
+}
+
+export function DiscoveryDynamicSection(
+  props: ComponentProps<typeof DiscoveryDynamicSectionContent>,
+) {
+  return (
+    <DiscoveryViewport>
+      <DiscoveryDynamicSectionContent {...props} />
+    </DiscoveryViewport>
   );
 }

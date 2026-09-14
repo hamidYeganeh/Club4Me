@@ -132,7 +132,7 @@ export function MinimalCarousel({
                     transition={transition}
                   >
                     <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-                      <div className="border-t border-accent-foreground/15 pt-3 text-sm leading-7 text-accent-foreground/80">
+                      <div className="pt-3 text-sm leading-7 text-accent-foreground/80">
                         {card.description ?? card.value}
                       </div>
                       {(onCopyClick || onCustomizeClick) && (

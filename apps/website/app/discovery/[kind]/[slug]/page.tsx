@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props) {
   const { kind, item, normalized: n } = await load(params);
   const description =
     n.description.slice(0, 170) ||
-    `${n.title}؛ اطلاعات و جزئیات ${catalogs[kind].singular} در Gym4Me.`;
+    `${n.title}؛ اطلاعات و جزئیات ${catalogs[kind].singular} در Club4Me.`;
   const meta = pageMetadata(
     n.title,
     description,
@@ -75,7 +75,7 @@ export default async function DetailPage({ params }: Props) {
       <article className={styles.article}>
         <Breadcrumbs items={crumbs} />
         <header>
-          <p className={styles.kicker}>مجله Gym4Me</p>
+          <p className={styles.kicker}>مجله Club4Me</p>
           <h1 className={styles.title}>{n.title}</h1>
           <p className={styles.description}>{item.excerpt}</p>
           <Facts
@@ -119,7 +119,7 @@ export default async function DetailPage({ params }: Props) {
             ...(item.publishedAt ? { datePublished: item.publishedAt } : {}),
             publisher: {
               "@type": "Organization",
-              name: "Gym4Me",
+              name: "Club4Me",
               url: absoluteUrl("/"),
             },
           }}
@@ -176,7 +176,7 @@ export default async function DetailPage({ params }: Props) {
             "@type": "Course",
             provider: {
               "@type": "Organization",
-              name: "Gym4Me",
+              name: "Club4Me",
               url: absoluteUrl("/"),
             },
           };
@@ -185,7 +185,7 @@ export default async function DetailPage({ params }: Props) {
       <Breadcrumbs items={crumbs} />
       <header className={styles.hero}>
         <div>
-          <p className={styles.kicker}>{catalogs[kind].singular} در Gym4Me</p>
+          <p className={styles.kicker}>{catalogs[kind].singular} در Club4Me</p>
           <h1 className={styles.title}>{n.title}</h1>
           <p className={styles.description}>{n.description}</p>
         </div>

@@ -447,6 +447,45 @@ export class BusinessClassPortalService {
     };
   }
 
+  async agendaForAthlete(userId: string) {
+    const studentIds = await this.linkedStudentIds(userId);
+    const enrollments = await this.enrollments
+      .find({
+        studentId: { $in: studentIds },
+        status: "active",
+        paymentStatus: { $nin: ["failed", "refunded"] },
+      })
+      .lean();
+    const classes = await this.classes
+      .find({
+        _id: { $in: enrollments.map((item) => item.classId) },
+        status: "active",
+      })
+      .lean();
+    const byId = new Map(classes.map((item) => [String(item._id), item]));
+    const now = new Date();
+    const sessions = await this.sessions
+      .find({
+        classId: { $in: classes.map((item) => item._id) },
+        status: "scheduled",
+        endsAt: { $gt: now },
+        startsAt: { $lt: new Date(now.getTime() + 30 * 86400000) },
+      })
+      .sort({ startsAt: 1, _id: 1 })
+      .lean();
+    return {
+      items: sessions.map((item) => ({
+        id: String(item._id),
+        source: "business_class" as const,
+        title: byId.get(String(item.classId))!.title,
+        startsAt: item.startsAt.toISOString(),
+        endsAt: item.endsAt.toISOString(),
+        paymentPending: false,
+        href: `/athlete/classes?classId=${item.classId}`,
+      })),
+    };
+  }
+
   async recommendationPreferences(userId: string) {
     const stored = await this.classes.db
       .collection("athlete_discovery_preferences")

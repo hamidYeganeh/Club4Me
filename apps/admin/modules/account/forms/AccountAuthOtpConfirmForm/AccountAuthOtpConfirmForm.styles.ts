@@ -15,6 +15,6 @@ export const accountAuthOtpConfirmFormStyles = tv({
     resendSeconds: "inline-block tabular-nums text-foreground",
     error: "min-h-5 text-center text-sm text-danger",
     actions: "w-full",
-    button: "active:scale-[0.98]",
+    button: "",
   },
 });

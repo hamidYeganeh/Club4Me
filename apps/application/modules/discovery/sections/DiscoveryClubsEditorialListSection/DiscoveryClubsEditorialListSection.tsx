@@ -1,4 +1,6 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import { Button, Skeleton, Typography } from "@heroui/react";
 import { useCatalogClubs } from "@api/discovery";
@@ -12,7 +14,7 @@ import type { DiscoveryClubsRailClub } from "@modules/discovery/sections/Discove
 import { discoveryClubsEditorialListSectionStyles } from "./DiscoveryClubsEditorialListSection.styles";
 import type { DiscoveryClubsEditorialListSectionProps } from "./DiscoveryClubsEditorialListSection.types";
 
-export function DiscoveryClubsEditorialListSection({
+function DiscoveryClubsEditorialListSectionContent({
   id = "editorial-list",
   title,
   subtitle,
@@ -116,4 +118,8 @@ export function DiscoveryClubsEditorialListSection({
       ) : null}
     </section>
   );
+}
+
+export function DiscoveryClubsEditorialListSection(props: ComponentProps<typeof DiscoveryClubsEditorialListSectionContent>) {
+ return <DiscoveryViewport><DiscoveryClubsEditorialListSectionContent {...props} /></DiscoveryViewport>;
 }

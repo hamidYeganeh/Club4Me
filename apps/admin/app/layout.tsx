@@ -17,8 +17,8 @@ const monoton = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Gym4Me Admin",
-  description: "Gym4Me admin panel",
+  title: "Club4Me Admin",
+  description: "Club4Me admin panel",
 };
 
 export default async function RootLayout({

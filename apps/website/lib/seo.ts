@@ -13,15 +13,15 @@ export function pageMetadata(
 ): Metadata {
   const images = image
     ? [{ url: image, alt: title }]
-    : [{ url: "/opengraph-image", alt: "Gym4Me — همراه مسیر ورزش تو" }];
+    : [{ url: "/opengraph-image", alt: "Club4Me — همراه مسیر ورزش تو" }];
   return {
-    title: { absolute: title.includes("Gym4Me") ? title : `${title} | Gym4Me` },
+    title: { absolute: title.includes("Club4Me") ? title : `${title} | Club4Me` },
     description,
     alternates: { canonical: absoluteUrl(path) },
     openGraph: {
       type: "website",
       locale: "fa_IR",
-      siteName: "Gym4Me",
+      siteName: "Club4Me",
       title,
       description,
       url: absoluteUrl(path),

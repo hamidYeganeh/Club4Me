@@ -15,11 +15,11 @@ export const welcomeIntroduceCarouselSectionStyles = tv({
     title: "w-full text-2xl font-extrabold leading-10 text-white",
     subtitle: "mt-3 w-full text-sm leading-7 !text-white/90",
     footer:
-      "absolute inset-x-0 bottom-0 z-20 h-[7.5rem] rounded-t-[2.5rem] border-t border-white/7 bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl",
+      "absolute inset-x-0 bottom-0 z-20 h-[7.5rem] rounded-t-[2.5rem] bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl",
     navNext:
-      "absolute top-4 left-5 z-30 flex size-12 items-center justify-center rounded-[1.1rem] bg-accent text-accent-foreground transition-transform duration-200 ease-out active:scale-95",
+      "absolute top-4 left-5 z-30 flex size-12 items-center justify-center rounded-[1.1rem] bg-accent text-accent-foreground transition-transform duration-200 ease-out",
     navPrev:
-      "absolute top-4 right-5 z-30 flex size-12 items-center justify-center rounded-[1.1rem] bg-surface-secondary text-foreground disabled:opacity-30 transition-transform duration-200 ease-out active:scale-95",
+      "absolute top-4 right-5 z-30 flex size-12 items-center justify-center rounded-[1.1rem] bg-surface-secondary text-foreground disabled:opacity-30 transition-transform duration-200 ease-out",
     pagination:
       "absolute top-6 right-20 left-20 z-20 flex items-center justify-center",
     bullet: "flex h-8 w-8 items-center justify-center",

@@ -1,4 +1,9 @@
 "use client";
+import { DiscoveryVirtualItems } from "@modules/discovery/components/DiscoveryViewport";
+import { useAccumulatedQuery } from "@modules/discovery/hooks/use-accumulated-query";
+
+import { BottomSheet } from "@/components/motion/bottom-sheet";
+import Link from "@/components/app-link";
 
 import { Checkbox as HeroCheckbox } from "@heroui/react";
 import { FormSelect, FormOption } from "@repo/ui/form-select";
@@ -84,15 +89,12 @@ export function DiscoverySearchScreen({
   const [skillLevelId, setSkillLevelId] = useState("");
   const [comparison, setComparison] = useState<string[]>([]);
   const budgetError =
-    kind === "class" &&
-    ([minPrice, maxPrice].some(
+    [minPrice, maxPrice].some(
       (value) =>
         value !== "" &&
         (!Number.isSafeInteger(Number(value)) || Number(value) < 0),
     ) ||
-      (minPrice !== "" &&
-        maxPrice !== "" &&
-        Number(minPrice) > Number(maxPrice)))
+    (minPrice !== "" && maxPrice !== "" && Number(minPrice) > Number(maxPrice))
       ? "بودجه باید عدد صحیح نامنفی باشد و حداقل از حداکثر بیشتر نباشد."
       : "";
   const [sort, setSort] = useState<SearchSort>("suggested");
@@ -109,6 +111,8 @@ export function DiscoverySearchScreen({
     kind,
     sort,
     nearby ? coordinates : null,
+    minPrice,
+    maxPrice,
     kind === "class"
       ? [
           minPrice,
@@ -125,9 +129,11 @@ export function DiscoverySearchScreen({
   ]);
   const page = pagination.scope === scope ? pagination.page : 1;
   const canSearch = deferredQuery.length >= 2;
-  const result = useCatalogSearch(
+  const resultPage = useCatalogSearch(
     {
       q: deferredQuery,
+      minPrice: minPrice === "" ? undefined : Number(minPrice),
+      maxPrice: maxPrice === "" ? undefined : Number(maxPrice),
       ...(kind === "class" && !budgetError
         ? {
             minPrice: minPrice === "" ? undefined : Number(minPrice),
@@ -153,6 +159,7 @@ export function DiscoverySearchScreen({
     },
     canSearch && !budgetError,
   );
+  const result = useAccumulatedQuery(resultPage, page, scope);
   const failure = getQueryFailure(result.error, result.fetchStatus);
 
   useEffect(() => {
@@ -232,9 +239,9 @@ export function DiscoverySearchScreen({
       url.searchParams.delete(key);
     if (deferredQuery) url.searchParams.set("q", deferredQuery);
     if (kind) url.searchParams.set("kind", kind);
+    if (minPrice !== "") url.searchParams.set("minPrice", minPrice);
+    if (maxPrice !== "") url.searchParams.set("maxPrice", maxPrice);
     if (kind === "class") {
-      if (minPrice !== "") url.searchParams.set("minPrice", minPrice);
-      if (maxPrice !== "") url.searchParams.set("maxPrice", maxPrice);
       if (serviceMode) url.searchParams.set("serviceMode", serviceMode);
       if (admission) url.searchParams.set("admission", admission);
       if (startsFrom) url.searchParams.set("startsFrom", startsFrom);
@@ -340,6 +347,12 @@ export function DiscoverySearchScreen({
         item.startDate,
         item.capacity,
         item.enrollmentCount,
+        {
+          amount: item.price.amount,
+          currency: item.price.currency,
+          unit: item.pricingModel ?? "course",
+          sessionCount: item.packageSessionCount,
+        },
       ),
       href: `/discovery/business-class?classId=${item.id}`,
       comparisonKey: `business-class-${item.id}`,
@@ -350,12 +363,13 @@ export function DiscoverySearchScreen({
       subtitle: item.address || item.shortDescription,
       imageUrl: item.imageUrl,
       badge: "باشگاه",
-      meta: clubResultMeta(
-        item.averageRating,
-        item.reviewsCount,
-        item.location,
-        coordinates,
-      ),
+      meta:
+        clubResultMeta(
+          item.averageRating,
+          item.reviewsCount,
+          item.location,
+          coordinates,
+        ) + catalogPriceMeta(item.catalogPrice),
       href: `/discovery/clubs/${item.slug}`,
       comparisonKey: `club-${item.id}`,
     })),
@@ -365,9 +379,13 @@ export function DiscoverySearchScreen({
       subtitle: item.shortBio,
       imageUrl: item.imageUrl,
       badge: "مربی",
-      meta: item.reviewsCount
-        ? `${item.averageRating.toLocaleString("fa-IR")} از ۵ · ${item.reviewsCount.toLocaleString("fa-IR")} نظر`
-        : "هنوز نظری ثبت نشده",
+      meta:
+        clubResultMeta(
+          item.averageRating,
+          item.reviewsCount,
+          item.location,
+          coordinates,
+        ) + catalogPriceMeta(item.catalogPrice),
       href: `/discovery/coaches/${item.slug}`,
       comparisonKey: `coach-${item.id}`,
     })),
@@ -394,12 +412,13 @@ export function DiscoverySearchScreen({
       subtitle: item.address || item.shortDescription,
       imageUrl: item.imageUrl,
       badge: "باشگاه خارج از محدوده",
-      meta: clubResultMeta(
-        item.averageRating,
-        item.reviewsCount,
-        item.location,
-        coordinates,
-      ),
+      meta:
+        clubResultMeta(
+          item.averageRating,
+          item.reviewsCount,
+          item.location,
+          coordinates,
+        ) + catalogPriceMeta(item.catalogPrice),
       href: `/discovery/clubs/${item.slug}`,
       comparisonKey: `club-${item.id}`,
     })),
@@ -429,6 +448,12 @@ export function DiscoverySearchScreen({
         item.startDate,
         item.capacity,
         item.enrollmentCount,
+        {
+          amount: item.price.amount,
+          currency: item.price.currency,
+          unit: item.pricingModel ?? "course",
+          sessionCount: item.packageSessionCount,
+        },
       ),
       href: `/discovery/business-class?classId=${item.id}`,
       comparisonKey: `business-class-${item.id}`,
@@ -440,7 +465,7 @@ export function DiscoverySearchScreen({
   const topics = keywords.data?.items ?? [];
 
   return (
-    <main className="app-page gap-6 pt-[calc(env(safe-area-inset-top)+1rem)]">
+    <main className="app-page gap-4">
       <SecondaryHeader title="جست‌وجو" showFilter={false} />
 
       <div className="flex flex-col gap-3" dir="rtl">
@@ -470,6 +495,7 @@ export function DiscoverySearchScreen({
               slot={null}
               aria-label="فیلتر نوع نتیجه"
               aria-expanded={showFilters}
+              aria-haspopup="dialog"
               onPress={() => setShowFilters((value) => !value)}
               className="size-10 min-w-10 rounded-xl"
             >
@@ -477,27 +503,62 @@ export function DiscoverySearchScreen({
             </Button>
           </SearchField.Group>
         </SearchField>
+      </div>
 
-        {showFilters ? (
-          <div className="app-chip-row app-reveal">
-            {kinds.map((item) => (
-              <Button
-                key={item.label}
-                size="sm"
-                variant="ghost"
-                className={`h-10 shrink-0 rounded-full border px-4 font-bold ${
-                  kind === item.value
-                    ? "border-accent bg-accent text-accent-foreground"
-                    : "border-border bg-surface-secondary/70 text-foreground"
-                }`}
-                onPress={() => setKind(item.value)}
+      {!canSearch ? (
+        <section aria-labelledby="browse-title">
+          <Typography id="browse-title" type="h5" weight="bold">
+            برای تمرین بعدی‌ات
+          </Typography>
+          <p className="mb-4 mt-1 text-sm leading-6 text-muted">
+            از یک مسیر شروع کن؛ بعد گزینه‌ها را با نیازت هماهنگ کن.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              {
+                href: "/discovery/clubs",
+                icon: "map-pin-1" as const,
+                title: "باشگاه مناسب تو",
+                description: "فضا، امکانات و سانس‌ها",
+              },
+              {
+                href: "/discovery/classes",
+                icon: "calendar-check" as const,
+                title: "یک کلاس تازه",
+                description: "زمان و سطح مناسب",
+              },
+              {
+                href: "/discovery/coaches",
+                icon: "whistle" as const,
+                title: "همراهی یک مربی",
+                description: "تخصص و شیوه تمرین",
+              },
+              {
+                href: "/discovery/sports",
+                icon: "medal" as const,
+                title: "رشته موردعلاقه‌ات",
+                description: "کشف مسیرهای ورزشی",
+              },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="app-card flex min-w-0 flex-col items-start gap-3 p-4 transition-colors hover:bg-surface-secondary"
               >
-                {item.label}
-              </Button>
+                <span className="grid size-11 place-items-center rounded-2xl bg-accent text-accent-foreground">
+                  <Icon name={item.icon} size={24} />
+                </span>
+                <span className="text-sm font-bold leading-6">
+                  {item.title}
+                </span>
+                <span className="text-xs leading-5 text-muted">
+                  {item.description}
+                </span>
+              </Link>
             ))}
           </div>
-        ) : null}
-      </div>
+        </section>
+      ) : null}
 
       {!canSearch ? (
         <section className="flex flex-col gap-4" aria-labelledby="topics-title">
@@ -519,7 +580,7 @@ export function DiscoverySearchScreen({
                 <Button
                   key={topic.id}
                   variant="ghost"
-                  className="h-12 rounded-full border border-white/10 bg-surface/80 px-4 font-bold text-foreground backdrop-blur-md hover:border-accent/35 hover:bg-accent/8"
+                  className="h-12 rounded-full bg-surface/80 px-4 font-bold text-foreground backdrop-blur-md hover:bg-accent/8"
                   onPress={() => {
                     setQuery(topic.name);
                     remember(topic.name);
@@ -538,8 +599,31 @@ export function DiscoverySearchScreen({
         </section>
       ) : null}
 
-      {showFilters ? (
-        <div className="space-y-3">
+      <BottomSheet
+        open={showFilters}
+        onOpenChange={setShowFilters}
+        title="فیلترهای جست‌وجو"
+        snapPoints={[0.85]}
+      >
+        <div className="space-y-4" dir="rtl">
+          <div className="flex flex-wrap gap-2">
+            {kinds.map((item) => (
+              <Button
+                key={item.label}
+                size="sm"
+                variant="ghost"
+                className={`h-10 shrink-0 rounded-full px-4 font-bold ${
+                  kind === item.value
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-surface-secondary/70 text-foreground"
+                }`}
+                onPress={() => setKind(item.value)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+
           <ActiveLocationSelector
             variant="search"
             onSelect={() => setSharedCoordinates(undefined)}
@@ -552,14 +636,15 @@ export function DiscoverySearchScreen({
               استفاده از موقعیت انتخابی من
             </Button>
           ) : null}
-          {kind === "class" ? (
-            <fieldset className="grid gap-3 rounded-2xl border border-border p-4">
+          {
+            <fieldset className="grid gap-3 rounded-2xl p-4">
               <legend className="px-2 text-sm font-semibold">
-                بودجه و شیوه کلاس
+                بودجه و شرایط جست‌وجو
               </legend>
               <p className="text-xs text-muted">
-                مبلغ اعلام‌شده کلاس به ریال؛ واحد دوره، بسته یا ماهانه را در
-                جزئیات کلاس بررسی کنید.
+                بودجه به ریال برای مبلغ اعلام‌شده هر گزینه است: یک سانس باشگاه
+                یا خدمت مربی یا دوره. این مبلغ هزینه یکسان به‌ازای جلسه نیست؛
+                واحد و تعداد جلسات را در جزئیات مقایسه کنید.
               </p>
               <label className="grid gap-1 text-sm">
                 حداقل بودجه (ریال)
@@ -583,98 +668,104 @@ export function DiscoverySearchScreen({
                   className="min-h-11 rounded-xl border border-border bg-surface px-3"
                 />
               </label>
-              <label className="grid gap-1 text-sm">
-                شیوه برگزاری
-                <FormSelect
-                  aria-label="شیوه برگزاری"
-                  value={serviceMode}
-                  onChange={(event) => setServiceMode(event)}
-                  className="min-h-11 rounded-xl border border-border bg-surface px-3"
-                >
-                  <FormOption value="">همه شیوه‌ها</FormOption>
-                  <FormOption value="club">باشگاه</FormOption>
-                  <FormOption value="online">آنلاین</FormOption>
-                  <FormOption value="home">منزل</FormOption>
-                  <FormOption value="outdoor">فضای باز</FormOption>
-                </FormSelect>
-              </label>
-              <label className="grid gap-1 text-sm">
-                نوع پذیرش
-                <FormSelect
-                  aria-label="نوع پذیرش"
-                  value={admission}
-                  onChange={(event) => setAdmission(event)}
-                  className="min-h-11 rounded-xl border border-border bg-surface px-3"
-                >
-                  <FormOption value="">همه</FormOption>
-                  <FormOption value="automatic">ثبت‌نام فوری</FormOption>
-                  <FormOption value="requires_approval">
-                    نیازمند تأیید
-                  </FormOption>
-                </FormSelect>
-              </label>
-              <label className="grid gap-1 text-sm">
-                سطح کلاس
-                <FormSelect
-                  aria-label="سطح کلاس"
-                  value={skillLevelId}
-                  onChange={(event) => setSkillLevelId(event)}
-                  className="min-h-11 rounded-xl border border-border bg-surface px-3"
-                >
-                  <FormOption value="">همه سطح‌ها</FormOption>
-                  {skillLevelId &&
-                  !levels.data?.items.some(
-                    (item) => item.id === skillLevelId,
-                  ) ? (
-                    <FormOption value={skillLevelId}>سطح لینک‌شده</FormOption>
-                  ) : null}
-                  {levels.data?.items.map((item) => (
-                    <FormOption entity={item} key={item.id} value={item.id}>
-                      {item.name}
-                    </FormOption>
-                  ))}
-                </FormSelect>
-              </label>
-              <label className="grid gap-1 text-sm">
-                شروع از تاریخ
-                <IranDateInput
-                  value={startsFrom}
-                  onValueChange={setStartsFrom}
-                  className="min-h-11 rounded-xl border border-border bg-surface px-3"
-                />
-              </label>
-              <label className="grid gap-1 text-sm">
-                شروع تا تاریخ
-                <IranDateInput
-                  value={startsTo}
-                  onValueChange={setStartsTo}
-                  min={startsFrom || undefined}
-                  className="min-h-11 rounded-xl border border-border bg-surface px-3"
-                />
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="grid gap-1 text-sm">
-                  ساعت شروع از
-                  <HeroInput
-                    type="time"
-                    value={timeFrom}
-                    onChange={(event) => setTimeFrom(event.target.value)}
-                    className="min-h-11 rounded-xl border border-border bg-surface px-3"
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  ساعت شروع تا
-                  <HeroInput
-                    type="time"
-                    value={timeTo}
-                    min={timeFrom || undefined}
-                    onChange={(event) => setTimeTo(event.target.value)}
-                    className="min-h-11 rounded-xl border border-border bg-surface px-3"
-                  />
-                </label>
-              </div>
+              {kind === "class" ? (
+                <>
+                  <label className="grid gap-1 text-sm">
+                    شیوه برگزاری
+                    <FormSelect
+                      aria-label="شیوه برگزاری"
+                      value={serviceMode}
+                      onChange={(event) => setServiceMode(event)}
+                      className="min-h-11 rounded-xl border border-border bg-surface px-3"
+                    >
+                      <FormOption value="">همه شیوه‌ها</FormOption>
+                      <FormOption value="club">باشگاه</FormOption>
+                      <FormOption value="online">آنلاین</FormOption>
+                      <FormOption value="home">منزل</FormOption>
+                      <FormOption value="outdoor">فضای باز</FormOption>
+                    </FormSelect>
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    نوع پذیرش
+                    <FormSelect
+                      aria-label="نوع پذیرش"
+                      value={admission}
+                      onChange={(event) => setAdmission(event)}
+                      className="min-h-11 rounded-xl border border-border bg-surface px-3"
+                    >
+                      <FormOption value="">همه</FormOption>
+                      <FormOption value="automatic">ثبت‌نام فوری</FormOption>
+                      <FormOption value="requires_approval">
+                        نیازمند تأیید
+                      </FormOption>
+                    </FormSelect>
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    سطح کلاس
+                    <FormSelect
+                      aria-label="سطح کلاس"
+                      value={skillLevelId}
+                      onChange={(event) => setSkillLevelId(event)}
+                      className="min-h-11 rounded-xl border border-border bg-surface px-3"
+                    >
+                      <FormOption value="">همه سطح‌ها</FormOption>
+                      {skillLevelId &&
+                      !levels.data?.items.some(
+                        (item) => item.id === skillLevelId,
+                      ) ? (
+                        <FormOption value={skillLevelId}>
+                          سطح لینک‌شده
+                        </FormOption>
+                      ) : null}
+                      {levels.data?.items.map((item) => (
+                        <FormOption entity={item} key={item.id} value={item.id}>
+                          {item.name}
+                        </FormOption>
+                      ))}
+                    </FormSelect>
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    شروع از تاریخ
+                    <IranDateInput
+                      value={startsFrom}
+                      onValueChange={setStartsFrom}
+                      className="min-h-11 rounded-xl border border-border bg-surface px-3"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    شروع تا تاریخ
+                    <IranDateInput
+                      value={startsTo}
+                      onValueChange={setStartsTo}
+                      min={startsFrom || undefined}
+                      className="min-h-11 rounded-xl border border-border bg-surface px-3"
+                    />
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="grid gap-1 text-sm">
+                      ساعت شروع از
+                      <HeroInput
+                        type="time"
+                        value={timeFrom}
+                        onChange={(event) => setTimeFrom(event.target.value)}
+                        className="min-h-11 rounded-xl border border-border bg-surface px-3"
+                      />
+                    </label>
+                    <label className="grid gap-1 text-sm">
+                      ساعت شروع تا
+                      <HeroInput
+                        type="time"
+                        value={timeTo}
+                        min={timeFrom || undefined}
+                        onChange={(event) => setTimeTo(event.target.value)}
+                        className="min-h-11 rounded-xl border border-border bg-surface px-3"
+                      />
+                    </label>
+                  </div>
+                </>
+              ) : null}
             </fieldset>
-          ) : null}
+          }
           <div className="flex flex-wrap gap-2">
             <Button
               variant="secondary"
@@ -724,12 +815,19 @@ export function DiscoverySearchScreen({
                 <HeroCheckbox.Control>
                   <HeroCheckbox.Indicator />
                 </HeroCheckbox.Control>
-                باشگاه‌ها و کلاس باشگاه در شعاع ۲۵ کیلومتر
+                باشگاه‌ها، کلاس باشگاه و مربیان دارای موقعیت در شعاع ۲۵ کیلومتر
               </HeroCheckbox.Content>
             </HeroCheckbox>
           ) : null}
+          <Button
+            fullWidth
+            variant="primary"
+            onPress={() => setShowFilters(false)}
+          >
+            نمایش نتایج
+          </Button>
         </div>
-      ) : null}
+      </BottomSheet>
 
       {!canSearch ? (
         <section className="pt-2">
@@ -761,7 +859,7 @@ export function DiscoverySearchScreen({
                     setKind(item.kind);
                     setQuery(item.query);
                   }}
-                  className="flex min-h-16 w-full items-center gap-4 border-b border-separator text-start last:border-b-0"
+                  className="flex min-h-16 w-full items-center gap-4 text-start last:border-b-0"
                 >
                   <Icon
                     name="clock"
@@ -821,40 +919,45 @@ export function DiscoverySearchScreen({
               </Button>
             ) : null}
           </div>
-          {!failure
-            ? results.map((item) => (
-                <div
-                  key={`${item.badge}-${item.id}`}
-                  onClick={() => remember()}
-                >
-                  <DiscoveryResultCard {...item} />
-                  <Button
-                    size="sm"
-                    variant={
-                      comparison.includes(item.comparisonKey)
-                        ? "primary"
-                        : "secondary"
-                    }
-                    className="mt-2"
-                    onPress={() =>
-                      setComparison((current) =>
-                        current.includes(item.comparisonKey)
-                          ? current.filter((key) => key !== item.comparisonKey)
-                          : current.length < 3
-                            ? [...current, item.comparisonKey]
-                            : current,
-                      )
-                    }
+          <DiscoveryVirtualItems>
+            {" "}
+            {!failure
+              ? results.map((item) => (
+                  <div
+                    key={`${item.badge}-${item.id}`}
+                    onClick={() => remember()}
                   >
-                    {comparison.includes(item.comparisonKey)
-                      ? "حذف از مقایسه"
-                      : comparison.length >= 3
-                        ? "حداکثر ۳ گزینه"
-                        : "افزودن به مقایسه"}
-                  </Button>
-                </div>
-              ))
-            : null}
+                    <DiscoveryResultCard {...item} />
+                    <Button
+                      size="sm"
+                      variant={
+                        comparison.includes(item.comparisonKey)
+                          ? "primary"
+                          : "secondary"
+                      }
+                      className="mt-2"
+                      onPress={() =>
+                        setComparison((current) =>
+                          current.includes(item.comparisonKey)
+                            ? current.filter(
+                                (key) => key !== item.comparisonKey,
+                              )
+                            : current.length < 3
+                              ? [...current, item.comparisonKey]
+                              : current,
+                        )
+                      }
+                    >
+                      {comparison.includes(item.comparisonKey)
+                        ? "حذف از مقایسه"
+                        : comparison.length >= 3
+                          ? "حداکثر ۳ گزینه"
+                          : "افزودن به مقایسه"}
+                    </Button>
+                  </div>
+                ))
+              : null}
+          </DiscoveryVirtualItems>
           {result.isLoading && !failure ? (
             <DiscoveryResultCardSkeleton count={4} />
           ) : null}
@@ -893,6 +996,8 @@ export function DiscoverySearchScreen({
           total={result.data?.totalPages ?? 0}
           limit={1}
           pending={result.isFetching}
+          failed={result.isError}
+          onRetry={() => void result.refetch()}
           onChange={(value) => setPagination({ scope, page: value })}
         />
       ) : null}
@@ -907,7 +1012,7 @@ export function DiscoverySearchScreen({
       />
       {comparisonItems.length ? (
         <aside
-          className="sticky bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-30 rounded-2xl border border-accent/30 bg-surface/95 p-4 shadow-xl backdrop-blur"
+          className="sticky bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-30 rounded-2xl bg-surface/95 p-4 shadow-xl backdrop-blur"
           aria-label="مقایسه گزینه‌ها"
         >
           <div className="flex items-center justify-between gap-3">
@@ -941,9 +1046,15 @@ function classResultMeta(
   startsAt: string,
   capacity: number,
   enrollmentCount: number,
+  price?: {
+    amount: number;
+    currency: string;
+    unit: string;
+    sessionCount?: number | null;
+  },
 ) {
   const remaining = Math.max(0, capacity - enrollmentCount);
-  return `${amount.toLocaleString("fa-IR")} ریال · ${new Date(startsAt).toLocaleDateString("fa-IR")} · ${remaining ? `${remaining.toLocaleString("fa-IR")} ظرفیت` : "تکمیل ظرفیت"}`;
+  return `${price ? catalogPriceMeta(price).slice(3) : `${amount.toLocaleString("fa-IR")} ریال برای دوره`} · ${new Date(startsAt).toLocaleDateString("fa-IR")} · ${remaining ? `${remaining.toLocaleString("fa-IR")} ظرفیت` : "تکمیل ظرفیت"}`;
 }
 
 function clubResultMeta(
@@ -994,4 +1105,31 @@ function placeholderFor(kind?: PublicCatalogSearchKind) {
   if (kind === "coach") return "جست‌وجوی مربی...";
   if (kind === "class") return "جست‌وجوی کلاس...";
   return "جست‌وجوی باشگاه، مربی یا کلاس...";
+}
+
+function catalogPriceMeta(
+  price?: {
+    amount: number;
+    currency: string;
+    unit: string;
+    sessionCount?: number | null;
+  } | null,
+) {
+  if (!price) return "";
+  const unit =
+    (
+      {
+        per_session: "جلسه",
+        package: "بسته",
+        per_month: "ماه",
+        monthly: "ماه",
+        course: "دوره",
+      } as Record<string, string>
+    )[price.unit] ?? "خدمت";
+  const currency = price.currency === "IRR" ? "ریال" : price.currency;
+  const normalized =
+    price.unit !== "per_session" && price.sessionCount && price.sessionCount > 0
+      ? ` · ${price.sessionCount.toLocaleString("fa-IR")} جلسه، هر جلسه حدود ${Math.round(price.amount / price.sessionCount).toLocaleString("fa-IR")} ${currency}`
+      : "";
+  return ` · ${price.amount.toLocaleString("fa-IR")} ${currency} برای ${unit}${normalized}`;
 }

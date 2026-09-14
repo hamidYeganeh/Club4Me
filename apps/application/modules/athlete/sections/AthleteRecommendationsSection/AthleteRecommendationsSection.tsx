@@ -1,8 +1,11 @@
 "use client";
+import { DiscoverySearchField } from "@modules/discovery/components/DiscoverySearchField";
+import { useRecordBrowser } from "@/components/record-browser";
 
 import { Checkbox as HeroCheckbox } from "@heroui/react";
 import { useAthleteClassRecommendations } from "@api";
 import { Icon } from "@theme/icon";
+import { BottomSheet } from "@/components/motion/bottom-sheet";
 import { useState } from "react";
 import { RecommendationPreferencesForm } from "./RecommendationPreferencesForm";
 import { Button, Card, Typography } from "@heroui/react";
@@ -23,24 +26,37 @@ export function AthleteRecommendationsSection({
   expanded?: boolean;
 }) {
   const query = useAthleteClassRecommendations();
-  const [editing, setEditing] = useState(expanded);
+  const [editing, setEditing] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const all = [
     ...(query.data?.items ?? []),
     ...(query.data?.alternatives ?? []),
   ];
   const compared = all.filter((item) => selected.includes(item.id));
+  const browser = useRecordBrowser(query.data?.items ?? [], {
+    label: "کلاس‌های پیشنهادی",
+    text: (item) => `${item.title} ${item.club.name} ${item.sport ?? ""}`,
+  });
 
   return (
     <section aria-labelledby="athlete-recommendations-title">
       <div className="mb-3">
         <Typography id="athlete-recommendations-title" type="h4" weight="bold">
-          پیشنهاد برای شما
+          کلاس‌های مناسب شما
         </Typography>
         <p className="mt-1 text-xs text-muted">
           بر اساس زمان، بودجه، موقعیت و سابقه ثبت‌نام شما
         </p>
       </div>
+      {expanded && (
+        <div className="mb-4">
+          <DiscoverySearchField
+            value={browser.search}
+            onChange={browser.setSearch}
+            placeholder="جست‌وجوی کلاس یا باشگاه در پیشنهادها"
+          />
+        </div>
+      )}
       {!expanded && (
         <Link
           href="/athlete/recommendations"
@@ -54,18 +70,27 @@ export function AthleteRecommendationsSection({
         variant="secondary"
         onPress={() => setEditing((v) => !v)}
         aria-expanded={editing}
+        aria-haspopup="dialog"
+        isDisabled={!query.isSuccess}
       >
-        زمان و ترجیحات من
+        زمان، بودجه و فاصله
       </Button>
-      {editing && query.isSuccess && (
-        <RecommendationPreferencesForm
-          initial={query.data.preferences}
-          onSaved={() => {
-            setEditing(false);
-            setSelected([]);
-          }}
-        />
-      )}
+      <BottomSheet
+        open={editing}
+        onOpenChange={setEditing}
+        title="زمان، بودجه و فاصله"
+        snapPoints={[0.85]}
+      >
+        {query.isSuccess ? (
+          <RecommendationPreferencesForm
+            initial={query.data.preferences}
+            onSaved={() => {
+              setEditing(false);
+              setSelected([]);
+            }}
+          />
+        ) : null}
+      </BottomSheet>
       {query.isPending ? <CompactCardListSkeleton count={2} /> : null}
       {query.isError ? (
         <Card className="app-card rounded-2xl p-5 text-center text-sm text-muted shadow-none">
@@ -76,7 +101,7 @@ export function AthleteRecommendationsSection({
         </Card>
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
-        {query.data?.items.slice(0, expanded ? 8 : 4).map((item) => (
+        {browser.items.slice(0, expanded ? undefined : 4).map((item) => (
           <div key={item.id} className="min-w-0">
             <Link
               href={`/discovery/business-class?classId=${item.id}`}
@@ -146,7 +171,7 @@ export function AthleteRecommendationsSection({
         <Card className="app-card rounded-2xl p-5 text-center text-sm text-muted shadow-none">
           <span
             aria-hidden="true"
-            className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl border border-border bg-surface-secondary text-accent"
+            className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-surface-secondary text-accent"
           >
             <Icon name="calendar-check" size={28} />
           </span>
@@ -168,7 +193,7 @@ export function AthleteRecommendationsSection({
       ) : null}
       {compared.length > 0 && (
         <section
-          className="mt-4 rounded-2xl border border-border bg-surface p-4"
+          className="mt-4 rounded-2xl bg-surface p-4"
           aria-label="مقایسه کلاس‌ها"
         >
           <div className="flex items-center justify-between gap-2">
@@ -236,7 +261,7 @@ export function AthleteRecommendationsSection({
             <Link
               key={item.id}
               href={`/discovery/business-class?classId=${item.id}`}
-              className="block rounded-2xl border border-border p-4"
+              className="block rounded-2xl p-4"
             >
               <h4 className="font-semibold">{item.title}</h4>
               <p className="mt-1 text-xs text-muted">

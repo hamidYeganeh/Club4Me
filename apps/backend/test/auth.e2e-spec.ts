@@ -1,5 +1,5 @@
 import { INestApplication } from "@nestjs/common";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "./mongo-memory";
 import request from "supertest";
 import type { App } from "supertest/types";
 

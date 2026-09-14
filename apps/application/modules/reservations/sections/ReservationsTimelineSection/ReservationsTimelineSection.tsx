@@ -96,7 +96,7 @@ function ReservationTimelineRow({
             </div>
           </div>
         </Button>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-3">
           <span className="text-xs font-semibold text-muted">
             {item.source === "class"
               ? "دوره ورزشی"
@@ -126,6 +126,7 @@ function paymentStatusLabel(status: TimelineReservation["paymentStatus"]) {
   const labels = {
     not_required: "رایگان",
     pending: "در انتظار پرداخت",
+    pay_on_arrival: "پرداخت در پذیرش",
     paid: "پرداخت‌شده",
     refunded: "بازپرداخت‌شده",
     failed: "پرداخت ناموفق",

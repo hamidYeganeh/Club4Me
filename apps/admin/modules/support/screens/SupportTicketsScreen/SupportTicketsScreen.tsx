@@ -1,4 +1,5 @@
 "use client";
+import { PanelSectionSwitcher } from "@repo/ui/panel-section-switcher";
 
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import {
@@ -34,6 +35,7 @@ const statusLabel = {
 } as const;
 
 export function SupportTicketsScreen() {
+  const [section, setSection] = useState("tickets");
   const [status, setStatus] = useState("open");
   const [selected, setSelected] = useState<SupportTicket | null>(null);
   const [action, setAction] = useState<{
@@ -103,7 +105,20 @@ export function SupportTicketsScreen() {
           ))}
         </FormSelect>
       </div>
-      <Card className="mt-5 rounded-[1.75rem] border border-border bg-surface p-2">
+      <PanelSectionSwitcher
+        label="صف‌های رسیدگی"
+        value={section}
+        onChange={setSection}
+        items={[
+          { value: "tickets", label: "تیکت‌ها" },
+          { value: "leads", label: "درخواست‌های سایت" },
+          { value: "reviews", label: "نظرات خدمات" },
+        ]}
+      />
+      <Card
+        hidden={section !== "tickets"}
+        className="mt-5 rounded-[1.75rem] bg-surface p-2"
+      >
         {tickets.isPending ? (
           <div className="flex justify-center py-16">
             <Spinner />
@@ -203,12 +218,12 @@ export function SupportTicketsScreen() {
           </Table>
         )}
       </Card>
-      <section className="mt-8">
+      <section hidden={section !== "leads"} className="mt-8">
         <h2 className="text-xl font-semibold">درخواست‌های فرم سایت</h2>
         <p className="mt-1 text-sm text-muted">
           سرنخ‌های ثبت‌شده همراه با رضایت تماس
         </p>
-        <Card className="mt-4 rounded-[1.75rem] border border-border bg-surface p-4">
+        <Card className="mt-4 rounded-[1.75rem] bg-surface p-4">
           {leads.isPending ? (
             <Spinner />
           ) : !leads.data?.items.length ? (
@@ -220,7 +235,7 @@ export function SupportTicketsScreen() {
               {leads.data.items.map((lead) => (
                 <div
                   key={lead._id}
-                  className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border p-3"
+                  className="flex flex-wrap items-start justify-between gap-3 rounded-xl p-3"
                 >
                   <div className="min-w-0">
                     <p className="font-semibold">
@@ -255,12 +270,12 @@ export function SupportTicketsScreen() {
           )}
         </Card>
       </section>
-      <section className="mt-8">
+      <section hidden={section !== "reviews"} className="mt-8">
         <h2 className="text-xl font-semibold">نظرات مربی و کلاس</h2>
         <p className="mt-1 text-sm text-muted">
           بازبینی نظرات دارای حضور تأییدشده
         </p>
-        <Card className="mt-4 rounded-[1.75rem] border border-border bg-surface p-4">
+        <Card className="mt-4 rounded-[1.75rem] bg-surface p-4">
           {reviews.isPending ? (
             <Spinner />
           ) : !reviews.data?.items.length ? (
@@ -268,10 +283,7 @@ export function SupportTicketsScreen() {
           ) : (
             <div className="grid gap-3">
               {reviews.data.items.map((review) => (
-                <div
-                  key={review.id}
-                  className="rounded-xl border border-border p-3"
-                >
+                <div key={review.id} className="rounded-xl p-3">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold">
@@ -565,10 +577,7 @@ function SupportOrderDetails({ ticketId }: { ticketId: string }) {
         <p>تراکنشی در سامانه مشترک برای این سفارش ثبت نشده است.</p>
       ) : (
         context.data.payments.map((payment) => (
-          <div
-            key={payment.id}
-            className="space-y-1 rounded-xl border border-border p-3"
-          >
+          <div key={payment.id} className="space-y-1 rounded-xl p-3">
             <p>
               {state(payment.status)} · {payment.amount.toLocaleString("fa-IR")}{" "}
               ریال

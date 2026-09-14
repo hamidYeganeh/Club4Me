@@ -55,7 +55,7 @@ export function MediaUploaderField({
         ) : null}
       </div>
       {value ? (
-        <div className="group relative overflow-hidden rounded-2xl border border-border bg-surface-secondary p-2">
+        <div className="group relative overflow-hidden rounded-2xl bg-surface-secondary p-2">
           {/* Uploaded files and existing remote assets are intentionally dynamic. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

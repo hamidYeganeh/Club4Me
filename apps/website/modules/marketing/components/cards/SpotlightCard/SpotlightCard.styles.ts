@@ -37,7 +37,7 @@ export const spotlightCardVariants = tv({
       "min-h-12 shrink-0 rounded-2xl bg-accent-foreground px-4",
       "font-bold text-accent shadow-none transition-transform duration-fast ease-app",
       "hover:opacity-90 data-[hovered=true]:opacity-90",
-      "data-[pressed=true]:scale-[0.97]",
+      "",
     ].join(" "),
   },
 });

@@ -7,7 +7,6 @@ import { Icon, type IconName } from "@theme/icon";
 import { useTranslations } from "next-intl";
 
 import { ButtonLink } from "@/components/button-link";
-import { ProgressiveBlur } from "@/components/progressive-blur";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-inset";
 import styles from "./main-bottom-navigation.module.css";
 import {
@@ -118,21 +117,9 @@ export function MainBottomNavigation() {
     <ActiveIndicatorGroup>
       <nav
         aria-label={t("main")}
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-xl"
+        className="app-bottom-fade app-bottom-fade-nav pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-xl"
       >
         <div className="relative h-[var(--app-bottom-nav-height)]">
-          <div className="absolute inset-0 overflow-hidden">
-            <ProgressiveBlur
-              direction="bottom"
-              className="h-full"
-              blurLayers={8}
-              blurIntensity={1.25}
-            />
-            <div
-              aria-hidden
-              className="absolute inset-0 bg-linear-to-t from-background from-40% via-background/75 to-transparent"
-            />
-          </div>
           <div className={styles.tray}>
             {leading.map((item) => (
               <NavLink

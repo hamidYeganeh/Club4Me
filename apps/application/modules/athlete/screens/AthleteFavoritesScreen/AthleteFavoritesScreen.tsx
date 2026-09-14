@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
+import { DiscoverySearchField } from "@modules/discovery/components/DiscoverySearchField";
+import { DiscoveryFilterSheet } from "@modules/discovery/components/DiscoveryFilterSheet";
+const FavoriteSearch = createContext("");
 import { SaveButton } from "@/components/save-button";
 import { Button, Typography } from "@heroui/react";
 import { useSavedItems, type Favorite, type FavoriteEntityType } from "@api";
@@ -38,6 +41,7 @@ export function AthleteFavoritesScreen({
   role?: "athlete" | "coach";
 }) {
   const [category, setCategory] = useState<"all" | FavoriteEntityType>("all");
+  const [search, setSearch] = useState("");
   const favorites = useSavedItems();
   const allItems = favorites.data?.items ?? [];
   const items = allItems.filter(
@@ -47,82 +51,94 @@ export function AthleteFavoritesScreen({
     ? null
     : getQueryFailure(favorites.error, favorites.fetchStatus);
   return (
-    <main className="app-page gap-6">
-      <SecondaryHeader
-        title="ذخیره‌شده‌ها"
-        showFilter={false}
-        backHref={`/${role}/profile`}
-      />
-      <ActiveIndicatorGroup>
-        <div
-          className="flex flex-wrap gap-2"
-          role="group"
-          aria-label="نوع ذخیره‌شده‌ها"
-        >
-          {(Object.keys(categories) as (keyof typeof categories)[]).map(
-            (key) => (
-              <Button
-                key={key}
-                size="sm"
-                variant="secondary"
-                className={`relative isolate overflow-hidden ${category === key ? "text-accent-foreground" : ""}`}
-                aria-pressed={category === key}
-                onPress={() => setCategory(key)}
-              >
-                {category === key ? <ActiveIndicator /> : null}
-                <span className="relative">
-                  {categories[key]}
-                  {favorites.data
-                    ? ` (${allItems.filter((item) => key === "all" || item.entityType === key).length.toLocaleString("fa-IR")})`
-                    : ""}
-                </span>
-              </Button>
-            ),
-          )}
-        </div>
-      </ActiveIndicatorGroup>
-      {favorites.isLoading && !failure ? (
-        <DiscoveryResultCardSkeleton count={4} />
-      ) : null}
-      {failure ? (
-        <RequestFailureState
-          error={failure}
-          onRetry={() => void favorites.refetch()}
+    <FavoriteSearch.Provider value={search}>
+      <main className="app-page gap-6">
+        <SecondaryHeader
+          title="ذخیره‌شده‌ها"
+          showFilter={false}
+          backHref={`/${role}/profile`}
         />
-      ) : null}
-      {!favorites.isLoading && !failure && items.length === 0 ? (
-        <div className="rounded-3xl bg-surface-secondary px-5 py-10 text-center">
-          <Typography type="h5" weight="bold">
-            {category === "all"
-              ? "هنوز موردی را ذخیره نکرده‌ای"
-              : `هنوز موردی در ${categories[category]} ذخیره نکرده‌ای`}
-          </Typography>
-          <p className="mt-2 text-sm leading-7 text-muted">
-            مقالات، باشگاه‌ها، مربی‌ها و کلاس‌های موردعلاقه‌ات را در دیسکاوری
-            پیدا کن.
-          </p>
-          <ButtonLink href="/discovery" variant="primary" className="mt-5">
-            کشف باشگاه‌ها و کلاس‌ها
-          </ButtonLink>
-        </div>
-      ) : null}
-      <div className="flex flex-col gap-4">
-        {items.map((item) => (
-          <article key={item.id} className="rounded-[2rem] bg-surface p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <span className="rounded-xl bg-surface-secondary px-3 py-2 text-xs font-semibold">
-                {categories[item.entityType]}
-              </span>
-              <SaveButton
-                entityType={item.entityType}
-                entityId={item.entityId}
-              />
+        <DiscoverySearchField
+          value={search}
+          onChange={setSearch}
+          placeholder="جست‌وجو در ذخیره‌شده‌ها"
+        />
+        <DiscoveryFilterSheet title="نوع ذخیره‌شده‌ها">
+          <ActiveIndicatorGroup>
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-label="نوع ذخیره‌شده‌ها"
+            >
+              {(Object.keys(categories) as (keyof typeof categories)[]).map(
+                (key) => (
+                  <Button
+                    key={key}
+                    size="sm"
+                    variant="secondary"
+                    className={`relative isolate overflow-hidden ${category === key ? "text-accent-foreground" : ""}`}
+                    aria-pressed={category === key}
+                    onPress={() => setCategory(key)}
+                  >
+                    {category === key ? <ActiveIndicator /> : null}
+                    <span className="relative">
+                      {categories[key]}
+                      {favorites.data
+                        ? ` (${allItems.filter((item) => key === "all" || item.entityType === key).length.toLocaleString("fa-IR")})`
+                        : ""}
+                    </span>
+                  </Button>
+                ),
+              )}
             </div>
-            <FavoriteResult item={item} />
-          </article>
-        ))}
-      </div>
-    </main>
+          </ActiveIndicatorGroup>
+        </DiscoveryFilterSheet>
+        {favorites.isLoading && !failure ? (
+          <DiscoveryResultCardSkeleton count={4} />
+        ) : null}
+        {failure ? (
+          <RequestFailureState
+            error={failure}
+            onRetry={() => void favorites.refetch()}
+          />
+        ) : null}
+        {!favorites.isLoading && !failure && items.length === 0 ? (
+          <div className="rounded-3xl bg-surface-secondary px-5 py-10 text-center">
+            <Typography type="h5" weight="bold">
+              {category === "all"
+                ? "هنوز موردی را ذخیره نکرده‌ای"
+                : `هنوز موردی در ${categories[category]} ذخیره نکرده‌ای`}
+            </Typography>
+            <p className="mt-2 text-sm leading-7 text-muted">
+              مقالات، باشگاه‌ها، مربی‌ها و کلاس‌های موردعلاقه‌ات را در دیسکاوری
+              پیدا کن.
+            </p>
+            <ButtonLink href="/discovery" variant="primary" className="mt-5">
+              کشف باشگاه‌ها و کلاس‌ها
+            </ButtonLink>
+          </div>
+        ) : null}
+        <div className="flex flex-col gap-4">
+          {items.map((item) => (
+            <article
+              key={item.id}
+              className="[&:has([data-search-match=false])]:hidden rounded-[2rem] bg-surface p-4"
+            >
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <span className="rounded-xl bg-surface-secondary px-3 py-2 text-xs font-semibold">
+                  {categories[item.entityType]}
+                </span>
+                <SaveButton
+                  entityType={item.entityType}
+                  entityId={item.entityId}
+                />
+              </div>
+              <FavoriteResult item={item} />
+            </article>
+          ))}
+        </div>
+      </main>
+    </FavoriteSearch.Provider>
   );
 }
 
@@ -232,6 +248,12 @@ function SavedItemCard({
   href: string;
   badge: string;
 }) {
+  const search = useContext(FavoriteSearch).trim().toLocaleLowerCase();
+  if (
+    search &&
+    !`${title} ${subtitle ?? ""}`.toLocaleLowerCase().includes(search)
+  )
+    return <span hidden data-search-match="false" />;
   return (
     <Link
       href={href}

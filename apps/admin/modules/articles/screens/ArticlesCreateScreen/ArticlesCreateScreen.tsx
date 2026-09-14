@@ -1,4 +1,5 @@
 "use client";
+import { useTextActionDialog } from "@repo/ui/text-action-dialog";
 
 import { Button, Spinner, toast } from "@heroui/react";
 import {
@@ -20,22 +21,15 @@ import {
 export function ArticlesCreateScreen() {
   const t = useTranslations("articlesPage");
   const router = useRouter();
+  const textAction = useTextActionDialog();
   const categories = useArticleCategories();
   const createArticle = useCreateArticle();
   const createCategory = useCreateArticleCategory();
 
-  const handleCreateCategory = async () => {
-    const name = window.prompt("نام دسته‌بندی جدید را وارد کنید:")?.trim();
-    if (!name) return;
-    try {
-      await createCategory.mutateAsync({ name });
-      toast.success("دسته‌بندی ساخته شد");
-    } catch (error) {
-      toast.danger("ساخت دسته‌بندی انجام نشد", {
-        description: error instanceof ApiError ? error.message : undefined,
-      });
-    }
-  };
+  const handleCreateCategory = () => textAction.open({
+    title: "نام دسته‌بندی جدید", maxLength: 100,
+    onSubmit: async (name) => { await createCategory.mutateAsync({ name }); toast.success("دسته‌بندی ساخته شد"); },
+  });
 
   const handleSubmit = async (values: ArticlesEditorFormValues) => {
     try {
@@ -61,6 +55,7 @@ export function ArticlesCreateScreen() {
 
   return (
     <main className="flex-1 overflow-auto p-4 lg:p-6">
+      {textAction.dialog}
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <ButtonLink href="/articles" variant="ghost" isIconOnly aria-label={t("back")}>
           <Icon name="arrow-right" size="md" />

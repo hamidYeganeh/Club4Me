@@ -6,25 +6,37 @@ import {
   type SsgoiConfig,
   type SsgoiTransitionRule,
 } from "@ssgoi/react";
-import { axis } from "@ssgoi/react/view-transitions";
+import { axis, zoom } from "@ssgoi/react/view-transitions";
 
-// One quiet fade/rise for route changes; route rules still own scroll restoration.
 const routeTransition = axis({ type: "y", variant: "non-directional" });
+const detailTransition = zoom({ type: "expand", variant: "fade" });
+const bookingTransition = axis({ type: "z" });
 
 const transitionRules: SsgoiTransitionRule[] = [
   {
-    priority: 30,
+    priority: 50,
+    on: [
+      "/discovery/clubs/:id/slots",
+      "/athlete/reservations",
+      "/athlete/reservations/:id",
+      "/coach/reservations",
+    ],
+    transition: bookingTransition,
+    preserveScroll: { from: true, to: false },
+  },
+  {
+    priority: 40,
     on: [
       "/discovery/clubs/:id",
-      "/discovery/clubs/:id/**",
+      "/discovery/clubs/:id/gallery",
       "/discovery/coaches/:id",
-      "/discovery/coaches/:id/**",
+      "/discovery/coaches/:id/gallery",
       "/discovery/classes/:id",
-      "/discovery/classes/:id/**",
+      "/discovery/classes/:id/gallery",
       "/discovery/business-class",
       "/discovery/business-classes/:id",
     ],
-    transition: routeTransition,
+    transition: detailTransition,
     preserveScroll: { from: true, to: false },
   },
   {

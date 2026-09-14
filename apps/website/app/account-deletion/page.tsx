@@ -3,7 +3,7 @@ import { LegalPage } from "@/components/legal-page";
 
 export const metadata = pageMetadata(
   "حذف حساب کاربری",
-  "راهنمای درخواست حذف حساب کاربری و اطلاعات شخصی در Gym4Me.",
+  "راهنمای درخواست حذف حساب کاربری و اطلاعات شخصی در Club4Me.",
   "/account-deletion",
 );
 
@@ -24,10 +24,10 @@ export default function AccountDeletionPage() {
       <section>
         <h2>درخواست بدون دسترسی به اپ</h2>
         <p>
-          شماره موبایل حساب و عبارت «حذف حساب Gym4Me» را به{" "}
+          شماره موبایل حساب و عبارت «حذف حساب Club4Me» را به{" "}
           <a
             className="text-accent underline"
-            href="mailto:support@gym4me.ir?subject=درخواست حذف حساب Gym4Me"
+            href="mailto:support@gym4me.ir?subject=درخواست حذف حساب Club4Me"
           >
             support@gym4me.ir
           </a>{" "}

@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { sportId } = await params;
   const canonical = new URL(`/discovery/sports/${sportId}`, siteUrl).toString();
   const supply = await getDiscoveryEntity<{ total: number }>(`/discovery/catalog/classes?sportId=${encodeURIComponent(sportId)}&limit=1`);
-  return { title: "باشگاه، مربی و کلاس این رشته | Gym4Me", description: "عرضه فعال این رشته را در Gym4Me پیدا و مقایسه کنید.", alternates: { canonical }, ...(supply?.total ? {} : { robots: { index: false, follow: true } }) };
+  return { title: "باشگاه، مربی و کلاس این رشته | Club4Me", description: "عرضه فعال این رشته را در Club4Me پیدا و مقایسه کنید.", alternates: { canonical }, ...(supply?.total ? {} : { robots: { index: false, follow: true } }) };
 }
 export default async function SportPage({ params }: PageProps) {
   const { sportId } = await params;

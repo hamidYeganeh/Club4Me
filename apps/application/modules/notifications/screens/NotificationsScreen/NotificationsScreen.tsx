@@ -1,4 +1,5 @@
 "use client";
+import { useRecordBrowser } from "@/components/record-browser";
 
 import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -82,12 +83,16 @@ export function NotificationsScreen() {
   const role = pathname.startsWith("/coach") ? "coach" : "athlete";
   const [filter, setFilter] = useState<NotificationFilter>("unread");
   const notifications = useNotifications();
+  const browser = useRecordBrowser(notifications.data?.items ?? [], {
+    label: "اعلان‌ها",
+    text: (item) => `${item.title} ${item.body}`,
+  });
   const markRead = useMarkNotificationRead();
   const failure = notifications.data
     ? null
     : getQueryFailure(notifications.error, notifications.fetchStatus);
   const groups = useMemo(() => {
-    const matchingItems = (notifications.data?.items ?? []).filter((item) =>
+    const matchingItems = browser.items.filter((item) =>
       filter === "read" ? Boolean(item.readAt) : !item.readAt,
     );
 
@@ -98,7 +103,7 @@ export function NotificationsScreen() {
         return grouped;
       }, new Map<string, typeof matchingItems>()),
     );
-  }, [filter, notifications.data?.items]);
+  }, [filter, browser.items]);
 
   return (
     <main className="min-h-dvh pb-[calc(7rem+env(safe-area-inset-bottom))]">
@@ -107,6 +112,7 @@ export function NotificationsScreen() {
         showFilter={false}
         backHref={`/${role}/profile`}
       />
+      <div className="px-4">{browser.controls}</div>
 
       <div className="px-5 pt-4">
         <div

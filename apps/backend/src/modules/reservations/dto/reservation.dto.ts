@@ -225,6 +225,7 @@ export class CreateReservationDto {
   static schema = z
     .object({
       sessionId: objectId,
+      paymentMethod: z.enum(["online", "cash", "pos"]).optional(),
       expectedTotalPrice: z.number().int().min(0).optional(),
       expectedCurrency: z.string().length(3).optional(),
       isTrial: z.boolean().optional(),
@@ -242,6 +243,7 @@ export class CreateReservationDto {
     })
     .strict();
   sessionId: string;
+  paymentMethod?: "online" | "cash" | "pos";
   expectedTotalPrice?: number;
   expectedCurrency?: string;
   isTrial?: boolean;
@@ -296,4 +298,17 @@ export class UpdateReservationCheckInDto {
   participantCount: number;
   expectedParticipantCount: number;
   reason: string;
+}
+
+export class RecordOnSitePaymentDto {
+  static schema = z
+    .object({
+      action: z.enum(["collect", "refund"]),
+      expectedAmount: z.number().int().positive(),
+      receipt: z.string().trim().max(120).default(""),
+    })
+    .strict();
+  action: "collect" | "refund";
+  expectedAmount: number;
+  receipt: string;
 }

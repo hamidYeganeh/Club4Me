@@ -41,7 +41,7 @@ export function ClassCard({
             fill
             unoptimized
             sizes="(max-width: 576px) 84vw, 22rem"
-            className="-z-20 object-cover motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105"
+            className="-z-20 object-cover motion-safe:transition-transform motion-safe:duration-300"
           />
         ) : null}
         <span className="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/75 to-background/10" />
@@ -67,7 +67,13 @@ export function ClassCard({
               </span>
             ) : null}
             <span aria-hidden>•</span>
-            <span>{Math.max(0, remaining).toLocaleString("fa-IR")} جای خالی</span>
+            <span
+              className={remaining <= 0 ? "font-semibold text-foreground" : ""}
+            >
+              {remaining <= 0
+                ? "ظرفیت تکمیل"
+                : `${remaining.toLocaleString("fa-IR")} جای خالی`}
+            </span>
           </div>
         </div>
       </Link>
@@ -81,14 +87,14 @@ export function ClassCard({
       className={`class-browse-card group overflow-hidden rounded-[2rem] bg-surface text-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-4 ${className}`}
     >
       {imageUrl ? (
-        <div className="relative aspect-[16/8] overflow-hidden">
+        <div className="relative aspect-[16/6] overflow-hidden">
           <FallbackImage
             src={imageUrl}
             alt=""
             fill
             unoptimized
             sizes="(max-width: 576px) 100vw, 576px"
-            className="object-cover motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105"
+            className="object-cover motion-safe:transition-transform motion-safe:duration-300"
           />
           <span className="absolute start-4 top-4 rounded-full bg-background px-3 py-2 text-xs font-bold">
             {badge}
@@ -125,7 +131,13 @@ export function ClassCard({
               })}
             </span>
           ) : null}
-          <span>{Math.max(0, remaining).toLocaleString("fa-IR")} جای خالی</span>
+          <span
+            className={remaining <= 0 ? "font-semibold text-foreground" : ""}
+          >
+            {remaining <= 0
+              ? "ظرفیت تکمیل"
+              : `${remaining.toLocaleString("fa-IR")} جای خالی`}
+          </span>
         </div>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
           <span className="text-sm font-extrabold">
@@ -136,7 +148,7 @@ export function ClassCard({
               </span>
             ) : null}
           </span>
-          <span className="text-xs font-semibold">مشاهده کلاس</span>
+          <span className="text-xs font-semibold">جزئیات و ثبت‌نام</span>
         </div>
       </div>
     </Link>

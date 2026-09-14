@@ -31,14 +31,70 @@ export class ClubReviewsService {
     private readonly resources: ResourcesService,
   ) {}
 
-  async list(clubId: string) {
+  async list(clubId: string, query: Record<string, string | undefined> = {}) {
     await this.clubs.getPublic(clubId);
+    return this.listReviews(clubId, query);
+  }
+
+  async listForBusiness(
+    userId: string,
+    clubId: string,
+    query: Record<string, string | undefined> = {},
+  ) {
+    await this.clubs.get(userId, clubId, "club.read");
+    return this.listReviews(clubId, query);
+  }
+
+  private async listReviews(
+    clubId: string,
+    query: Record<string, string | undefined>,
+  ) {
+    const page = Number(query.page ?? 1);
+    const limit = Number(query.limit ?? 100);
+    if (
+      !Number.isSafeInteger(page) ||
+      page < 1 ||
+      page > 100000 ||
+      !Number.isSafeInteger(limit) ||
+      limit < 1 ||
+      limit > 100 ||
+      (query.q?.length ?? 0) > 200 ||
+      (query.hasResponse && !["yes", "no"].includes(query.hasResponse))
+    ) {
+      throw new AppError(
+        400,
+        "INVALID_REVIEW_FILTER",
+        "فیلتر نظرها معتبر نیست",
+      );
+    }
     const id = objectId(clubId, "CLUB_NOT_FOUND");
-    const [items, summary] = await Promise.all([
+    const filter: Record<string, unknown> = { clubId: id, status: "published" };
+    if (query.rating) {
+      const rating = Number(query.rating);
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5)
+        throw new AppError(400, "INVALID_REVIEW_FILTER", "امتیاز معتبر نیست");
+      filter.rating = rating;
+    }
+    if (query.hasResponse === "yes")
+      filter["ownerResponse.body"] = { $exists: true, $ne: "" };
+    if (query.hasResponse === "no")
+      filter.$or = [
+        { "ownerResponse.body": { $exists: false } },
+        { "ownerResponse.body": "" },
+      ];
+    if (query.q?.trim()) {
+      const pattern = new RegExp(
+        query.q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        "i",
+      );
+      filter.$and = [{ $or: [{ title: pattern }, { body: pattern }] }];
+    }
+    const [items, summary, total, distribution] = await Promise.all([
       this.reviews
-        .find({ clubId: id, status: "published" })
-        .sort({ createdAt: -1 })
-        .limit(100)
+        .find(filter)
+        .sort({ createdAt: -1, _id: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
         .exec(),
       this.reviews.aggregate<{ averageRating: number; reviewsCount: number }>([
         { $match: { clubId: id, status: "published" } },
@@ -49,6 +105,11 @@ export class ClubReviewsService {
             reviewsCount: { $sum: 1 },
           },
         },
+      ]),
+      this.reviews.countDocuments(filter),
+      this.reviews.aggregate<{ _id: number; count: number }>([
+        { $match: { clubId: id, status: "published" } },
+        { $group: { _id: "$rating", count: { $sum: 1 } } },
       ]),
     ]);
     const criteria = await this.activeCriteria();
@@ -85,6 +146,13 @@ export class ClubReviewsService {
         };
       }),
       items: items.map(toPublic),
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      distribution: [5, 4, 3, 2, 1].map(
+        (rating) => distribution.find((row) => row._id === rating)?.count ?? 0,
+      ),
       averageRating: summary[0]?.averageRating ?? 0,
       reviewsCount: summary[0]?.reviewsCount ?? 0,
     };

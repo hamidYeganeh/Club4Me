@@ -15,6 +15,7 @@ test.beforeEach(async ({ page }) => {
 test("role survives reload without crossing accounts", async ({ page }) => {
   await page.goto("/coach"); await expect(page.getByRole("heading", { name: "میز کار امروز" })).toBeVisible();
   await page.getByRole("navigation", { name: "منوی اصلی" }).getByRole("link", { name: "کشف", exact: true }).click();
+  await expect(page).toHaveURL(/\/discovery$/);
   await page.reload();
   const home = page.getByRole("navigation", { name: "منوی اصلی" }).getByRole("link", { name: "خانه", exact: true });
   await expect(home).toHaveAttribute("href", "/coach");
@@ -31,7 +32,6 @@ test("next session has a detail destination and fits both themes", async ({ page
   await expect(action.getByRole("heading", { name: "تمرین قدرت با مربی" })).toBeVisible();
   await expect(action.getByRole("link")).toHaveAttribute("href", "/athlete/reservations/booking-next?source=coach");
   await expect(page.getByRole("group", { name: "انتخاب روز" }).getByRole("button")).toHaveCount(7);
-  await page.getByRole("button", { name: "فعلاً نه", exact: true }).click();
   for (const theme of ["light", "dark"]) {
     await page.evaluate((theme) => { document.documentElement.classList.toggle("dark", theme === "dark"); document.documentElement.setAttribute("data-theme", theme); }, theme);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -53,6 +53,6 @@ test("social login accepts Persian phone digits and allows correction", async ({
   await page.getByRole("button", { name: "ارسال کد", exact: true }).click(); expect((await sent).postDataJSON().phone).toBe("09123456789");
   await expect(page.getByRole("button", { name: /ارسال مجدد تا/ })).toBeDisabled();
   await page.getByRole("button", { name: "اصلاح شماره" }).click(); await expect(page.getByRole("textbox", { name: "شماره موبایل" })).toBeEnabled();
-  await page.goto("/auth/social/callback"); await expect(page.getByRole("alert")).toContainText("منقضی یا نامعتبر");
+  await page.goto("/auth/social/callback"); await expect(page.getByRole("alert").filter({ hasText: "منقضی یا نامعتبر" })).toBeVisible();
   await expect(page.getByRole("link", { name: "بازگشت به ورود" })).toHaveAttribute("href", "/auth");
 });

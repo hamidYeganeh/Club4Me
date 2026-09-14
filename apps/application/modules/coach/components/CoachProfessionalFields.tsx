@@ -49,7 +49,7 @@ export function CoachProfessionalFields({
     );
   };
   return (
-    <div className="space-y-7 border-t border-border pt-6">
+    <div className="space-y-7 pt-6">
       <Group
         title="مخاطب و هدف تمرین"
         description="کمک کنید ورزشکار بفهمد همکاری با شما برای او مناسب است یا نه."
@@ -161,7 +161,7 @@ export function CoachProfessionalFields({
         {value.credentials.map((row, index) => (
           <fieldset
             key={index}
-            className="space-y-3 rounded-2xl border border-border p-4"
+            className="space-y-3 rounded-2xl p-4"
             disabled={uploading}
           >
             <legend className="px-2 text-sm font-bold">مدرک {index + 1}</legend>
@@ -256,7 +256,7 @@ export function CoachProfessionalFields({
         {value.achievements.map((row, index) => (
           <fieldset
             key={index}
-            className="space-y-3 rounded-2xl border border-border p-4"
+            className="space-y-3 rounded-2xl p-4"
           >
             <legend className="px-2 text-sm font-bold">
               افتخار {index + 1}
@@ -314,7 +314,7 @@ export function CoachProfessionalFields({
         {value.successStories.map((row, index) => (
           <fieldset
             key={index}
-            className="space-y-3 rounded-2xl border border-border p-4"
+            className="space-y-3 rounded-2xl p-4"
           >
             <legend className="px-2 text-sm font-bold">
               نمونه {index + 1}

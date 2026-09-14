@@ -1,21 +1,22 @@
 meta:
   product: Gym4Me
-  version: 2
-  created: 2026-09-04
-  updated: 2026-09-04
+  version: 3
+  created: 2026-09-04T00:00:00.000Z
+  updated: '2026-09-13'
   owner: product-engineering
   platform: capacitor-android-nextjs-nestjs
   implementation: custom
-  destinations: [gym4me_first_party]
+  destinations:
+    - gym4me_first_party
+    - posthog
   naming_convention: object.action
   pii_policy: none
   internal_user_policy: by_role
-  implementation_status: implemented
-
+  implementation_status: code_ready_posthog_project_pending
 entities:
   user:
     id_property: user_id
-    id_format: "MongoDB ObjectId string"
+    id_format: MongoDB ObjectId string
     traits:
       - name: roles
         type: string_array
@@ -34,16 +35,19 @@ entities:
         update_pattern: on_change
       - name: platform
         type: string
-        enum: [android, web]
+        enum:
+          - android
+          - web
         required: true
         pii: false
         update_pattern: on_change
-
 groups:
   - type: club
-    id_format: "MongoDB ObjectId string"
+    id_format: MongoDB ObjectId string
     is_top_level: true
-    triggers: [creation, trait_change]
+    triggers:
+      - creation
+      - trait_change
     traits:
       - name: status
         type: string
@@ -58,16 +62,21 @@ groups:
         type: datetime
         required: true
   - type: session
-    id_format: "MongoDB ObjectId string"
+    id_format: MongoDB ObjectId string
     parent_type: club
-    triggers: [creation, trait_change]
+    triggers:
+      - creation
+      - trait_change
     traits:
       - name: parent_group_id
         type: string
         required: true
       - name: session_type
         type: string
-        enum: [court, class, coached_session]
+        enum:
+          - court
+          - class
+          - coached_session
         required: true
       - name: status
         type: string
@@ -75,7 +84,6 @@ groups:
       - name: starts_at
         type: datetime
         required: true
-
 events:
   - name: user.signed_up
     category: lifecycle
@@ -84,14 +92,18 @@ events:
     properties:
       - name: signup_method
         type: string
-        enum: [otp, password]
+        enum:
+          - otp
+          - password
         required: true
       - name: initial_role
         type: string
-        enum: [athlete, coach, owner]
+        enum:
+          - athlete
+          - coach
+          - owner
         required: true
     expected_frequency: low
-
   - name: onboarding.completed
     category: lifecycle
     group_level: user
@@ -99,10 +111,12 @@ events:
     properties:
       - name: selected_role
         type: string
-        enum: [athlete, coach, owner]
+        enum:
+          - athlete
+          - coach
+          - owner
         required: true
     expected_frequency: low
-
   - name: search.performed
     category: feature_usage
     group_level: user
@@ -110,7 +124,11 @@ events:
     properties:
       - name: result_type
         type: string
-        enum: [all, club, coach, class]
+        enum:
+          - all
+          - club
+          - coach
+          - class
         required: true
       - name: has_location_filter
         type: boolean
@@ -118,8 +136,21 @@ events:
       - name: result_count
         type: integer
         required: true
+      - name: acquisition_channel
+        type: string
+        required: false
+      - name: sport_id
+        type: string
+        required: false
+      - name: service_type
+        type: string
+        required: false
+        enum:
+          - club
+          - coach
+          - class
+          - court
     expected_frequency: medium
-
   - name: favorite.added
     category: feature_usage
     group_level: club
@@ -127,7 +158,11 @@ events:
     properties:
       - name: favorite_type
         type: string
-        enum: [club, coach, class]
+        enum:
+          - club
+          - coach
+          - class
+          - article
         required: true
       - name: favorite_id
         type: string
@@ -136,7 +171,6 @@ events:
         type: string
         required: false
     expected_frequency: medium
-
   - name: review.submitted
     category: collaboration
     group_level: club
@@ -144,7 +178,10 @@ events:
     properties:
       - name: review_target_type
         type: string
-        enum: [club, coach]
+        enum:
+          - club
+          - coach
+          - class
         required: true
       - name: review_target_id
         type: string
@@ -153,7 +190,6 @@ events:
         type: integer
         required: true
     expected_frequency: low
-
   - name: reservation.created
     category: core_value
     group_level: session
@@ -170,13 +206,16 @@ events:
         required: true
       - name: session_type
         type: string
-        enum: [court, class, coached_session]
+        enum:
+          - court
+          - class
+          - coached_session
         required: true
       - name: participant_count
         type: integer
         required: true
     expected_frequency: medium
-
+    source: server
   - name: reservation.cancelled
     category: core_value
     group_level: session
@@ -191,12 +230,20 @@ events:
       - name: session_id
         type: string
         required: true
-      - name: cancelled_by
+      - name: session_type
         type: string
-        enum: [athlete, provider]
         required: true
+      - name: participant_count
+        type: integer
+        required: true
+      - name: reason
+        type: string
+        required: true
+        enum:
+          - payment_failed
+          - cancelled
     expected_frequency: low
-
+    source: server
   - name: session.published
     category: core_value
     group_level: session
@@ -210,10 +257,12 @@ events:
         required: true
       - name: session_type
         type: string
-        enum: [court, class, coached_session]
+        enum:
+          - court
+          - class
+          - coached_session
         required: true
     expected_frequency: medium
-
   - name: notification_preference.changed
     category: configuration
     group_level: user
@@ -221,13 +270,17 @@ events:
     properties:
       - name: preference_name
         type: string
-        enum: [push_enabled, booking_updates, reminders, discovery, marketing]
+        enum:
+          - push_enabled
+          - booking_updates
+          - reminders
+          - discovery
+          - marketing
         required: true
       - name: is_enabled
         type: boolean
         required: true
     expected_frequency: low
-
   - name: account.deleted
     category: lifecycle
     group_level: user
@@ -237,22 +290,200 @@ events:
         type: boolean
         required: true
     expected_frequency: low
-
+  - name: app.opened
+    category: feature_usage
+    group_level: user
+    description: An allowlisted screen category becomes active; consent required.
+    properties:
+      - name: screen
+        type: string
+        required: true
+        enum:
+          - discovery
+          - athlete
+          - coach
+          - reservations
+          - profile
+          - other
+  - name: request.completed
+    category: reliability
+    group_level: user
+    description: Selected API request duration/status; no URL/body/message.
+    properties:
+      - name: category
+        type: string
+        required: true
+        enum:
+          - discovery
+          - reservation
+          - payment
+      - name: status
+        type: integer
+        required: true
+      - name: duration_ms
+        type: integer
+        required: true
+  - name: discovery.club_viewed
+    category: feature_usage
+    group_level: club
+    properties:
+      - name: club_id
+        type: string
+        required: true
+        format: MongoDB ObjectId
+  - name: discovery.entity_viewed
+    category: feature_usage
+    group_level: user
+    properties:
+      - name: entity_type
+        type: string
+        required: true
+        enum:
+          - class
+          - coach
+      - name: entity_id
+        type: string
+        required: true
+        format: MongoDB ObjectId
+      - name: club_id
+        type: string
+        required: false
+  - name: checkout.started
+    category: core_value
+    group_level: session
+    properties:
+      - name: club_id
+        type: string
+        required: true
+        format: MongoDB ObjectId
+      - name: session_id
+        type: string
+        required: true
+        format: MongoDB ObjectId
+  - name: payment.started
+    category: core_value
+    group_level: user
+    source: server
+    description: Reconciled from committed payment intent; includes simulation marker.
+    properties:
+      - name: payment_id
+        type: string
+        required: true
+        format: MongoDB ObjectId
+      - name: reference_id
+        type: string
+        required: true
+        format: MongoDB ObjectId
+      - name: reference_type
+        type: string
+        required: true
+      - name: club_id
+        type: string
+        required: false
+      - name: reservation_id
+        type: string
+        required: false
+      - name: amount
+        type: number
+        required: true
+      - name: currency
+        type: string
+        required: true
+      - name: payment_mode
+        type: string
+        required: true
+        enum:
+          - simulation
+          - live
+  - name: payment.succeeded
+    category: core_value
+    group_level: user
+    source: server
+    description: Reconciled from committed payment intent; includes simulation marker.
+    properties:
+      - name: payment_id
+        type: string
+        required: true
+        format: MongoDB ObjectId
+      - name: reference_id
+        type: string
+        required: true
+        format: MongoDB ObjectId
+      - name: reference_type
+        type: string
+        required: true
+      - name: club_id
+        type: string
+        required: false
+      - name: reservation_id
+        type: string
+        required: false
+      - name: amount
+        type: number
+        required: true
+      - name: currency
+        type: string
+        required: true
+      - name: payment_mode
+        type: string
+        required: true
+        enum:
+          - simulation
+          - live
+  - name: payment.failed
+    category: core_value
+    group_level: user
+    source: server
+    description: Reconciled from committed payment intent; includes simulation marker.
+    properties:
+      - name: payment_id
+        type: string
+        required: true
+        format: MongoDB ObjectId
+      - name: reference_id
+        type: string
+        required: true
+        format: MongoDB ObjectId
+      - name: reference_type
+        type: string
+        required: true
+      - name: club_id
+        type: string
+        required: false
+      - name: reservation_id
+        type: string
+        required: false
+      - name: amount
+        type: number
+        required: true
+      - name: currency
+        type: string
+        required: true
+      - name: payment_mode
+        type: string
+        required: true
+        enum:
+          - simulation
+          - live
 snapshot_sync:
   cadence: daily
   traits:
     - entity: club
       trait: active_session_count
       type: integer
-      source: "COUNT of active reservable sessions by club"
+      source: COUNT of active reservable sessions by club
     - entity: club
       trait: reservation_count_30d
       type: integer
-      source: "COUNT of reservations created in the previous 30 days by club"
-
+      source: COUNT of reservations created in the previous 30 days by club
+  status: not_scheduled; reports compute current snapshot from source records
 implementation_notes:
-  - "The backend derives user_id from the verified access token; clients cannot submit it."
-  - "Never include phone, name, search text, precise coordinates, or free-form review text."
-  - "Admin and system-role activity is discarded before persistence."
-  - "Critical outcome events are emitted server-side at the successful transaction boundary."
-  - "Client events include occurrence time and an idempotency key for offline-safe retries."
+  - The backend derives user_id from the verified access token; clients cannot submit it.
+  - Never include phone, name, search text, precise coordinates, or free-form review text.
+  - Admin and system-role activity is discarded before persistence.
+  - Client events include occurrence time and an idempotency key for offline-safe retries.
+  - >-
+    Committed server outcomes are reconciled by OutcomeSyncService with a durable checkpoint and deterministic
+    IDs.
+  - PostHog delivery disabled until a project token and matching environment are configured.
+  - Internal dashboard financial totals come from the database/ledger, not telemetry.

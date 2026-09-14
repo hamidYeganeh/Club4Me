@@ -117,7 +117,7 @@ test("mobile screens share headers, fit the viewport and connect favorites to di
       ),
     ).toBe(true);
     await expect(
-      page.getByRole("status", { name: "Gym4Me", exact: true }),
+      page.getByRole("status", { name: "Club4Me", exact: true }),
     ).toHaveCount(0);
     await page.screenshot({
       path: testInfo.outputPath(`${name}.png`),
@@ -135,7 +135,7 @@ test("mobile screens share headers, fit the viewport and connect favorites to di
     page.getByRole("button", { name: "همین حالا رزرو کن", exact: true }).last(),
   ).toBeVisible();
   await expect(
-    page.getByRole("status", { name: "Gym4Me", exact: true }),
+    page.getByRole("status", { name: "Club4Me", exact: true }),
   ).toHaveCount(0);
   await page.screenshot({
     path: testInfo.outputPath("club-details.png"),

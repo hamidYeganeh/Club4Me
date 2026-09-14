@@ -429,10 +429,14 @@ export class TrainingClassesService {
       )
       .sort({ startAt: 1 })
       .exec();
-    return (await this.present([{
-      ...toPublicDocument(trainingClass),
-      sessions: sessions.map(toPublicDocument),
-    }]))[0]!;
+    return (
+      await this.present([
+        {
+          ...toPublicDocument(trainingClass),
+          sessions: sessions.map(toPublicDocument),
+        },
+      ])
+    )[0]!;
   }
 
   async requireOwnedDocument(

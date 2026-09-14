@@ -2,15 +2,15 @@
 
 @layer components {
   .app-surface {
-    @apply border border-white/7 bg-surface/72 backdrop-blur-xl;
+    @apply bg-surface/72 backdrop-blur-xl;
   }
 
   .app-card {
-    @apply rounded-[1.35rem] border border-white/7 bg-surface/78 backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-300 ease-out hover:border-accent/30 active:scale-[0.985];
+    @apply rounded-[1.35rem] bg-surface/78 backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-300 ease-out;
   }
 
   .app-icon-button {
-    @apply flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-[1rem] border border-white/8 bg-surface/72 text-foreground backdrop-blur-xl transition-transform duration-200 active:scale-95;
+    @apply flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-[1rem] bg-surface/72 text-foreground backdrop-blur-xl transition-transform duration-200;
   }
 
   .app-field {

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { AuthScreenSkeleton } from "@/components/loading-skeletons";
 
 export const metadata: Metadata = {
-  title: "تأیید بازیابی رمز عبور | جیم فور می",
+  title: "تأیید بازیابی رمز عبور | کلاب‌فورمی",
 };
 
 export default function AuthForgotPasswordConfirmPage() {

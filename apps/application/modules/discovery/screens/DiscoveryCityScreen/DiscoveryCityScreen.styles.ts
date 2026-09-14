@@ -10,22 +10,22 @@ export const discoveryCityScreenStyles = tv({
     topBar:
       "absolute inset-x-0 top-0 z-10 flex justify-end px-5 pt-[max(1.25rem,env(safe-area-inset-top))]",
     backButton:
-      "size-13 rounded-[1.15rem] border border-white/15 bg-black/30 text-white shadow-lg backdrop-blur-xl",
+      "size-13 rounded-[1.15rem] bg-black/30 text-white shadow-lg backdrop-blur-xl",
     heroCopy:
       "absolute inset-x-0 bottom-11 z-10 flex flex-col gap-3 px-5",
     eyebrow:
-      "w-fit rounded-full border border-accent/60 bg-black/35 px-3 py-1.5 text-accent backdrop-blur-md",
+      "w-fit rounded-full bg-black/35 px-3 py-1.5 text-accent backdrop-blur-md",
     heroTitle: "text-[2rem] leading-[1.25] text-white",
     heroDescription: "max-w-sm text-sm leading-7 text-white/70",
     sheet:
       "relative mt-6 space-y-5 px-4",
     sheetHeader: "mb-5 flex items-center justify-between gap-3",
     list: "flex flex-col gap-3",
-    card: "app-card app-stack-card group relative flex min-h-27 flex-row items-center gap-4 overflow-hidden p-3 shadow-none active:scale-[0.985]",
+    card: "app-card app-stack-card group relative flex min-h-27 flex-row items-center gap-4 overflow-hidden p-3 shadow-none",
     imageWrap:
       "relative size-22 shrink-0 overflow-hidden rounded-[1.15rem] bg-surface-tertiary",
     image:
-      "object-cover saturate-75 transition-transform duration-700 ease-out group-hover:scale-105 group-hover:saturate-100",
+      "object-cover saturate-75 transition-transform duration-700 ease-out group-hover:saturate-100",
     cardBody: "flex min-w-0 flex-1 flex-col gap-1",
     cardTitle: "text-lg text-foreground",
     count: "text-sm text-muted",

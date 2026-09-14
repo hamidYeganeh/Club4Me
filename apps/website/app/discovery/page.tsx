@@ -42,7 +42,7 @@ export default async function DiscoveryPage({
     <>
       <Breadcrumbs items={[]} />
       <header className={styles.intro}>
-        <p className={styles.kicker}>کشف Gym4Me</p>
+        <p className={styles.kicker}>کشف Club4Me</p>
         <h1 className={styles.title}>جای تمرین و مربی خودت را پیدا کن</h1>
         <p className={styles.description}>
           جزئیات را همین‌جا ببین؛ برای رزرو، ثبت‌نام و دنبال‌کردن تمرین‌ها وارد

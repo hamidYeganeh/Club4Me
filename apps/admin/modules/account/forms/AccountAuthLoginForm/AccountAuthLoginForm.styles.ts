@@ -16,6 +16,6 @@ export const accountAuthLoginFormStyles = tv({
     remember: "gap-2 text-sm leading-5 text-foreground",
     forgot: "px-0 py-0",
     actions: "mt-2 w-full",
-    button: "active:scale-[0.98]",
+    button: "",
   },
 });

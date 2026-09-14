@@ -11,7 +11,7 @@ export default function DiscoveryLayout({ children }: { children: ReactNode }) {
       </a>
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <Link className={styles.logo} href="/" aria-label="Gym4Me، صفحه اصلی">
+          <Link className={styles.logo} href="/" aria-label="Club4Me، صفحه اصلی">
             GYM4ME
           </Link>
           <nav className={styles.nav} aria-label="کشف">
@@ -30,7 +30,7 @@ export default function DiscoveryLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
       <footer className={styles.footer}>
-        <Link href="/">Gym4Me</Link>
+        <Link href="/">Club4Me</Link>
         <Link href="/privacy">حریم خصوصی</Link>
         <Link href="/terms">شرایط استفاده</Link>
         <Link href="/support">پشتیبانی</Link>

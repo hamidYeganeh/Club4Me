@@ -141,7 +141,7 @@ export function DiscoverySectionsScreen() {
       ) : list.isError ? (
         <div
           role="alert"
-          className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-danger p-4"
+          className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl p-4"
         >
           <p>دریافت چیدمان انجام نشد.</p>
           <Button variant="secondary" onPress={() => void list.refetch()}>
@@ -642,7 +642,7 @@ function SectionEditor({
               </Field>
               {value.selection.mode === "manual" ? (
                 <Field label="انتخاب محتوا" wide>
-                  <div className="max-h-48 overflow-auto rounded-xl border border-border p-2">
+                  <div className="max-h-48 overflow-auto rounded-xl p-2">
                     {options.isPending ? (
                       <Spinner />
                     ) : (
@@ -773,7 +773,7 @@ function BannerFields({
       {value.banners.map((banner, index) => (
         <div
           key={index}
-          className="grid gap-4 rounded-2xl border border-border p-4 sm:grid-cols-2"
+          className="grid gap-4 rounded-2xl p-4 sm:grid-cols-2"
         >
           <div className="flex items-center justify-between sm:col-span-2">
             <strong>بنر {index + 1}</strong>

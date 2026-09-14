@@ -128,7 +128,7 @@ export function UploaderFileItem({
               {item.status === "error" ? (
                 <button
                   type="button"
-                  className="grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-default hover:text-foreground active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                  className="grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-default hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   onClick={() => onRetry?.(item.id)}
                   aria-label={labels.retry}
                 >
@@ -137,7 +137,7 @@ export function UploaderFileItem({
               ) : null}
               <button
                 type="button"
-                className="grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-default hover:text-foreground active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                className="grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-default hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 onClick={() => onRemove?.(item.id)}
                 aria-label={labels.remove}
               >

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { AuthScreenSkeleton } from "@/components/loading-skeletons";
 
 export const metadata: Metadata = {
-  title: "تأیید کد | جیم فور می",
+  title: "تأیید کد | کلاب‌فورمی",
 };
 
 export default function AuthOtpConfirmPage() {

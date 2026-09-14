@@ -17,6 +17,6 @@ export const accountAuthLoginFormStyles = tv({
     forgot:
       "h-auto min-h-0 px-0 py-0 text-sm font-semibold text-accent",
     actions: "mt-2 w-full",
-    button: "h-14 rounded-full text-base font-bold active:scale-[0.98]",
+    button: "h-14 rounded-full text-base font-bold",
   },
 });

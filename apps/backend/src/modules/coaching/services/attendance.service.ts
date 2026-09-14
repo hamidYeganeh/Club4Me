@@ -101,14 +101,32 @@ export class AttendanceService {
     input: BulkAttendanceDto["items"],
   ) {
     const session = await this.sessions.requireOwnedDocument(userId, sessionId);
-    if (session.status === "cancelled") throw new AppError(409, "CLASS_SESSION_CANCELLED", "Cancelled sessions cannot record attendance");
+    if (session.status === "cancelled")
+      throw new AppError(
+        409,
+        "CLASS_SESSION_CANCELLED",
+        "Cancelled sessions cannot record attendance",
+      );
     if (!input.length) return this.list(userId, sessionId);
-    const previousRecords = await this.attendance.find({sessionId: session._id}).exec();
-    const previousByAthlete = new Map(previousRecords.map(item => [String(item.athleteId), item]));
+    const previousRecords = await this.attendance
+      .find({ sessionId: session._id })
+      .exec();
+    const previousByAthlete = new Map(
+      previousRecords.map((item) => [String(item.athleteId), item]),
+    );
     for (const item of input) {
       const previous = previousByAthlete.get(item.athleteId);
-      if (item.checkedOut && (!["present", "late"].includes(item.status) || !previous?.checkedInAt || !["present", "late"].includes(previous.status))) {
-        throw new AppError(409, "ATTENDANCE_CHECKOUT_REQUIRES_CHECKIN", "Record arrival before departure");
+      if (
+        item.checkedOut &&
+        (!["present", "late"].includes(item.status) ||
+          !previous?.checkedInAt ||
+          !["present", "late"].includes(previous.status))
+      ) {
+        throw new AppError(
+          409,
+          "ATTENDANCE_CHECKOUT_REQUIRES_CHECKIN",
+          "Record arrival before departure",
+        );
       }
     }
     const athleteIds = input.map((item) =>
@@ -166,7 +184,10 @@ export class AttendanceService {
         const previous = previousByAthlete.get(item.athleteId);
         const now = new Date();
         const present = item.status === "present" || item.status === "late";
-        const event = item.checkedOut && !previous?.checkedOutAt ? "checked_out" : item.status;
+        const event =
+          item.checkedOut && !previous?.checkedOutAt
+            ? "checked_out"
+            : item.status;
         return {
           updateOne: {
             filter: {
@@ -174,14 +195,28 @@ export class AttendanceService {
               athleteId: objectId(item.athleteId),
             },
             update: {
-              ...(event !== previous?.status && !(event === "checked_out" && previous?.checkedOutAt) ? {$push: {changes: {actorId: userId, at: now, before: previous?.status ?? "unrecorded", after: event}}} : {}),
+              ...(event !== previous?.status &&
+              !(event === "checked_out" && previous?.checkedOutAt)
+                ? {
+                    $push: {
+                      changes: {
+                        actorId: userId,
+                        at: now,
+                        before: previous?.status ?? "unrecorded",
+                        after: event,
+                      },
+                    },
+                  }
+                : {}),
               $set: {
                 coachId: session.ownerCoachId,
                 ...source,
                 status: item.status,
                 note: item.note?.trim(),
-                checkedInAt: present ? previous?.checkedInAt ?? now : null,
-                checkedOutAt: present ? previous?.checkedOutAt ?? (item.checkedOut ? now : null) : null,
+                checkedInAt: present ? (previous?.checkedInAt ?? now) : null,
+                checkedOutAt: present
+                  ? (previous?.checkedOutAt ?? (item.checkedOut ? now : null))
+                  : null,
                 recordedBy,
               },
             },

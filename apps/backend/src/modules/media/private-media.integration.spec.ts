@@ -1,5 +1,5 @@
 import { createConnection, type Connection, Types } from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryServer } from "../../../test/mongo-memory";
 import { Media, MediaSchema } from "./schemas/media.schema";
 import { Coach, CoachSchema } from "../coaching/schemas/coaching.schemas";
 import { MediaService } from "./media.service";

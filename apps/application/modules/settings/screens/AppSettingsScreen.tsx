@@ -316,7 +316,7 @@ export function AppSettingsScreen({ role }: Props) {
       </SettingsSection>
 
       <p className="font-brand pb-5 text-center text-xs text-muted" dir="ltr">
-        Gym4Me {version}
+        Club4Me {version}
       </p>
 
       <PermissionGrantSheet

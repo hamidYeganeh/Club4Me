@@ -1,4 +1,6 @@
 "use client";
+import { type ComponentProps } from "react";
+import { DiscoveryViewport } from "@modules/discovery/components/DiscoveryViewport";
 
 import { ClassCardSkeleton } from "../../components/skeletons/ClassCardSkeleton";
 import { ClassCard } from "../../components/ClassCard";
@@ -12,7 +14,7 @@ import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEm
 import { discoveryClassesRailSectionStyles } from "./DiscoveryClassesRailSection.styles";
 import type { DiscoveryClassesRailSectionProps } from "./DiscoveryClassesRailSection.types";
 
-export function DiscoveryClassesRailSection({
+function DiscoveryClassesRailSectionContent({
   id,
   title,
   subtitle,
@@ -104,5 +106,15 @@ export function DiscoveryClassesRailSection({
         </div>
       </ScrollShadow>
     </section>
+  );
+}
+
+export function DiscoveryClassesRailSection(
+  props: ComponentProps<typeof DiscoveryClassesRailSectionContent>,
+) {
+  return (
+    <DiscoveryViewport>
+      <DiscoveryClassesRailSectionContent {...props} />
+    </DiscoveryViewport>
   );
 }

@@ -38,7 +38,7 @@ export function DashboardHistoryCard({
   return (
     <article
       className={cn(
-        "grid min-h-36 grid-cols-[minmax(0,1fr)_minmax(7.5rem,0.9fr)] grid-rows-[auto_1fr] gap-x-4 gap-y-3 rounded-[28px] border border-border/70 bg-surface p-4 text-foreground",
+        "grid min-h-36 grid-cols-[minmax(0,1fr)_minmax(7.5rem,0.9fr)] grid-rows-[auto_1fr] gap-x-4 gap-y-3 rounded-[28px] bg-surface p-4 text-foreground",
         className,
       )}
     >
@@ -94,7 +94,7 @@ export function DashboardTrendCard({
   return (
     <article
       className={cn(
-        "grid min-h-64 grid-rows-[minmax(9rem,1fr)_auto] rounded-[28px] border border-border/70 bg-surface p-5 text-foreground",
+        "grid min-h-64 grid-rows-[minmax(9rem,1fr)_auto] rounded-[28px] bg-surface p-5 text-foreground",
         className,
       )}
     >
@@ -109,7 +109,7 @@ export function DashboardTrendCard({
           />
         </LineChart>
       </div>
-      <div className="border-t border-border/60 pt-3">
+      <div className="pt-3">
         <div className="flex items-end justify-between gap-4">
           <div>
             <h3 className="text-sm font-medium text-muted">{title}</h3>

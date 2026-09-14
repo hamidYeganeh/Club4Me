@@ -62,7 +62,7 @@ export function CompactCardListSkeleton({ count = 2 }: CountProps) {
             </div>
             <Skeleton className="h-7 w-20 shrink-0 rounded-full" />
           </div>
-          <div className="mt-4 flex items-center justify-between gap-4 border-t border-white/7 pt-3">
+          <div className="mt-4 flex items-center justify-between gap-4 pt-3">
             <Skeleton className="h-3 w-28 rounded-lg" />
             <Skeleton className="h-3 w-20 rounded-lg" />
           </div>

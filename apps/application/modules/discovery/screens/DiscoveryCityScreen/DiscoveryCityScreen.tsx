@@ -1,6 +1,8 @@
 "use client";
+import { useAccumulatedQuery } from "@modules/discovery/hooks/use-accumulated-query";
 
-import { useState } from "react";
+import { useDiscoveryList } from "../../hooks/use-discovery-list";
+import { DiscoverySearchField } from "../../components/DiscoverySearchField";
 import { DiscoveryPagination } from "../../components/DiscoveryPagination";
 
 import { DiscoveryQueryPage } from "../../components/DiscoveryQueryPage";
@@ -26,7 +28,7 @@ import { DiscoveryEmptyPage } from "@modules/discovery/components/DiscoveryEmpty
 import { DiscoveryEmptySection } from "@modules/discovery/components/DiscoveryEmptySection";
 
 export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
-  const [page, setPage] = useState(1);
+  const { query, setQuery, q, page, setPage } = useDiscoveryList();
   const styles = discoveryCityScreenStyles();
   const cities = usePublicCatalogResource("location", "city", {
     search: cityId,
@@ -34,11 +36,16 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
   const city = cities.data?.items.find(
     (item) => item.slug === cityId || item.id === cityId,
   );
-  const districts = usePublicCatalogResource(
+  const districtsPage = usePublicCatalogResource(
     "location",
     "district",
-    city ? { parentId: city.id, page, limit: 50 } : undefined,
+    city ? { parentId: city.id, search: q, page, limit: 50 } : undefined,
     Boolean(city),
+  );
+  const districts = useAccumulatedQuery(
+    districtsPage,
+    page,
+    JSON.stringify([cityId, q]),
   );
   const clubs = useCatalogClubs(
     city ? { cityId: city.id, limit: 1 } : undefined,
@@ -87,6 +94,11 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
         >
           مشاهده همه باشگاه‌های {city.name}
           <Icon name="arrow-left" size={18} />
+          <DiscoverySearchField
+            value={query}
+            onChange={setQuery}
+            placeholder="جست‌وجو در این منطقه"
+          />
         </ButtonLink>
         <DiscoveryQueryState query={clubs} />
         <DiscoveryQueryState query={districts} />
@@ -153,6 +165,8 @@ export function DiscoveryCityScreen({ cityId }: DiscoveryCityScreenProps) {
         limit={50}
         onChange={setPage}
         pending={districts.isFetching}
+        failed={districts.isError}
+        onRetry={() => void districts.refetch()}
       />
     </main>
   );
