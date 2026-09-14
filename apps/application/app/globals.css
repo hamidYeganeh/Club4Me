@@ -511,16 +511,3 @@
   background: var(--accent);
   color: var(--accent-foreground);
 }
-
-/* Flat application surfaces: selected/focused states use color, not edge effects. */
-*, *::before, *::after {
-  outline: none !important;
-  border-width: 0 !important;
-  box-shadow: none !important;
-  --tw-ring-shadow: 0 0 transparent !important;
-  --tw-ring-offset-shadow: 0 0 transparent !important;
-}
-:where(button, a, input, select, textarea, [tabindex]):focus-visible {
-  background-color: color-mix(in oklch, var(--accent) 16%, var(--surface)) !important;
-  color: var(--foreground);
-}
