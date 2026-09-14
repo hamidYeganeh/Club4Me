@@ -533,7 +533,7 @@ export function ReservationManagementScreen({ clubId }: { clubId: string }) {
                         برای انتشار سانس ابتدا{" "}
                         <Link
                           className="underline"
-                          href={`/clubs/${clubId}/edit`}
+                          href={`/clubs/${clubId}`}
                         >
                           قانون لغو باشگاه
                         </Link>{" "}

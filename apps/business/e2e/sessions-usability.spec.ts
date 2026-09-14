@@ -166,14 +166,14 @@ for (const width of [375, 1440])
 test("missing cancellation policy blocks publication and explains the remedy", async ({
   page,
 }) => {
-  await setup(page, false);
+  const { club } = await setup(page, false);
   await page.getByRole("button", { name: "ساخت سانس", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "ثبت سانس", exact: true }),
   ).toBeDisabled();
   await expect(
     page.getByRole("link", { name: "قانون لغو باشگاه", exact: true }),
-  ).toBeVisible();
+  ).toHaveAttribute("href", `/clubs/${club.id}`);
 });
 test("cancellation requires explicit confirmation", async ({ page }) => {
   const { writes } = await setup(page);
