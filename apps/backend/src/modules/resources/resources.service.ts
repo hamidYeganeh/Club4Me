@@ -246,8 +246,11 @@ export class ResourcesService {
   async create(category: string, segment: string, body: ResourceInput) {
     const definition = this.requireDefinition(category, segment);
     const payload = await this.preparePayload(definition, body, true);
+    const model = this.getModel(definition);
+    // Lazy resource models must finish index initialization before their first write.
+    await model.init();
     try {
-      return toPublicResource(await this.getModel(definition).create(payload));
+      return toPublicResource(await model.create(payload));
     } catch (error) {
       this.throwDuplicate(error);
       throw error;
@@ -576,6 +579,7 @@ export class ResourcesService {
       }
       if (
         payload[field.name] !== undefined &&
+        payload[field.name] !== null &&
         (field.kind === "relation" || field.kind === "relation-list")
       ) {
         await this.assertActiveRelation(field, payload[field.name]);
@@ -741,7 +745,12 @@ function normalizeValue(
   value: unknown,
   field?: ServerResourceField,
 ): unknown {
-  if (value === null && field && !field.required) return null;
+  if (
+    value === null &&
+    ((field && !field.required) ||
+      ["description", "icon", "imageUrl", "slug"].includes(key))
+  )
+    return null;
   if (key === "isActive" && typeof value !== "boolean")
     throw new AppError(400, "INVALID_BOOLEAN", "isActive must be a boolean");
   const isNumber = key === "sortOrder" || field?.kind === "number";

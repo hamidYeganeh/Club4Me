@@ -3,6 +3,12 @@ import {
   BusinessTrainingClassSchema,
 } from "../business-operations/schemas/training-class.schema";
 import { Module } from "@nestjs/common";
+import { AppConfigModule } from "../../config/app-config.module";
+import {
+  SavedSearchesController,
+  SavedSearchesService,
+} from "./saved-searches";
+import { NotificationsModule } from "../notifications/notifications.module";
 import { MongooseModule } from "@nestjs/mongoose";
 
 import { Article, ArticleSchema } from "../articles/schemas/article.schema";
@@ -30,6 +36,8 @@ import {
 
 @Module({
   imports: [
+    AppConfigModule,
+    NotificationsModule,
     AuthModule,
     MediaModule,
     ResourcesModule,
@@ -43,7 +51,11 @@ import {
       { name: BusinessTrainingClass.name, schema: BusinessTrainingClassSchema },
     ]),
   ],
-  controllers: [DiscoveryFeedController, AdminDiscoveryController],
-  providers: [DiscoveryFeedService],
+  controllers: [
+    DiscoveryFeedController,
+    AdminDiscoveryController,
+    SavedSearchesController,
+  ],
+  providers: [DiscoveryFeedService, SavedSearchesService],
 })
 export class DiscoveryFeedModule {}

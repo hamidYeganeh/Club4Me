@@ -1,14 +1,12 @@
 "use client";
 
-import { EntityOptionContent, entityOptionText } from "@repo/ui/entity-option";
+import { FormOption, FormSelect } from "@repo/ui/form-select";
 import { useEffect, useMemo, useRef } from "react";
 import {
   Button,
   FieldError,
   Input,
   Label,
-  ListBox,
-  Select,
   Spinner,
   TextArea,
   TextField,
@@ -85,24 +83,6 @@ export function ArticlesEditorForm({
     form.setValue("slug", slugify(title), { shouldDirty: false });
   }, [form, mode, title]);
 
-  useEffect(() => {
-    if (!defaultValues) {
-      return;
-    }
-
-    form.reset({
-      title: defaultValues.title ?? "",
-      authorName: defaultValues.authorName ?? "",
-      categoryId: defaultValues.categoryId ?? "",
-      slug: defaultValues.slug ?? "",
-      excerpt: defaultValues.excerpt ?? "",
-      bodyHtml: defaultValues.bodyHtml ?? "",
-      coverImageUrl: defaultValues.coverImageUrl ?? "",
-      status: defaultValues.status ?? "draft",
-    });
-    slugTouched.current = Boolean(defaultValues.slug);
-  }, [defaultValues, form]);
-
   const busy = Boolean(isSubmitting);
 
   const handleSubmit = async (values: ArticlesEditorFormValues) => {
@@ -168,41 +148,24 @@ export function ArticlesEditorForm({
             control={form.control}
             render={({ field, fieldState }) => (
               <div className={styles.field()}>
-                <Select
+                <Label className={styles.label()} htmlFor="article-category">
+                  {t("category")}
+                </Label>
+                <FormSelect
+                  id="article-category"
                   aria-label={t("category")}
-                  isDisabled={busy || categoriesLoading}
-                  placeholder={t("selectCategory")}
-                  value={field.value || null}
-                  onChange={(key) => {
-                    if (typeof key === "string") {
-                      field.onChange(key);
-                    }
-                  }}
+                  disabled={busy || categoriesLoading}
+                  value={field.value}
+                  onChange={field.onChange}
+                  className={styles.input()}
                 >
-                  <Label className={styles.label()}>{t("category")}</Label>
-                  <Select.Trigger className={styles.input()}>
-                    <Select.Value />
-                    <Select.Indicator />
-                  </Select.Trigger>
-                  <Select.Popover>
-                    <ListBox>
-                      {categories.map((item) => (
-                        <ListBox.Item
-                          dir="rtl"
-                          key={item.id}
-                          id={item.id}
-                          textValue={entityOptionText(item, String(item.name))}
-                        >
-                          <EntityOptionContent
-                            entity={item}
-                            title={String(item.name)}
-                          />
-                          <ListBox.ItemIndicator />
-                        </ListBox.Item>
-                      ))}
-                    </ListBox>
-                  </Select.Popover>
-                </Select>
+                  <FormOption value="">{t("selectCategory")}</FormOption>
+                  {categories.map((item) => (
+                    <FormOption key={item.id} value={item.id} entity={item}>
+                      {item.name}
+                    </FormOption>
+                  ))}
+                </FormSelect>
                 {fieldState.error?.message ? (
                   <p className={styles.error()}>{fieldState.error.message}</p>
                 ) : null}
@@ -238,38 +201,20 @@ export function ArticlesEditorForm({
             control={form.control}
             render={({ field }) => (
               <div className={styles.field()}>
-                <Select
+                <Label className={styles.label()} htmlFor="article-status">
+                  {t("status")}
+                </Label>
+                <FormSelect
+                  id="article-status"
                   aria-label={t("status")}
-                  isDisabled={busy}
+                  disabled={busy}
                   value={field.value}
-                  onChange={(key) => {
-                    if (key === "draft" || key === "published") {
-                      field.onChange(key);
-                    }
-                  }}
+                  onChange={field.onChange}
+                  className={styles.input()}
                 >
-                  <Label className={styles.label()}>{t("status")}</Label>
-                  <Select.Trigger className={styles.input()}>
-                    <Select.Value />
-                    <Select.Indicator />
-                  </Select.Trigger>
-                  <Select.Popover>
-                    <ListBox>
-                      <ListBox.Item dir="rtl" id="draft" textValue={t("draft")}>
-                        {t("draft")}
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                      <ListBox.Item
-                        dir="rtl"
-                        id="published"
-                        textValue={t("published")}
-                      >
-                        {t("published")}
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                    </ListBox>
-                  </Select.Popover>
-                </Select>
+                  <FormOption value="draft">{t("draft")}</FormOption>
+                  <FormOption value="published">{t("published")}</FormOption>
+                </FormSelect>
               </div>
             )}
           />
@@ -317,9 +262,14 @@ export function ArticlesEditorForm({
         <Controller
           name="bodyHtml"
           control={form.control}
-          render={({ field }) => (
+          render={({ field, fieldState }) => (
             <div className={`${styles.editorWrap()} mt-4`}>
               <Label className={styles.label()}>{t("body")}</Label>
+              {fieldState.error?.message ? (
+                <p role="alert" className={styles.error()}>
+                  {fieldState.error.message}
+                </p>
+              ) : null}
               <ArticlesEditorField
                 value={field.value}
                 onChange={field.onChange}

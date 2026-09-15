@@ -101,6 +101,13 @@ BusinessTrainingClassSchema.index({ clubId: 1, status: 1, startDate: 1 });
 
 @Schema({ collection: "business_class_sessions", timestamps: true })
 export class BusinessClassSession {
+  @Prop({ type: Types.ObjectId, default: null })
+  substituteCoachId: Types.ObjectId | null;
+  @Prop({ type: String, default: null }) substituteCoachName: string | null;
+  @Prop({ type: Types.ObjectId, default: null })
+  substituteAssignedBy: Types.ObjectId | null;
+  @Prop({ type: Date, default: null }) substituteAssignedAt: Date | null;
+
   @Prop({
     type: Types.ObjectId,
     ref: BusinessTrainingClass.name,

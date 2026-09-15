@@ -269,6 +269,7 @@ export class RecordClassAttendanceDto {
 export class UpdateClassSessionDto {
   static schema = z
     .object({
+      substituteCoachId: objectId.nullable().optional(),
       startsAt: z.iso.datetime().optional(),
       endsAt: z.iso.datetime().optional(),
       status: z.enum(["scheduled", "completed", "cancelled"]).optional(),
@@ -280,6 +281,7 @@ export class UpdateClassSessionDto {
         !(value.startsAt && value.endsAt) || value.startsAt < value.endsAt,
       { message: "Session end must be after start", path: ["endsAt"] },
     );
+  substituteCoachId?: string | null;
   startsAt?: string;
   endsAt?: string;
   status?: "scheduled" | "completed" | "cancelled";

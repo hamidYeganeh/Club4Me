@@ -34,6 +34,13 @@
 
         </activity>
 
+        <activity android:name=".HealthPrivacyActivity" android:exported="false" />
+        <activity-alias android:name=".HealthPermissionUsage" android:targetActivity=".HealthPrivacyActivity" android:exported="true" android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
         <receiver
             android:name=".ReminderWidgetProvider"
             android:exported="false"
@@ -58,6 +65,7 @@
     </application>
 
     <!-- Permissions -->
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />

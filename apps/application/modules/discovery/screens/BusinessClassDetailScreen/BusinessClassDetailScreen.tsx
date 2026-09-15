@@ -342,6 +342,11 @@ export function BusinessClassDetailScreen({ classId }: { classId: string }) {
                   minute: "2-digit",
                 })}
               </span>
+              {session.substituteCoachName && (
+                <p className="mt-2 text-xs text-accent">
+                  مربی این جلسه: {session.substituteCoachName} · جانشین
+                </p>
+              )}
             </div>
           ))}
           {!item.sessions.length ? (

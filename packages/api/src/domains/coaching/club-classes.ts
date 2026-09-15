@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { http } from "../../http/client";
 
 export type ClubClassSession = {
+  substituteCoachId?: string | null;
+  substituteCoachName?: string | null;
   id: string;
   classId: string;
   startsAt: string;
@@ -111,6 +113,7 @@ const athleteKey = ["athlete", "club-classes"] as const;
 const coachKey = ["coach", "club-classes"] as const;
 
 export function usePublicClubClasses(params?: {
+  classModel?: PublicClubClass["model"];
   clubId?: string;
   q?: string;
   page?: number;

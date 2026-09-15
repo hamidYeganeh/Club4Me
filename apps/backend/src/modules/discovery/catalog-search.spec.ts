@@ -36,6 +36,29 @@ function setup() {
 }
 
 describe("catalog search", () => {
+  it("shows available starting prices without a budget filter and preserves the actual pricing unit", async () => {
+    const { service, clubs } = setup();
+    const clubId = new Types.ObjectId();
+    clubs.lean.mockResolvedValue([
+      { _id: clubId, name: "باشگاه", slug: "club" },
+    ]);
+    const aggregate = jest.fn().mockReturnValue({
+      toArray: async () => [{ _id: clubId, amount: 120000, unit: "per_court" }],
+    });
+    Object.assign(clubs, { db: { collection: () => ({ aggregate }) } });
+    const result = await service.listPublicClubs({});
+    expect(result.items[0]?.catalogPrice).toMatchObject({
+      amount: 120000,
+      unit: "per_court",
+    });
+    const match = aggregate.mock.calls[0]![0][0].$match;
+    expect(match).not.toHaveProperty("basePrice");
+    expect(match).toMatchObject({
+      status: "active",
+      currency: "IRR",
+      clubId: { $in: [clubId] },
+    });
+  });
   it("counts clubs using the same spherical radius and retains public-only filters", async () => {
     const { service, clubs } = setup();
     await service.listPublicClubs({

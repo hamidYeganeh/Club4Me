@@ -31,7 +31,7 @@ export class Article {
   @Prop({ trim: true, default: "" })
   excerpt: string;
 
-  @Prop({ required: true, default: "" })
+  @Prop({ default: "" })
   bodyHtml: string;
 
   @Prop({ trim: true, maxlength: MAX_INLINE_IMAGE_URL_LENGTH })

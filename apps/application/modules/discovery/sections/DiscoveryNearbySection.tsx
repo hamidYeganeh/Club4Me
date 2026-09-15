@@ -9,7 +9,7 @@ export function DiscoveryNearbySection() {
   const { active } = useActiveLocation();
   const coordinates = getActiveCoordinates(active);
   return (
-    <div className="-mx-5 flex flex-col">
+    <div className="flex flex-col">
       <DiscoveryClubsRailSection
         id="discovery-nearby"
         title={coordinates ? "نزدیک تو" : "باشگاه‌های پیشنهادی"}
@@ -24,16 +24,16 @@ export function DiscoveryNearbySection() {
           limit: 6,
           ...(coordinates
             ? {
-                latitude: coordinates.latitude,
-                longitude: coordinates.longitude,
-                radiusKm: 25,
-              }
+              latitude: coordinates.latitude,
+              longitude: coordinates.longitude,
+              radiusKm: 25,
+            }
             : {}),
         }}
         tone="accent"
         cardVariant="compact"
       />
-      <div className="relative z-10 -mt-5 rounded-t-3xl bg-background px-5 pt-7 pb-3">
+      <div className="relative z-10  rounded-t-3xl bg-background px-5 pt-7 pb-3">
         <DiscoveryClubTypesSection />
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { NotificationsService } from "../notifications/notifications.service";
 import { MediaService } from "../media/media.service";
 import { withMediaReferences } from "../media/media-references";
 import {
@@ -15,7 +16,10 @@ import {
 import type { ClubPermission } from "../clubs/club-permissions";
 import { Injectable, Optional } from "@nestjs/common";
 import { ModuleRef } from "@nestjs/core";
-import { Atomic } from "../../infrastructure/database/atomic-operation";
+import {
+  Atomic,
+  lockPaymentReference,
+} from "../../infrastructure/database/atomic-operation";
 import { InjectConnection, InjectModel } from "@nestjs/mongoose";
 import { Connection, Model, Types } from "mongoose";
 import { AppError } from "../../common/errors/app.exception";
@@ -293,6 +297,7 @@ export class BusinessClassesService {
     };
   }
 
+  @Atomic("sessions")
   async updateSession(
     ownerId: string,
     clubId: string,
@@ -301,13 +306,97 @@ export class BusinessClassesService {
     input: UpdateClassSessionDto,
   ) {
     const id = await this.club(ownerId, clubId, "classes.write");
-    await this.classDocument(id, classId);
+    await lockPaymentReference(this.sessions.db, "class-schedule", clubId);
+    const trainingClass = await this.classDocument(id, classId);
     const item = await this.sessions.findOne({
       _id: oid(sessionId),
       classId: oid(classId),
       clubId: id,
     });
     if (!item) throw notFound("CLASS_SESSION_NOT_FOUND");
+    if (input.substituteCoachId !== undefined) {
+      if (
+        input.scope === "future" ||
+        input.startsAt ||
+        input.endsAt ||
+        input.status
+      )
+        throw invalid("SUBSTITUTE_SINGLE_SESSION_ONLY");
+      if (item.status !== "scheduled" || item.startsAt <= new Date())
+        throw invalid("SUBSTITUTE_REQUIRES_FUTURE_SESSION");
+      const substitute = input.substituteCoachId
+        ? await this.coaches.findOne({
+            _id: oid(input.substituteCoachId),
+            clubId: id,
+            status: "active",
+          })
+        : null;
+      if (input.substituteCoachId && !substitute)
+        throw invalid("SUBSTITUTE_COACH_UNAVAILABLE");
+      const effectiveCoach = substitute?._id ?? trainingClass.coachProfileId;
+      if (effectiveCoach) {
+        const taught = await this.classes
+          .find({ clubId: id, coachProfileId: effectiveCoach })
+          .select("_id");
+        const conflict = await this.sessions.exists({
+          _id: { $ne: item._id },
+          clubId: id,
+          status: "scheduled",
+          startsAt: { $lt: item.endsAt },
+          endsAt: { $gt: item.startsAt },
+          $or: [
+            { substituteCoachId: effectiveCoach },
+            {
+              substituteCoachId: null,
+              classId: { $in: taught.map((value) => value._id) },
+            },
+          ],
+        });
+        if (conflict)
+          throw new AppError(
+            409,
+            "SUBSTITUTE_COACH_CONFLICT",
+            "مربی در این زمان جلسهٔ دیگری دارد.",
+          );
+      }
+      if (
+        String(item.substituteCoachId ?? "") === String(substitute?._id ?? "")
+      )
+        return { ...sessionDto(item), affectedCount: 0 };
+      item.substituteCoachId = substitute?._id ?? null;
+      item.substituteCoachName = substitute
+        ? `${substitute.firstName} ${substitute.lastName}`.trim()
+        : null;
+      item.substituteAssignedBy = oid(ownerId);
+      item.substituteAssignedAt = new Date();
+      await item.save();
+      if (this.moduleRef) {
+        const enrollments = await this.enrollments
+          .find({ classId: item.classId, status: "active" })
+          .select("studentId");
+        const recipients = await this.students
+          .find({
+            _id: { $in: enrollments.map((enrollment) => enrollment.studentId) },
+            clubId: id,
+            userId: { $ne: null },
+          })
+          .select("userId");
+        const notifications = this.moduleRef.get(NotificationsService, {
+          strict: false,
+        });
+        for (const recipient of recipients)
+          if (recipient.userId)
+            await notifications.notifyClassCoachChanged({
+              userId: recipient.userId,
+              classId: item.classId,
+              title: trainingClass.title,
+              coachName: item.substituteCoachName ?? "مربی اصلی کلاس",
+              startsAt: item.startsAt,
+            });
+      }
+      return { ...sessionDto(item), affectedCount: 1 };
+    }
+
     const preview = await this.buildSessionChangePreview(id, item, input);
     if (preview.conflicts.length)
       throw new AppError(
@@ -380,14 +469,84 @@ export class BusinessClassesService {
     clubId: Types.ObjectId,
     item: BusinessClassSessionDocument,
     input: UpdateClassSessionDto,
-  ) {
+    excludedIds: Types.ObjectId[] = [item._id as Types.ObjectId],
+  ): Promise<{
+    startsAt: Date;
+    endsAt: Date;
+    conflicts: Array<{
+      source: "class" | "reservable";
+      id: string;
+      title: string;
+      startsAt: string;
+      endsAt: string;
+    }>;
+  }> {
     const startsAt = input.startsAt ? new Date(input.startsAt) : item.startsAt;
     const endsAt = input.endsAt ? new Date(input.endsAt) : item.endsAt;
     if (startsAt >= endsAt) throw invalid("CLASS_SESSION_TIME_INVALID");
+    if (!input.startsAt && !input.endsAt)
+      return { startsAt, endsAt, conflicts: [] };
+    if (input.scope === "future") {
+      const targets = await this.sessions
+        .find({
+          classId: item.classId,
+          startsAt: { $gte: item.startsAt },
+          status: "scheduled",
+        })
+        .sort({ startsAt: 1 });
+      const excluded = targets.map((target) => target._id as Types.ObjectId);
+      const startDelta = startsAt.getTime() - item.startsAt.getTime();
+      const endDelta = endsAt.getTime() - item.endsAt.getTime();
+      const conflicts: Array<{
+        source: "class" | "reservable";
+        id: string;
+        title: string;
+        startsAt: string;
+        endsAt: string;
+      }> = [];
+      let previousEnd = -Infinity;
+      for (const target of targets) {
+        const nextStart = new Date(target.startsAt.getTime() + startDelta);
+        const nextEnd = new Date(target.endsAt.getTime() + endDelta);
+        const preview = await this.buildSessionChangePreview(
+          clubId,
+          target,
+          {
+            ...input,
+            scope: "single",
+            startsAt: nextStart.toISOString(),
+            endsAt: nextEnd.toISOString(),
+          },
+          excluded,
+        );
+        conflicts.push(...preview.conflicts);
+        if (nextStart.getTime() < previousEnd)
+          conflicts.push({
+            source: "class",
+            id: String(target._id),
+            title: "تداخل جلسات جابه‌جاشده",
+            startsAt: nextStart.toISOString(),
+            endsAt: nextEnd.toISOString(),
+          });
+        previousEnd = Math.max(previousEnd, nextEnd.getTime());
+      }
+      return {
+        startsAt,
+        endsAt,
+        conflicts: [
+          ...new Map(
+            conflicts.map((conflict) => [
+              `${conflict.source}:${conflict.id}`,
+              conflict,
+            ]),
+          ).values(),
+        ],
+      };
+    }
     const [classConflicts, reservableConflicts] = await Promise.all([
       this.sessions
         .find({
-          _id: { $ne: item._id },
+          _id: { $nin: excludedIds },
           clubId,
           status: "scheduled",
           startsAt: { $lt: endsAt },
@@ -1094,6 +1253,10 @@ function classReadinessIssues(value: {
 }
 function sessionDto(item: BusinessClassSessionDocument) {
   return {
+    substituteCoachId: item.substituteCoachId
+      ? String(item.substituteCoachId)
+      : null,
+    substituteCoachName: item.substituteCoachName ?? null,
     ...base(item),
     classId: String(item.classId),
     startsAt: item.startsAt.toISOString(),

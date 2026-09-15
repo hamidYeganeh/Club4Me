@@ -1,5 +1,6 @@
 "use client";
 import { useRecordBrowser } from "@/components/record-browser";
+import { WeeklyTrainingReport } from "./WeeklyTrainingReport";
 
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
@@ -361,7 +362,12 @@ function CoachTrainingSession() {
                             aria-label="حرکت"
                             className={fieldClass}
                             value={exercise.exerciseId}
-                            onChange={(e) => change({ exerciseId: e })}
+                            onChange={(e) =>
+                              change({
+                                exerciseId: e,
+                                alternativeExerciseIds: [],
+                              })
+                            }
                           >
                             {exercises.data?.items.map((e) => (
                               <FormOption entity={e} key={e.id} value={e.id}>
@@ -429,6 +435,65 @@ function CoachTrainingSession() {
                           onChange={(e) => change({ note: e.target.value })}
                         />
                       </label>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-2 text-sm">
+                          گروه سوپرست
+                          <FormSelect
+                            aria-label={`گروه سوپرست حرکت ${exerciseIndex + 1}`}
+                            value={exercise.supersetGroup ?? "none"}
+                            onChange={(value) =>
+                              change({
+                                supersetGroup:
+                                  value === "none"
+                                    ? undefined
+                                    : (value as
+                                        "A" | "B" | "C" | "D" | "E" | "F"),
+                              })
+                            }
+                          >
+                            <FormOption value="none">حرکت مستقل</FormOption>
+                            {["A", "B", "C", "D", "E", "F"].map((group) => (
+                              <FormOption key={group} value={group}>
+                                {group}
+                              </FormOption>
+                            ))}
+                          </FormSelect>
+                        </label>
+                        <label className="grid gap-2 text-sm">
+                          جایگزین با تجهیزات متفاوت
+                          <FormSelect
+                            aria-label={`جایگزین مجاز حرکت ${exerciseIndex + 1}`}
+                            value={
+                              exercise.alternativeExerciseIds?.[0] ?? "none"
+                            }
+                            onChange={(value) =>
+                              change({
+                                alternativeExerciseIds:
+                                  value === "none" ? [] : [value],
+                              })
+                            }
+                          >
+                            <FormOption value="none">بدون جایگزین</FormOption>
+                            {exercises.data?.items
+                              .filter(
+                                (candidate) =>
+                                  candidate.id !== exercise.exerciseId &&
+                                  candidate.muscle ===
+                                    exercises.data?.items.find(
+                                      (item) => item.id === exercise.exerciseId,
+                                    )?.muscle,
+                              )
+                              .map((candidate) => (
+                                <FormOption
+                                  key={candidate.id}
+                                  value={candidate.id}
+                                >
+                                  {candidate.name} · {candidate.equipment}
+                                </FormOption>
+                              ))}
+                          </FormSelect>
+                        </label>
+                      </div>
                     </div>
                   );
                 })}
@@ -786,6 +851,11 @@ function CoachTrainingSession() {
             آماده‌کردن نسخه بعدی برنامه
           </Button>
           <TrainingSummary sessions={results.sessions} />
+          <WeeklyTrainingReport
+            audience="coach"
+            sessions={results.sessions}
+            exercises={exercises.data?.items}
+          />
           {results.sessions.map((s) => (
             <Card key={s.clientId} className="p-4">
               <p>
@@ -802,6 +872,18 @@ function CoachTrainingSession() {
                 key={`${s.clientId}:${s.coachReview?.revision ?? 0}`}
                 session={s}
                 assignmentId={results.assignmentId}
+                onSaved={(saved) =>
+                  setResults((current) =>
+                    current
+                      ? {
+                          ...current,
+                          sessions: current.sessions.map((item) =>
+                            item.clientId === saved.clientId ? saved : item,
+                          ),
+                        }
+                      : current,
+                  )
+                }
               />
             </Card>
           ))}

@@ -1438,6 +1438,10 @@ function classBaseDto(item: BusinessTrainingClassDocument) {
 }
 function sessionDto(item: BusinessClassSessionDocument) {
   return {
+    substituteCoachId: item.substituteCoachId
+      ? String(item.substituteCoachId)
+      : null,
+    substituteCoachName: item.substituteCoachName ?? null,
     id: String(item._id),
     classId: String(item.classId),
     startsAt: item.startsAt.toISOString(),

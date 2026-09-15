@@ -26,10 +26,15 @@ export function ArticlesCreateScreen() {
   const createArticle = useCreateArticle();
   const createCategory = useCreateArticleCategory();
 
-  const handleCreateCategory = () => textAction.open({
-    title: "نام دسته‌بندی جدید", maxLength: 100,
-    onSubmit: async (name) => { await createCategory.mutateAsync({ name }); toast.success("دسته‌بندی ساخته شد"); },
-  });
+  const handleCreateCategory = () =>
+    textAction.open({
+      title: "نام دسته‌بندی جدید",
+      maxLength: 100,
+      onSubmit: async (name) => {
+        await createCategory.mutateAsync({ name });
+        toast.success("دسته‌بندی ساخته شد");
+      },
+    });
 
   const handleSubmit = async (values: ArticlesEditorFormValues) => {
     try {
@@ -47,8 +52,7 @@ export function ArticlesCreateScreen() {
       router.replace(`/articles/${article.id}`);
     } catch (error) {
       toast.danger(t("saveError"), {
-        description:
-          error instanceof ApiError ? error.message : undefined,
+        description: error instanceof ApiError ? error.message : undefined,
       });
     }
   };
@@ -57,7 +61,12 @@ export function ArticlesCreateScreen() {
     <main className="flex-1 overflow-auto p-4 lg:p-6">
       {textAction.dialog}
       <div className="mb-5 flex flex-wrap items-center gap-3">
-        <ButtonLink href="/articles" variant="ghost" isIconOnly aria-label={t("back")}>
+        <ButtonLink
+          href="/articles"
+          variant="ghost"
+          isIconOnly
+          aria-label={t("back")}
+        >
           <Icon name="arrow-right" size="md" />
         </ButtonLink>
         <h1 className="text-2xl font-semibold">{t("new")}</h1>
@@ -71,6 +80,17 @@ export function ArticlesCreateScreen() {
         </Button>
       </div>
 
+      {categories.isError ? (
+        <div
+          role="alert"
+          className="mb-4 flex flex-wrap items-center gap-3 text-danger"
+        >
+          دریافت دسته‌بندی‌ها انجام نشد.
+          <Button variant="secondary" onPress={() => void categories.refetch()}>
+            تلاش دوباره
+          </Button>
+        </div>
+      ) : null}
       {categories.isPending ? (
         <div className="flex justify-center py-16">
           <Spinner />

@@ -33,6 +33,56 @@ describe("ResourcesService", () => {
     );
   });
 
+  it("clears optional fields and relations while retaining valid empty lists", async () => {
+    const category = await service.create("sports", "sport-category", {
+      name: "دسته آزمایش",
+      code: "TEST_CATEGORY",
+    });
+    const resource = await service.create("sports", "sport", {
+      name: "ورزش آزمایش",
+      code: "TEST_SPORT",
+      description: "توضیح",
+      aliases: ["نام دوم"],
+      categoryId: String(category.id),
+    });
+    const updated = await service.update(
+      "sports",
+      "sport",
+      String(resource.id),
+      {
+        name: "ورزش ویرایش‌شده",
+        description: null,
+        aliases: [],
+        categoryId: null,
+      },
+    );
+    expect(updated).toMatchObject({ name: "ورزش ویرایش‌شده", aliases: [] });
+    expect(updated.description).toBeFalsy();
+    expect(updated.categoryId).toBeFalsy();
+    await expect(
+      service.update("sports", "sport", String(resource.id), { name: null }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("enforces unique codes on concurrent first writes to a lazy resource model", async () => {
+    const results = await Promise.allSettled([
+      service.create("sports", "coach-specialty", {
+        name: "تخصص اول",
+        code: "SAME_CODE",
+      }),
+      service.create("sports", "coach-specialty", {
+        name: "تخصص دوم",
+        code: "SAME_CODE",
+      }),
+    ]);
+    expect(
+      results.filter((result) => result.status === "fulfilled"),
+    ).toHaveLength(1);
+    expect(
+      results.find((result) => result.status === "rejected"),
+    ).toMatchObject({ reason: { status: 409 } });
+  });
+
   it("counts only discoverable clubs for each public province", async () => {
     const country = await service.create("location", "country", {
       name: "ایران",

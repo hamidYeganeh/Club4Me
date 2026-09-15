@@ -311,6 +311,50 @@ export class NotificationsService {
     });
   }
 
+  notifyClassCoachChanged(input: {
+    userId: Types.ObjectId;
+    classId: Types.ObjectId;
+    title: string;
+    coachName: string;
+    startsAt: Date;
+  }) {
+    return this.notifyUser({
+      userId: input.userId,
+      type: "class_coach_changed",
+      title: "مربی جلسه به‌روز شد",
+      body: `مربی جلسهٔ ${input.startsAt.toLocaleString("fa-IR", { timeZone: "Asia/Tehran" })} کلاس «${input.title}»: ${input.coachName}.`,
+      href: `/discovery/business-classes/${String(input.classId)}`,
+      tokens: { token: shortId(input.classId) },
+    });
+  }
+
+  async notifyDiscoveryMatch(input: {
+    userId: Types.ObjectId;
+    key: string;
+    title: string;
+    count: number;
+    href: string;
+  }) {
+    const _id = new Types.ObjectId(input.key);
+    await this.notifications.updateOne(
+      { _id },
+      {
+        $setOnInsert: {
+          userId: input.userId,
+          type: "discovery_match",
+          title: "گزینه تازه برای جست‌وجوی تو",
+          body: `${input.count.toLocaleString("fa-IR")} گزینه تازه برای «${input.title}» پیدا شد.`,
+          href: input.href,
+          readAt: null,
+          pushDelivery: {},
+          smsDelivery: {},
+        },
+      },
+      { upsert: true },
+    );
+    await afterCommit(() => this.outbox.runSafely(_id));
+  }
+
   private async notifyUser(input: {
     userId: string | Types.ObjectId;
     type: string;

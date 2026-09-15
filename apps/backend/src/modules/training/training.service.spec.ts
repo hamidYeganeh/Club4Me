@@ -8,7 +8,7 @@ import {
   WorkoutAssignmentSchema,
   WorkoutSessionSchema,
 } from "./training.models";
-import type { SessionWrite, Plan } from "./training.contracts";
+import { planSchema, type SessionWrite, type Plan } from "./training.contracts";
 
 describe("training permissions, immutable snapshots and durable replay", () => {
   let mongo: MongoMemoryServer, db: Connection, service: TrainingService;
@@ -27,6 +27,7 @@ describe("training permissions, immutable snapshots and durable replay", () => {
         exercises: [
           {
             exerciseId: "squat",
+            alternativeExerciseIds: ["goblet-squat"],
             sets: 2,
             reps: 10,
             weight: 20,
@@ -101,6 +102,42 @@ describe("training permissions, immutable snapshots and durable replay", () => {
       note: "",
     };
   }
+  it("accepts complete superset rounds and rejects single or unequal groups", () => {
+    const exercise = plan.days[0]!.exercises[0]!;
+    const grouped = (sets: number[]) => ({
+      ...plan,
+      days: [
+        {
+          ...plan.days[0]!,
+          exercises: sets.map((count) => ({
+            ...exercise,
+            sets: count,
+            supersetGroup: "A",
+          })),
+        },
+      ],
+    });
+    expect(planSchema.safeParse(grouped([2, 2])).success).toBe(true);
+    expect(planSchema.safeParse(grouped([2])).success).toBe(false);
+    expect(planSchema.safeParse(grouped([2, 3])).success).toBe(false);
+  });
+  it("persists prescribed alternatives and rejects an unapproved replacement", async () => {
+    const { assignment } = await assigned();
+    await service.consent(String(athlete), assignment.id, { accepted: true });
+    const payload = log(assignment.id);
+    const id = randomUUID();
+    payload.sets[0]!.actualExerciseId = "bench-press";
+    await expect(
+      service.saveSession(String(athlete), id, payload),
+    ).rejects.toMatchObject({ code: "INVALID_SET" });
+    payload.sets[0]!.actualExerciseId = "goblet-squat";
+    await service.saveSession(String(athlete), id, payload);
+    const stored = await db
+      .collection("workout_sessions")
+      .findOne({ clientId: id });
+    expect(stored?.sets[0].actualExerciseId).toBe("goblet-squat");
+    expect(stored?.snapshot.days[0].exercises[0].exerciseId).toBe("squat");
+  });
   it("versions plans without changing assignments; deduplicates retries", async () => {
     const { planId, assignment, write } = await assigned();
     const mutationId = randomUUID();

@@ -243,7 +243,8 @@ function readServiceAccount(path: string) {
 export function categoryFor(type: string): keyof typeof DEFAULT_PREFERENCES {
   if (type === "booking_reminder" || type === "membership_expiry_reminder")
     return "reminders";
-  if (type === "class_published") return "discovery";
+  if (type === "class_published" || type === "discovery_match")
+    return "discovery";
   if (type.startsWith("marketing_")) return "marketing";
   return "bookingUpdates";
 }

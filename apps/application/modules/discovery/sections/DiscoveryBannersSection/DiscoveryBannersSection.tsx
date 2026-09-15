@@ -39,6 +39,10 @@ function DiscoveryBannersSectionContent({
   const reduceMotion = useReducedMotion();
   const isAuto = slidesPerView === "auto";
   const isSingle = slidesPerView === 1;
+  // Swiper loop needs slides.length >= ceil(slidesPerView) + slidesPerGroup
+  const minSlidesForLoop =
+    typeof slidesPerView === "number" ? Math.ceil(slidesPerView) + 1 : 2;
+  const canLoop = !isLoading && !isAuto && items.length >= minSlidesForLoop;
   const styles = discoveryBannersSectionStyles({
     aspectRatio,
     slidesPerView: isAuto ? "auto" : isSingle ? "1" : "1.2",
@@ -80,7 +84,7 @@ function DiscoveryBannersSectionContent({
         spaceBetween={spaceBetween}
         freeMode={isAuto}
         watchOverflow
-        loop={!isLoading && !isAuto && items.length > 1}
+        loop={canLoop}
         pagination={isSingle ? { clickable: true } : undefined}
         autoplay={
           !isLoading && autoplay && !reduceMotion

@@ -275,7 +275,11 @@ export function ClubProfileSection({ club }: { club: PublicClubDetails }) {
           {club.trialBookingEnabled && (
             <>
               <p className="text-sm">
-                یک جلسه آزمایشی رایگان برای هر کاربر، یک نفر و بدون خدمات جانبی.
+                یک جلسه آزمایشی برای هر کاربر، یک نفر و بدون خدمات جانبی؛{" "}
+                {(club.trialBookingPrice ?? 0) > 0
+                  ? `${club.trialBookingPrice!.toLocaleString("fa-IR")} ریال`
+                  : "رایگان"}
+                .
               </p>
               <Link
                 className="inline-block rounded-xl bg-accent px-4 py-2 text-accent-foreground"

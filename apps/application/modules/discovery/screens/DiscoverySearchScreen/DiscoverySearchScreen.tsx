@@ -1,4 +1,9 @@
 "use client";
+import {
+  DiscoveryComparison,
+  type ComparisonItem,
+} from "../../components/DiscoveryComparison";
+import { SavedSearches } from "../../components/SavedSearches";
 import { DiscoveryVirtualItems } from "@modules/discovery/components/DiscoveryViewport";
 import { useAccumulatedQuery } from "@modules/discovery/hooks/use-accumulated-query";
 
@@ -87,7 +92,7 @@ export function DiscoverySearchScreen({
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
   const [skillLevelId, setSkillLevelId] = useState("");
-  const [comparison, setComparison] = useState<string[]>([]);
+  const [comparison, setComparison] = useState<ComparisonItem[]>([]);
   const budgetError =
     [minPrice, maxPrice].some(
       (value) =>
@@ -459,9 +464,6 @@ export function DiscoverySearchScreen({
       comparisonKey: `business-class-${item.id}`,
     })),
   ];
-  const comparisonItems = [...results, ...alternatives].filter((item) =>
-    comparison.includes(item.comparisonKey),
-  );
   const topics = keywords.data?.items ?? [];
 
   return (
@@ -505,6 +507,18 @@ export function DiscoverySearchScreen({
         </SearchField>
       </div>
 
+      <SavedSearches
+        canSave={canSearch && !budgetError && deferredQuery === query.trim()}
+      />
+      <DiscoveryComparison
+        items={comparison}
+        onRemove={(key) =>
+          setComparison((current) =>
+            current.filter((item) => item.comparisonKey !== key),
+          )
+        }
+        onClear={() => setComparison([])}
+      />
       {!canSearch ? (
         <section aria-labelledby="browse-title">
           <Typography id="browse-title" type="h5" weight="bold">
@@ -931,24 +945,34 @@ export function DiscoverySearchScreen({
                     <Button
                       size="sm"
                       variant={
-                        comparison.includes(item.comparisonKey)
+                        comparison.some(
+                          (selected) =>
+                            selected.comparisonKey === item.comparisonKey,
+                        )
                           ? "primary"
                           : "secondary"
                       }
                       className="mt-2"
                       onPress={() =>
                         setComparison((current) =>
-                          current.includes(item.comparisonKey)
+                          current.some(
+                            (selected) =>
+                              selected.comparisonKey === item.comparisonKey,
+                          )
                             ? current.filter(
-                                (key) => key !== item.comparisonKey,
+                                (selected) =>
+                                  selected.comparisonKey !== item.comparisonKey,
                               )
                             : current.length < 3
-                              ? [...current, item.comparisonKey]
+                              ? [...current, item]
                               : current,
                         )
                       }
                     >
-                      {comparison.includes(item.comparisonKey)
+                      {comparison.some(
+                        (selected) =>
+                          selected.comparisonKey === item.comparisonKey,
+                      )
                         ? "حذف از مقایسه"
                         : comparison.length >= 3
                           ? "حداکثر ۳ گزینه"
@@ -1010,33 +1034,6 @@ export function DiscoverySearchScreen({
         description="نتیجه‌ها را با ترتیبی که برایتان مهم‌تر است نمایش دهید."
         options={searchSortOptions}
       />
-      {comparisonItems.length ? (
-        <aside
-          className="sticky bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-30 rounded-2xl bg-surface/95 p-4 shadow-xl backdrop-blur"
-          aria-label="مقایسه گزینه‌ها"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <strong>
-              مقایسه {comparisonItems.length.toLocaleString("fa-IR")} گزینه
-            </strong>
-            <Button size="sm" variant="ghost" onPress={() => setComparison([])}>
-              پاک‌کردن
-            </Button>
-          </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            {comparisonItems.map((item) => (
-              <div
-                key={item.comparisonKey}
-                className="rounded-xl bg-surface-secondary p-3"
-              >
-                <p className="font-semibold">{item.title}</p>
-                <p className="mt-1 text-xs text-muted">{item.badge}</p>
-                <p className="mt-2 text-sm">{item.meta}</p>
-              </div>
-            ))}
-          </div>
-        </aside>
-      ) : null}
     </main>
   );
 }
@@ -1119,7 +1116,9 @@ function catalogPriceMeta(
   const unit =
     (
       {
-        per_session: "جلسه",
+        per_session: "کل سانس",
+        per_participant: "هر نفر",
+        per_court: "کل زمین",
         package: "بسته",
         per_month: "ماه",
         monthly: "ماه",
@@ -1128,8 +1127,8 @@ function catalogPriceMeta(
     )[price.unit] ?? "خدمت";
   const currency = price.currency === "IRR" ? "ریال" : price.currency;
   const normalized =
-    price.unit !== "per_session" && price.sessionCount && price.sessionCount > 0
+    price.sessionCount && price.sessionCount > 1
       ? ` · ${price.sessionCount.toLocaleString("fa-IR")} جلسه، هر جلسه حدود ${Math.round(price.amount / price.sessionCount).toLocaleString("fa-IR")} ${currency}`
       : "";
-  return ` · ${price.amount.toLocaleString("fa-IR")} ${currency} برای ${unit}${normalized}`;
+  return ` · از ${price.amount.toLocaleString("fa-IR")} ${currency} برای ${unit}${normalized}`;
 }

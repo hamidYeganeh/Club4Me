@@ -5,7 +5,7 @@ import { ReservationsService } from "./reservations.service";
 describe("trial reservations", () => {
   const userId = new Types.ObjectId().toHexString();
   const sessionId = new Types.ObjectId();
-  function setup(enabled = true) {
+  function setup(enabled = true, trialBookingPrice = 0) {
     const session = {
       _id: sessionId,
       clubId: new Types.ObjectId(),
@@ -53,6 +53,7 @@ describe("trial reservations", () => {
       {
         getPublic: async () => ({
           trialBookingEnabled: enabled,
+          trialBookingPrice,
           operationalStatus: "active",
         }),
       } as never,
@@ -118,6 +119,24 @@ describe("trial reservations", () => {
       isTrial: true,
       paymentStatus: "not_required",
       status: "reserved",
+    });
+    expect(entitlements.reserveForReservation).not.toHaveBeenCalled();
+  });
+  it("uses the configured trial price in both quote and pending payment", async () => {
+    const { service, entitlements } = setup(true, 120);
+    const payload = {
+      sessionId: String(sessionId),
+      participantCount: 1,
+      isTrial: true,
+      expectedTotalPrice: 120,
+    };
+    expect(await service.quote(userId, payload)).toMatchObject({
+      totalPrice: 120,
+    });
+    expect(await service.reserve(userId, payload)).toMatchObject({
+      totalPrice: 120,
+      paymentStatus: "pending",
+      isTrial: true,
     });
     expect(entitlements.reserveForReservation).not.toHaveBeenCalled();
   });

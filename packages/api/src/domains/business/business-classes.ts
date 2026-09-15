@@ -55,6 +55,8 @@ export type BusinessTrainingClass = Base & {
   sessionCount?: number;
 };
 export type BusinessClassSession = Base & {
+  substituteCoachId?: string | null;
+  substituteCoachName?: string | null;
   classId: string;
   startsAt: string;
   endsAt: string;
@@ -239,7 +241,10 @@ export function useUpdateBusinessClassSession(clubId: string, classId: string) {
     }: {
       sessionId: string;
       payload: Partial<
-        Pick<BusinessClassSession, "startsAt" | "endsAt" | "status">
+        Pick<
+          BusinessClassSession,
+          "startsAt" | "endsAt" | "status" | "substituteCoachId"
+        >
       > & { scope?: "single" | "future" };
     }) =>
       http.patch<BusinessClassSession>(

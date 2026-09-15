@@ -1,4 +1,8 @@
 "use client";
+import {
+  MobileChoiceField,
+  useMobileChoice,
+} from "@repo/ui/mobile-choice-field";
 import { EntityOptionContent, entityOptionText } from "@repo/ui/entity-option";
 import { Checkbox as HeroCheckbox } from "@heroui/react";
 import { FormSelect, FormOption } from "@repo/ui/form-select";
@@ -148,6 +152,7 @@ const defaultCancellationRules: ClubCancellationRule[] = [
 ];
 
 export function ClubFormScreen({ clubId }: { clubId?: string }) {
+  const mobile = useMobileChoice();
   const t = useTranslations("businessClubs");
   const tu = useTranslations("uploader");
   const { contains } = useFilter({ sensitivity: "base" });
@@ -167,6 +172,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const [name, setName] = useState("");
   const [profile, setProfile] = useState<ClubProfile>({});
   const [trialBookingEnabled, setTrialBookingEnabled] = useState(false);
+  const [trialBookingPrice, setTrialBookingPrice] = useState(0);
   const [busyHours, setBusyHours] = useState<ClubBusyHour[]>([]);
   const [amenityAccess, setAmenityAccess] = useState<
     Record<
@@ -337,6 +343,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
     setTags(value.tags);
     setProfile(value.profile ?? {});
     setTrialBookingEnabled(value.trialBookingEnabled ?? false);
+    setTrialBookingPrice(value.trialBookingPrice ?? 0);
     setBusyHours(value.busyHours ?? []);
     setAmenityAccess(
       Object.fromEntries(
@@ -603,6 +610,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
             : undefined,
         },
         trialBookingEnabled,
+        trialBookingPrice,
         busyHours,
         name: cleanName,
         shortDescription: shortDescription.trim(),
@@ -1547,6 +1555,8 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                   value={profile}
                   onChange={setProfile}
                   trial={trialBookingEnabled}
+                  trialPrice={trialBookingPrice}
+                  onTrialPriceChange={setTrialBookingPrice}
                   onTrialChange={setTrialBookingEnabled}
                   busyHours={busyHours}
                   onBusyHoursChange={setBusyHours}
@@ -1664,58 +1674,85 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                   </NumberField>
                 </Field>
                 <Field label={t("ageRange")} wide>
-                  <Select
-                    fullWidth
-                    variant="secondary"
-                    value={ageGroupId || null}
-                    onChange={(value) => {
-                      if (typeof value === "string") setAgeGroupId(value);
-                      else setAgeGroupId("");
-                    }}
-                    placeholder={t("ageGroupPlaceholder")}
-                  >
-                    <Label className="sr-only">{t("ageRange")}</Label>
-                    <Select.Trigger>
-                      <Select.Value />
-                      <Select.Indicator />
-                    </Select.Trigger>
-                    <Select.Popover>
-                      <ListBox items={ageGroupOptions}>
-                        {(item) => (
-                          <ListBox.Item
-                            dir="rtl"
-                            id={item.id}
-                            textValue={entityOptionText(
-                              item,
-                              String(
-                                `${item.name} ${item.minAge}-${item.maxAge}`,
-                              ),
-                            )}
-                          >
-                            <EntityOptionContent
-                              entity={item}
-                              title={String(
-                                `${item.name} ${item.minAge}-${item.maxAge}`,
+                  {mobile ? (
+                    <MobileChoiceField
+                      label={t("ageRange")}
+                      placeholder={t("ageGroupPlaceholder")}
+                      value={[ageGroupId]}
+                      onChange={(keys) => setAgeGroupId(keys[0] ?? "")}
+                      options={ageGroupOptions.map((item) => ({
+                        value: item.id,
+                        label: `${item.name} ${item.minAge}-${item.maxAge}`,
+                        entity: item,
+                      }))}
+                      footer={
+                        <CatalogScrollSentinel
+                          hasNextPage={Boolean(ageGroups.hasNextPage)}
+                          isFetchingNextPage={ageGroups.isFetchingNextPage}
+                          onLoadMore={() => {
+                            if (
+                              ageGroups.hasNextPage &&
+                              !ageGroups.isFetchingNextPage
+                            )
+                              void ageGroups.fetchNextPage();
+                          }}
+                        />
+                      }
+                    />
+                  ) : (
+                    <Select
+                      fullWidth
+                      variant="secondary"
+                      value={ageGroupId || null}
+                      onChange={(value) => {
+                        if (typeof value === "string") setAgeGroupId(value);
+                        else setAgeGroupId("");
+                      }}
+                      placeholder={t("ageGroupPlaceholder")}
+                    >
+                      <Label className="sr-only">{t("ageRange")}</Label>
+                      <Select.Trigger>
+                        <Select.Value />
+                        <Select.Indicator />
+                      </Select.Trigger>
+                      <Select.Popover>
+                        <ListBox items={ageGroupOptions}>
+                          {(item) => (
+                            <ListBox.Item
+                              dir="rtl"
+                              id={item.id}
+                              textValue={entityOptionText(
+                                item,
+                                String(
+                                  `${item.name} ${item.minAge}-${item.maxAge}`,
+                                ),
                               )}
-                            />
-                            <ListBox.ItemIndicator />
-                          </ListBox.Item>
-                        )}
-                      </ListBox>
-                      <CatalogScrollSentinel
-                        hasNextPage={Boolean(ageGroups.hasNextPage)}
-                        isFetchingNextPage={ageGroups.isFetchingNextPage}
-                        onLoadMore={() => {
-                          if (
-                            ageGroups.hasNextPage &&
-                            !ageGroups.isFetchingNextPage
-                          ) {
-                            void ageGroups.fetchNextPage();
-                          }
-                        }}
-                      />
-                    </Select.Popover>
-                  </Select>
+                            >
+                              <EntityOptionContent
+                                entity={item}
+                                title={String(
+                                  `${item.name} ${item.minAge}-${item.maxAge}`,
+                                )}
+                              />
+                              <ListBox.ItemIndicator />
+                            </ListBox.Item>
+                          )}
+                        </ListBox>
+                        <CatalogScrollSentinel
+                          hasNextPage={Boolean(ageGroups.hasNextPage)}
+                          isFetchingNextPage={ageGroups.isFetchingNextPage}
+                          onLoadMore={() => {
+                            if (
+                              ageGroups.hasNextPage &&
+                              !ageGroups.isFetchingNextPage
+                            ) {
+                              void ageGroups.fetchNextPage();
+                            }
+                          }}
+                        />
+                      </Select.Popover>
+                    </Select>
+                  )}
                   {ageGroupOptions.length === 0 ? (
                     <p className="mt-2 text-xs text-muted">
                       {t("ageGroupEmpty")}
@@ -1771,62 +1808,84 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                       key={index}
                       className="flex min-w-0 flex-col gap-3 rounded-xl p-3"
                     >
-                      <Select
-                        fullWidth
-                        variant="secondary"
-                        value={item.platform}
-                        onChange={(selected) => {
-                          if (typeof selected !== "string") return;
-                          setSocialMedia((current) =>
-                            current.map((value, i) =>
-                              i === index
-                                ? {
-                                    ...value,
-                                    platform: selected as SocialPlatform,
-                                  }
-                                : value,
-                            ),
-                          );
-                        }}
-                      >
-                        <Label>{t("socialPlatform")}</Label>
-                        <Select.Trigger>
-                          <Select.Value>
-                            {({ defaultChildren, isPlaceholder }) => {
-                              if (isPlaceholder) return defaultChildren;
-                              return (
-                                <span className="flex min-w-0 items-center gap-2">
-                                  <SocialPlatformIcon
-                                    platform={item.platform}
-                                  />
-                                  <span className="truncate">
-                                    {t(`platforms.${item.platform}`)}
-                                  </span>
-                                </span>
+                      {mobile ? (
+                        <div className="space-y-2">
+                          <Label>{t("socialPlatform")}</Label>
+                          <MobileChoiceField
+                            label={t("socialPlatform")}
+                            value={[item.platform]}
+                            onChange={(keys) => {
+                              const platform = keys[0] as SocialPlatform;
+                              setSocialMedia((current) =>
+                                current.map((value, i) =>
+                                  i === index ? { ...value, platform } : value,
+                                ),
                               );
                             }}
-                          </Select.Value>
-                          <Select.Indicator />
-                        </Select.Trigger>
-                        <Select.Popover>
-                          <ListBox>
-                            {platforms.map((platform) => (
-                              <ListBox.Item
-                                dir="rtl"
-                                key={platform}
-                                id={platform}
-                                textValue={t(`platforms.${platform}`)}
-                              >
-                                <span className="flex items-center gap-2">
-                                  <SocialPlatformIcon platform={platform} />
-                                  <span>{t(`platforms.${platform}`)}</span>
-                                </span>
-                                <ListBox.ItemIndicator />
-                              </ListBox.Item>
-                            ))}
-                          </ListBox>
-                        </Select.Popover>
-                      </Select>
+                            options={platforms.map((platform) => ({
+                              value: platform,
+                              label: t(`platforms.${platform}`),
+                            }))}
+                          />
+                        </div>
+                      ) : (
+                        <Select
+                          fullWidth
+                          variant="secondary"
+                          value={item.platform}
+                          onChange={(selected) => {
+                            if (typeof selected !== "string") return;
+                            setSocialMedia((current) =>
+                              current.map((value, i) =>
+                                i === index
+                                  ? {
+                                      ...value,
+                                      platform: selected as SocialPlatform,
+                                    }
+                                  : value,
+                              ),
+                            );
+                          }}
+                        >
+                          <Label>{t("socialPlatform")}</Label>
+                          <Select.Trigger>
+                            <Select.Value>
+                              {({ defaultChildren, isPlaceholder }) => {
+                                if (isPlaceholder) return defaultChildren;
+                                return (
+                                  <span className="flex min-w-0 items-center gap-2">
+                                    <SocialPlatformIcon
+                                      platform={item.platform}
+                                    />
+                                    <span className="truncate">
+                                      {t(`platforms.${item.platform}`)}
+                                    </span>
+                                  </span>
+                                );
+                              }}
+                            </Select.Value>
+                            <Select.Indicator />
+                          </Select.Trigger>
+                          <Select.Popover>
+                            <ListBox>
+                              {platforms.map((platform) => (
+                                <ListBox.Item
+                                  dir="rtl"
+                                  key={platform}
+                                  id={platform}
+                                  textValue={t(`platforms.${platform}`)}
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <SocialPlatformIcon platform={platform} />
+                                    <span>{t(`platforms.${platform}`)}</span>
+                                  </span>
+                                  <ListBox.ItemIndicator />
+                                </ListBox.Item>
+                              ))}
+                            </ListBox>
+                          </Select.Popover>
+                        </Select>
+                      )}
                       <label className="space-y-2">
                         <span className="block text-sm font-medium">
                           {t("socialLink")}
@@ -2668,6 +2727,34 @@ function CatalogComboBox({
   onLoadMore?: () => void;
   onChange: (value: string) => void;
 }) {
+  const mobile = useMobileChoice();
+  if (mobile)
+    return (
+      <div className="space-y-2">
+        <Label>{label}</Label>
+        <MobileChoiceField
+          label={label}
+          value={[value]}
+          onChange={(keys) => onChange(keys[0] ?? "")}
+          disabled={isDisabled}
+          placeholder={placeholder}
+          options={items.map((item) => ({
+            value: item.id,
+            label: String(item.name),
+            entity: item,
+          }))}
+          footer={
+            <CatalogScrollSentinel
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              onLoadMore={() => {
+                if (hasNextPage && !isFetchingNextPage) onLoadMore?.();
+              }}
+            />
+          }
+        />
+      </div>
+    );
   return (
     <ComboBox
       fullWidth

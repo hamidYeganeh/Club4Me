@@ -45,7 +45,7 @@ export function DiscoveryHomeScreen() {
     : contentSections;
 
   return (
-    <main className="app-page gap-6 pb-[calc(11rem+env(safe-area-inset-bottom))]">
+    <main className="app-page gap-6">
       <SecondaryHeader />
       <Link
         href="/athlete/recommendations"
@@ -88,9 +88,9 @@ function renderFeedSection(
       : {}),
     ...(section.appearance.textColor
       ? {
-          color: section.appearance.textColor,
-          "--foreground": section.appearance.textColor,
-        }
+        color: section.appearance.textColor,
+        "--foreground": section.appearance.textColor,
+      }
       : {}),
     ...(section.appearance.accentColor
       ? { "--accent": section.appearance.accentColor }

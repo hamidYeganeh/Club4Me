@@ -358,6 +358,8 @@ function toPersistence(input: Partial<ClubFields>): Record<string, unknown> {
   }
   if (input.weeklyHours !== undefined) result.weeklyHours = input.weeklyHours;
   if (input.profile !== undefined) result.profile = input.profile;
+  if (input.trialBookingPrice !== undefined)
+    result.trialBookingPrice = input.trialBookingPrice;
   if (input.trialBookingEnabled !== undefined)
     result.trialBookingEnabled = input.trialBookingEnabled;
   if (input.busyHours !== undefined) {

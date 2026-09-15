@@ -4,6 +4,7 @@ export function reservationPrice(input: {
   participantCount: number;
   options: Array<{ unitPrice: number; quantity: number }>;
   isTrial?: boolean;
+  trialPrice?: number;
   entitlementId?: string;
   taxPercent?: number;
 }) {
@@ -16,13 +17,13 @@ export function reservationPrice(input: {
   );
   const coveredAmount = input.entitlementId ? baseAmount : 0;
   const totalPrice = input.isTrial
-    ? 0
+    ? (input.trialPrice ?? 0)
     : baseAmount + optionsAmount - coveredAmount;
   // Catalog prices are final prices; expose their included tax, never silently add it.
   const taxPercent = input.taxPercent ?? 0;
   const taxAmount = Math.round((totalPrice * taxPercent) / (100 + taxPercent));
   return {
-    baseAmount: input.isTrial ? 0 : baseAmount,
+    baseAmount: input.isTrial ? (input.trialPrice ?? 0) : baseAmount,
     optionsAmount,
     coveredAmount,
     totalPrice,

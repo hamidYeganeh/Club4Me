@@ -63,6 +63,7 @@ export type BusinessClub = {
   profileResources?: Record<string, { name: string; isActive: boolean }>;
   profile?: ClubProfile;
   trialBookingEnabled?: boolean;
+  trialBookingPrice?: number;
   onSitePaymentMethods?: Array<"cash" | "pos">;
   busyHours?: ClubBusyHour[];
   busyHoursSource?: "owner_reported";
@@ -157,6 +158,7 @@ export type ClubResourceQuantityPayload = {
 export type CreateBusinessClubPayload = {
   profile?: ClubProfile;
   trialBookingEnabled?: boolean;
+  trialBookingPrice?: number;
   onSitePaymentMethods?: Array<"cash" | "pos">;
   busyHours?: ClubBusyHour[];
   name: string;

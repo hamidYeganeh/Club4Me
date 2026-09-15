@@ -1,5 +1,6 @@
 "use client";
 
+import { BookingWidgetSettings } from "../../BookingWidgetSettings";
 import { useState } from "react";
 import { Avatar, Button, Card, Input, Spinner, toast } from "@heroui/react";
 import { useAccountMe, useUpdateAccountMe } from "@api/account";
@@ -143,6 +144,7 @@ export function SettingsContentSection() {
           مدیریت پرداخت‌ها
         </ButtonLink>
       </Card>
+      <BookingWidgetSettings />
       <Button
         variant="danger"
         isPending={logout.isPending}

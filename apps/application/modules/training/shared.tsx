@@ -21,7 +21,8 @@ export const weekdays = [
 ];
 export const number = (n: number) =>
   n.toLocaleString("fa-IR", { maximumFractionDigits: 1 });
-export const date = (s: string) => new Date(s).toLocaleDateString("fa-IR");
+export const date = (s: string) =>
+  new Date(s).toLocaleDateString("fa-IR", { timeZone: "Asia/Tehran" });
 export const errorText = (e: unknown) => {
   const error = e as { code?: string; message?: string; status?: number };
   if (error.code === "NETWORK_ERROR" || error.message === "Network Error")
@@ -120,6 +121,7 @@ export function TrainingFrame({
     { href: base, label: coach ? "برنامه‌های شاگردان" : "برنامه من" },
     { href: `${base}/exercises`, label: "کتابخانه حرکات" },
     ...(!coach ? [{ href: `${base}/progress`, label: "روند پیشرفت" }] : []),
+    ...(!coach ? [{ href: `${base}/habits`, label: "عادت‌های من" }] : []),
   ];
   return (
     <main

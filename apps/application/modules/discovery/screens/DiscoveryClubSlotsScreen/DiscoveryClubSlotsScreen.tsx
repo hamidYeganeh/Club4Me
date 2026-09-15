@@ -57,20 +57,20 @@ import { ReservationReviewScreen } from "@modules/reservations/components/Reserv
 import { discoveryClubSlotsScreenStyles } from "./DiscoveryClubSlotsScreen.styles";
 import type { DiscoveryClubSlotsScreenProps } from "./DiscoveryClubSlotsScreen.types";
 
-function toDateKey(value: string | Date) {
-  const date = typeof value === "string" ? new Date(value) : value;
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
-}
+const toDateKey = (value: string | Date) =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tehran",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(value));
 
 function formatTimeRange(startsAt: string, endsAt: string) {
   const formatter = new Intl.DateTimeFormat("fa-IR", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+    timeZone: "Asia/Tehran",
   });
   return `${formatter.format(new Date(startsAt))} - ${formatter.format(new Date(endsAt))}`;
 }
@@ -124,12 +124,8 @@ export function DiscoveryClubSlotsScreen({
   );
 
   const dateWindow = useMemo(() => {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 13);
-    end.setHours(23, 59, 59, 999);
-    return { startMs: start.getTime(), endMs: end.getTime() };
+    const startMs = Date.parse(`${toDateKey(new Date())}T00:00:00+03:30`);
+    return { startMs, endMs: startMs + 14 * 86400000 - 1 };
   }, []);
 
   const sessions = useMemo(
@@ -170,8 +166,7 @@ export function DiscoveryClubSlotsScreen({
   const dates = useMemo(() => {
     const start = new Date(dateWindow.startMs);
     return Array.from({ length: 14 }, (_, index) => {
-      const date = new Date(start);
-      date.setDate(start.getDate() + index);
+      const date = new Date(start.getTime() + index * 86400000);
       const id = toDateKey(date);
       const hasSlots = courtSessions.some(
         (session) => toDateKey(session.startsAt) === id,
@@ -186,10 +181,14 @@ export function DiscoveryClubSlotsScreen({
         availableCount: daySessions.filter(
           (session) => session.reservedCount < session.capacity,
         ).length,
-        day: new Intl.DateTimeFormat("fa-IR", { day: "numeric" }).format(date),
-        weekday: new Intl.DateTimeFormat("fa-IR", { weekday: "short" }).format(
-          date,
-        ),
+        day: new Intl.DateTimeFormat("fa-IR", {
+          day: "numeric",
+          timeZone: "Asia/Tehran",
+        }).format(date),
+        weekday: new Intl.DateTimeFormat("fa-IR", {
+          weekday: "short",
+          timeZone: "Asia/Tehran",
+        }).format(date),
       };
     });
   }, [courtSessions, dateWindow.startMs]);
@@ -566,13 +565,15 @@ export function DiscoveryClubSlotsScreen({
           amount: quote.data
             ? quote.data.totalPrice + quote.data.coveredAmount
             : isTrial
-              ? 0
+              ? (publicClub.data?.trialBookingPrice ?? 0)
               : selectedSession.basePrice,
           currency: quote.data?.currency ?? selectedSession.currency,
           pricingUnit: quote.data?.pricingUnit ?? selectedSession.pricingUnit,
           includedTaxAmount: quote.data?.taxAmount,
           paymentLabel: isTrial
-            ? "جلسه آزمایشی رایگان"
+            ? (publicClub.data?.trialBookingPrice ?? 0) > 0
+              ? "جلسه آزمایشی با تعرفه ویژه"
+              : "جلسه آزمایشی رایگان"
             : selectedEntitlement?.title,
           coveredAmount:
             !isTrial && selectedEntitlement
@@ -859,7 +860,7 @@ export function DiscoveryClubSlotsScreen({
               <div className="flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-surface-secondary p-4 text-sm">
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="font-semibold text-foreground">
-                    رزرو جلسه آزمایشی رایگان
+                    رزرو جلسه آزمایشی
                   </span>
                   <Tooltip delay={0} closeDelay={100}>
                     <Tooltip.Trigger
@@ -880,7 +881,7 @@ export function DiscoveryClubSlotsScreen({
                   </Tooltip>
                 </div>
                 <Switch
-                  aria-label="رزرو جلسه آزمایشی رایگان"
+                  aria-label="رزرو جلسه آزمایشی"
                   isSelected={isTrial}
                   isDisabled={
                     participantCount !== 1 || selectedOptions.length > 0
@@ -890,7 +891,7 @@ export function DiscoveryClubSlotsScreen({
                     if (selected) setEntitlementId("");
                   }}
                 >
-                  <Switch.Content aria-label="رزرو جلسه آزمایشی رایگان">
+                  <Switch.Content aria-label="رزرو جلسه آزمایشی">
                     <Switch.Control>
                       <Switch.Thumb />
                     </Switch.Control>
@@ -1005,7 +1006,7 @@ export function DiscoveryClubSlotsScreen({
                       <AnimatedCounter
                         value={
                           isTrial
-                            ? 0
+                            ? (publicClub.data?.trialBookingPrice ?? 0)
                             : (selectedEntitlement ? 0 : baseAmount) +
                               optionsAmount
                         }

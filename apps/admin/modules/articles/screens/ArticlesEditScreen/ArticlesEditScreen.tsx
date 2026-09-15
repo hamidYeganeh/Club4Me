@@ -59,8 +59,7 @@ export function ArticlesEditScreen({ articleId }: ArticlesEditScreenProps) {
       toast.success(t("saveSuccess"));
     } catch (error) {
       toast.danger(t("saveError"), {
-        description:
-          error instanceof ApiError ? error.message : undefined,
+        description: error instanceof ApiError ? error.message : undefined,
       });
     }
   };
@@ -77,6 +76,13 @@ export function ArticlesEditScreen({ articleId }: ArticlesEditScreenProps) {
     return (
       <main className="flex-1 overflow-auto p-4 lg:p-6">
         <p className="text-muted">{t("loadError")}</p>
+        <Button
+          variant="secondary"
+          className="mt-4"
+          onPress={() => void article.refetch()}
+        >
+          تلاش دوباره
+        </Button>
         <ButtonLink href="/articles" variant="ghost" className="mt-4">
           {t("back")}
         </ButtonLink>
@@ -87,7 +93,12 @@ export function ArticlesEditScreen({ articleId }: ArticlesEditScreenProps) {
   return (
     <main className="flex-1 overflow-auto p-4 lg:p-6">
       <div className="mb-5 flex flex-wrap items-center gap-3">
-        <ButtonLink href="/articles" variant="ghost" isIconOnly aria-label={t("back")}>
+        <ButtonLink
+          href="/articles"
+          variant="ghost"
+          isIconOnly
+          aria-label={t("back")}
+        >
           <Icon name="arrow-right" size="md" />
         </ButtonLink>
         <h1 className="text-2xl font-semibold">{t("edit")}</h1>
@@ -101,7 +112,19 @@ export function ArticlesEditScreen({ articleId }: ArticlesEditScreenProps) {
         </Button>
       </div>
 
+      {categories.isError ? (
+        <div
+          role="alert"
+          className="mb-4 flex flex-wrap items-center gap-3 text-danger"
+        >
+          دریافت دسته‌بندی‌ها انجام نشد.
+          <Button variant="secondary" onPress={() => void categories.refetch()}>
+            تلاش دوباره
+          </Button>
+        </div>
+      ) : null}
       <ArticlesEditorForm
+        key={articleId}
         mode="edit"
         defaultValues={{
           title: article.data.title,

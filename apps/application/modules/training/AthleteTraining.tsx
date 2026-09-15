@@ -3,8 +3,10 @@ import { useRecordBrowser } from "@/components/record-browser";
 
 import { Checkbox as HeroCheckbox } from "@heroui/react";
 import { TextArea as HeroTextArea } from "@heroui/react";
-import { Counter } from "@/components/counter";
-import { useEffect, useState } from "react";
+import { ActiveExerciseCard, RestTimer } from "./ActiveExerciseCard";
+import { mergeTrainingSessions } from "@api/domains/training/insights";
+import { useNow } from "@/lib/use-now";
+import { useMemo, useState } from "react";
 import { Button, Card } from "@heroui/react";
 import {
   trainingApi,
@@ -46,11 +48,20 @@ function AthleteTrainingSession() {
   const logs = useWorkouts();
   const [message, setMessage] = useState("");
   const [accepting, setAccepting] = useState<string | null>(null);
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
+  const now = useNow() ?? 0;
+  const remoteSessions = useTrainingData(
+    "sessions",
+    trainingApi.sessions,
+    true,
+  );
+  const history = useMemo(
+    () =>
+      mergeTrainingSessions(
+        remoteSessions.data?.items ?? [],
+        logs.workouts.map((w) => w.session),
+      ),
+    [remoteSessions.data, logs.workouts],
+  );
   const active = logs.workouts.find((w) => w.session.status === "active");
   const pending = logs.workouts.filter((w) => w.dirty || w.pending).length;
   const consent = async (a: Assignment, accepted: boolean) => {
@@ -133,6 +144,14 @@ function AthleteTrainingSession() {
           )}
         </Card.Content>
       </Card>
+      {remoteSessions.error && (
+        <Notice>
+          سابقهٔ سرور به‌روز نشد؛ ثبت‌های این دستگاه همچنان در دسترس‌اند.{" "}
+          <Button variant="ghost" onPress={remoteSessions.reload}>
+            تلاش دوباره
+          </Button>
+        </Notice>
+      )}
       {(logs.error || message) && <Notice>{logs.error || message}</Notice>}
       {logs.conflict && (
         <Notice>
@@ -163,147 +182,21 @@ function AthleteTrainingSession() {
                 }
               </h2>
             </div>
-            <p
-              aria-live="off"
-              className="rounded-xl bg-accent-soft p-3 tabular-nums"
-            >
-              {active.restUntil && active.restUntil > now
-                ? `استراحت: ${number(Math.ceil((active.restUntil - now) / 1000))} ثانیه`
-                : "آماده ست بعدی"}
-            </p>
+            <RestTimer until={active.restUntil} />
           </div>
           {active.session.snapshot.days
             .find((d) => d.id === active.session.dayId)
             ?.exercises.map((e, index) => (
-              <Card key={index} className="p-5">
-                <Card.Header>
-                  <p className="text-xs text-muted">
-                    حرکت {number(index + 1)} · استراحت {number(e.restSeconds)}{" "}
-                    ثانیه
-                  </p>
-                  <Card.Title>
-                    {exercises.data?.items.find((x) => x.id === e.exerciseId)
-                      ?.name ?? e.exerciseId}
-                  </Card.Title>
-                  <Card.Description>
-                    {e.note ||
-                      exercises.data?.items.find((x) => x.id === e.exerciseId)
-                        ?.instructions}
-                  </Card.Description>
-                </Card.Header>
-                <Card.Content className="space-y-3">
-                  {active.session.sets.map((set, setArrayIndex) =>
-                    set.exerciseIndex !== index ? null : (
-                      <div
-                        className="grid grid-cols-[2rem_1fr_1fr_auto] items-end gap-2"
-                        key={setArrayIndex}
-                      >
-                        <span className="pb-3 text-muted">
-                          {number(set.setIndex + 1)}
-                        </span>
-                        <label className="text-xs">
-                          تکرار
-                          <Counter
-                            aria-label={`تکرار حرکت ${index + 1} ست ${set.setIndex + 1}`}
-                            className={fieldClass}
-
-                            min={0}
-                            max={100}
-                            disabled={logs.busy || !!set.done}
-                            key={`reps:${active.session.clientId}:${active.session.revision}:${set.done}`}
-                            defaultValue={set.reps}
-                            onBlur={(event) => {
-                              if (!event.target.validity.valid)
-                                event.target.value = String(set.reps);
-                            }}
-                            onChange={(event) => {
-                              const value = Number(event.target.value);
-                              if (
-                                Number.isInteger(value) &&
-                                value >= 0 &&
-                                value <= 100
-                              )
-                                void logs.update(
-                                  active.session.clientId,
-                                  (current) => ({
-                                    ...current,
-                                    sets: current.sets.map((s, i) =>
-                                      i === setArrayIndex
-                                        ? { ...s, reps: value }
-                                        : s,
-                                    ),
-                                  }),
-                                  active.restUntil,
-                                );
-                            }}
-                          />
-                        </label>
-                        <label className="text-xs">
-                          کیلوگرم
-                          <Counter
-                            aria-label={`وزنه حرکت ${index + 1} ست ${set.setIndex + 1}`}
-                            className={fieldClass}
-
-                            min={0}
-                            max={1000}
-                            step={0.5}
-                            disabled={logs.busy || !!set.done}
-                            key={`weight:${active.session.clientId}:${active.session.revision}:${set.done}`}
-                            defaultValue={set.weight}
-                            onBlur={(event) => {
-                              if (!event.target.validity.valid)
-                                event.target.value = String(set.weight);
-                            }}
-                            onChange={(event) => {
-                              const value = Number(event.target.value);
-                              if (
-                                Number.isFinite(value) &&
-                                value >= 0 &&
-                                value <= 1000
-                              )
-                                void logs.update(
-                                  active.session.clientId,
-                                  (current) => ({
-                                    ...current,
-                                    sets: current.sets.map((s, i) =>
-                                      i === setArrayIndex
-                                        ? { ...s, weight: value }
-                                        : s,
-                                    ),
-                                  }),
-                                  active.restUntil,
-                                );
-                            }}
-                          />
-                        </label>
-                        <Button
-                          aria-label={`${set.done ? "لغو ثبت" : "ثبت"} حرکت ${index + 1} ست ${set.setIndex + 1}`}
-                          variant={set.done ? "secondary" : "primary"}
-                          isDisabled={logs.busy}
-                          onPress={() =>
-                            void logs.update(
-                              active.session.clientId,
-                              (current) => ({
-                                ...current,
-                                sets: current.sets.map((s, i) =>
-                                  i === setArrayIndex
-                                    ? { ...s, done: !s.done }
-                                    : s,
-                                ),
-                              }),
-                              !set.done
-                                ? Date.now() + e.restSeconds * 1000
-                                : active.restUntil,
-                            )
-                          }
-                        >
-                          {set.done ? "ثبت شد ✓" : "ثبت ست"}
-                        </Button>
-                      </div>
-                    ),
-                  )}
-                </Card.Content>
-              </Card>
+              <ActiveExerciseCard
+                key={index}
+                exercise={e}
+                index={index}
+                session={active.session}
+                restUntil={active.restUntil}
+                library={exercises.data?.items ?? []}
+                history={history}
+                logs={logs}
+              />
             ))}
           <fieldset disabled={logs.busy} className="space-y-3 rounded-2xl p-4">
             <legend className="px-2 text-sm font-semibold">

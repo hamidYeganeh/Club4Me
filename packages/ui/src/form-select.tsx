@@ -1,5 +1,7 @@
 "use client";
 
+import { MobileChoiceField, useMobileChoice } from "./mobile-choice-field";
+import { useEffect, useRef, useState } from "react";
 import { EntityOptionContent, entityOptionText } from "./entity-option";
 import { ComboBox, Input, ListBox, Select } from "@heroui/react";
 import {
@@ -45,7 +47,42 @@ type Props = Omit<
   onChange?: (value: string) => void;
 };
 /** Shared HeroUI select for named HTML forms and controlled filters. */
-export function FormSelect({
+export function FormSelect(props: Props) {
+  const root = useRef<HTMLDivElement>(null);
+  const options = optionsFrom(props.children);
+  const first = options.find((option) => !option.disabled);
+  const initial = String(
+    props.defaultValue ??
+      first?.value ??
+      (first ? textContent(first.children) : ""),
+  );
+  const [localValue, setLocalValue] = useState(initial);
+  useEffect(() => {
+    const form = root.current?.closest("form");
+    const reset = (event: Event) => {
+      queueMicrotask(() => {
+        if (!event.defaultPrevented && props.value === undefined)
+          setLocalValue(initial);
+      });
+    };
+    form?.addEventListener("reset", reset);
+    return () => form?.removeEventListener("reset", reset);
+  }, [initial, props.value]);
+  return (
+    <div ref={root} className="min-w-0 w-full">
+      <FormSelectControl
+        {...props}
+        value={props.value ?? localValue}
+        onChange={(next) => {
+          setLocalValue(next);
+          props.onChange?.(next);
+        }}
+      />
+    </div>
+  );
+}
+
+function FormSelectControl({
   children,
   value,
   defaultValue,
@@ -66,6 +103,30 @@ export function FormSelect({
     (firstEnabled
       ? (firstEnabled.value ?? textContent(firstEnabled.children))
       : undefined);
+  const mobile = useMobileChoice();
+  const selectedValue = String(value ?? initial ?? "");
+  const change = (next: string) => onChange?.(next);
+  if (mobile)
+    return (
+      <MobileChoiceField
+        options={options.map((option) => ({
+          value: String(option.value ?? textContent(option.children)),
+          label: textContent(option.children),
+          entity: option.entity,
+          disabled: option.disabled,
+        }))}
+        value={[selectedValue]}
+        onChange={(keys) => change(keys[0] ?? "")}
+        id={id}
+        name={name}
+        disabled={disabled}
+        required={required}
+        className={className}
+        label={aria["aria-label"]}
+        labelledBy={aria["aria-labelledby"]}
+        describedBy={aria["aria-describedby"]}
+      />
+    );
   if (options.length > 12)
     return (
       <ComboBox
@@ -78,13 +139,8 @@ export function FormSelect({
         isDisabled={disabled}
         isRequired={required}
         className="min-w-0 w-full"
-        {...(value !== undefined
-          ? { selectedKey: String(value) }
-          : {
-              defaultSelectedKey:
-                initial === undefined ? undefined : String(initial),
-            })}
-        onSelectionChange={(key) => onChange?.(key == null ? "" : String(key))}
+        selectedKey={selectedValue}
+        onSelectionChange={(key) => change(key == null ? "" : String(key))}
         disabledKeys={options
           .filter((option) => option.disabled)
           .map((option) =>
@@ -134,12 +190,8 @@ export function FormSelect({
       autoFocus={autoFocus}
       autoComplete={autoComplete}
       className="min-w-0 w-full"
-      {...(value !== undefined
-        ? { value: String(value) }
-        : {
-            defaultValue: initial === undefined ? undefined : String(initial),
-          })}
-      onChange={(key) => onChange?.(key == null ? "" : String(key))}
+      value={selectedValue}
+      onChange={(key) => change(key == null ? "" : String(key))}
       disabledKeys={options
         .filter((option) => option.disabled)
         .map((option) => String(option.value ?? textContent(option.children)))}

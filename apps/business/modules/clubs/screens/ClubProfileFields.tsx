@@ -23,6 +23,8 @@ export function ClubProfileFields({
   value,
   onChange,
   trial,
+  trialPrice,
+  onTrialPriceChange,
   onTrialChange,
   busyHours,
   onBusyHoursChange,
@@ -31,6 +33,8 @@ export function ClubProfileFields({
   value: ClubProfile;
   onChange: (value: ClubProfile) => void;
   trial: boolean;
+  trialPrice: number;
+  onTrialPriceChange: (value: number) => void;
   onTrialChange: (value: boolean) => void;
   busyHours: ClubBusyHour[];
   onBusyHoursChange: (value: ClubBusyHour[]) => void;
@@ -249,14 +253,29 @@ export function ClubProfileFields({
             <HeroCheckbox.Control>
               <HeroCheckbox.Indicator />
             </HeroCheckbox.Control>
-            فعال‌سازی رزرو یک جلسه آزمایشی رایگان
+            فعال‌سازی رزرو یک جلسه آزمایشی
           </HeroCheckbox.Content>
         </HeroCheckbox>
         <p className="text-sm text-muted">
-          هر کاربر یک جلسه برای یک نفر در این باشگاه؛ بدون خدمات جانبی و بدون
-          پرداخت. رزرو لغوشده قابل تکرار است؛ جلسه تکمیل‌شده یا عدم حضور، فرصت
-          آزمایشی را مصرف می‌کند.
+          هر کاربر یک جلسه برای یک نفر در این باشگاه؛ بدون خدمات جانبی. رزرو
+          لغوشده قابل تکرار است؛ جلسه تکمیل‌شده یا عدم حضور، فرصت آزمایشی را
+          مصرف می‌کند.
         </p>
+        {trial && (
+          <label className="grid gap-2 text-sm">
+            قیمت جلسه آزمایشی (ریال؛ صفر برای رایگان)
+            <HeroInput
+              aria-label="قیمت جلسه آزمایشی"
+              type="number"
+              min={0}
+              max={1000000000}
+              value={String(trialPrice)}
+              onChange={(event) =>
+                onTrialPriceChange(Number(event.target.value))
+              }
+            />
+          </label>
+        )}
         <HeroCheckbox
           className="flex gap-2"
           isSelected={visit.visitAvailable ?? false}

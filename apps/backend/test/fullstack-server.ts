@@ -47,6 +47,7 @@ async function main() {
   const allowedOrigins = [
     `http://127.0.0.1:${applicationPort}`,
     "http://127.0.0.1:7083",
+    "http://127.0.0.1:7082",
   ];
   process.env.CORS_ORIGINS = allowedOrigins.join(",");
   const sms = new CapturingSmsProvider();
@@ -260,8 +261,24 @@ async function main() {
     enrollmentMode: "automatic",
     skillLevelId,
   });
+  const admin = await db.model("User").create({
+    phone: "+989121230005",
+    firstName: "اپراتور",
+    lastName: "آزمایشی",
+    roles: ["admin"],
+    status: "active",
+    passwordHash,
+  });
   fixture = {
     password,
+    admin: { id: String(admin._id), phone: "09121230005", ...tokens(admin) },
+    coach: {
+      id: String(coachUser._id),
+      profileId: String(coach._id),
+      slug: coach.slug,
+      phone: "09121230004",
+      ...tokens(coachUser),
+    },
     athlete: {
       id: String(athlete._id),
       phone: "09121230002",

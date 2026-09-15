@@ -16,6 +16,8 @@ export const prescriptionSchema = z.object({
   weight: z.number().min(0).max(1000),
   restSeconds: z.number().int().min(0).max(600),
   note: text(1000),
+  supersetGroup: z.enum(["A", "B", "C", "D", "E", "F"]).optional(),
+  alternativeExerciseIds: z.array(z.string().min(1).max(80)).max(3).optional(),
 });
 export const planSchema = z
   .object({
@@ -34,6 +36,28 @@ export const planSchema = z
       .max(7),
   })
   .superRefine((plan, ctx) => {
+    for (const [dayIndex, day] of plan.days.entries()) {
+      const groups = new Map<string, number[]>();
+      day.exercises.forEach((exercise, index) => {
+        if (exercise.supersetGroup)
+          groups.set(exercise.supersetGroup, [
+            ...(groups.get(exercise.supersetGroup) ?? []),
+            index,
+          ]);
+      });
+      for (const [group, indices] of groups) {
+        if (
+          indices.length < 2 ||
+          indices.at(-1)! - indices[0]! + 1 !== indices.length ||
+          new Set(indices.map((index) => day.exercises[index]!.sets)).size > 1
+        )
+          ctx.addIssue({
+            code: "custom",
+            path: ["days", dayIndex, "exercises"],
+            message: `سوپرست ${group} باید حداقل دو حرکت پشت‌سرهم با تعداد ست برابر داشته باشد.`,
+          });
+      }
+    }
     if (new Set(plan.days.map((d) => d.id)).size !== plan.days.length)
       ctx.addIssue({ code: "custom", message: "شناسه روزها باید یکتا باشد" });
     if (new Set(plan.days.map((d) => d.weekday)).size !== plan.days.length)
@@ -64,6 +88,7 @@ export const assignmentSchema = z
     "پایان باید بعد از شروع و بازه حداکثر یک سال باشد",
   );
 export const setLogSchema = z.object({
+  actualExerciseId: z.string().min(1).max(80).optional(),
   exerciseIndex: z.number().int().min(0).max(29),
   setIndex: z.number().int().min(0).max(19),
   reps: z.number().int().min(0).max(100),

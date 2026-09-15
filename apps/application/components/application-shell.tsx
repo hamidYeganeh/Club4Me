@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { AppApiProvider } from "@/components/app-api-provider";
 import { AppMotion } from "@/components/app-motion";
 import { AppRouteGate } from "@/components/app-route-gate";
@@ -22,6 +23,14 @@ import { AppInteractions } from "@/components/app-interactions";
 import { AppMotionProvider } from "@/components/motion/motion-provider";
 
 export function ApplicationShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  if (pathname.startsWith("/embed/"))
+    return (
+      <AppApiProvider>
+        <AppToastProvider />
+        {children}
+      </AppApiProvider>
+    );
   return (
     <AppMotionProvider>
       <AppApiProvider>

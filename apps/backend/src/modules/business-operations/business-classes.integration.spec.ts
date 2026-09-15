@@ -151,6 +151,107 @@ describe("BusinessClassesService integration", () => {
     });
   });
 
+  it("assigns one future session to an active club coach, rejects conflicts, and permits status-only cancellation", async () => {
+    const classModel = moduleRef.get<Model<BusinessTrainingClass>>(
+      getModelToken(BusinessTrainingClass.name),
+    );
+    const sessionModel = moduleRef.get<Model<BusinessClassSession>>(
+      getModelToken(BusinessClassSession.name),
+    );
+    const coach = await coaches.create({
+      clubId: new Types.ObjectId(clubId),
+      firstName: "مربی",
+      lastName: "جانشین",
+      phone: "09121111999",
+      status: "active",
+    });
+    const first = await classModel.create({
+      clubId: new Types.ObjectId(clubId),
+      title: "اول",
+      classModel: "single",
+      pricingModel: "course",
+      price: 0,
+      capacity: 2,
+      startDate: "2030-01-05",
+      endDate: "2030-01-05",
+      schedule: [],
+      status: "active",
+    });
+    const second = await classModel.create({
+      clubId: new Types.ObjectId(clubId),
+      title: "دوم",
+      classModel: "single",
+      pricingModel: "course",
+      price: 0,
+      capacity: 2,
+      startDate: "2030-01-05",
+      endDate: "2030-01-05",
+      schedule: [],
+      status: "active",
+    });
+    const a = await sessionModel.create({
+      clubId: new Types.ObjectId(clubId),
+      classId: first._id,
+      startsAt: "2030-01-05T10:00:00Z",
+      endsAt: "2030-01-05T11:00:00Z",
+      capacity: 2,
+    });
+    const b = await sessionModel.create({
+      clubId: new Types.ObjectId(clubId),
+      classId: second._id,
+      startsAt: a.startsAt,
+      endsAt: a.endsAt,
+      capacity: 2,
+    });
+    expect(
+      await classModel.findOne({
+        _id: first._id,
+        clubId: new Types.ObjectId(clubId),
+      }),
+    ).not.toBeNull();
+    const result = await service.updateSession(
+      ownerId,
+      clubId,
+      String(first._id),
+      String(a._id),
+      { substituteCoachId: String(coach._id) },
+    );
+    expect(result.substituteCoachName).toBe("مربی جانشین");
+    expect((await classModel.findById(first._id))?.coachProfileId).toBeNull();
+    await expect(
+      service.updateSession(
+        ownerId,
+        clubId,
+        String(second._id),
+        String(b._id),
+        { substituteCoachId: String(coach._id) },
+      ),
+    ).rejects.toMatchObject({ code: "SUBSTITUTE_COACH_CONFLICT" });
+    await expect(
+      service.updateSession(ownerId, clubId, String(first._id), String(a._id), {
+        substituteCoachId: String(new Types.ObjectId()),
+      }),
+    ).rejects.toMatchObject({ code: "SUBSTITUTE_COACH_UNAVAILABLE" });
+    expect(
+      await service.updateSession(
+        ownerId,
+        clubId,
+        String(second._id),
+        String(b._id),
+        { status: "cancelled" },
+      ),
+    ).toMatchObject({ status: "cancelled" });
+    expect(
+      await service.updateSession(
+        ownerId,
+        clubId,
+        String(first._id),
+        String(a._id),
+        { substituteCoachId: null },
+      ),
+    ).toMatchObject({ substituteCoachId: null });
+  });
+
   it("scopes club coaches to assigned classes, including rosters, attendance and check-in credentials", async () => {
     const coachUser = new Types.ObjectId();
     await students.db.collection("club_memberships").insertOne({
@@ -565,6 +666,70 @@ describe("BusinessClassesService integration", () => {
         .model(BusinessClassEnrollment.name)
         .findById(membership._id))!.remainingSessions,
     ).toBe(0);
+  });
+
+  it("checks conflicts on later occurrences before moving an entire series", async () => {
+    const classes = students.db.model(BusinessTrainingClass.name);
+    const sessions = students.db.model(BusinessClassSession.name);
+    const training = await classes.create({
+      clubId: new Types.ObjectId(clubId),
+      title: "برنامه هفتگی",
+      classModel: "group",
+      pricingModel: "course",
+      price: 1000,
+      capacity: 10,
+      startDate: new Date("2032-01-01"),
+      endDate: new Date("2032-02-01"),
+      schedule: [],
+    });
+    const first = await sessions.create({
+      clubId: new Types.ObjectId(clubId),
+      classId: training._id,
+      startsAt: new Date("2032-01-01T08:00:00Z"),
+      endsAt: new Date("2032-01-01T09:00:00Z"),
+      capacity: 10,
+    });
+    await sessions.create({
+      clubId: new Types.ObjectId(clubId),
+      classId: training._id,
+      startsAt: new Date("2032-01-08T08:00:00Z"),
+      endsAt: new Date("2032-01-08T09:00:00Z"),
+      capacity: 10,
+    });
+    const collision = await sessions.create({
+      clubId: new Types.ObjectId(clubId),
+      classId: new Types.ObjectId(),
+      startsAt: new Date("2032-01-08T10:00:00Z"),
+      endsAt: new Date("2032-01-08T11:00:00Z"),
+      capacity: 10,
+    });
+    const input = {
+      scope: "future" as const,
+      startsAt: "2032-01-01T10:00:00Z",
+      endsAt: "2032-01-01T11:00:00Z",
+    };
+    const preview = await service.previewSessionChange(
+      ownerId,
+      clubId,
+      String(training._id),
+      String(first._id),
+      input,
+    );
+    expect(preview.conflicts.map((item) => item.id)).toContain(
+      String(collision._id),
+    );
+    await expect(
+      service.updateSession(
+        ownerId,
+        clubId,
+        String(training._id),
+        String(first._id),
+        input,
+      ),
+    ).rejects.toThrow();
+    expect((await sessions.findById(first._id))!.startsAt).toEqual(
+      new Date("2032-01-01T08:00:00Z"),
+    );
   });
 
   it("creates sessions, enrolls a club student, tracks package usage and transfers enrollment", async () => {

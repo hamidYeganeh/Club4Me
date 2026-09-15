@@ -106,6 +106,7 @@ export const WorkoutSessionSchema = new Schema<WorkoutSessionRecord>(
         new Schema(
           {
             exerciseIndex: Number,
+            actualExerciseId: String,
             setIndex: Number,
             reps: Number,
             weight: Number,

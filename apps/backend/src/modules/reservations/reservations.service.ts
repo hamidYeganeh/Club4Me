@@ -780,6 +780,7 @@ export class ReservationsService {
       participantCount: input.participantCount,
       options: selected,
       isTrial: input.isTrial,
+      trialPrice: club.trialBookingPrice ?? 0,
       entitlementId: input.entitlementId,
       taxPercent: club.taxPercent,
     });

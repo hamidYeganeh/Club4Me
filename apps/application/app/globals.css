@@ -378,8 +378,16 @@
   min-height: calc(var(--app-header-height) + var(--app-header-gap));
   flex-shrink: 0;
 }
-[data-bottom-navigation="true"] main {
-  padding-bottom: var(--app-bottom-nav-clearance);
+/* Bottom-nav routes pin `main` to the scrollport via flex-1 + border-box, so
+   padding-bottom is eaten by overflowing children. A trailing flex spacer puts
+   clearance after the last section in the scrollable overflow instead. */
+[data-bottom-navigation="true"] main::after {
+  content: "";
+  display: block;
+  flex-shrink: 0;
+  width: 100%;
+  height: var(--app-bottom-nav-clearance);
+  pointer-events: none;
 }
 .app-scroll-root:has([data-bottom-navigation="true"]) {
   scroll-padding-bottom: var(--app-bottom-nav-clearance);

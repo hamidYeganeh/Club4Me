@@ -1,4 +1,5 @@
 "use client";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
 import {
   usePublicCatalogResource,
   type PublicCatalogParams,
@@ -67,74 +68,69 @@ function Fields({
       {kind === "coach" && (
         <label className="block text-sm">
           مرتب‌سازی
-          <select
+          <FormSelect
             className={field}
             value={value.sort ?? ""}
             onChange={(e) =>
               onChange({
                 ...value,
-                sort: (e.target.value ||
-                  undefined) as PublicCatalogParams["sort"],
+                sort: (e || undefined) as PublicCatalogParams["sort"],
               })
             }
           >
-            <option value="">پیشنهادی</option>
-            <option value="newest">جدیدترین</option>
-            <option value="rating">بالاترین امتیاز</option>
-          </select>
+            <FormOption value="">پیشنهادی</FormOption>
+            <FormOption value="newest">جدیدترین</FormOption>
+            <FormOption value="rating">بالاترین امتیاز</FormOption>
+          </FormSelect>
         </label>
       )}
       {kind === "article" && (
         <label className="block text-sm">
           موضوع مقاله
-          <select
+          <FormSelect
             className={field}
             value={value.categoryId ?? ""}
-            onChange={(e) =>
-              onChange({ ...value, categoryId: e.target.value || undefined })
-            }
+            onChange={(e) => onChange({ ...value, categoryId: e || undefined })}
           >
-            <option value="">همه موضوع‌ها</option>
+            <FormOption value="">همه موضوع‌ها</FormOption>
             {categories.data?.items.map((category) => (
-              <option key={category.id} value={category.id}>
+              <FormOption key={category.id} value={category.id}>
                 {category.name}
-              </option>
+              </FormOption>
             ))}
-          </select>
+          </FormSelect>
         </label>
       )}
       {kind !== "article" && (
         <>
           <label className="block text-sm">
             رشته ورزشی
-            <select
+            <FormSelect
               className={field}
               value={value.sportId ?? ""}
-              onChange={(e) =>
-                onChange({ ...value, sportId: e.target.value || undefined })
-              }
+              onChange={(e) => onChange({ ...value, sportId: e || undefined })}
             >
-              <option value="">همه رشته‌ها</option>
+              <FormOption value="">همه رشته‌ها</FormOption>
               {sports.data?.items.map((sport) => (
-                <option key={sport.id} value={sport.id}>
+                <FormOption key={sport.id} value={sport.id}>
                   {sport.name}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </label>
           <label className="block text-sm">
             شیوه برگزاری
-            <select
+            <FormSelect
               className={field}
               value={value.serviceMode ?? ""}
               onChange={(e) =>
-                onChange({ ...value, serviceMode: e.target.value || undefined })
+                onChange({ ...value, serviceMode: e || undefined })
               }
             >
-              <option value="">همه</option>
-              <option value="online">آنلاین</option>
-              <option value="club">حضوری</option>
-            </select>
+              <FormOption value="">همه</FormOption>
+              <FormOption value="online">آنلاین</FormOption>
+              <FormOption value="club">حضوری</FormOption>
+            </FormSelect>
           </label>
         </>
       )}

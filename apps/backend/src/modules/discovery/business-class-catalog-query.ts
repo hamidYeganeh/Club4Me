@@ -73,6 +73,15 @@ export function businessClassCatalogQuery(query: Query) {
     visibility: "public",
     endDate: { $gte: new Date(new Date().toISOString().slice(0, 10)) },
   };
+  if (query.classModel) {
+    if (
+      !["group", "private", "course", "single", "open"].includes(
+        query.classModel,
+      )
+    )
+      throw new AppError(400, "INVALID_CATALOG_QUERY", "Invalid class model");
+    filter.classModel = query.classModel;
+  }
   if (query.q?.trim()) {
     if (query.q.length > 200)
       throw new AppError(

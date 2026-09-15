@@ -67,6 +67,9 @@ function ClassesResults({
         description="کلاس دلخواهت را پیدا کن؛ ظرفیت، شهریه و زمان شروع را کنار هم ببین."
         eyebrow="کلاس‌ها و دوره‌های ورزشی"
       />
+      <ButtonLink href="/discovery/play" variant="secondary">
+        بازی آزاد و پیدا کردن هم‌بازی
+      </ButtonLink>
       <DiscoverySearchField
         value={query}
         onChange={setQuery}

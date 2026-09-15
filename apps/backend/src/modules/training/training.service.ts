@@ -198,9 +198,15 @@ export class TrainingService {
     const input = parse(planWriteSchema, body),
       coachId = await this.coach(userId);
     const key = id(planId);
+    const exerciseIds = new Set(trainingExercises().map((e) => e.id));
     for (const day of input.plan.days)
       for (const exercise of day.exercises)
-        if (!trainingExercises().some((e) => e.id === exercise.exerciseId))
+        if (
+          ![
+            exercise.exerciseId,
+            ...(exercise.alternativeExerciseIds ?? []),
+          ].every((key) => exerciseIds.has(key))
+        )
           throw new AppError(400, "INVALID_EXERCISE", "حرکت معتبر نیست");
     const previous = await this.plans.findOne({ _id: key, coachId }).lean();
     if (previous?.versions.some((v) => v.mutationId === input.mutationId))
@@ -450,6 +456,11 @@ export class TrainingService {
       input.sets.some(
         (s) =>
           !day.exercises[s.exerciseIndex] ||
+          (s.actualExerciseId !== undefined &&
+            s.actualExerciseId !== day.exercises[s.exerciseIndex]!.exerciseId &&
+            !day.exercises[s.exerciseIndex]!.alternativeExerciseIds?.includes(
+              s.actualExerciseId,
+            )) ||
           s.setIndex >= day.exercises[s.exerciseIndex]!.sets,
       )
     )

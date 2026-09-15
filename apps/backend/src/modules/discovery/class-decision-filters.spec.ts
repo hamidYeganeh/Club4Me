@@ -2,6 +2,18 @@ import { classDecisionFilters } from "./class-decision-filters";
 import { businessClassCatalogQuery } from "./business-class-catalog-query";
 
 describe("class budget and delivery filters", () => {
+  it("filters open play on the server and rejects unknown models", () => {
+    expect(
+      businessClassCatalogQuery({ classModel: "open" }).filter,
+    ).toMatchObject({
+      classModel: "open",
+      visibility: "public",
+      status: "active",
+    });
+    expect(() =>
+      businessClassCatalogQuery({ classModel: "unknown" }),
+    ).toThrow();
+  });
   it("compares Iranian rial amounts using each model's actual price fields", () => {
     expect(
       classDecisionFilters({

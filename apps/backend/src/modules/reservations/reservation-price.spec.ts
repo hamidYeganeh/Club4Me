@@ -33,6 +33,22 @@ describe("reservation pricing", () => {
       totalPrice: 100_000,
     });
   });
+  it("charges the configured final trial price once and discloses included tax", () => {
+    const quote = reservationPrice({
+      ...input,
+      participantCount: 1,
+      pricingUnit: "per_participant",
+      isTrial: true,
+      trialPrice: 110_000,
+      taxPercent: 10,
+    });
+    expect(quote).toMatchObject({
+      baseAmount: 110_000,
+      totalPrice: 110_000,
+      taxAmount: 10_000,
+      subtotal: 100_000,
+    });
+  });
   it("a trial has no payable amount or included tax", () =>
     expect(
       reservationPrice({

@@ -6,6 +6,7 @@ export type PublicClub = {
   profileResources?: Record<string, { name: string; isActive: boolean }>;
   profile: ClubProfile;
   trialBookingEnabled: boolean;
+  trialBookingPrice: number;
   busyHours: ClubBusyHour[];
   busyHoursSource: "owner_reported";
   busyHoursUpdatedAt: string | null;
@@ -116,6 +117,7 @@ export function toPublicClub(club: ClubDocument): PublicClub {
   return {
     profile: club.profile ?? {},
     trialBookingEnabled: club.trialBookingEnabled ?? false,
+    trialBookingPrice: club.trialBookingPrice ?? 0,
     busyHours: club.busyHours ?? [],
     busyHoursSource: "owner_reported",
     busyHoursUpdatedAt: club.busyHoursUpdatedAt?.toISOString() ?? null,

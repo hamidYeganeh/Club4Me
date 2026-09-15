@@ -37,7 +37,7 @@ import {
   type BusinessTrainingClass,
 } from "@api/business";
 import { Button, Card, Chip, Spinner, toast } from "@heroui/react";
-import { getApiConfig, usePublicCatalogResource } from "@api";
+import { ApiError, getApiConfig, usePublicCatalogResource } from "@api";
 import { Icon } from "@theme/icon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -466,8 +466,14 @@ function ClassForm({
       { dayOfWeek: 6, startTime: "18:00", durationMinutes: 60 },
     ],
   );
+  const [saveError, setSaveError] = useState("");
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setSaveError("");
+    if (!schedule.length) {
+      setSaveError("حداقل یک زمان در بخش برنامهٔ کلاس اضافه کنید.");
+      return;
+    }
     if (coverBusy || galleryBusy) return;
     const data = new FormData(event.currentTarget);
     const payload: BusinessClassPayload = {
@@ -522,10 +528,13 @@ function ClassForm({
         initial ? "تغییرات کلاس ذخیره شد" : "کلاس و جلسات آن ساخته شد",
       );
       router.push(`/clubs/${clubId}/classes/${result.id}`);
-    } catch {
-      toast.danger(
-        "ذخیره یا انتشار کلاس انجام نشد؛ موارد الزامی، رسانه و برنامه را بررسی کنید",
-      );
+    } catch (error) {
+      const message =
+        error instanceof ApiError && error.code !== "VALIDATION_ERROR"
+          ? error.message
+          : "ذخیرهٔ کلاس انجام نشد. تاریخ‌ها، برنامه، ظرفیت و محدودیت سنی را بررسی کنید و دوباره ذخیره کنید.";
+      setSaveError(message);
+      toast.danger(message);
     }
   };
   const setScheduleField = (
@@ -706,7 +715,7 @@ function ClassForm({
           <div className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             <Field label="وضعیت">
               <FormSelect
-                aria-label="status"
+                aria-label="وضعیت کلاس"
                 name="status"
                 defaultValue={initial?.status ?? "draft"}
                 className={input}
@@ -720,7 +729,7 @@ function ClassForm({
             </Field>
             <Field label="نمایش در اپ ورزشکار">
               <FormSelect
-                aria-label="visibility"
+                aria-label="نمایش در اپ ورزشکار"
                 name="visibility"
                 defaultValue={initial?.visibility ?? "public"}
                 className={input}
@@ -733,7 +742,7 @@ function ClassForm({
             </Field>
             <Field label="روش تأیید ثبت‌نام">
               <FormSelect
-                aria-label="enrollmentMode"
+                aria-label="روش تأیید ثبت‌نام"
                 name="enrollmentMode"
                 defaultValue={initial?.enrollmentMode ?? "automatic"}
                 className={input}
@@ -994,6 +1003,14 @@ function ClassForm({
             ))}
           </div>
         </Card>
+        {saveError ? (
+          <p
+            role="alert"
+            className="rounded-2xl bg-danger/10 p-4 text-sm leading-7 text-danger"
+          >
+            {saveError}
+          </p>
+        ) : null}
         <div className="flex gap-2">
           <Button
             type="submit"
@@ -1318,7 +1335,11 @@ export function BusinessClassDetailScreen({
               </FormSelect>
             </Field>
             <Field label="وضعیت">
-              <FormSelect aria-label="status" name="status" className={input}>
+              <FormSelect
+                aria-label="وضعیت کلاس"
+                name="status"
+                className={input}
+              >
                 <FormOption value="active">ثبت‌نام فعال</FormOption>
                 <FormOption value="waitlisted">لیست انتظار</FormOption>
               </FormSelect>
@@ -1512,6 +1533,46 @@ export function BusinessClassDetailScreen({
               ))}
             </FormSelect>
           </Field>
+          {sessions.data?.items.find((session) => session.id === sessionId)
+            ?.status === "scheduled" && (
+            <Field label="مربی جانشین این جلسه">
+              <FormSelect
+                aria-label="مربی جانشین این جلسه"
+                value={
+                  sessions.data?.items.find(
+                    (session) => session.id === sessionId,
+                  )?.substituteCoachId ?? ""
+                }
+                disabled={updateSession.isPending}
+                onChange={async (value) => {
+                  try {
+                    await updateSession.mutateAsync({
+                      sessionId,
+                      payload: { substituteCoachId: value || null },
+                    });
+                    toast.success("مربی جلسه به‌روز شد");
+                  } catch {
+                    toast.danger(
+                      "تغییر مربی انجام نشد؛ مربی فعال و جلسه آینده را انتخاب کنید.",
+                    );
+                  }
+                }}
+              >
+                <FormOption value="">مربی اصلی کلاس</FormOption>
+                {coaches.data?.items
+                  .filter((coach) => coach.status === "active")
+                  .map((coach) => (
+                    <FormOption key={coach.id} value={coach.id}>
+                      {coach.firstName} {coach.lastName}
+                    </FormOption>
+                  ))}
+              </FormSelect>
+              <p className="mt-2 text-xs text-muted">
+                این انتخاب فقط برای همین جلسه است. دسترسی‌های مربی از بخش اعضای
+                تیم مدیریت می‌شود.
+              </p>
+            </Field>
+          )}
           {sessionId && (
             <div className="mt-3 flex flex-wrap gap-2">
               <Button

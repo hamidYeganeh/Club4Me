@@ -1,5 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { WeeklyTrainingReport } from "./WeeklyTrainingReport";
+import {
+  mergeTrainingSessions,
+  exerciseForSet,
+} from "@api/domains/training/insights";
 import { ButtonLink } from "@/components/button-link";
 import {
   ProgressMeter,
@@ -32,33 +37,23 @@ function TrainingProgressSession() {
   const remote = useTrainingData("sessions", trainingApi.sessions, true);
   const library = useTrainingData("exercises", trainingApi.exercises, true);
   const local = useWorkouts();
-  const sessions = [
-    ...new Map(
-      [
-        ...(remote.data?.items ?? []),
-        ...local.workouts.map((w) => w.session),
-      ].map((s) => [
-        s.clientId,
-        {
-          ...s,
-          coachReview:
-            remote.data?.items.find((r) => r.clientId === s.clientId)
-              ?.coachReview ?? s.coachReview,
-        },
-      ]),
-    ).values(),
-  ].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  const sessions = useMemo(
+    () =>
+      mergeTrainingSessions(
+        remote.data?.items ?? [],
+        local.workouts.map((w) => w.session),
+      ),
+    [remote.data, local.workouts],
+  );
   const complete = sessions.filter((s) => s.status === "completed");
   const maxWeights = new Map<string, number>();
   for (const s of complete)
     for (const set of s.sets.filter((x) => x.done)) {
-      const exercise = s.snapshot.days.find((d) => d.id === s.dayId)?.exercises[
-        set.exerciseIndex
-      ];
+      const exercise = exerciseForSet(s, set);
       if (exercise)
         maxWeights.set(
-          exercise.exerciseId,
-          Math.max(maxWeights.get(exercise.exerciseId) ?? 0, set.weight),
+          exercise,
+          Math.max(maxWeights.get(exercise) ?? 0, set.weight),
         );
     }
   const calendar = Array.from({ length: 28 }, (_, i) => {
@@ -81,6 +76,10 @@ function TrainingProgressSession() {
         </Notice>
       )}
       <TrainingSummary sessions={sessions} />
+      <WeeklyTrainingReport
+        sessions={sessions}
+        exercises={library.data?.items}
+      />
       <Card className={`${clarityStyles.surface} p-5`}>
         <Card.Header>
           <Card.Title>۲۸ روز حرکت</Card.Title>

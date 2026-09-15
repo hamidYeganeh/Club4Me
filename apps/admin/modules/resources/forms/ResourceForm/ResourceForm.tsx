@@ -1,20 +1,19 @@
 "use client";
 
-import { EntityOptionContent, entityOptionText } from "@repo/ui/entity-option";
+import { FormOption, FormSelect } from "@repo/ui/form-select";
 import {
   Button,
   Checkbox,
   Input,
   Label,
-  ListBox,
   Modal,
-  Select,
   Spinner,
   Switch,
   TextArea,
   TextField,
   toast,
 } from "@heroui/react";
+import { ApiError } from "@api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type {
   ResourceDefinition,
@@ -160,7 +159,14 @@ function RelationInput({
         <Label className="text-sm font-medium">{t("relationSearch")}</Label>
         <Input variant="secondary" />
       </TextField>
-      {resources.isPending ? (
+      {resources.isError ? (
+        <div role="alert" className="space-y-2 text-sm text-danger">
+          دریافت گزینه‌ها انجام نشد.
+          <Button variant="secondary" onPress={() => void resources.refetch()}>
+            تلاش دوباره
+          </Button>
+        </div>
+      ) : resources.isPending ? (
         <Spinner size="sm" />
       ) : multiple ? (
         <div className="max-h-48 space-y-2 overflow-auto rounded-xl p-3">
@@ -190,47 +196,33 @@ function RelationInput({
           })}
         </div>
       ) : (
-        <Select
-          value={value || null}
-          placeholder={t("selectOption")}
-          onChange={(key) => {
-            if (typeof key === "string") onChange(key);
-          }}
-        >
-          <Label className="text-sm font-medium">
+        <div className="space-y-1.5">
+          <Label htmlFor={`resource-${field.name}`}>
             {field.label}
             {field.required ? " *" : ""}
           </Label>
-          <Select.Trigger className="h-11 rounded-xl bg-surface-secondary px-3 text-sm">
-            <Select.Value />
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover>
-            <ListBox>
-              {(resources.data?.items ?? []).map((item) => {
-                const text = String(
+          <FormSelect
+            id={`resource-${field.name}`}
+            aria-label={field.label}
+            value={value}
+            onChange={onChange}
+            className="h-12 rounded-xl bg-surface-secondary px-3 text-sm"
+          >
+            <FormOption value="">{t("selectOption")}</FormOption>
+            {(resources.data?.items ?? []).map((item) => (
+              <FormOption key={item.id} value={item.id} entity={item}>
+                {String(
                   item.name ??
                     item.title ??
                     item.canonicalTerm ??
                     item.phrase ??
                     item.code ??
                     item.id,
-                );
-                return (
-                  <ListBox.Item
-                    dir="rtl"
-                    key={item.id}
-                    id={item.id}
-                    textValue={entityOptionText(item, String(text))}
-                  >
-                    <EntityOptionContent entity={item} title={String(text)} />
-                    <ListBox.ItemIndicator />
-                  </ListBox.Item>
-                );
-              })}
-            </ListBox>
-          </Select.Popover>
-        </Select>
+                )}
+              </FormOption>
+            ))}
+          </FormSelect>
+        </div>
       )}
     </div>
   );
@@ -252,6 +244,11 @@ export function ResourceForm({
   const schema = useMemo(() => makeSchema(fields), [fields]);
   const create = useCreateResource();
   const update = useUpdateResource();
+  const [submitError, setSubmitError] = useState("");
+  const changeOpen = (open: boolean) => {
+    setSubmitError("");
+    onOpenChange(open);
+  };
   const mutationPending = create.isPending || update.isPending;
   const { control, handleSubmit, reset } = useForm<FormValues>({
     resolver: zodResolver(schema) as Resolver<FormValues>,
@@ -263,6 +260,7 @@ export function ResourceForm({
   );
 
   const submit = async (values: FormValues) => {
+    setSubmitError("");
     const payload: ResourceMutationPayload = {
       isActive: Boolean(values.isActive),
     };
@@ -275,7 +273,10 @@ export function ResourceForm({
           !field.required &&
           !field.immutable
         ) {
-          payload[field.name] = null;
+          payload[field.name] =
+            field.kind === "string-list" || field.kind === "relation-list"
+              ? []
+              : null;
         }
         continue;
       }
@@ -303,13 +304,16 @@ export function ResourceForm({
         });
       toast.success(record ? t("updateSuccess") : t("createSuccess"));
       onOpenChange(false);
-    } catch {
+    } catch (error) {
+      setSubmitError(
+        error instanceof ApiError ? error.message : t("mutationError"),
+      );
       toast.danger(t("mutationError"));
     }
   };
 
   return (
-    <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="blur">
+    <Modal.Backdrop isOpen={isOpen} onOpenChange={changeOpen} variant="blur">
       <Modal.Container size="lg" scroll="inside" className="px-3 py-5 sm:px-6">
         <Modal.Dialog
           className="overflow-hidden rounded-[1.75rem]"
@@ -324,6 +328,11 @@ export function ResourceForm({
             </Modal.Heading>
           </Modal.Header>
           <Modal.Body>
+            {submitError ? (
+              <p role="alert" className="mb-4 text-sm text-danger">
+                {submitError}
+              </p>
+            ) : null}
             <form
               id="resource-form"
               onSubmit={handleSubmit(submit)}
@@ -391,38 +400,30 @@ export function ResourceForm({
                               : "space-y-1.5"
                           }
                         >
-                          <Select
-                            value={String(controlled.value ?? "") || null}
-                            placeholder={t("selectOption")}
-                            onChange={(key) => {
-                              if (typeof key === "string")
-                                controlled.onChange(key);
-                            }}
+                          <Label
+                            htmlFor={`resource-${field.name}`}
+                            className="text-sm font-semibold"
                           >
-                            <Label className="text-sm font-semibold">
-                              {field.label}
-                              {field.required ? " *" : ""}
-                            </Label>
-                            <Select.Trigger className="h-11 rounded-xl bg-surface-secondary px-3 text-sm">
-                              <Select.Value />
-                              <Select.Indicator />
-                            </Select.Trigger>
-                            <Select.Popover>
-                              <ListBox>
-                                {field.options?.map((option) => (
-                                  <ListBox.Item
-                                    dir="rtl"
-                                    key={option}
-                                    id={option}
-                                    textValue={option}
-                                  >
-                                    {option}
-                                    <ListBox.ItemIndicator />
-                                  </ListBox.Item>
-                                ))}
-                              </ListBox>
-                            </Select.Popover>
-                          </Select>
+                            {field.label}
+                            {field.required ? " *" : ""}
+                          </Label>
+                          <FormSelect
+                            id={`resource-${field.name}`}
+                            aria-label={field.label}
+                            disabled={mutationPending}
+                            value={String(controlled.value ?? "")}
+                            onChange={controlled.onChange}
+                            className="h-12 rounded-xl bg-surface-secondary px-3 text-sm"
+                          >
+                            <FormOption value="">
+                              {t("selectOption")}
+                            </FormOption>
+                            {field.options?.map((option) => (
+                              <FormOption key={option} value={option}>
+                                {option}
+                              </FormOption>
+                            ))}
+                          </FormSelect>
                           {fieldState.error?.message ? (
                             <span className="block text-xs text-danger">
                               {String(fieldState.error.message)}
@@ -434,11 +435,15 @@ export function ResourceForm({
                     if (multiline)
                       return (
                         <div className="space-y-1.5 sm:col-span-2">
-                          <Label className="text-sm font-semibold">
+                          <Label
+                            htmlFor={`resource-${field.name}`}
+                            className="text-sm font-semibold"
+                          >
                             {field.label}
                             {field.required ? " *" : ""}
                           </Label>
                           <TextArea
+                            id={`resource-${field.name}`}
                             value={String(controlled.value ?? "")}
                             rows={field.kind === "textarea" ? 3 : 2}
                             disabled={field.immutable && Boolean(record)}
@@ -516,7 +521,7 @@ export function ResourceForm({
             </form>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onPress={() => onOpenChange(false)}>
+            <Button variant="secondary" onPress={() => changeOpen(false)}>
               {t("cancel")}
             </Button>
             <Button

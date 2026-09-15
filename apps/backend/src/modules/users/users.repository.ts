@@ -168,6 +168,11 @@ export class UsersRepository {
       ["product_telemetry", { actorId: id }],
       ["training_assignments", { athleteId: id }],
       ["training_sessions", { athleteId: id }],
+      ["workout_sessions", { athleteId: id }],
+      ["workout_assignments", { athleteId: id }],
+      ["training_habits", { userId: id }],
+      ["saved_discovery_searches", { userId: id }],
+      ["user_feature_locks", { userId: id }],
     ];
     await Promise.all(
       cleanup.map(([collection, filter]) =>

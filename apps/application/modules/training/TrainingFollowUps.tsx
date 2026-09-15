@@ -92,7 +92,7 @@ export function SessionReview({
 }: {
   session: SessionRecord;
   assignmentId?: string;
-  onSaved?: () => void;
+  onSaved?: (session: SessionRecord) => void;
 }) {
   const [text, setText] = useState(session.coachReview?.text ?? "");
   const [review, setReview] = useState(session.coachReview);
@@ -135,7 +135,7 @@ export function SessionReview({
               );
               setReview(saved.coachReview);
               setMessage("بازخورد برای ورزشکار ذخیره شد.");
-              onSaved?.();
+              onSaved?.(saved);
             } catch (error) {
               setMessage(errorText(error));
             } finally {
@@ -143,6 +143,41 @@ export function SessionReview({
             }
           }}
         >
+          <div className="rounded-2xl bg-surface-secondary p-3">
+            <p className="text-xs leading-6 text-muted">
+              دستیار مرور جلسه، یک پیش‌نویس از ثبت‌های ورزشکار می‌سازد. متن را
+              بررسی و ویرایش کن؛ انتشار با دکمهٔ ذخیره انجام می‌شود.
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              isDisabled={busy || Boolean(text.trim())}
+              onPress={() => {
+                const completed = session.sets.filter((set) => set.done);
+                const planned =
+                  session.snapshot.days
+                    .find((day) => day.id === session.dayId)
+                    ?.exercises.reduce(
+                      (sum, exercise) => sum + exercise.sets,
+                      0,
+                    ) ?? 0;
+                const lines = [
+                  `در این جلسه ${completed.length.toLocaleString("fa-IR")} ست از ${planned.toLocaleString("fa-IR")} ست برنامه ثبت کردی.`,
+                ];
+                if (session.effort)
+                  lines.push(
+                    `شدت جلسه را «${effort[session.effort]}» ارزیابی کردی.`,
+                  );
+                if (session.followUpRequested)
+                  lines.push(
+                    "درخواست پیگیری‌ات را دیدم. برای هماهنگی جلسهٔ بعد، نکته‌ای که نیاز به بررسی دارد را بنویس.",
+                  );
+                setText(lines.join("\n"));
+              }}
+            >
+              ساخت پیش‌نویس از آمار جلسه
+            </Button>
+          </div>
           <label className="block text-sm">
             بازخورد همین جلسه
             <TextArea

@@ -180,6 +180,7 @@ export class ClubLocationPoint {
 export class Club {
   @Prop({ type: Object, default: {} }) profile: ClubProfile;
   @Prop({ type: Boolean, default: false }) trialBookingEnabled: boolean;
+  @Prop({ type: Number, default: 0, min: 0 }) trialBookingPrice: number;
   @Prop({ type: [Object], default: [] }) busyHours: ClubBusyHour[];
   @Prop({ type: Date, default: null }) busyHoursUpdatedAt: Date | null;
   @Prop({ type: Object, default: {} }) verifications: Partial<

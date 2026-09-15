@@ -218,6 +218,7 @@ export const ClubFieldsObjectSchema = z
     name: z.string().trim().min(2).max(120),
     profile: ClubProfileSchema.optional(),
     trialBookingEnabled: z.boolean().optional(),
+    trialBookingPrice: z.number().int().min(0).max(1000000000).optional(),
     onSitePaymentMethods: z
       .array(z.enum(["cash", "pos"]))
       .max(2)

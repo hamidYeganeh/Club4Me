@@ -1,4 +1,5 @@
 "use client";
+import { MobileChoiceField, useMobileChoice } from "../mobile-choice-field";
 import { Select, ListBox } from "@heroui/react";
 import type { TimeOption } from "./types";
 export function TimeSelect({
@@ -14,6 +15,18 @@ export function TimeSelect({
   onOpenChange: (open: boolean) => void;
   options: TimeOption[];
 }) {
+  const mobile = useMobileChoice();
+  if (mobile)
+    return (
+      <MobileChoiceField
+        label="زمان"
+        value={[value]}
+        onChange={(keys) => onChange(keys[0] ?? "")}
+        open={open}
+        onOpenChange={onOpenChange}
+        options={options}
+      />
+    );
   return (
     <Select
       aria-label="زمان"

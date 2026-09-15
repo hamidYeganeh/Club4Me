@@ -12,6 +12,8 @@ export type Exercise = {
   attribution?: { publisher: string; licenseUrl: string };
 };
 export type Prescription = {
+  supersetGroup?: "A" | "B" | "C" | "D" | "E" | "F";
+  alternativeExerciseIds?: string[];
   exerciseId: string;
   sets: number;
   reps: number;
@@ -47,6 +49,7 @@ export type Assignment = {
   available: boolean;
 };
 export type TrainingSet = {
+  actualExerciseId?: string;
   exerciseIndex: number;
   setIndex: number;
   reps: number;

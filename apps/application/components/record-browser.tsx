@@ -1,4 +1,5 @@
 "use client";
+import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { useState } from "react";
 import { DiscoverySearchField } from "@modules/discovery/components/DiscoverySearchField";
 import { DiscoveryFilterSheet } from "@modules/discovery/components/DiscoveryFilterSheet";
@@ -79,33 +80,33 @@ export function useRecordBrowser<T>(
         {status && (
           <label className="block text-sm">
             وضعیت
-            <select
+            <FormSelect
               aria-label="وضعیت"
               className="mt-2 min-h-12 w-full rounded-2xl bg-surface-secondary px-4"
               value={selected}
-              onChange={(e) => setSelected(e.target.value)}
+              onChange={(value) => setSelected(value)}
             >
-              <option value="">همه وضعیت‌ها</option>
+              <FormOption value="">همه وضعیت‌ها</FormOption>
               {statuses.map((value) => (
-                <option key={value} value={value}>
+                <FormOption key={value} value={value}>
                   {statusLabels[value] ?? value}
-                </option>
+                </FormOption>
               ))}
-            </select>
+            </FormSelect>
           </label>
         )}
         <label className="block text-sm">
           ترتیب نام
-          <select
+          <FormSelect
             aria-label="ترتیب نام"
             className="mt-2 min-h-12 w-full rounded-2xl bg-surface-secondary px-4"
             value={sort}
-            onChange={(e) => setSort(e.target.value)}
+            onChange={(value) => setSort(value)}
           >
-            <option value="default">ترتیب پیش‌فرض</option>
-            <option value="asc">الف تا ی</option>
-            <option value="desc">ی تا الف</option>
-          </select>
+            <FormOption value="default">ترتیب پیش‌فرض</FormOption>
+            <FormOption value="asc">الف تا ی</FormOption>
+            <FormOption value="desc">ی تا الف</FormOption>
+          </FormSelect>
         </label>
         <Button
           variant="secondary"

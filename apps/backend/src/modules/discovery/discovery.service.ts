@@ -129,33 +129,38 @@ export class DiscoveryFeedService {
         .lean(),
       this.clubs.countDocuments(countFilter),
     ]);
-    const offers =
-      budget && documents.length
-        ? await this.clubs.db
-            .collection("reservable_sessions")
-            .aggregate([
-              {
-                $match: {
-                  clubId: { $in: documents.map((item) => item._id) },
-                  status: "active",
-                  startsAt: { $gt: new Date() },
-                  currency: "IRR",
-                  basePrice: budget,
-                  $expr: { $lt: ["$reservedCount", "$capacity"] },
-                },
+    const offers = documents.length
+      ? await this.clubs.db
+          .collection("reservable_sessions")
+          .aggregate([
+            {
+              $match: {
+                clubId: { $in: documents.map((item) => item._id) },
+                status: "active",
+                startsAt: { $gt: new Date() },
+                currency: "IRR",
+                ...(budget ? { basePrice: budget } : {}),
+                $expr: { $lt: ["$reservedCount", "$capacity"] },
               },
-              { $sort: { basePrice: 1, _id: 1 } },
-              { $group: { _id: "$clubId", amount: { $first: "$basePrice" } } },
-            ])
-            .toArray()
-        : [];
+            },
+            { $sort: { basePrice: 1, _id: 1 } },
+            {
+              $group: {
+                _id: "$clubId",
+                amount: { $first: "$basePrice" },
+                unit: { $first: "$pricingUnit" },
+              },
+            },
+          ])
+          .toArray()
+      : [];
     const prices = new Map(
       offers.map((item) => [
         String(item._id),
         {
           amount: item.amount,
           currency: "IRR",
-          unit: "per_session",
+          unit: item.unit ?? "per_participant",
           sessionCount: 1,
         },
       ]),
@@ -290,34 +295,33 @@ export class DiscoveryFeedService {
         .lean(),
       this.coaches.countDocuments(countFilter),
     ]);
-    const offers =
-      budget && documents.length
-        ? await this.coaches.db
-            .collection("coach_services")
-            .aggregate([
-              {
-                $match: {
-                  coachId: { $in: documents.map((item) => item._id) },
-                  status: "published",
-                  "price.currency": "IRR",
-                  "price.amount": budget,
-                  ...(query.serviceMode
-                    ? { deliveryModes: query.serviceMode }
-                    : {}),
-                },
+    const offers = documents.length
+      ? await this.coaches.db
+          .collection("coach_services")
+          .aggregate([
+            {
+              $match: {
+                coachId: { $in: documents.map((item) => item._id) },
+                status: "published",
+                "price.currency": "IRR",
+                ...(budget ? { "price.amount": budget } : {}),
+                ...(query.serviceMode
+                  ? { deliveryModes: query.serviceMode }
+                  : {}),
               },
-              { $sort: { "price.amount": 1, _id: 1 } },
-              {
-                $group: {
-                  _id: "$coachId",
-                  amount: { $first: "$price.amount" },
-                  unit: { $first: "$pricingType" },
-                  sessionCount: { $first: "$sessionCount" },
-                },
+            },
+            { $sort: { "price.amount": 1, _id: 1 } },
+            {
+              $group: {
+                _id: "$coachId",
+                amount: { $first: "$price.amount" },
+                unit: { $first: "$pricingType" },
+                sessionCount: { $first: "$sessionCount" },
               },
-            ])
-            .toArray()
-        : [];
+            },
+          ])
+          .toArray()
+      : [];
     const prices = new Map(
       offers.map((item) => [
         String(item._id),
