@@ -26,6 +26,9 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    # Keep MongoDB private; administrators connect through an SSH tunnel.
+    ports:
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo_data:/data/db
       - ./scripts/docker/mongodb-entrypoint.sh:/opt/club4me/mongodb-entrypoint.sh:ro
