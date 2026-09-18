@@ -3,11 +3,17 @@
 import { Checkbox as HeroCheckbox } from "@heroui/react";
 import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
+import { PanelPriceField } from "@/components/form/PanelPriceField";
 import type { ClubProfile, ClubBusyHour } from "@api/business";
 import { ClubResourceField } from "./ClubResourceField";
 import { useState } from "react";
 
 const input = "w-full min-w-0";
+const fieldLabel = "grid gap-1.5 text-sm font-medium text-foreground";
+const spaceCard =
+  "app-surface space-y-4 rounded-2xl border border-border/50 p-4 sm:p-5";
+const busySelect =
+  "w-full min-w-[3.25rem] rounded-md border-0 bg-surface-secondary/70 px-1 py-0.5 text-[10px] leading-tight text-foreground";
 const days = [
   "یکشنبه",
   "دوشنبه",
@@ -46,8 +52,8 @@ export function ClubProfileFields({
   return (
     <div className="space-y-8">
       <fieldset className="space-y-4">
-        <legend className="mb-3 font-bold">مشخصات تخصصی فضاها</legend>
-        <p className="text-sm text-muted">
+        <legend className="mb-1 text-base font-bold">مشخصات تخصصی فضاها</legend>
+        <p className="text-sm leading-6 text-muted">
           برای هر سالن، مجموعه زمین یا استخر مشخصات جدا وارد کنید. موارد نامرتبط
           را خالی بگذارید.
         </p>
@@ -60,9 +66,15 @@ export function ClubProfileFields({
               ),
             });
           return (
-            <div key={index} className="rounded-2xl p-4 space-y-3">
+            <article key={index} className={spaceCard}>
+              <div className="flex items-center justify-between gap-3 border-b border-border/40 pb-3">
+                <h3 className="text-sm font-bold text-foreground">
+                  فضای {index + 1}
+                  {space.name.trim() ? ` — ${space.name.trim()}` : ""}
+                </h3>
+              </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <label>
+                <label className={fieldLabel}>
                   نام فضا
                   <HeroInput
                     variant="secondary"
@@ -112,7 +124,7 @@ export function ClubProfileFields({
                     ["poolMaxDepthMeters", "بیشترین عمق (متر)"],
                   ] as const
                 ).map(([key, label]) => (
-                  <label key={key}>
+                  <label key={key} className={fieldLabel}>
                     {label}
                     <HeroInput
                       variant="secondary"
@@ -151,7 +163,7 @@ export function ClubProfileFields({
               </div>
               <button
                 type="button"
-                className="text-sm text-danger"
+                className="text-sm font-medium text-danger"
                 onClick={() =>
                   onChange({
                     ...value,
@@ -161,13 +173,13 @@ export function ClubProfileFields({
               >
                 حذف فضا
               </button>
-            </div>
+            </article>
           );
         })}
         <button
           type="button"
           disabled={spaces.length >= 30}
-          className={input}
+          className="app-surface w-full rounded-2xl border border-dashed border-border/70 px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary/40 disabled:opacity-50"
           onClick={() =>
             onChange({ ...value, spaces: [...spaces, { name: "" }] })
           }
@@ -175,8 +187,11 @@ export function ClubProfileFields({
           افزودن سالن، زمین یا استخر
         </button>
       </fieldset>
-      <fieldset>
-        <legend className="mb-3 font-bold">شرایط تجربه تمرین</legend>
+      <fieldset className="app-surface space-y-4 rounded-2xl border border-border/50 p-4 sm:p-5">
+        <legend className="mb-1 text-base font-bold">شرایط تجربه تمرین</legend>
+        <p className="text-sm leading-6 text-muted">
+          ظرفیت و زیرساخت فضای تمرین را برای نمایش در پروفایل باشگاه تکمیل کنید.
+        </p>
         <div className="grid gap-3 sm:grid-cols-2">
           {(
             [
@@ -184,7 +199,7 @@ export function ClubProfileFields({
               ["classCapacity", "ظرفیت معمول کلاس"],
             ] as const
           ).map(([key, label]) => (
-            <label key={key}>
+            <label key={key} className={fieldLabel}>
               {label}
               <HeroInput
                 variant="secondary"
@@ -262,19 +277,14 @@ export function ClubProfileFields({
           مصرف می‌کند.
         </p>
         {trial && (
-          <label className="grid gap-2 text-sm">
-            قیمت جلسه آزمایشی (ریال؛ صفر برای رایگان)
-            <HeroInput
-              aria-label="قیمت جلسه آزمایشی"
-              type="number"
-              min={0}
-              max={1000000000}
-              value={String(trialPrice)}
-              onChange={(event) =>
-                onTrialPriceChange(Number(event.target.value))
-              }
-            />
-          </label>
+          <PanelPriceField
+            label="قیمت جلسه آزمایشی (ریال؛ صفر برای رایگان)"
+            aria-label="قیمت جلسه آزمایشی"
+            minValue={0}
+            maxValue={1_000_000_000}
+            value={trialPrice}
+            onChange={onTrialPriceChange}
+          />
         )}
         <HeroCheckbox
           className="flex gap-2"
@@ -401,25 +411,30 @@ export function ClubProfileFields({
           قیمت پلن‌ها، تعداد جلسات و مدت اعتبار از بخش «عضویت‌ها» مدیریت می‌شود.
         </p>
       </fieldset>
-      <fieldset className="space-y-3">
-        <legend className="mb-3 font-bold">
+      <fieldset className="app-surface space-y-3 rounded-2xl border border-border/50 p-4 sm:p-5">
+        <legend className="mb-1 text-base font-bold">
           شلوغی معمول ساعت‌ها — اعلام باشگاه
         </legend>
-        <p className="text-sm text-muted">
-          این جدول تخمین هفتگی شماست، نه حضور زنده یا درصد رزرو. ساعت خالی یعنی
-          اطلاعاتی ثبت نشده است. ساعت‌ها به وقت محلی باشگاه هستند.
+        <p className="text-sm leading-6 text-muted">
+          تخمین هفتگی شماست، نه حضور زنده. «—» یعنی ثبت نشده. فقط ساعتی که
+          می‌دانید شلوغ است را علامت بزنید؛ بقیه خالی بماند.
         </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+        <div className="overflow-x-auto rounded-xl bg-surface-secondary/30 p-2">
+          <table className="w-full border-separate border-spacing-0.5 text-[10px]">
             <caption className="sr-only">
               شلوغی هفتگی باشگاه بر حسب ساعت
             </caption>
             <thead>
               <tr>
-                <th>ساعت</th>
+                <th className="sticky start-0 z-[1] bg-surface-secondary/90 px-1 py-1 font-medium text-muted">
+                  ساعت
+                </th>
                 {[6, 0, 1, 2, 3, 4, 5].map((day) => (
-                  <th key={day} className="p-2">
-                    {days[day]}
+                  <th
+                    key={day}
+                    className="px-0.5 py-1 font-medium text-muted"
+                  >
+                    {days[day].slice(0, 3)}
                   </th>
                 ))}
               </tr>
@@ -427,16 +442,18 @@ export function ClubProfileFields({
             <tbody>
               {Array.from({ length: 24 }, (_, hour) => (
                 <tr key={hour}>
-                  <th className="p-2">{String(hour).padStart(2, "0")}:۰۰</th>
+                  <th className="sticky start-0 z-[1] bg-surface-secondary/90 px-1 py-0.5 font-normal tabular-nums text-muted">
+                    {String(hour).padStart(2, "0")}
+                  </th>
                   {[6, 0, 1, 2, 3, 4, 5].map((day) => {
                     const cell = busyHours.find(
                       (h) => h.dayOfWeek === day && h.hour === hour,
                     );
                     return (
-                      <td key={day} className="p-1">
+                      <td key={day} className="p-0">
                         <FormSelect
                           aria-label={`${days[day]} ساعت ${hour}`}
-                          className="rounded-lg border border-border bg-surface p-2"
+                          className={busySelect}
                           value={cell?.level ?? ""}
                           onChange={(e) => {
                             const next = busyHours.filter(
@@ -451,10 +468,10 @@ export function ClubProfileFields({
                             onBusyHoursChange(next);
                           }}
                         >
-                          <FormOption value="">نامشخص</FormOption>
+                          <FormOption value="">—</FormOption>
                           {Object.entries(levels).map(([key, label]) => (
                             <FormOption key={key} value={key}>
-                              {label}
+                              {label.slice(0, 4)}
                             </FormOption>
                           ))}
                         </FormSelect>

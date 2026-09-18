@@ -3,6 +3,7 @@ import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput } from "@heroui/react";
 import { useAccountPreference } from "@api/preferences";
 import { useSelectedClub, SelectedClubScope } from "@/lib/use-selected-club";
+import { IRANIAN_PHONE_INPUT_PATTERN } from "@/lib/phone";
 import {
   BranchesScreen,
   CoachesScreen,
@@ -35,6 +36,7 @@ import {
   tehranLocalDate,
   tehranLocalValue,
 } from "@repo/ui/iran-date";
+import { PanelPriceField } from "@/components/form/PanelPriceField";
 import { BusinessClassFormScreen } from "@modules/classes/screens/BusinessClassesScreens";
 
 const field =
@@ -238,6 +240,7 @@ function StaffStudents({
           <label>
             نام
             <HeroInput
+              variant="secondary"
               required
               minLength={2}
               name="firstName"
@@ -247,6 +250,7 @@ function StaffStudents({
           <label>
             نام خانوادگی
             <HeroInput
+              variant="secondary"
               required
               minLength={2}
               name="lastName"
@@ -256,9 +260,14 @@ function StaffStudents({
           <label>
             موبایل
             <HeroInput
+              variant="secondary"
               required
               name="phone"
+              type="tel"
               inputMode="tel"
+              dir="ltr"
+              pattern={IRANIAN_PHONE_INPUT_PATTERN}
+              title="مثال: 09383729627، 9383729627 یا 989383729627"
               className={field}
             />
           </label>
@@ -268,6 +277,7 @@ function StaffStudents({
         </form>
       )}
       <HeroInput
+        variant="secondary"
         aria-label="جست‌وجوی شاگرد"
         placeholder="نام یا موبایل"
         className={field}
@@ -353,21 +363,19 @@ function StaffPayments({
             <label>
               عنوان رسید
               <HeroInput
+                variant="secondary"
                 required
                 minLength={2}
                 name="title"
                 className={field}
               />
             </label>
-            <label>
-              مبلغ (ریال)
-              <HeroInput
-                required
-                name="amount"
-                inputMode="numeric"
-                className={field}
-              />
-            </label>
+            <PanelPriceField
+              label="مبلغ (ریال)"
+              name="amount"
+              minValue={1}
+              isRequired
+            />
             <label>
               تاریخ پرداخت
               <IranDateInput

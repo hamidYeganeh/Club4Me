@@ -18,7 +18,7 @@ import {
   normalizeIranianPhone,
   toE164IranianPhone,
 } from "@/lib/phone";
-import { completeAuthenticationPath } from "@/lib/auth-return-path";
+import { tokenStore } from "@api";
 
 const ACCOUNT_AUTH_FORGOT_CONFIRM_FORM_ID = "account-auth-forgot-confirm-form";
 
@@ -103,8 +103,9 @@ export function AccountAuthForgotPasswordConfirmScreen() {
         passwordRequired={tConfirm("passwordRequired")}
         passwordMin={tConfirm("passwordMin")}
         passwordMismatch={tConfirm("passwordMismatch")}
-        onSuccess={(user) => {
-          router.replace(completeAuthenticationPath(user));
+        onSuccess={() => {
+          tokenStore.clear();
+          router.replace("/auth/login");
         }}
         sent={t("sent")}
       />

@@ -46,9 +46,9 @@ export function AthleteScreenHeaderSection({
           <Link
             href={`/${role}`}
             aria-label="کلاب‌فورمی"
-            className="mx-auto rounded-xl text-accent outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            className="mx-auto rounded-xl text-accent outline-none flex items-center justify-center"
           >
-            <Logo size={48} label="کلاب‌فورمی" />
+            <Logo size={64} label="کلاب‌فورمی" />
           </Link>
           <Link
             href={`/${role}/notifications`}

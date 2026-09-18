@@ -15,6 +15,7 @@ import {
 type CreateArticleInput = {
   title: string;
   slug?: string;
+  authorId: string;
   authorName: string;
   categoryId: string;
   excerpt?: string;
@@ -26,6 +27,7 @@ type CreateArticleInput = {
 type UpdateArticleInput = {
   title?: string;
   slug?: string;
+  authorId?: string;
   authorName?: string;
   categoryId?: string;
   excerpt?: string;
@@ -83,6 +85,7 @@ export class ArticlesRepository {
       const created = await this.articleModel.create({
         title: input.title.trim(),
         slug,
+        authorId: toObjectId(input.authorId, "AUTHOR_NOT_FOUND"),
         authorName: input.authorName.trim(),
         categoryId: toObjectId(input.categoryId, "CATEGORY_NOT_FOUND"),
         excerpt: input.excerpt?.trim() ?? "",
@@ -121,6 +124,10 @@ export class ArticlesRepository {
 
     if (input.slug !== undefined) {
       article.slug = resolveSlug(input.slug, article.title);
+    }
+
+    if (input.authorId !== undefined) {
+      article.authorId = toObjectId(input.authorId, "AUTHOR_NOT_FOUND");
     }
 
     if (input.authorName !== undefined) {

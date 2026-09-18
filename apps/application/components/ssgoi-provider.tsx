@@ -9,6 +9,7 @@ import {
 import { axis, zoom } from "@ssgoi/react/view-transitions";
 
 const routeTransition = axis({ type: "y", variant: "non-directional" });
+const authSlideTransition = axis({ type: "x", variant: "snappy" });
 const detailTransition = zoom({ type: "expand", variant: "fade" });
 const bookingTransition = axis({ type: "z" });
 
@@ -40,6 +41,11 @@ const transitionRules: SsgoiTransitionRule[] = [
     preserveScroll: { from: true, to: false },
   },
   {
+    priority: 30,
+    on: "/auth/**",
+    transition: authSlideTransition,
+  },
+  {
     priority: 20,
     on: "/discovery/map",
     transition: routeTransition,
@@ -52,11 +58,6 @@ const transitionRules: SsgoiTransitionRule[] = [
   {
     priority: 20,
     on: "/*/profile/image",
-    transition: routeTransition,
-  },
-  {
-    on: "/auth/**",
-    except: "/auth",
     transition: routeTransition,
   },
   {

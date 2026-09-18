@@ -55,7 +55,7 @@ export function EntityOptionContent({
         {!compact && detail.description ? (
           <Description
             dir={detail.phoneOnly ? "ltr" : "rtl"}
-            className="mt-0.5 block truncate text-right text-xs text-muted"
+            className="mt-0.5 block whitespace-normal text-right text-xs leading-5 text-muted"
           >
             {detail.description}
           </Description>

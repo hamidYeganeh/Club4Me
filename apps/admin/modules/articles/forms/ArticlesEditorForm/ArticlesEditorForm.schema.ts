@@ -13,6 +13,7 @@ export function createArticlesEditorFormSchema(messages: Messages) {
       .trim()
       .min(1, messages.titleRequired)
       .max(200, "عنوان باید حداکثر ۲۰۰ نویسه باشد."),
+    authorId: z.string().trim().min(1, messages.authorRequired),
     authorName: z
       .string()
       .trim()

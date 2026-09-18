@@ -6,7 +6,6 @@ import { Button, Skeleton } from "@heroui/react";
 import { usePublicClub } from "@api";
 import { useCatalogClub } from "@api/discovery";
 import { Icon } from "@theme/icon";
-import { FALLBACK_IMAGE_SRC } from "@ui/fallback-image";
 import type { Swiper as SwiperType } from "swiper";
 import { Keyboard, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -84,7 +83,16 @@ export function DiscoveryClubGalleryScreen({
       (!category || (item.category ?? "other") === category),
   );
   const images = gallery.map((item) => item.url);
-  const slides = images.length > 0 ? images : [FALLBACK_IMAGE_SRC];
+  const slides = images;
+  const availableCategories = GALLERY_CATEGORIES.filter(
+    (item) =>
+      !item.value ||
+      club.data.gallery.some(
+        (photo) =>
+          photo.mimeType.startsWith("image/") &&
+          (photo.category ?? "other") === item.value,
+      ),
+  );
 
   return (
     <main
@@ -112,7 +120,7 @@ export function DiscoveryClubGalleryScreen({
         role="group"
         aria-label="دسته عکس"
       >
-        {GALLERY_CATEGORIES.map((item) => (
+        {availableCategories.map((item) => (
           <Button
             key={item.value || "all"}
             size="sm"
@@ -141,13 +149,16 @@ export function DiscoveryClubGalleryScreen({
           ).toLocaleDateString("fa-IR")}
         </p>
       )}
-      {!images.length && (
-        <p className="mt-3 text-sm text-muted">
-          عکسی در این دسته ثبت نشده است.
-        </p>
-      )}
-
-      {gridVisible ? (
+      {!images.length ? (
+        <div className="mt-6 grid flex-1 place-items-center rounded-[2rem] bg-surface-secondary px-6 text-center">
+          <div>
+            <Icon name="image-1" size={36} className="mx-auto text-muted" />
+            <p className="mt-3 text-sm text-muted">
+              عکسی در این دسته ثبت نشده است.
+            </p>
+          </div>
+        </div>
+      ) : gridVisible ? (
         <div className="grid flex-1 grid-cols-2 content-start gap-2 overflow-y-auto px-3 py-3">
           {slides.map((src, index) => (
             <button

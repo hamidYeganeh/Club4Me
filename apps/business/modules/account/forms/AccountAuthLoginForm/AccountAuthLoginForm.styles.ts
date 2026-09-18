@@ -7,16 +7,14 @@ export const accountAuthLoginFormStyles = tv({
     group: "flex w-full flex-col gap-4",
     field: "flex w-full flex-col gap-2",
     label: "text-sm font-bold text-foreground",
-    inputGroup:
-      "h-12 rounded-2xl border border-border bg-surface shadow-none",
+    inputGroup: "h-12 rounded-lg border border-border bg-surface shadow-none",
     prefix: "ps-3 text-muted",
     suffix: "pe-1",
     input: "min-w-0 flex-1 text-start text-base",
     meta: "flex w-full flex-col items-start gap-3",
     remember: "gap-2 text-sm leading-5 text-foreground",
-    forgot:
-      "h-auto min-h-0 px-0 py-0 text-sm font-semibold text-accent",
+    forgot: "h-auto min-h-0 px-0 py-0 text-sm font-semibold text-accent",
     actions: "mt-2 w-full",
-    button: "h-14 rounded-full text-base font-bold",
+    button: "h-14 rounded-full text-base font-semibold",
   },
 });

@@ -148,7 +148,7 @@ function FormSelectControl({
           )}
       >
         <ComboBox.InputGroup className={className}>
-          <Input id={id} placeholder="جست‌وجو و انتخاب…" />
+          <Input id={id} variant="secondary" placeholder="جست‌وجو و انتخاب…" />
           <ComboBox.Trigger aria-label="نمایش گزینه‌ها" />
         </ComboBox.InputGroup>
         <ComboBox.Popover>

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { AccountAuthLoginForm } from "@modules/account/forms/AccountAuthLoginForm";
 import { AccountAuthMethodActionsSection } from "@modules/account/sections/AccountAuthMethodActionsSection";
 import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
-import { AccountAuthLoginSocialSection } from "@modules/account/sections/AccountAuthLoginSocialSection";
 import { AuthPageIntro } from "@/components/auth-page-intro";
 import { useTranslations } from "next-intl";
 
@@ -67,7 +66,6 @@ export function AccountAuthLoginScreen() {
           router.replace(completeAuthenticationPath(user));
         }}
       />
-      {!isKeyboardOpen ? <AccountAuthLoginSocialSection caption="یا ورود با" xLabel="ورود با X" facebookLabel="ورود با فیسبوک" googleLabel="ورود با گوگل" unavailable="این روش ورود هنوز برای این محیط فعال نشده است" /> : null}
       <AccountAuthMethodActionsSection
         formId={ACCOUNT_AUTH_LOGIN_FORM_ID}
         submitLabel={t("submit")}

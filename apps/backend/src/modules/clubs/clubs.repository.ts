@@ -95,6 +95,52 @@ export class ClubsRepository {
     return toPublicClub(club);
   }
 
+  async linkBranches(
+    ownerId: string,
+    sourceId: string,
+    targetId: string,
+  ): Promise<void> {
+    if (sourceId === targetId)
+      throw new AppError(400, "SAME_CLUB", "Choose another club");
+    const source = await this.findDocumentForOwner(ownerId, sourceId);
+    const target = await this.findDocumentForOwner(ownerId, targetId);
+    if (!source || !target) throw clubNotFound();
+    const groupId = source.branchGroupId ?? source._id;
+    const targetGroup = target.branchGroupId ?? target._id;
+    await this.model.updateMany(
+      {
+        ownerId: toObjectId(ownerId),
+        $or: [
+          { _id: { $in: [source._id, target._id] } },
+          { branchGroupId: { $in: [groupId, targetGroup] } },
+        ],
+      },
+      { $set: { branchGroupId: groupId } },
+    );
+  }
+
+  async unlinkBranch(
+    ownerId: string,
+    sourceId: string,
+    targetId: string,
+  ): Promise<void> {
+    const source = await this.findDocumentForOwner(ownerId, sourceId);
+    const target = await this.findDocumentForOwner(ownerId, targetId);
+    if (!source || !target) throw clubNotFound();
+    if (
+      sourceId === targetId ||
+      !source.branchGroupId ||
+      String(source.branchGroupId) !== String(target.branchGroupId)
+    )
+      throw new AppError(
+        400,
+        "INVALID_BRANCH_LINK",
+        "Clubs are not linked branches",
+      );
+    target.branchGroupId = null;
+    await target.save();
+  }
+
   async create(ownerId: string, input: ClubFields): Promise<PublicClub> {
     const id = new Types.ObjectId();
     const payload = toPersistence(input);
@@ -116,10 +162,11 @@ export class ClubsRepository {
     ownerId: string,
     clubId: string,
     input: Partial<ClubFields>,
+    allowPending = false,
   ): Promise<PublicClub> {
     const club = await this.findDocumentForOwner(ownerId, clubId);
     if (!club) throw clubNotFound();
-    if (club.reviewStatus === "pending") {
+    if (club.reviewStatus === "pending" && !allowPending) {
       throw new AppError(
         409,
         "CLUB_PENDING_REVIEW",

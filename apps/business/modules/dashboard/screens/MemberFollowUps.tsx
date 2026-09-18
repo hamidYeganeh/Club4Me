@@ -1,7 +1,7 @@
 "use client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { http } from "@api/http/client";
-import { Button, TextArea } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -15,7 +15,6 @@ type FollowUp = {
   nextFollowUpAt: string | null;
 };
 export function MemberFollowUps({ clubId }: { clubId: string }) {
-  const client = useQueryClient();
   const key = ["business", clubId, "member-follow-ups"];
   const query = useQuery({
     queryKey: key,
@@ -26,20 +25,6 @@ export function MemberFollowUps({ clubId }: { clubId: string }) {
   });
   const [showDeferred, setShowDeferred] = useState(false);
   const [limit, setLimit] = useState(5);
-  const [selected, setSelected] = useState<FollowUp | null>(null);
-  const [note, setNote] = useState("");
-  const mutation = useMutation({
-    mutationFn: () =>
-      http.post(
-        `/business/clubs/${clubId}/operations/follow-ups/${selected!.studentId}`,
-        { note, remindInDays: 7 },
-      ),
-    onSuccess: () => {
-      setSelected(null);
-      setNote("");
-      void client.invalidateQueries({ queryKey: key });
-    },
-  });
   const items = (query.data?.items ?? []).filter(
     (item) => showDeferred || !item.deferred,
   );
@@ -103,21 +88,12 @@ export function MemberFollowUps({ clubId }: { clubId: string }) {
               >
                 پرونده و تمدید ←
               </Link>
-              <Button
-                size="sm"
-                variant="secondary"
-                onPress={() => {
-                  setSelected(item);
-                  setNote(item.note);
-                  mutation.reset();
-                  requestAnimationFrame(() =>
-                    document
-                      .getElementById(`follow-up-form-${clubId}`)
-                      ?.scrollIntoView({ block: "start" }),
-                  );
-                }}
-              >
-                ثبت نتیجه پیگیری
+              <Button size="sm" variant="secondary">
+                <Link
+                  href={`/students/${item.studentId}/follow-up?clubId=${clubId}`}
+                >
+                  ثبت نتیجه پیگیری
+                </Link>
               </Button>
             </div>
           </div>
@@ -140,50 +116,6 @@ export function MemberFollowUps({ clubId }: { clubId: string }) {
         <Button variant="ghost" onPress={() => setLimit((v) => v + 20)}>
           نمایش موارد بیشتر ({(items.length - limit).toLocaleString("fa-IR")})
         </Button>
-      )}
-      {selected && (
-        <form
-          id={`follow-up-form-${clubId}`}
-          className="space-y-3 rounded-xl p-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!mutation.isPending) mutation.mutate();
-          }}
-        >
-          <h4 className="font-semibold">نتیجه پیگیری {selected.name}</h4>
-          <label className="block text-sm">
-            یادداشت پیگیری
-            <TextArea
-              required
-              maxLength={500}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              disabled={mutation.isPending}
-              className="mt-2 w-full"
-            />
-          </label>
-          <div className="flex gap-2">
-            <Button
-              type="submit"
-              isPending={mutation.isPending}
-              isDisabled={!note.trim()}
-            >
-              ذخیره و یادآوری هفت روز بعد
-            </Button>
-            <Button
-              variant="ghost"
-              isDisabled={mutation.isPending}
-              onPress={() => setSelected(null)}
-            >
-              بستن
-            </Button>
-          </div>
-          {mutation.isError && (
-            <p role="alert" className="text-sm text-danger">
-              ذخیره نشد؛ دسترسی ویرایش اعضا لازم است. متن حفظ شده است.
-            </p>
-          )}
-        </form>
       )}
     </section>
   );

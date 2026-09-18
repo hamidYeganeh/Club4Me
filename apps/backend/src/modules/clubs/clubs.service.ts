@@ -53,6 +53,34 @@ export class ClubsService {
     };
   }
 
+  async createForAdmin(ownerId: string, input: CreateClubDto) {
+    if (
+      !this.connection ||
+      !Types.ObjectId.isValid(ownerId) ||
+      !(await this.connection
+        .collection("users")
+        .findOne({ _id: new Types.ObjectId(ownerId), status: "active" }))
+    )
+      throw new AppError(404, "USER_NOT_FOUND", "Active user not found");
+    return this.create(ownerId, input);
+  }
+
+  async updateForAdmin(clubId: string, input: UpdateClubDto) {
+    const club = await this.repository.findById(clubId);
+    await this.validateReferences(input, club);
+    return this.repository.update(club.ownerId, clubId, input, true);
+  }
+
+  async linkBranches(ownerId: string, clubId: string, targetClubId: string) {
+    await this.repository.linkBranches(ownerId, clubId, targetClubId);
+    return this.listAccessible(ownerId);
+  }
+
+  async unlinkBranch(ownerId: string, clubId: string, targetClubId: string) {
+    await this.repository.unlinkBranch(ownerId, clubId, targetClubId);
+    return this.listAccessible(ownerId);
+  }
+
   async listForAdmin(): Promise<{ items: PublicClub[] }> {
     return { items: await this.repository.listForAdmin() };
   }

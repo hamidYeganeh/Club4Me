@@ -418,6 +418,13 @@ export const resourceGroups = [
         "مدیریت دسته‌بندی مقالات",
       ),
       resource(
+        "article_authors",
+        "article-author",
+        "article_authors",
+        "نویسندگان مقاله",
+        "مدیریت نویسندگان مقاله",
+      ),
+      resource(
         "article_types",
         "article-type",
         "article_types",

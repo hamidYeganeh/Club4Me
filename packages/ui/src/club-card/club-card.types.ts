@@ -1,6 +1,6 @@
 import type { IconName } from "@repo/theme/icon";
 
-export type ClubCardVariant = "compact" | "editorial";
+export type ClubCardVariant = "compact" | "editorial" | "overlay";
 
 export type ClubCardAmenity = {
   id?: string;

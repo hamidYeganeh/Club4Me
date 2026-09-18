@@ -24,17 +24,19 @@ const locationImages = {
 const baseResourceSeedData: Readonly<
   Record<string, readonly ResourceSeedRecord[]>
 > = {
-  sport_categories: named(
-    ["تناسب اندام", "FITNESS"],
-    ["ذهن و بدن", "MIND_BODY"],
-    ["ورزش‌های توپی", "BALL_SPORTS"],
-    ["ورزش‌های راکتی", "RACQUET_SPORTS"],
-    ["ورزش‌های رزمی", "MARTIAL_ARTS"],
-    ["ورزش‌های آبی", "WATER_SPORTS"],
-    ["استقامتی و هوازی", "ENDURANCE"],
-    ["طبیعت و ماجراجویی", "OUTDOOR"],
-    ["ژیمناستیک و حرکات نمایشی", "GYMNASTICS"],
-  ),
+  sport_categories: (
+    [
+      ["تناسب اندام", "FITNESS", "weight"],
+      ["ذهن و بدن", "MIND_BODY", "person-yoga"],
+      ["ورزش‌های توپی", "BALL_SPORTS", "soccer"],
+      ["ورزش‌های راکتی", "RACQUET_SPORTS", "tennis"],
+      ["ورزش‌های رزمی", "MARTIAL_ARTS", "boxing"],
+      ["ورزش‌های آبی", "WATER_SPORTS", "person-swimming"],
+      ["استقامتی و هوازی", "ENDURANCE", "person-running"],
+      ["طبیعت و ماجراجویی", "OUTDOOR", "person-hiking"],
+      ["ژیمناستیک و حرکات نمایشی", "GYMNASTICS", "person-yoga"],
+    ] satisfies Array<[string, string, string]>
+  ).map(([name, code, icon], sortOrder) => ({ name, code, icon, sortOrder })),
   sports: [
     {
       name: "بدنسازی",
@@ -1367,15 +1369,33 @@ const baseResourceSeedData: Readonly<
     { name: "سالمندان", minAge: 60, maxAge: 100 },
   ],
 
-  article_categories: named(
-    ["تمرین", "TRAINING"],
-    ["تغذیه", "NUTRITION"],
-    ["سلامت", "HEALTH"],
-    ["اخبار", "NEWS"],
-    ["ریکاوری", "RECOVERY"],
-    ["روان‌شناسی ورزش", "SPORT_PSYCHOLOGY"],
-    ["پیشگیری از آسیب", "INJURY_PREVENTION"],
-  ),
+  article_authors: [
+    {
+      name: "تیم gym4me",
+      code: "GYM4ME_TEAM",
+      icon: "users-three",
+      sortOrder: 0,
+    },
+  ],
+  article_categories: [
+    { name: "تمرین", code: "TRAINING", icon: "weight", sortOrder: 0 },
+    { name: "تغذیه", code: "NUTRITION", icon: "apple", sortOrder: 1 },
+    { name: "سلامت", code: "HEALTH", icon: "heart", sortOrder: 2 },
+    { name: "اخبار", code: "NEWS", icon: "book-open", sortOrder: 3 },
+    { name: "ریکاوری", code: "RECOVERY", icon: "heart", sortOrder: 4 },
+    {
+      name: "روان‌شناسی ورزش",
+      code: "SPORT_PSYCHOLOGY",
+      icon: "head-cognition",
+      sortOrder: 5,
+    },
+    {
+      name: "پیشگیری از آسیب",
+      code: "INJURY_PREVENTION",
+      icon: "shield-check",
+      sortOrder: 6,
+    },
+  ],
   article_types: named(
     ["مقاله آموزشی", "EDUCATIONAL"],
     ["راهنما", "GUIDE"],

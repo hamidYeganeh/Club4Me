@@ -52,6 +52,7 @@ import { BenefitsService } from "./benefits.service";
 import {
   AdminBenefitsController,
   BenefitsController,
+  BusinessDiscountsController,
 } from "./benefits.controller";
 import {
   DiscountCampaign,
@@ -130,6 +131,7 @@ import {
     AdminCommerceController,
     BenefitsController,
     AdminBenefitsController,
+    BusinessDiscountsController,
     BusinessBenefitProductsController,
     PublicBenefitProductsController,
     BenefitPurchasesController,

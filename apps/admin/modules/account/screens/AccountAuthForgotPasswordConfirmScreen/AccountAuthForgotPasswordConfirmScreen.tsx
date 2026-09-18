@@ -1,5 +1,6 @@
 "use client";
 
+import { tokenStore } from "@api";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AccountAuthForgotPasswordConfirmForm } from "@modules/account/forms/AccountAuthForgotPasswordConfirmForm";
@@ -69,7 +70,8 @@ export function AccountAuthForgotPasswordConfirmScreen() {
         passwordMismatch={tConfirm("passwordMismatch")}
         sent={t("sent")}
         onSuccess={() => {
-          router.replace("/");
+          tokenStore.clear();
+          router.replace("/auth/login");
         }}
       />
     </AuthScreen>

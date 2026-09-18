@@ -57,6 +57,8 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
       icon: "ticket",
       label: t("panel.memberships"),
     },
+    { href: "/discounts", icon: "ticket", label: "کدهای تخفیف" },
+    { href: "/crm", icon: "chat", label: "پیام‌های باشگاه" },
     {
       href: "/reviews",
       icon: "star-full",

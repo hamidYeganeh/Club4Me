@@ -55,13 +55,61 @@ export function useReviewClub() {
 }
 
 export function useAdminSupplyQuality() {
-  return useQuery({ queryKey: ["admin", "clubs", "quality"], queryFn: () => http.get<{ items: BusinessClub[] }>("/admin/clubs/quality/queue") });
+  return useQuery({
+    queryKey: ["admin", "clubs", "quality"],
+    queryFn: () =>
+      http.get<{ items: BusinessClub[] }>("/admin/clubs/quality/queue"),
+  });
 }
 
 export function useUpdateClubSupplyQuality() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ clubId, ...payload }: { clubId: string; status: "active" | "review_required" | "suspended"; reasons: string[]; nextReviewAt?: string | null }) => http.patch<BusinessClub>(`/admin/clubs/${clubId}/quality`, payload),
-    onSuccess: async () => { await Promise.all([client.invalidateQueries({ queryKey: ["admin", "clubs"] }), client.invalidateQueries({ queryKey: ["admin", "clubs", "quality"] })]); },
+    mutationFn: ({
+      clubId,
+      ...payload
+    }: {
+      clubId: string;
+      status: "active" | "review_required" | "suspended";
+      reasons: string[];
+      nextReviewAt?: string | null;
+    }) => http.patch<BusinessClub>(`/admin/clubs/${clubId}/quality`, payload),
+    onSuccess: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["admin", "clubs"] }),
+        client.invalidateQueries({ queryKey: ["admin", "clubs", "quality"] }),
+      ]);
+    },
+  });
+}
+
+export function useCreateAdminClub() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      ownerId: string;
+      name: string;
+      shortDescription?: string;
+      description?: string;
+    }) => http.post<BusinessClub>("/admin/clubs", payload),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["admin", "clubs"] }),
+  });
+}
+
+export function useUpdateAdminClub() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      clubId,
+      payload,
+    }: {
+      clubId: string;
+      payload: {
+        name?: string;
+        shortDescription?: string;
+        description?: string;
+      };
+    }) => http.patch<BusinessClub>(`/admin/clubs/${clubId}`, payload),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["admin", "clubs"] }),
   });
 }

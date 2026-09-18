@@ -1,5 +1,6 @@
 "use client";
 
+import { useResources } from "@api/resources";
 import { FormOption, FormSelect } from "@repo/ui/form-select";
 import { useEffect, useMemo, useRef } from "react";
 import {
@@ -46,6 +47,10 @@ export function ArticlesEditorForm({
 }: ArticlesEditorFormProps) {
   const t = useTranslations("articlesPage");
   const styles = articlesEditorFormStyles();
+  const authors = useResources("content", "article-author", {
+    isActive: true,
+    limit: 100,
+  });
   const slugTouched = useRef(Boolean(defaultValues?.slug));
 
   const schema = useMemo(
@@ -62,6 +67,7 @@ export function ArticlesEditorForm({
     resolver: zodResolver(schema),
     defaultValues: {
       title: defaultValues?.title ?? "",
+      authorId: defaultValues?.authorId ?? "",
       authorName: defaultValues?.authorName ?? "",
       categoryId: defaultValues?.categoryId ?? "",
       slug: defaultValues?.slug ?? "",
@@ -122,24 +128,38 @@ export function ArticlesEditorForm({
           />
 
           <Controller
-            name="authorName"
+            name="authorId"
             control={form.control}
             render={({ field, fieldState }) => (
-              <TextField
-                name={field.name}
-                value={field.value}
-                isDisabled={busy}
-                isInvalid={fieldState.invalid}
-                className={styles.field()}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-              >
-                <Label className={styles.label()}>{t("author")}</Label>
-                <Input className={styles.input()} />
+              <div className={styles.field()}>
+                <Label className={styles.label()} htmlFor="article-author">
+                  {t("author")}
+                </Label>
+                <FormSelect
+                  id="article-author"
+                  aria-label={t("author")}
+                  disabled={busy || authors.isPending}
+                  value={field.value}
+                  onChange={(id) => {
+                    field.onChange(id);
+                    const author = authors.data?.items.find(
+                      (item) => item.id === id,
+                    );
+                    form.setValue("authorName", String(author?.name ?? ""));
+                  }}
+                  className={styles.input()}
+                >
+                  <FormOption value="">انتخاب نویسنده</FormOption>
+                  {authors.data?.items.map((item) => (
+                    <FormOption key={item.id} value={item.id} entity={item}>
+                      {String(item.name)}
+                    </FormOption>
+                  ))}
+                </FormSelect>
                 {fieldState.error?.message ? (
-                  <FieldError>{fieldState.error.message}</FieldError>
+                  <p className={styles.error()}>{fieldState.error.message}</p>
                 ) : null}
-              </TextField>
+              </div>
             )}
           />
 

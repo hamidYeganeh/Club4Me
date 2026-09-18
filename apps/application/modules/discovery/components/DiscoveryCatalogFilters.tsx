@@ -5,8 +5,10 @@ import {
   type PublicCatalogParams,
 } from "@api/discovery";
 import { DiscoveryFilterSheet } from "./DiscoveryFilterSheet";
-import { useArticleCategories } from "@api";
+import { Counter } from "@/components/counter";
+
 import { Button } from "@heroui/react";
+import { Icon, iconNames, type IconName } from "@theme/icon";
 
 export function DiscoveryCatalogFilters({
   kind,
@@ -60,7 +62,12 @@ function Fields({
     { limit: 100 },
     kind !== "article",
   );
-  const categories = useArticleCategories(kind === "article");
+  const categories = usePublicCatalogResource(
+    "content",
+    "article-category",
+    { limit: 100 },
+    kind === "article",
+  );
   const field =
     "mt-2 min-h-12 w-full rounded-2xl border border-border bg-surface-secondary px-4 text-foreground";
   return (
@@ -95,6 +102,10 @@ function Fields({
             <FormOption value="">همه موضوع‌ها</FormOption>
             {categories.data?.items.map((category) => (
               <FormOption key={category.id} value={category.id}>
+                {category.icon &&
+                iconNames.includes(category.icon as IconName) ? (
+                  <Icon name={category.icon as IconName} size={18} />
+                ) : null}{" "}
                 {category.name}
               </FormOption>
             ))}
@@ -138,9 +149,9 @@ function Fields({
         <>
           <label className="block text-sm">
             حداکثر شهریه (ریال)
-            <input
-              type="number"
-              min="0"
+            <Counter
+              money
+              min={0}
               className={field}
               value={value.maxPrice ?? ""}
               onChange={(e) =>

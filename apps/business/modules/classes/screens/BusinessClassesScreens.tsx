@@ -21,9 +21,7 @@ import {
   useCreateBusinessClass,
   useCreateBusinessCalendarFeed,
   useRevokeBusinessCalendarFeed,
-  useEnrollStudentInBusinessClass,
   useRecordBusinessClassAttendance,
-  usePreviewBusinessClassSessionChange,
   useRegenerateBusinessClassSessions,
   useGenerateBusinessClassCheckIn,
   useTransferBusinessClassEnrollment,
@@ -56,6 +54,7 @@ import {
   ListPagePanel,
 } from "@/components/data-table";
 import { PanelNumberField } from "@/components/form/PanelNumberField";
+import { PanelPriceField } from "@/components/form/PanelPriceField";
 import QRCode from "qrcode";
 
 const input = "w-full min-w-0";
@@ -859,7 +858,7 @@ function ClassForm({
             </FormSelect>
           </Field>
           <Field label="مبلغ (ریال)">
-            <PanelNumberField
+            <PanelPriceField
               name="price"
               minValue={0}
               defaultValue={initial?.price ?? 0}
@@ -897,18 +896,16 @@ function ClassForm({
             />
           </Field>
           <Field label="شروع ثبت‌نام">
-            <HeroInput
-              variant="secondary"
-              type="datetime-local"
+            <IranDateInput
+              withTime
               name="registrationStartAt"
               defaultValue={toLocalInput(initial?.registrationStartAt)}
               className={input}
             />
           </Field>
           <Field label="پایان ثبت‌نام">
-            <HeroInput
-              variant="secondary"
-              type="datetime-local"
+            <IranDateInput
+              withTime
               name="registrationEndAt"
               defaultValue={toLocalInput(initial?.registrationEndAt)}
               className={input}
@@ -1086,22 +1083,13 @@ export function BusinessClassDetailScreen({
   const classes = useBusinessClasses(clubId);
   const coaches = useClubCoachProfiles(clubId);
   const branches = useClubBranches(clubId);
-  const enroll = useEnrollStudentInBusinessClass(clubId, classId);
   const updateEnrollment = useUpdateBusinessClassEnrollment(clubId, classId);
   const transfer = useTransferBusinessClassEnrollment(clubId, classId);
   const updateSession = useUpdateBusinessClassSession(clubId, classId);
-  const previewSession = usePreviewBusinessClassSessionChange(clubId, classId);
   const regenerate = useRegenerateBusinessClassSessions(clubId, classId);
   const calendarFeed = useCreateBusinessCalendarFeed(clubId);
   const revokeCalendarFeed = useRevokeBusinessCalendarFeed(clubId);
-  const [showEnroll, setShowEnroll] = useState(false);
   const [chosenSession, setChosenSession] = useState("");
-  const [showReschedule, setShowReschedule] = useState(false);
-  const [sessionChange, setSessionChange] = useState({
-    startsAt: "",
-    endsAt: "",
-    scope: "single" as "single" | "future",
-  });
   const sessionId =
     chosenSession ||
     sessions.data?.items.find((session) => session.status === "scheduled")
@@ -1154,28 +1142,6 @@ export function BusinessClassDetailScreen({
     enrollments.data?.items.filter((value) =>
       ["active", "completed"].includes(value.status),
     ) ?? [];
-  const addStudent = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    try {
-      await enroll.mutateAsync({
-        studentId: String(data.get("studentId")),
-        status: String(data.get("status")) as "active" | "waitlisted",
-        agreedPrice: Number(data.get("agreedPrice")),
-        paymentStatus: String(data.get("paymentStatus")) as
-          "pending" | "paid" | "partial" | "waived",
-        totalSessions: data.get("totalSessions")
-          ? Number(data.get("totalSessions"))
-          : null,
-      });
-      form.reset();
-      setShowEnroll(false);
-      toast.success("شاگرد به کلاس اضافه شد");
-    } catch {
-      toast.danger("افزودن شاگرد انجام نشد؛ ممکن است ظرفیت کلاس پر باشد");
-    }
-  };
   const mark = (
     studentId: string,
     status: "present" | "absent" | "excused",
@@ -1205,12 +1171,10 @@ export function BusinessClassDetailScreen({
               ویرایش کلاس
             </Link>
           </Button>
-          <Button
-            variant="primary"
-            onPress={() => setShowEnroll((value) => !value)}
-          >
-            <Icon name="plus" />
-            افزودن شاگرد
+          <Button variant="primary">
+            <Link href={`/clubs/${clubId}/classes/${classId}/enroll`}>
+              افزودن شاگرد
+            </Link>
           </Button>
           <Button
             variant="secondary"
@@ -1299,98 +1263,6 @@ export function BusinessClassDetailScreen({
           </p>
         </Card>
       ) : null}
-      {showEnroll && (
-        <Card className="app-card mt-4 p-5 shadow-none active:scale-100">
-          <form
-            onSubmit={addStudent}
-            className="grid gap-4 md:grid-cols-2 lg:grid-cols-5"
-          >
-            <Field label="شاگرد">
-              <FormSelect
-                aria-label="studentId"
-                required
-                name="studentId"
-                className={input}
-              >
-                <FormOption value="">انتخاب شاگرد</FormOption>
-                {students.data?.items
-                  .filter(
-                    (student) =>
-                      student.status === "active" &&
-                      !enrollments.data?.items.some(
-                        (record) =>
-                          record.studentId === student.id &&
-                          ["active", "waitlisted"].includes(record.status),
-                      ),
-                  )
-                  .map((student) => (
-                    <FormOption
-                      entity={student}
-                      key={student.id}
-                      value={student.id}
-                    >
-                      {student.firstName} {student.lastName}
-                    </FormOption>
-                  ))}
-              </FormSelect>
-            </Field>
-            <Field label="وضعیت">
-              <FormSelect
-                aria-label="وضعیت کلاس"
-                name="status"
-                className={input}
-              >
-                <FormOption value="active">ثبت‌نام فعال</FormOption>
-                <FormOption value="waitlisted">لیست انتظار</FormOption>
-              </FormSelect>
-            </Field>
-            <Field label="مبلغ توافقی">
-              <PanelNumberField
-                name="agreedPrice"
-                minValue={0}
-                defaultValue={item.data.price}
-                isRequired
-                aria-label="مبلغ توافقی"
-              />
-            </Field>
-            <Field label="وضعیت پرداخت">
-              <FormSelect
-                aria-label="paymentStatus"
-                name="paymentStatus"
-                className={input}
-              >
-                <FormOption value="pending">پرداخت‌نشده</FormOption>
-                <FormOption value="paid">پرداخت‌شده</FormOption>
-                <FormOption value="waived">رایگان</FormOption>
-              </FormSelect>
-            </Field>
-            <Field label="تعداد جلسات">
-              <PanelNumberField
-                name="totalSessions"
-                minValue={1}
-                defaultValue={item.data.packageSessionCount ?? undefined}
-                aria-label="تعداد جلسات"
-              />
-            </Field>
-            <div className="flex gap-2 lg:col-span-5">
-              <Button
-                type="submit"
-                variant="primary"
-                isPending={enroll.isPending}
-              >
-                ثبت عضویت
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onPress={() => setShowEnroll(false)}
-              >
-                انصراف
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
       <section className="mt-4 grid gap-4 xl:grid-cols-[1.1fr_1fr]">
         <Card className="app-card shadow-none active:scale-100 p-5">
           <div className="flex items-center justify-between">
@@ -1589,31 +1461,12 @@ export function BusinessClassDetailScreen({
               >
                 <Icon name="qr-code" /> کد ورود ۱۵ دقیقه‌ای
               </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onPress={() => {
-                  const selected = sessions.data?.items.find(
-                    (session) => session.id === sessionId,
-                  );
-                  if (!selected) return;
-                  const localValue = (value: string) => {
-                    const date = new Date(value);
-                    const offset = date.getTimezoneOffset() * 60_000;
-                    return new Date(date.getTime() - offset)
-                      .toISOString()
-                      .slice(0, 16);
-                  };
-                  setSessionChange({
-                    startsAt: localValue(selected.startsAt),
-                    endsAt: localValue(selected.endsAt),
-                    scope: "single",
-                  });
-                  previewSession.reset();
-                  setShowReschedule((value) => !value);
-                }}
-              >
-                جابه‌جایی زمان
+              <Button size="sm" variant="secondary">
+                <Link
+                  href={`/clubs/${clubId}/classes/${classId}/sessions/${sessionId}/reschedule`}
+                >
+                  جابه‌جایی زمان
+                </Link>
               </Button>
               <Button
                 size="sm"
@@ -1641,109 +1494,6 @@ export function BusinessClassDetailScreen({
               </Button>
             </div>
           )}
-          {showReschedule && sessionId ? (
-            <Card className="mt-3 rounded-2xl p-4 shadow-none">
-              <form
-                className="grid gap-3 sm:grid-cols-2"
-                onSubmit={async (event) => {
-                  event.preventDefault();
-                  const payload = {
-                    startsAt: new Date(sessionChange.startsAt).toISOString(),
-                    endsAt: new Date(sessionChange.endsAt).toISOString(),
-                    scope: sessionChange.scope,
-                  };
-                  try {
-                    const result = await previewSession.mutateAsync({
-                      sessionId,
-                      payload,
-                    });
-                    if (result.conflicts.length) return;
-                    await updateSession.mutateAsync({ sessionId, payload });
-                    toast.success(
-                      `${result.affectedCount.toLocaleString("fa-IR")} جلسه جابه‌جا شد`,
-                    );
-                    setShowReschedule(false);
-                  } catch {
-                    toast.danger("جابه‌جایی جلسه انجام نشد");
-                  }
-                }}
-              >
-                <Field label="شروع جدید">
-                  <HeroInput
-                    variant="secondary"
-                    className={input}
-                    type="datetime-local"
-                    required
-                    value={sessionChange.startsAt}
-                    onChange={(event) =>
-                      setSessionChange((value) => ({
-                        ...value,
-                        startsAt: event.target.value,
-                      }))
-                    }
-                  />
-                </Field>
-                <Field label="پایان جدید">
-                  <HeroInput
-                    variant="secondary"
-                    className={input}
-                    type="datetime-local"
-                    required
-                    value={sessionChange.endsAt}
-                    onChange={(event) =>
-                      setSessionChange((value) => ({
-                        ...value,
-                        endsAt: event.target.value,
-                      }))
-                    }
-                  />
-                </Field>
-                <Field label="دامنه تغییر">
-                  <FormSelect
-                    aria-label="انتخاب گزینه"
-                    className={input}
-                    value={sessionChange.scope}
-                    onChange={(event) =>
-                      setSessionChange((value) => ({
-                        ...value,
-                        scope: event as "single" | "future",
-                      }))
-                    }
-                  >
-                    <FormOption value="single">فقط همین جلسه</FormOption>
-                    <FormOption value="future">
-                      این جلسه و همه جلسات بعدی
-                    </FormOption>
-                  </FormSelect>
-                </Field>
-                <div className="flex items-end gap-2">
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    isPending={
-                      previewSession.isPending || updateSession.isPending
-                    }
-                  >
-                    بررسی و ثبت
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onPress={() => setShowReschedule(false)}
-                  >
-                    انصراف
-                  </Button>
-                </div>
-              </form>
-              {previewSession.data?.conflicts.length ? (
-                <div className="mt-3 rounded-xl bg-danger/10 p-3 text-sm text-danger">
-                  این زمان با{" "}
-                  {previewSession.data.conflicts.length.toLocaleString("fa-IR")}{" "}
-                  برنامه دیگر تداخل دارد و ثبت نشد.
-                </div>
-              ) : null}
-            </Card>
-          ) : null}
           {credential ? (
             <CheckInCredentialCard credential={credential} />
           ) : null}

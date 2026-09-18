@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -21,6 +22,26 @@ import { ReviewClubDto } from "./dto/review-club.dto";
 import { VerifyClubDto } from "./dto/verify-club.dto";
 import { ClubsService } from "./clubs.service";
 import { z } from "zod";
+
+class AdminCreateClubDto {
+  static schema = z
+    .object({
+      ownerId: z.string().regex(/^[a-f\d]{24}$/i),
+      name: z.string().trim().min(2).max(120),
+      shortDescription: z.string().trim().max(300).optional(),
+      description: z.string().trim().max(5000).optional(),
+    })
+    .strict();
+  ownerId: string;
+  name: string;
+  shortDescription?: string;
+  description?: string;
+}
+
+class LinkBranchDto {
+  static schema = z.object({ targetClubId: z.string().regex(/^[a-f\d]{24}$/i) }).strict();
+  targetClubId: string;
+}
 
 class UpdateSupplyQualityDto {
   static schema = z
@@ -57,6 +78,24 @@ export class ClubsController {
   @HttpCode(HttpStatus.CREATED)
   create(@CurrentUser() user: AuthTokenPayload, @Body() body: CreateClubDto) {
     return this.service.create(user.sub, body);
+  }
+
+  @Post(":clubId/branch-links")
+  linkBranch(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Body() body: LinkBranchDto,
+  ) {
+    return this.service.linkBranches(user.sub, clubId, body.targetClubId);
+  }
+
+  @Delete(":clubId/branch-links/:targetClubId")
+  unlinkBranch(
+    @CurrentUser() user: AuthTokenPayload,
+    @Param("clubId") clubId: string,
+    @Param("targetClubId") targetClubId: string,
+  ) {
+    return this.service.unlinkBranch(user.sub, clubId, targetClubId);
   }
 
   @Get(":clubId")
@@ -101,6 +140,18 @@ export class AdminClubsController {
   @Get()
   list() {
     return this.service.listForAdmin();
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  createClub(@Body() body: AdminCreateClubDto) {
+    const { ownerId, ...input } = body;
+    return this.service.createForAdmin(ownerId, input as CreateClubDto);
+  }
+
+  @Patch(":clubId")
+  updateClub(@Param("clubId") clubId: string, @Body() body: UpdateClubDto) {
+    return this.service.updateForAdmin(clubId, body);
   }
 
   @Get("quality/queue") qualityQueue() {

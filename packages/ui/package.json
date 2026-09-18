@@ -16,6 +16,8 @@
     "./use-fallback-image-src": "./src/use-fallback-image-src.ts",
     "./uploader": "./src/uploader/index.ts",
     "./availability-scheduler": "./src/availability-scheduler/index.tsx",
+    "./rial-toman": "./src/rial-toman.ts",
+    "./price-number-field": "./src/price-number-field.tsx",
     "./*": "./src/*.tsx"
   },
   "scripts": {
@@ -45,6 +47,7 @@
     "lucide-react": "^0.544.0",
     "motion": "^13.2.0",
     "react": "19.2.8",
+    "react-aria-components": "^1.21.0",
     "react-dom": "19.2.8",
     "react-dropzone": "^14.3.8",
     "tailwind-merge": "^3.6.0",

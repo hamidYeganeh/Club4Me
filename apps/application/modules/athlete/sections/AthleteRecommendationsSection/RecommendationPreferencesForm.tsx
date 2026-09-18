@@ -103,6 +103,7 @@ export function RecommendationPreferencesForm({
           سقف قیمت کل کلاس · ریال
           <Counter
             aria-label="سقف قیمت کل کلاس به ریال"
+            money
             min={0}
             max={1e12}
             step={100000}

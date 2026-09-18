@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { Button, Card, Typography } from "@heroui/react";
 import { Icon } from "@repo/theme/icon";
 
@@ -9,6 +10,8 @@ import type { ClubCardProps } from "./club-card.types";
 
 const MAX_RATING = 5;
 const MAX_VISIBLE_SPORTS = 2;
+const OVERLAY_MAX_VISIBLE_SPORTS = 3;
+const OVERLAY_BLUR_LAYERS = [2, 4, 8, 16] as const;
 
 function displayRating(rating: number) {
   return Number.isInteger(rating) ? String(rating) : rating.toFixed(1);
@@ -33,6 +36,7 @@ export function ClubCard({
   shareAriaLabel = "Share club",
   className,
 }: ClubCardProps) {
+  const isOverlay = variant === "overlay";
   const styles = clubCardStyles({ variant });
   const { src: resolvedImageUrl, onError: onImageError } =
     useFallbackImageSrc(imageUrl);
@@ -43,7 +47,8 @@ export function ClubCard({
   const visibleSports = sports.filter(
     ({ label, icon }) => label.trim() && icon,
   );
-  const shownSports = visibleSports.slice(0, MAX_VISIBLE_SPORTS);
+  const maxSports = isOverlay ? OVERLAY_MAX_VISIBLE_SPORTS : MAX_VISIBLE_SPORTS;
+  const shownSports = visibleSports.slice(0, maxSports);
   const hiddenSportsCount = Math.max(
     0,
     visibleSports.length - shownSports.length,
@@ -60,7 +65,26 @@ export function ClubCard({
         decoding="async"
         onError={onImageError}
       />
-      <div aria-hidden className={styles.shade()} />
+
+      {isOverlay ? (
+        <div aria-hidden className={styles.shadeEdge()}>
+          <div className={styles.shadeGradient()} />
+          {OVERLAY_BLUR_LAYERS.map((blur, index) => (
+            <div
+              key={blur}
+              className={styles.shadeBlur()}
+              style={
+                {
+                  "--blur": `${blur}px`,
+                  "--reach": `${100 - index * 20}%`,
+                } as CSSProperties
+              }
+            />
+          ))}
+        </div>
+      ) : (
+        <div aria-hidden className={styles.shade()} />
+      )}
 
       {href ? (
         <a href={href} aria-label={title} className={styles.link()} />
@@ -68,7 +92,21 @@ export function ClubCard({
 
       <div className={styles.content()}>
         <div className={styles.top()}>
-          {safeRating != null ? (
+          {isOverlay ? (
+            hasPrice ? (
+              <div className={styles.priceBadge()}>
+                {pricePrefix ? (
+                  <span className={styles.priceBadgeSuffix()}>{pricePrefix}</span>
+                ) : null}
+                <span className={styles.priceBadgeAmount()}>{price}</span>
+                {priceSuffix ? (
+                  <span className={styles.priceBadgeSuffix()}>{priceSuffix}</span>
+                ) : null}
+              </div>
+            ) : (
+              <span />
+            )
+          ) : safeRating != null ? (
             <div
               className={styles.rating()}
               aria-label={`${displayRating(safeRating)} out of ${MAX_RATING}${
@@ -94,7 +132,7 @@ export function ClubCard({
           )}
 
           <div className={styles.actions()}>
-            {onSharePress ? (
+            {!isOverlay && onSharePress ? (
               <Button
                 isIconOnly
                 size="sm"
@@ -124,7 +162,44 @@ export function ClubCard({
         <div className={styles.body()}>
           <div className={styles.bottom()}>
             <div className={styles.identity()}>
-              <Card.Title className={styles.title()}>{title}</Card.Title>
+              {isOverlay ? (
+                <div className={styles.titleRow()}>
+                  <Card.Title className={styles.title()}>{title}</Card.Title>
+                  {safeRating != null ? (
+                    <div
+                      className={styles.titleRating()}
+                      aria-label={`${displayRating(safeRating)} out of ${MAX_RATING}${
+                        reviewsCount != null
+                          ? `, ${reviewsCount} reviews`
+                          : ""
+                      }`}
+                    >
+                      <Icon
+                        name="star-full"
+                        size={15}
+                        className={styles.ratingIcon()}
+                      />
+                      <Typography
+                        type="body-sm"
+                        className={styles.ratingText()}
+                      >
+                        {displayRating(safeRating)}
+                      </Typography>
+                      {reviewsCount != null ? (
+                        <Typography
+                          type="body-sm"
+                          className={styles.reviews()}
+                        >
+                          ({reviewsCount})
+                        </Typography>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <Card.Title className={styles.title()}>{title}</Card.Title>
+              )}
+
               {location ? (
                 <div className={styles.details()}>
                   <Icon
@@ -137,6 +212,7 @@ export function ClubCard({
                   </Typography>
                 </div>
               ) : null}
+
               {shownSports.length > 0 ? (
                 <div
                   className={styles.sports()}
@@ -166,7 +242,7 @@ export function ClubCard({
               ) : null}
             </div>
 
-            {hasPrice ? (
+            {!isOverlay && hasPrice ? (
               <div className={styles.priceBlock()}>
                 {pricePrefix ? (
                   <div className={styles.pricePrefix()}>{pricePrefix}</div>

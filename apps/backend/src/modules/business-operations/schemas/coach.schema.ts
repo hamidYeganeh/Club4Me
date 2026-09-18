@@ -12,6 +12,17 @@ export class ClubCoachProfile {
   @Prop({ required: true, trim: true, maxlength: 20 }) phone: string;
   @Prop({ type: [String], default: [] }) specialties: string[];
   @Prop({ trim: true, maxlength: 120, default: "" }) employmentType: string;
+  @Prop({ type: Number, min: 0, max: 100, default: null }) commissionPercent:
+    number | null;
+  @Prop({
+    type: [{ weekday: Number, startTime: String, endTime: String }],
+    default: [],
+  })
+  weeklyAvailability: Array<{
+    weekday: number;
+    startTime: string;
+    endTime: string;
+  }>;
   @Prop({ type: String, enum: ["active", "inactive"], default: "active" })
   status: "active" | "inactive";
   @Prop({ trim: true, maxlength: 500, default: "" }) notes: string;

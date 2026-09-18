@@ -646,12 +646,37 @@ export class BusinessOperationsService {
       ),
     };
   }
+  private async assertClubSport(
+    ownerId: string,
+    clubId: string,
+    sportName: string,
+  ) {
+    const club = await this.clubs.findForOwner(
+      ownerId,
+      clubId,
+      "students.write",
+    );
+    const sportIds = club.sportIds.map((id) => new Types.ObjectId(id));
+    const sport = await this.students.db.collection("sports").findOne({
+      _id: { $in: sportIds },
+      name: sportName,
+      isActive: { $ne: false },
+    });
+    if (!sport)
+      throw new AppError(
+        400,
+        "INVALID_CLUB_SPORT",
+        "Sport must belong to this club",
+      );
+  }
+
   async createStudent(
     ownerId: string,
     clubId: string,
     input: CreateStudentDto,
   ) {
     const id = await this.club(ownerId, clubId, "students.write");
+    await this.assertClubSport(ownerId, clubId, input.sport);
     const duplicate = await this.students.exists({
       clubId: id,
       phone: input.phone,
@@ -681,6 +706,8 @@ export class BusinessOperationsService {
     input: UpdateStudentDto,
   ) {
     const id = await this.club(ownerId, clubId, "students.write");
+    if (input.sport !== undefined)
+      await this.assertClubSport(ownerId, clubId, input.sport);
     const userId = input.phone
       ? await this.linkedUserId(input.phone, "athlete")
       : undefined;
@@ -738,6 +765,11 @@ export class BusinessOperationsService {
         "COACH_PHONE_EXISTS",
         "A coach with this phone already exists",
       );
+    this.assertCoachTerms(
+      input.employmentType,
+      input.commissionPercent,
+      input.weeklyAvailability,
+    );
     const userId = await this.linkedUserId(input.phone, "coach");
     return coachDto(
       await this.coaches.create({
@@ -758,6 +790,18 @@ export class BusinessOperationsService {
     const userId = input.phone
       ? await this.linkedUserId(input.phone, "coach")
       : undefined;
+    const current = await this.coaches.findOne({
+      _id: oid(itemId),
+      clubId: id,
+    });
+    if (!current) throw notFound("COACH_NOT_FOUND");
+    this.assertCoachTerms(
+      input.employmentType ?? current.employmentType,
+      input.commissionPercent !== undefined
+        ? input.commissionPercent
+        : current.commissionPercent,
+      input.weeklyAvailability ?? current.weeklyAvailability,
+    );
     const item = await this.coaches.findOneAndUpdate(
       { _id: oid(itemId), clubId: id },
       {
@@ -773,6 +817,42 @@ export class BusinessOperationsService {
     );
     if (!item) throw notFound("COACH_NOT_FOUND");
     return coachDto(item);
+  }
+
+  private assertCoachTerms(
+    employmentType: string,
+    commissionPercent: number | null,
+    weeklyAvailability: Array<{
+      weekday: number;
+      startTime: string;
+      endTime: string;
+    }>,
+  ) {
+    if (
+      ["COMMISSION", "درصدی"].includes(employmentType) &&
+      (commissionPercent === null ||
+        commissionPercent <= 0 ||
+        commissionPercent > 100)
+    )
+      throw new AppError(
+        400,
+        "COMMISSION_REQUIRED",
+        "Commission percentage is required",
+      );
+    if (
+      ["PART_TIME", "پاره‌وقت"].includes(employmentType) &&
+      !weeklyAvailability.length
+    )
+      throw new AppError(
+        400,
+        "AVAILABILITY_REQUIRED",
+        "Part-time availability is required",
+      );
+    if (
+      new Set(weeklyAvailability.map((slot) => slot.weekday)).size !==
+      weeklyAvailability.length
+    )
+      throw new AppError(400, "DUPLICATE_WEEKDAY", "Duplicate weekday");
   }
 
   private async linkedUserId(phone: string, role: "athlete" | "coach") {
@@ -891,6 +971,7 @@ export class BusinessOperationsService {
 
   async summary(ownerId: string, clubId: string) {
     const id = await this.club(ownerId, clubId, "reports.read");
+    const selectedClub = await this.clubs.findById(clubId);
     const now = new Date();
     const sixMonthsAgo = new Date(
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1),
@@ -908,7 +989,13 @@ export class BusinessOperationsService {
       this.students.countDocuments({ clubId: id, status: "active" }),
       this.coaches.countDocuments({ clubId: id, status: "active" }),
       this.classes.countDocuments({ clubId: id, status: "active" }),
-      this.branches.countDocuments({ clubId: id, status: "active" }),
+      selectedClub.branchGroupId
+        ? this.students.db.collection("clubs").countDocuments({
+            ownerId: oid(ownerId),
+            branchGroupId: oid(selectedClub.branchGroupId),
+            _id: { $ne: id },
+          })
+        : Promise.resolve(0),
       this.payments
         .find({
           clubId: id,
@@ -1096,6 +1183,8 @@ function coachDto(item: ClubCoachProfileDocument) {
     userId: item.userId ? String(item.userId) : null,
     specialties: item.specialties,
     employmentType: item.employmentType,
+    commissionPercent: item.commissionPercent ?? null,
+    weeklyAvailability: item.weeklyAvailability ?? [],
     status: item.status,
     notes: item.notes,
   };

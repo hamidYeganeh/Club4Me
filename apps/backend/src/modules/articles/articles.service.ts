@@ -1,4 +1,6 @@
 import { Injectable } from "@nestjs/common";
+import { InjectConnection } from "@nestjs/mongoose";
+import { Connection, Types } from "mongoose";
 
 import { AppError } from "../../common/errors/app.exception";
 import type { UserRole } from "../../lib/roles";
@@ -15,6 +17,7 @@ export class ArticlesService {
   constructor(
     private readonly articlesRepository: ArticlesRepository,
     private readonly categoriesRepository: ArticleCategoriesRepository,
+    @InjectConnection() private readonly connection: Connection,
   ) {}
 
   async listArticles(
@@ -52,7 +55,11 @@ export class ArticlesService {
     assertAdmin(actorRoles);
 
     const categoryName = await this.requireCategoryName(input.categoryId);
-    return this.articlesRepository.create(input, categoryName);
+    const authorName = await this.requireAuthorName(input.authorId);
+    return this.articlesRepository.create(
+      { ...input, authorName },
+      categoryName,
+    );
   }
 
   async updateArticle(
@@ -69,7 +76,14 @@ export class ArticlesService {
 
     const categoryId = input.categoryId ?? existing.categoryId;
     const categoryName = await this.requireCategoryName(categoryId);
-    return this.articlesRepository.update(id, input, categoryName);
+    const authorName = input.authorId
+      ? await this.requireAuthorName(input.authorId)
+      : undefined;
+    return this.articlesRepository.update(
+      id,
+      { ...input, ...(authorName ? { authorName } : {}) },
+      categoryName,
+    );
   }
 
   async deleteArticle(
@@ -94,6 +108,17 @@ export class ArticlesService {
   ): Promise<PublicArticleCategory> {
     assertAdmin(actorRoles);
     return this.categoriesRepository.create(input);
+  }
+
+  private async requireAuthorName(authorId: string): Promise<string> {
+    if (!Types.ObjectId.isValid(authorId))
+      throw new AppError(404, "AUTHOR_NOT_FOUND", "Author not found");
+    const author = await this.connection
+      .collection("article_authors")
+      .findOne({ _id: new Types.ObjectId(authorId), isActive: { $ne: false } });
+    if (!author || typeof author.name !== "string")
+      throw new AppError(404, "AUTHOR_NOT_FOUND", "Author not found");
+    return author.name;
   }
 
   private async requireCategoryName(categoryId: string): Promise<string> {

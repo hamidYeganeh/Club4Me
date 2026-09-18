@@ -5,7 +5,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getHttpClient, http } from "../../http/client";
 
 type EntityBase = {
-  user?: {id: string; firstName?: string; lastName?: string; avatarUrl?: string} | null;
+  user?: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    avatarUrl?: string;
+  } | null;
   id: string;
   clubId: string;
   createdAt: string;
@@ -27,6 +32,12 @@ export type ClubCoachProfile = EntityBase & {
   phone: string;
   specialties: string[];
   employmentType: string;
+  commissionPercent: number | null;
+  weeklyAvailability: Array<{
+    weekday: number;
+    startTime: string;
+    endTime: string;
+  }>;
   status: "active" | "inactive";
   notes: string;
 };
@@ -95,7 +106,13 @@ export type BusinessDashboardSummary = {
 };
 
 export type CreateStudentPayload = Omit<ClubStudent, keyof EntityBase>;
-export type CreateCoachPayload = Omit<ClubCoachProfile, keyof EntityBase>;
+export type CreateCoachPayload = Omit<
+  ClubCoachProfile,
+  keyof EntityBase | "commissionPercent" | "weeklyAvailability"
+> & {
+  commissionPercent?: number | null;
+  weeklyAvailability?: ClubCoachProfile["weeklyAvailability"];
+};
 export type CreatePaymentPayload = Omit<
   ClubManualPayment,
   | keyof EntityBase

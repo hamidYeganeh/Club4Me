@@ -48,6 +48,7 @@ export function ArticlesEditScreen({ articleId }: ArticlesEditScreenProps) {
       await updateArticle.mutateAsync({
         id: articleId,
         title: values.title,
+        authorId: values.authorId,
         authorName: values.authorName,
         categoryId: values.categoryId,
         slug: values.slug || undefined,
@@ -128,6 +129,7 @@ export function ArticlesEditScreen({ articleId }: ArticlesEditScreenProps) {
         mode="edit"
         defaultValues={{
           title: article.data.title,
+          authorId: article.data.authorId ?? "",
           authorName: article.data.authorName,
           categoryId: article.data.categoryId,
           slug: article.data.slug,

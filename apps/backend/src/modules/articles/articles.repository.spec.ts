@@ -29,6 +29,7 @@ describe("article draft persistence", () => {
     const input = {
       title: "پیش‌نویس",
       slug: "draft-regression",
+      authorId: String(new mongoose.Types.ObjectId()),
       authorName: "نویسنده",
       categoryId: String(new mongoose.Types.ObjectId()),
     };

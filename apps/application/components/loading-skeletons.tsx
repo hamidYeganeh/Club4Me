@@ -298,17 +298,17 @@ export function FormPageSkeleton({ fields = 5 }: { fields?: number }) {
 export function AuthScreenSkeleton() {
   return (
     <main
-      className="flex min-h-dvh flex-col bg-background px-5 pb-8 pt-[calc(2rem+var(--app-safe-top))]"
+      className="relative isolate flex min-h-dvh flex-col overflow-hidden bg-surface-secondary"
       {...loadingProps}
     >
-      <Skeleton className="size-11 rounded-full" />
-      <div className="mx-auto mt-7 w-full max-w-md space-y-6">
-        <Skeleton className="mx-auto aspect-[16/9] w-full rounded-[2rem]" />
-        <div className="space-y-3 text-center">
-          <Skeleton className="mx-auto h-7 w-48 rounded-xl" />
-          <Skeleton className="mx-auto h-4 w-64 max-w-full rounded-lg" />
-        </div>
-        <div className="space-y-4">
+      <Skeleton className="absolute inset-0 rounded-none opacity-40" />
+      <div className="relative z-10 flex min-h-dvh flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[calc(1rem+var(--app-safe-top))]">
+        <Skeleton className="size-11 rounded-full" />
+        <div className="mt-auto w-full space-y-4 rounded-[2rem] bg-surface p-5">
+          <div className="space-y-3">
+            <Skeleton className="h-7 w-48 rounded-xl" />
+            <Skeleton className="h-4 w-64 max-w-full rounded-lg" />
+          </div>
           <Skeleton className="h-13 w-full rounded-2xl" />
           <Skeleton className="h-13 w-full rounded-2xl" />
           <Skeleton className="h-13 w-full rounded-2xl" />

@@ -3,6 +3,7 @@
 import { createPortalAuth } from "../portal/create-portal-auth";
 
 export * from "./admin-clubs";
+export * from "./admin-crm";
 export * from "./admin-coaches";
 export * from "./admin-classes";
 export * from "./admin-users";

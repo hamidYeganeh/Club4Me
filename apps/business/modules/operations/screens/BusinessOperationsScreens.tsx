@@ -1,11 +1,10 @@
 "use client";
 
-import { CatalogMultiSelect } from "@repo/ui/catalog-multi-select";
-import { usePublicCatalogResource } from "@api";
 import { PanelSectionSwitcher } from "@repo/ui/panel-section-switcher";
 import { FormSelect, FormOption } from "@repo/ui/form-select";
-import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
+import { Input as HeroInput } from "@heroui/react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useSelectedClub, SelectedClubScope } from "@/lib/use-selected-club";
 import { StudentAccounts } from "@/components/student-accounts";
 import { IranDateInput } from "@repo/ui/iran-date-input";
@@ -13,21 +12,15 @@ import { tehranLocalValue } from "@repo/ui/iran-date";
 
 import {
   useClubAttendance,
-  useClubBranches,
   useClubCoachProfiles,
   useClubPayments,
   useClubStudents,
-  useCreateClubBranch,
-  useCreateClubCoach,
-  useCreateClubPayment,
-  useCreateClubStudent,
-  useUpdateClubBranch,
   useUpdateClubCoach,
   useUpdateClubStudent,
   useUpsertClubAttendance,
   type BusinessClub,
+  useUnlinkBusinessBranch,
   type ClubAttendanceRecord,
-  type ClubBranch,
   type ClubCoachProfile,
   type ClubManualPayment,
   type ClubStudent,
@@ -37,7 +30,6 @@ import {
   useCancelPayout,
   usePayoutBalance,
   usePayouts,
-  useRequestPayout,
 } from "@api";
 import {
   createListColumnHelper,
@@ -47,20 +39,9 @@ import {
 import { Button, Card, Chip, toast } from "@heroui/react";
 import { Icon } from "@theme/icon";
 import { EntityDetailsModal } from "@ui/entity-details-modal";
-import {
-  FormEvent,
-  ReactNode,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
-import { PanelNumberField } from "@/components/form/PanelNumberField";
+import { ReactNode, useCallback, useContext, useMemo, useState } from "react";
 
 const inputClass = "w-full min-w-0";
-const textareaClass = `${inputClass} h-24 py-3`;
-const iranPhonePattern = "(?:\\+98|0)?9\\d{9}";
-const ibanPattern = "IR\\d{24}";
 const today = () => tehranLocalValue(new Date().toISOString()).slice(0, 10);
 const formatDate = (value: string | null) =>
   value
@@ -183,7 +164,6 @@ type AttendanceTableRow = ClubStudent & {
   attendance?: ClubAttendanceRecord;
 };
 const attendanceColumnHelper = createListColumnHelper<AttendanceTableRow>();
-const branchColumnHelper = createListColumnHelper<ClubBranch>();
 
 const paymentTypeLabels = {
   tuition: "شهریه",
@@ -201,9 +181,7 @@ export function StudentsScreen() {
   const { clubs, clubId, setClubId } = useSelectedClub();
   const params = useSearchParams();
   const students = useClubStudents(clubId);
-  const create = useCreateClubStudent(clubId);
   const update = useUpdateClubStudent(clubId);
-  const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<ClubStudent | null>(null);
   const [draftFilters, setDraftFilters] = useState({
     query: params.get("query") ?? "",
@@ -293,6 +271,11 @@ export function StudentsScreen() {
                 >
                   جزئیات
                 </Button>
+                <Button size="sm" variant="secondary">
+                  <Link href={`/students/${student.id}/edit?clubId=${clubId}`}>
+                    ویرایش
+                  </Link>
+                </Button>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -320,29 +303,6 @@ export function StudentsScreen() {
     [update],
   );
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    try {
-      await create.mutateAsync({
-        firstName: String(data.get("firstName")),
-        lastName: String(data.get("lastName")),
-        phone: String(data.get("phone")).trim(),
-        sport: String(data.get("sport")),
-        membershipTitle: String(data.get("membershipTitle")),
-        membershipEndsAt: data.get("membershipEndsAt")
-          ? new Date(String(data.get("membershipEndsAt"))).toISOString()
-          : null,
-        status: "active",
-        notes: String(data.get("notes")),
-      });
-      event.currentTarget.reset();
-      setOpen(false);
-      toast.success("شاگرد با موفقیت اضافه شد");
-    } catch {
-      toast.danger("ثبت شاگرد انجام نشد؛ شماره تماس را بررسی کنید");
-    }
-  };
   return (
     <Page
       title="شاگردها"
@@ -354,106 +314,12 @@ export function StudentsScreen() {
             value={clubId}
             onChange={setClubId}
           />
-          <Button
-            variant="primary"
-            isDisabled={!clubId}
-            onPress={() => setOpen((value) => !value)}
-          >
-            <Icon name="plus" />
-            افزودن شاگرد
+          <Button variant="primary" isDisabled={!clubId}>
+            <Link href={`/students/new?clubId=${clubId}`}>افزودن شاگرد</Link>
           </Button>
         </div>
       }
     >
-      {open && (
-        <Card className="mt-5 app-card shadow-none active:scale-100 p-5">
-          <form
-            onSubmit={submit}
-            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-          >
-            <Field label="نام">
-              <HeroInput
-                variant="secondary"
-                required
-                minLength={2}
-                name="firstName"
-                className={inputClass}
-              />
-            </Field>
-            <Field label="نام خانوادگی">
-              <HeroInput
-                variant="secondary"
-                required
-                minLength={2}
-                name="lastName"
-                className={inputClass}
-              />
-            </Field>
-            <Field label="شماره تماس">
-              <HeroInput
-                variant="secondary"
-                required
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                maxLength={13}
-                pattern={iranPhonePattern}
-                title="شماره موبایل را مانند 09121234567 یا +989121234567 وارد کنید."
-                dir="ltr"
-                className={inputClass}
-              />
-            </Field>
-            <Field label="رشته ورزشی">
-              <HeroInput
-                variant="secondary"
-                name="sport"
-                className={inputClass}
-              />
-            </Field>
-            <Field label="عنوان عضویت">
-              <HeroInput
-                variant="secondary"
-                name="membershipTitle"
-                placeholder="مثلاً بدنسازی ماهانه"
-                className={inputClass}
-              />
-            </Field>
-            <Field label="پایان عضویت">
-              <IranDateInput
-                name="membershipEndsAt"
-
-                className={inputClass}
-              />
-            </Field>
-            <div className="md:col-span-2 lg:col-span-3">
-              <Field label="یادداشت">
-                <HeroTextArea
-                  variant="secondary"
-                  name="notes"
-                  className={textareaClass}
-                />
-              </Field>
-            </div>
-            <div className="flex gap-2 md:col-span-2 lg:col-span-3">
-              <Button
-                type="submit"
-                variant="primary"
-                isPending={create.isPending}
-              >
-                ثبت شاگرد
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onPress={() => setOpen(false)}
-              >
-                انصراف
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
       {students.isError ? (
         <div className="mt-5">
           <QueryError onRetry={() => void students.refetch()} />
@@ -617,22 +483,9 @@ export function StudentsScreen() {
 }
 
 export function CoachesScreen() {
-  const specialtiesCatalog = usePublicCatalogResource(
-    "sports",
-    "coach-specialty",
-    { limit: 100 },
-  );
-  const employmentCatalog = usePublicCatalogResource(
-    "sports",
-    "employment-type",
-    { limit: 100 },
-  );
-  const [specialtyNames, setSpecialtyNames] = useState<string[]>([]);
   const { clubs, clubId, setClubId } = useSelectedClub();
   const coaches = useClubCoachProfiles(clubId);
-  const create = useCreateClubCoach(clubId);
   const update = useUpdateClubCoach(clubId);
-  const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<ClubCoachProfile | null>(null);
   const [draftFilters, setDraftFilters] = useState({
     query: "",
@@ -724,6 +577,11 @@ export function CoachesScreen() {
                 >
                   جزئیات
                 </Button>
+                <Button size="sm" variant="secondary">
+                  <Link href={`/coaches/${coach.id}/edit?clubId=${clubId}`}>
+                    ویرایش
+                  </Link>
+                </Button>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -751,26 +609,6 @@ export function CoachesScreen() {
     [update],
   );
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    try {
-      await create.mutateAsync({
-        firstName: String(data.get("firstName")),
-        lastName: String(data.get("lastName")),
-        phone: String(data.get("phone")).trim(),
-        specialties: specialtyNames,
-        employmentType: String(data.get("employmentType")),
-        status: "active",
-        notes: String(data.get("notes")),
-      });
-      setSpecialtyNames([]);
-      setOpen(false);
-      toast.success("مربی اضافه شد");
-    } catch {
-      toast.danger("ثبت مربی انجام نشد");
-    }
-  };
   return (
     <Page
       title="مربی‌ها"
@@ -782,118 +620,12 @@ export function CoachesScreen() {
             value={clubId}
             onChange={setClubId}
           />
-          <Button
-            variant="primary"
-            isDisabled={!clubId}
-            onPress={() => setOpen((v) => !v)}
-          >
-            <Icon name="plus" />
-            افزودن مربی
+          <Button variant="primary" isDisabled={!clubId}>
+            <Link href={`/coaches/new?clubId=${clubId}`}>افزودن مربی</Link>
           </Button>
         </div>
       }
     >
-      {open && (
-        <Card className="mt-5 app-card shadow-none active:scale-100 p-5">
-          <form
-            onSubmit={submit}
-            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-          >
-            <Field label="نام">
-              <HeroInput
-                variant="secondary"
-                required
-                name="firstName"
-                minLength={2}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="نام خانوادگی">
-              <HeroInput
-                variant="secondary"
-                required
-                name="lastName"
-                minLength={2}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="شماره تماس">
-              <HeroInput
-                variant="secondary"
-                required
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                maxLength={13}
-                pattern={iranPhonePattern}
-                title="شماره موبایل را مانند 09121234567 یا +989121234567 وارد کنید."
-                dir="ltr"
-                className={inputClass}
-              />
-            </Field>
-            <CatalogMultiSelect
-              label="تخصص‌ها"
-              options={(specialtiesCatalog.data?.items ?? []).map((item) => ({
-                id: item.name,
-                name: item.name,
-              }))}
-              value={specialtyNames}
-              onChange={setSpecialtyNames}
-              isPending={specialtiesCatalog.isPending}
-              isError={specialtiesCatalog.isError}
-              onRetry={() => void specialtiesCatalog.refetch()}
-            />
-            <Field label="نوع همکاری">
-              <FormSelect
-                name="employmentType"
-                aria-label="نوع همکاری"
-                disabled={
-                  employmentCatalog.isPending || employmentCatalog.isError
-                }
-              >
-                <FormOption value="">انتخاب نوع همکاری</FormOption>
-                {employmentCatalog.data?.items.map((item) => (
-                  <FormOption key={item.id} value={item.name}>
-                    {item.name}
-                  </FormOption>
-                ))}
-              </FormSelect>
-              {employmentCatalog.isError && (
-                <Button
-                  variant="ghost"
-                  onPress={() => void employmentCatalog.refetch()}
-                >
-                  دریافت دوباره گزینه‌ها
-                </Button>
-              )}
-            </Field>
-            <Field label="یادداشت">
-              <HeroInput
-                variant="secondary"
-                name="notes"
-                className={inputClass}
-              />
-            </Field>
-            <div className="flex gap-2 md:col-span-2 lg:col-span-3">
-              <Button
-                type="submit"
-                variant="primary"
-                isPending={create.isPending}
-              >
-                ثبت مربی
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onPress={() => setOpen(false)}
-              >
-                انصراف
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
       {coaches.isError ? (
         <div className="mt-5">
           <QueryError onRetry={() => void coaches.refetch()} />
@@ -1015,13 +747,9 @@ export function PaymentsScreen() {
   const { clubs, clubId, setClubId } = useSelectedClub();
   const students = useClubStudents(clubId);
   const payments = useClubPayments(clubId);
-  const create = useCreateClubPayment(clubId);
   const payoutBalance = usePayoutBalance("club", clubId);
   const payouts = usePayouts();
-  const requestPayout = useRequestPayout();
   const cancelPayout = useCancelPayout();
-  const [open, setOpen] = useState(false);
-  const [payoutOpen, setPayoutOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] =
     useState<ClubManualPayment | null>(null);
   const [selectedPayout, setSelectedPayout] = useState<Payout | null>(null);
@@ -1125,47 +853,6 @@ export function PaymentsScreen() {
     [studentMap],
   );
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    try {
-      await create.mutateAsync({
-        studentId: String(data.get("studentId")),
-        type: String(data.get("type")) as "tuition" | "session" | "other",
-        title: String(data.get("title")),
-        amount: Number(data.get("amount")),
-        currency: "IRR",
-        paidAt: new Date(String(data.get("paidAt"))).toISOString(),
-        method: String(data.get("method")) as
-          "cash" | "card" | "transfer" | "other",
-        notes: String(data.get("notes")),
-      });
-      form.reset();
-      setOpen(false);
-      toast.success("پرداخت ثبت شد");
-    } catch {
-      toast.danger("ثبت پرداخت انجام نشد");
-    }
-  };
-  const submitPayout = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    try {
-      await requestPayout.mutateAsync({
-        providerType: "club",
-        providerId: clubId,
-        amount: Number(data.get("amount")),
-        iban: String(data.get("iban")).replaceAll(" ", "").trim().toUpperCase(),
-      });
-      form.reset();
-      setPayoutOpen(false);
-      toast.success("درخواست تسویه ثبت شد");
-    } catch {
-      toast.danger("ثبت درخواست تسویه انجام نشد");
-    }
-  };
   return (
     <Page
       title="پرداخت‌ها"
@@ -1177,16 +864,8 @@ export function PaymentsScreen() {
             value={clubId}
             onChange={setClubId}
           />
-          <Button
-            variant="primary"
-            isDisabled={!students.data?.items.length}
-            onPress={() => {
-              setPaymentSection("receipts");
-              setOpen((v) => !v);
-            }}
-          >
-            <Icon name="plus" />
-            ثبت پرداخت
+          <Button variant="primary" isDisabled={!students.data?.items.length}>
+            <Link href={`/payments/new?clubId=${clubId}`}>ثبت پرداخت</Link>
           </Button>
         </div>
       }
@@ -1230,9 +909,10 @@ export function PaymentsScreen() {
             className="mt-4"
             variant="primary"
             isDisabled={(payoutBalance.data?.availableAmount ?? 0) <= 0}
-            onPress={() => setPayoutOpen((value) => !value)}
           >
-            درخواست برداشت
+            <Link href={`/payments/payout/new?clubId=${clubId}`}>
+              درخواست برداشت
+            </Link>
           </Button>
         </Card>
         <Card className="app-card shadow-none active:scale-100 p-5">
@@ -1299,148 +979,7 @@ export function PaymentsScreen() {
           </div>
         </Card>
       </section>
-      {paymentSection === "settlements" && payoutOpen ? (
-        <Card className="mt-4 app-card shadow-none active:scale-100 p-5">
-          <form onSubmit={submitPayout} className="grid gap-4 md:grid-cols-2">
-            <Field label="مبلغ برداشت (ریال)">
-              <PanelNumberField
-                name="amount"
-                minValue={1}
-                step={1}
-                isRequired
-                maxValue={payoutBalance.data?.availableAmount ?? undefined}
-                aria-label="مبلغ برداشت (ریال)"
-              />
-            </Field>
-            <Field label="شماره شبا">
-              <HeroInput
-                variant="secondary"
-                required
-                name="iban"
-                dir="ltr"
-                inputMode="numeric"
-                maxLength={26}
-                pattern={ibanPattern}
-                title="شماره شبا باید با IR شروع شود و پس از آن دقیقاً ۲۴ رقم داشته باشد."
-                autoComplete="off"
-                placeholder="IR000000000000000000000000"
-                className={inputClass}
-              />
-            </Field>
-            <Button
-              type="submit"
-              variant="primary"
-              isPending={requestPayout.isPending}
-            >
-              ثبت درخواست
-            </Button>
-          </form>
-        </Card>
-      ) : null}
       <div hidden={paymentSection !== "receipts"}>
-        {open && (
-          <Card className="mt-5 app-card shadow-none active:scale-100 p-5">
-            <form
-              onSubmit={submit}
-              className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-            >
-              <Field label="شاگرد">
-                <FormSelect
-                  aria-label="شاگرد"
-                  required
-                  name="studentId"
-                  className={inputClass}
-                >
-                  <FormOption value="">انتخاب کنید</FormOption>
-                  {students.data?.items.map((student) => (
-                    <FormOption
-                      entity={student}
-                      key={student.id}
-                      value={student.id}
-                    >
-                      {student.firstName} {student.lastName}
-                    </FormOption>
-                  ))}
-                </FormSelect>
-              </Field>
-              <Field label="نوع پرداخت">
-                <FormSelect
-                  aria-label="نوع پرداخت"
-                  name="type"
-                  className={inputClass}
-                >
-                  <FormOption value="tuition">شهریه</FormOption>
-                  <FormOption value="session">هزینه سانس</FormOption>
-                  <FormOption value="other">سایر</FormOption>
-                </FormSelect>
-              </Field>
-              <Field label="عنوان">
-                <HeroInput
-                  variant="secondary"
-                  required
-                  name="title"
-                  placeholder="شهریه شهریور"
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="مبلغ (ریال)">
-                <PanelNumberField
-                  name="amount"
-                  minValue={1}
-                  step={1}
-                  isRequired
-                  aria-label="مبلغ (ریال)"
-                />
-              </Field>
-              <Field label="تاریخ پرداخت">
-                <IranDateInput
-                  required
-                  defaultValue={today()}
-                  name="paidAt"
-
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="روش پرداخت">
-                <FormSelect
-                  aria-label="روش پرداخت"
-                  name="method"
-                  className={inputClass}
-                >
-                  <FormOption value="card">کارتخوان</FormOption>
-                  <FormOption value="cash">نقدی</FormOption>
-                  <FormOption value="transfer">کارت‌به‌کارت</FormOption>
-                  <FormOption value="other">سایر</FormOption>
-                </FormSelect>
-              </Field>
-              <div className="md:col-span-2 lg:col-span-3">
-                <Field label="یادداشت">
-                  <HeroTextArea
-                    variant="secondary"
-                    name="notes"
-                    className={textareaClass}
-                  />
-                </Field>
-              </div>
-              <div className="flex gap-2 md:col-span-2 lg:col-span-3">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  isPending={create.isPending}
-                >
-                  تأیید پرداخت‌شده
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onPress={() => setOpen(false)}
-                >
-                  انصراف
-                </Button>
-              </div>
-            </form>
-          </Card>
-        )}
         {payments.isError ? (
           <div className="mt-5">
             <QueryError onRetry={() => void payments.refetch()} />
@@ -1936,316 +1475,74 @@ export function AttendanceScreen() {
 
 export function BranchesScreen() {
   const { clubs, clubId, setClubId } = useSelectedClub();
-  const branches = useClubBranches(clubId);
-  const create = useCreateClubBranch(clubId);
-  const update = useUpdateClubBranch(clubId);
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<ClubBranch | null>(null);
-  const [draftFilters, setDraftFilters] = useState({
-    query: "",
-    status: "" as "" | "active" | "inactive",
-  });
-  const [filters, setFilters] = useState({
-    query: "",
-    status: "" as "" | "active" | "inactive",
-  });
-
-  const items = useMemo(
-    () => branches.data?.items ?? [],
-    [branches.data?.items],
-  );
-  const filtered = useMemo(() => {
-    const query = filters.query.trim().toLowerCase();
-    return items.filter((branch) => {
-      if (filters.status && branch.status !== filters.status) return false;
-      if (!query) return true;
-      return (
-        branch.name.toLowerCase().includes(query) ||
-        branch.address.toLowerCase().includes(query) ||
-        branch.phone.includes(query)
-      );
-    });
-  }, [filters, items]);
-
-  const filterActiveCount =
-    (filters.query.trim() ? 1 : 0) + (filters.status ? 1 : 0);
-
-  const columns = useMemo(
-    () =>
-      branchColumnHelper.columns([
-        branchColumnHelper.accessor("name", {
-          header: "نام شعبه",
-          cell: (info) => (
-            <span className="font-medium">{info.getValue()}</span>
-          ),
-        }),
-        branchColumnHelper.accessor("address", {
-          enableSorting: false,
-          header: "نشانی",
-          cell: (info) => (
-            <span className="line-clamp-2 max-w-xs text-sm text-muted">
-              {info.getValue()}
-            </span>
-          ),
-        }),
-        branchColumnHelper.accessor("phone", {
-          header: "تماس",
-          cell: (info) => (
-            <span className="tabular-nums" dir="ltr">
-              {info.getValue() || "ثبت نشده"}
-            </span>
-          ),
-        }),
-        branchColumnHelper.accessor("status", {
-          header: "وضعیت",
-          cell: (info) => <StatusChip active={info.getValue() === "active"} />,
-        }),
-        branchColumnHelper.display({
-          id: "actions",
-          header: "عملیات",
-          cell: (info) => {
-            const branch = info.row.original;
-            return (
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onPress={() => setSelected(branch)}
-                >
-                  جزئیات
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  isPending={update.isPending}
-                  onPress={() =>
-                    update
-                      .mutateAsync({
-                        id: branch.id,
-                        payload: {
-                          status:
-                            branch.status === "active" ? "inactive" : "active",
-                        },
-                      })
-                      .then(() => toast.success("وضعیت شعبه تغییر کرد"))
-                      .catch(() => toast.danger("تغییر وضعیت انجام نشد"))
-                  }
-                >
-                  {branch.status === "active" ? "تعطیل کردن" : "فعال کردن"}
-                </Button>
-              </div>
-            );
-          },
-        }),
-      ]),
-    [update],
-  );
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    try {
-      await create.mutateAsync({
-        name: String(data.get("name")).trim(),
-        address: String(data.get("address")).trim(),
-        phone: String(data.get("phone")).trim(),
-        timezone: "Asia/Tehran",
-        status: "active",
-      });
-      event.currentTarget.reset();
-      setOpen(false);
-      toast.success("شعبه ساخته شد");
-    } catch {
-      toast.danger("ساخت شعبه انجام نشد؛ نام شعبه باید یکتا باشد");
-    }
-  };
+  const unlink = useUnlinkBusinessBranch(clubId);
+  const current = clubs.data?.items.find((club) => club.id === clubId);
+  const owned = (clubs.data?.items ?? []).filter((club) => club.isOwner);
+  const groupId = current?.branchGroupId;
+  const connected = groupId
+    ? owned.filter((club) => club.branchGroupId === groupId)
+    : current
+      ? [current]
+      : [];
   return (
     <Page
       title="شعبه‌ها"
-      description="شعبه‌های زیرمجموعه هر باشگاه را ایجاد و مدیریت کنید"
+      description="هر شعبه یک باشگاه مستقل با پرونده، کلاس‌ها و مدیریت خودش است."
       action={
-        <div className="flex items-end gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           <ClubSelect
             clubs={clubs.data?.items ?? []}
             value={clubId}
             onChange={setClubId}
           />
-          <Button
-            variant="primary"
-            isDisabled={!clubId}
-            onPress={() => setOpen((v) => !v)}
-          >
-            <Icon name="plus" />
-            ساخت شعبه
+          <Button variant="primary" isDisabled={!clubId || !current?.isOwner}>
+            <Link href={`/branches/link?clubId=${clubId}`}>اتصال شعبه</Link>
+          </Button>
+          <Button variant="secondary">
+            <Link href="/clubs/new">ساخت باشگاه جدید</Link>
           </Button>
         </div>
       }
     >
-      {open && (
-        <Card className="mt-5 app-card shadow-none active:scale-100 p-5">
-          <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
-            <Field label="نام شعبه">
-              <HeroInput
-                variant="secondary"
-                required
-                minLength={2}
-                name="name"
-                placeholder="شعبه مرکزی"
-                className={inputClass}
-              />
-            </Field>
-            <Field label="شماره تماس">
-              <HeroInput
-                variant="secondary"
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                maxLength={13}
-                pattern={iranPhonePattern}
-                title="شماره موبایل را مانند 09121234567 یا +989121234567 وارد کنید."
-                dir="ltr"
-                className={inputClass}
-              />
-            </Field>
-            <div className="md:col-span-2">
-              <Field label="نشانی">
-                <HeroTextArea
-                  variant="secondary"
-                  required
-                  minLength={5}
-                  name="address"
-                  className={textareaClass}
-                />
-              </Field>
-            </div>
-            <div className="flex gap-2 md:col-span-2">
-              <Button
-                type="submit"
-                variant="primary"
-                isPending={create.isPending}
-              >
-                ساخت شعبه
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        {connected.map((club) => (
+          <Card
+            key={club.id}
+            className="app-card p-5 shadow-none active:scale-100"
+          >
+            <h2 className="font-semibold">{club.name}</h2>
+            <p className="mt-2 text-sm text-muted">
+              {club.shortDescription || "باشگاه مستقل"}
+            </p>
+            <div className="mt-4 flex gap-2">
+              <Button size="sm" variant="secondary">
+                <Link href={`/clubs/${club.id}`}>مشاهده باشگاه</Link>
               </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onPress={() => setOpen(false)}
-              >
-                انصراف
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
-      {branches.isError ? (
-        <div className="mt-5">
-          <QueryError onRetry={() => void branches.refetch()} />
-        </div>
-      ) : (
-        <ListPagePanel
-          title="فهرست شعبه‌ها"
-          description={`${filtered.length.toLocaleString("fa-IR")} شعبه`}
-          filterActiveCount={filterActiveCount}
-          filterTitle="فیلتر شعبه‌ها"
-          onFilterApply={() => setFilters(draftFilters)}
-          onFilterReset={() => {
-            const empty = { query: "", status: "" as const };
-            setDraftFilters(empty);
-            setFilters(empty);
-          }}
-          filterContent={
-            <>
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-muted">جست‌وجو</span>
-                <HeroInput
-                  variant="secondary"
-                  className={inputClass}
-                  value={draftFilters.query}
-                  onChange={(event) =>
-                    setDraftFilters((current) => ({
-                      ...current,
-                      query: event.target.value,
-                    }))
-                  }
-                  placeholder="نام، نشانی یا تماس"
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-muted">وضعیت</span>
-                <FormSelect
-                  aria-label="فیلتر وضعیت"
-                  className={inputClass}
-                  value={draftFilters.status}
-                  onChange={(event) =>
-                    setDraftFilters((current) => ({
-                      ...current,
-                      status: event as "" | "active" | "inactive",
-                    }))
+              {club.id !== clubId && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  isPending={unlink.isPending}
+                  onPress={() =>
+                    void unlink
+                      .mutateAsync(club.id)
+                      .then(() => toast.success("ارتباط شعبه برداشته شد"))
+                      .catch(() => toast.danger("حذف ارتباط انجام نشد"))
                   }
                 >
-                  <FormOption value="">همه</FormOption>
-                  <FormOption value="active">فعال</FormOption>
-                  <FormOption value="inactive">غیرفعال</FormOption>
-                </FormSelect>
-              </label>
-            </>
-          }
-        >
-          <DataTable
-            ariaLabel="فهرست شعبه‌ها"
-            data={filtered}
-            columns={columns}
-            getRowId={(row) => row.id}
-            rowHeaderColumnId="name"
-            isLoading={branches.isPending}
-            emptyContent={
-              <Empty
-                title="شعبه‌ای ساخته نشده"
-                hint="برای مدیریت مستقل مکان‌ها، اولین شعبه را بسازید"
-              />
-            }
-          />
-        </ListPagePanel>
+                  قطع ارتباط
+                </Button>
+              )}
+            </div>
+          </Card>
+        ))}
+      </div>
+      {!connected.length && (
+        <Empty
+          title="باشگاهی انتخاب نشده"
+          hint="ابتدا یک باشگاه بسازید یا انتخاب کنید."
+        />
       )}
-      <EntityDetailsModal
-        isOpen={Boolean(selected)}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) setSelected(null);
-        }}
-        title={selected?.name ?? "جزئیات شعبه"}
-        description="اطلاعات تماس، نشانی و وضعیت شعبه"
-        sections={
-          selected
-            ? [
-                {
-                  items: [
-                    { label: "شناسه شعبه", value: selected.id, dir: "ltr" },
-                    { label: "نشانی", value: selected.address, wide: true },
-                    { label: "شماره تماس", value: selected.phone, dir: "ltr" },
-                    {
-                      label: "منطقه زمانی",
-                      value: selected.timezone,
-                      dir: "ltr",
-                    },
-                    {
-                      label: "وضعیت",
-                      value: selected.status === "active" ? "فعال" : "غیرفعال",
-                    },
-                    {
-                      label: "زمان ثبت",
-                      value: formatDate(selected.createdAt),
-                    },
-                    {
-                      label: "آخرین تغییر",
-                      value: formatDate(selected.updatedAt),
-                    },
-                  ],
-                },
-              ]
-            : []
-        }
-      />
     </Page>
   );
 }

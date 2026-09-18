@@ -1,5 +1,6 @@
 export type ArticlesEditorFormValues = {
   title: string;
+  authorId: string;
   authorName: string;
   categoryId: string;
   slug: string;

@@ -443,6 +443,7 @@ function OfferingEditor({ initial }: { initial?: CoachOffering }) {
               value={draft.price.amount}
               min={0}
               max={1000000000000}
+              money
               onChange={(amount) =>
                 patch({ price: { ...draft.price, amount: amount ?? 0 } })
               }
@@ -736,6 +737,7 @@ function Numeric({
   min,
   max,
   optional = false,
+  money = false,
   onChange,
 }: {
   label: string;
@@ -743,6 +745,7 @@ function Numeric({
   min: number;
   max: number;
   optional?: boolean;
+  money?: boolean;
   onChange: (value: number | null) => void;
 }) {
   return (
@@ -751,7 +754,7 @@ function Numeric({
       <Counter
         aria-label={label}
         className={field}
-
+        money={money}
         required={!optional}
         min={min}
         max={max}

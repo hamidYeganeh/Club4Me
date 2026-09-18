@@ -13,6 +13,7 @@ import { RequestFailureState } from "@/components/request-failure-state";
 import { getQueryFailure } from "@/lib/request-failure";
 import { getApplicationRoles, getRolePath } from "@/lib/post-auth-path";
 import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
+import { AccountAuthOtpHeaderSection } from "@modules/account/sections/AccountAuthOtpHeaderSection";
 import { AccountAuthRolesOptionsSection } from "../sections/AccountAuthRolesOptionsSection";
 
 const labels = {
@@ -25,6 +26,7 @@ export function RoleRequestScreen({ role }: { role: RequestableRole }) {
   const me = useAccountMe();
   const requests = useMyRoleRequests();
   const t = useTranslations("auth.roles");
+  const tCommon = useTranslations("common");
   const failure = getQueryFailure(requests.error, requests.fetchStatus);
   const existing = requests.data?.items
     .filter((item) => item.role === role)
@@ -32,10 +34,11 @@ export function RoleRequestScreen({ role }: { role: RequestableRole }) {
   const granted = me.data?.roles.includes(role);
   return (
     <AuthScreen>
-      <SecondaryHeader
-        title={role === "coach" ? "درخواست مربیگری" : "درخواست مالک باشگاه"}
-        showFilter={false}
-        backHref="/auth/roles?manage=1"
+      <AccountAuthOtpHeaderSection
+        backLabel={tCommon("back")}
+        href="/auth/roles?manage=1"
+        overlay
+        transparent
       />
       {failure ? (
         <RequestFailureState

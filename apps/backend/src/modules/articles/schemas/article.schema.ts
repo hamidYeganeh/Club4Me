@@ -20,6 +20,9 @@ export class Article {
   @Prop({ required: true, trim: true })
   authorName: string;
 
+  @Prop({ type: Types.ObjectId, ref: "ArticleAuthor", index: true })
+  authorId?: Types.ObjectId;
+
   @Prop({
     type: Types.ObjectId,
     ref: "ArticleCategory",

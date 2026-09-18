@@ -9,6 +9,7 @@ import { FormSelect, FormOption } from "@repo/ui/form-select";
 import { Input as HeroInput, TextArea as HeroTextArea } from "@heroui/react";
 import { IranDateInput } from "@repo/ui/iran-date-input";
 import { tehranLocalValue } from "@repo/ui/iran-date";
+import { PriceNumberField } from "@repo/ui/price-number-field";
 
 import {
   type KeyboardEvent,
@@ -206,7 +207,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   const [timezone, setTimezone] = useState("Asia/Tehran");
   const [locationNotes, setLocationNotes] = useState("");
   const [audience, setAudience] = useState<string[]>(["mixed"]);
-  const [ageGroupId, setAgeGroupId] = useState("");
+  const [ageGroupIds, setAgeGroupIds] = useState<string[]>([]);
   const [currency, setCurrency] = useState("IRR");
   const [taxPercent, setTaxPercent] = useState(0);
   const [onSitePaymentMethods, setOnSitePaymentMethods] = useState<
@@ -437,17 +438,26 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
   useEffect(() => {
     const value = club.data;
     if (!value || ageGroupOptions.length === 0) return;
-    const matched = ageGroupOptions.find(
-      (item) => item.minAge === value.minAge && item.maxAge === value.maxAge,
-    );
-    // Sync selected preset after catalog loads for an existing club.
+    if (value.minAge == null || value.maxAge == null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAgeGroupIds([]);
+      return;
+    }
+    // Select every preset fully covered by the club age window.
+    const matched = ageGroupOptions
+      .filter(
+        (item) =>
+          item.minAge >= value.minAge! && item.maxAge <= value.maxAge!,
+      )
+      .map((item) => item.id);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setAgeGroupId(matched?.id ?? "");
+    setAgeGroupIds(matched);
   }, [ageGroupOptions, club.data]);
 
-  const selectedAgeGroup = useMemo(
-    () => ageGroupOptions.find((item) => item.id === ageGroupId) ?? null,
-    [ageGroupId, ageGroupOptions],
+  const selectedAgeGroups = useMemo(
+    () =>
+      ageGroupOptions.filter((item) => ageGroupIds.includes(item.id)),
+    [ageGroupIds, ageGroupOptions],
   );
 
   const busy = create.isPending || update.isPending || createMedia.isPending;
@@ -476,8 +486,14 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
 
   const save = dynamicForm.handleSubmit(async (dynamicValues) => {
     const cleanName = name.trim();
-    const minimumAge = selectedAgeGroup?.minAge ?? null;
-    const maximumAge = selectedAgeGroup?.maxAge ?? null;
+    const minimumAge =
+      selectedAgeGroups.length > 0
+        ? Math.min(...selectedAgeGroups.map((item) => item.minAge))
+        : null;
+    const maximumAge =
+      selectedAgeGroups.length > 0
+        ? Math.max(...selectedAgeGroups.map((item) => item.maxAge))
+        : null;
     const hasSomeLocation = [
       countryId,
       provinceId,
@@ -988,6 +1004,41 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
             <Tabs.Panel id="gallery" className="min-w-0 space-y-5">
               <Section title={t("gallery")}>
                 <div className="md:col-span-2 min-w-0 space-y-4">
+                  <div className="rounded-[1.15rem] bg-surface-secondary/60 p-3">
+                    <p className="text-sm font-medium">دسته‌های پیشنهادی عکس</p>
+                    <p className="mt-1 text-xs leading-5 text-muted">
+                      هنگام افزودن عکس، یکی از این دسته‌ها را انتخاب کنید تا در
+                      اپ فقط دسته‌هایی که عکس دارند بالای گالری دیده شوند.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(
+                        [
+                          ["training", "فضای تمرین"],
+                          ["equipment", "تجهیزات"],
+                          ["changing_room", "رختکن"],
+                          ["entrance", "نمای ورودی"],
+                          ["other", "سایر"],
+                        ] as const
+                      ).map(([value, label]) => {
+                        const count = gallery.filter(
+                          (item) => (item.category ?? "other") === value,
+                        ).length;
+                        return (
+                          <span
+                            key={value}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-xs font-medium"
+                          >
+                            {label}
+                            {count > 0 ? (
+                              <span className="tabular-nums text-accent">
+                                {count.toLocaleString("fa-IR")}
+                              </span>
+                            ) : null}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
                   <Uploader
                     key={galleryUploaderKey}
                     multiple={false}
@@ -1006,6 +1057,7 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                           title: "",
                           altText: "",
                           kind: "image",
+                          category: "training",
                           isCover: current.length === 0,
                         },
                       ]);
@@ -1254,29 +1306,20 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                           </FormSelect>
                         </label>
                         {amenityAccess[id]?.availability === "paid" && (
-                          <label className="text-sm">
-                            هزینه ({amenityAccess[id]?.currency ?? currency})
-                            <HeroInput
-                              variant="secondary"
-                              type="number"
-                              min={0}
-                              step={1}
-                              className={inputClass}
-                              value={amenityAccess[id]?.amount ?? ""}
-                              onChange={(e) =>
-                                setAmenityAccess((current) => ({
-                                  ...current,
-                                  [id]: {
-                                    ...current[id]!,
-                                    amount:
-                                      e.target.value === ""
-                                        ? undefined
-                                        : Number(e.target.value),
-                                  },
-                                }))
-                              }
-                            />
-                          </label>
+                          <PriceNumberField
+                            label={`هزینه (${amenityAccess[id]?.currency ?? currency})`}
+                            minValue={0}
+                            value={amenityAccess[id]?.amount ?? 0}
+                            onChange={(amount) =>
+                              setAmenityAccess((current) => ({
+                                ...current,
+                                [id]: {
+                                  ...current[id]!,
+                                  amount,
+                                },
+                              }))
+                            }
+                          />
                         )}
                       </div>
                     )}
@@ -1678,8 +1721,9 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                     <MobileChoiceField
                       label={t("ageRange")}
                       placeholder={t("ageGroupPlaceholder")}
-                      value={[ageGroupId]}
-                      onChange={(keys) => setAgeGroupId(keys[0] ?? "")}
+                      multiple
+                      value={ageGroupIds}
+                      onChange={setAgeGroupIds}
                       options={ageGroupOptions.map((item) => ({
                         value: item.id,
                         label: `${item.name} ${item.minAge}-${item.maxAge}`,
@@ -1703,10 +1747,16 @@ export function ClubFormScreen({ clubId }: { clubId?: string }) {
                     <Select
                       fullWidth
                       variant="secondary"
-                      value={ageGroupId || null}
+                      selectionMode="multiple"
+                      value={ageGroupIds}
                       onChange={(value) => {
-                        if (typeof value === "string") setAgeGroupId(value);
-                        else setAgeGroupId("");
+                        setAgeGroupIds(
+                          Array.isArray(value)
+                            ? value.map(String)
+                            : value
+                              ? [String(value)]
+                              : [],
+                        );
                       }}
                       placeholder={t("ageGroupPlaceholder")}
                     >
@@ -2483,6 +2533,7 @@ function CountedGrid({
   renderExtra?: (id: string) => React.ReactNode;
 }) {
   const t = useTranslations("businessClubs");
+  const mobile = useMobileChoice();
   const [search, setSearch] = useState("");
   const [notesOpen, setNotesOpen] = useState<Record<string, boolean>>({});
   const catalog = useCatalogOptions(category, resource, search, true);
@@ -2505,76 +2556,116 @@ function CountedGrid({
     <div className="min-w-0 max-w-full space-y-5">
       <div className="min-w-0 max-w-full space-y-3">
         <Description>{selectionHint}</Description>
-        <CatalogSearchField
-          value={search}
-          placeholder={searchPlaceholder}
-          onChange={setSearch}
-        />
-        <CatalogScrollArea>
-          {catalog.isPending ? (
-            <div className="grid h-full min-h-52 place-items-center">
+        {mobile ? (
+          catalog.isPending ? (
+            <div className="grid h-52 place-items-center rounded-[1.15rem] bg-surface/80">
               <Spinner />
             </div>
           ) : isEmpty ? (
-            <div className="p-3">
-              <CatalogEmptyState
-                icon="list-two-bullet"
-                title={
-                  search.trim() ? t("catalogEmptySearch") : t("catalogEmpty")
-                }
-                description={t("catalogEmptyHint")}
-              />
-            </div>
+            <CatalogEmptyState
+              icon="list-two-bullet"
+              title={search.trim() ? t("catalogEmptySearch") : t("catalogEmpty")}
+              description={t("catalogEmptyHint")}
+            />
           ) : (
-            <>
-              <Virtualizer
-                layout={ListLayout}
-                layoutOptions={{ gap: 4, padding: 8, rowHeight: 58 }}
-              >
-                <ListBox
-                  aria-label={ariaLabel}
-                  className="w-full min-w-0 max-w-full"
-                  items={catalog.items}
-                  selectedKeys={new Set(Object.keys(values))}
-                  selectionMode="multiple"
-                  onSelectionChange={(selection) =>
-                    onSelectionChange(
-                      mergeCatalogSelection(
-                        Object.keys(values),
-                        catalog.items.map((item) => item.id),
-                        selection,
-                      ),
-                      catalog.items,
-                    )
-                  }
-                >
-                  {(item) => (
-                    <ListBox.Item
-                      dir="rtl"
-                      id={item.id}
-                      textValue={entityOptionText(item, String(item.name))}
+            <MobileChoiceField
+              label={ariaLabel}
+              placeholder={searchPlaceholder}
+              multiple
+              value={Object.keys(values)}
+              onChange={(keys) => onSelectionChange(keys, catalog.items)}
+              options={catalog.items.map((item) => ({
+                value: item.id,
+                label: String(item.name),
+                entity: item,
+              }))}
+              footer={
+                <CatalogScrollSentinel
+                  hasNextPage={Boolean(catalog.hasNextPage)}
+                  isFetchingNextPage={catalog.isFetchingNextPage}
+                  onLoadMore={() => {
+                    if (catalog.hasNextPage && !catalog.isFetchingNextPage) {
+                      void catalog.fetchNextPage();
+                    }
+                  }}
+                />
+              }
+            />
+          )
+        ) : (
+          <>
+            <CatalogSearchField
+              value={search}
+              placeholder={searchPlaceholder}
+              onChange={setSearch}
+            />
+            <CatalogScrollArea>
+              {catalog.isPending ? (
+                <div className="grid h-full min-h-52 place-items-center">
+                  <Spinner />
+                </div>
+              ) : isEmpty ? (
+                <div className="p-3">
+                  <CatalogEmptyState
+                    icon="list-two-bullet"
+                    title={
+                      search.trim() ? t("catalogEmptySearch") : t("catalogEmpty")
+                    }
+                    description={t("catalogEmptyHint")}
+                  />
+                </div>
+              ) : (
+                <>
+                  <Virtualizer
+                    layout={ListLayout}
+                    layoutOptions={{ gap: 4, padding: 8, rowHeight: 72 }}
+                  >
+                    <ListBox
+                      aria-label={ariaLabel}
+                      className="w-full min-w-0 max-w-full"
+                      items={catalog.items}
+                      selectedKeys={new Set(Object.keys(values))}
+                      selectionMode="multiple"
+                      onSelectionChange={(selection) =>
+                        onSelectionChange(
+                          mergeCatalogSelection(
+                            Object.keys(values),
+                            catalog.items.map((item) => item.id),
+                            selection,
+                          ),
+                          catalog.items,
+                        )
+                      }
                     >
-                      <EntityOptionContent
-                        entity={item}
-                        title={String(item.name)}
-                      />
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                  )}
-                </ListBox>
-              </Virtualizer>
-              <CatalogScrollSentinel
-                hasNextPage={Boolean(catalog.hasNextPage)}
-                isFetchingNextPage={catalog.isFetchingNextPage}
-                onLoadMore={() => {
-                  if (catalog.hasNextPage && !catalog.isFetchingNextPage) {
-                    void catalog.fetchNextPage();
-                  }
-                }}
-              />
-            </>
-          )}
-        </CatalogScrollArea>
+                      {(item) => (
+                        <ListBox.Item
+                          dir="rtl"
+                          id={item.id}
+                          textValue={entityOptionText(item, String(item.name))}
+                        >
+                          <EntityOptionContent
+                            entity={item}
+                            title={String(item.name)}
+                          />
+                          <ListBox.ItemIndicator />
+                        </ListBox.Item>
+                      )}
+                    </ListBox>
+                  </Virtualizer>
+                  <CatalogScrollSentinel
+                    hasNextPage={Boolean(catalog.hasNextPage)}
+                    isFetchingNextPage={catalog.isFetchingNextPage}
+                    onLoadMore={() => {
+                      if (catalog.hasNextPage && !catalog.isFetchingNextPage) {
+                        void catalog.fetchNextPage();
+                      }
+                    }}
+                  />
+                </>
+              )}
+            </CatalogScrollArea>
+          </>
+        )}
       </div>
 
       <div className="space-y-3">

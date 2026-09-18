@@ -6,6 +6,8 @@ export type PublicArticle = {
   title: string;
   slug: string;
   authorName: string;
+  author: { id: string | null; name: string };
+  authorId?: string;
   categoryId: string;
   categoryName: string;
   excerpt: string;
@@ -26,6 +28,11 @@ export function toPublicArticle(
     title: article.title,
     slug: article.slug,
     authorName: article.authorName,
+    author: {
+      id: article.authorId ? String(article.authorId) : null,
+      name: article.authorName,
+    },
+    ...(article.authorId ? { authorId: String(article.authorId) } : {}),
     categoryId: String(article.categoryId),
     categoryName,
     excerpt: article.excerpt ?? "",

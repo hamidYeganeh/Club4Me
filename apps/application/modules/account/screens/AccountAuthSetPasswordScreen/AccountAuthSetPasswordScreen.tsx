@@ -8,7 +8,6 @@ import { AccountAuthSetPasswordForm } from "@modules/account/forms/AccountAuthSe
 import { AuthPageIntro } from "@/components/auth-page-intro";
 import { useTranslations } from "next-intl";
 
-import { SecondaryHeader } from "@modules/discovery/components/SecondaryHeader";
 import { AuthScreen } from "@/components/auth-screen";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-inset";
 import { FIRST_TIME_ROLES_PATH } from "@/lib/post-auth-path";
@@ -94,11 +93,13 @@ export function AccountAuthSetPasswordScreen() {
 
   return (
     <AuthScreen>
-      <SecondaryHeader
-        title="تعیین رمز عبور"
-        showFilter={false}
-        showBack={false}
-      />
+      <>
+        <header
+          className="app-header pointer-events-none justify-start bg-transparent shadow-none backdrop-blur-none"
+          aria-hidden
+        />
+        <div aria-hidden className="hidden" />
+      </>
       <AuthPageIntro
         titleId="account-auth-set-password-title"
         title={t("title")}

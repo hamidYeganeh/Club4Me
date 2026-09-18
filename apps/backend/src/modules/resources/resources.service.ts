@@ -688,10 +688,23 @@ export class ResourcesService {
         }
       }
     }
+    if (definition.key === "article_authors") {
+      const used = await this.connection
+        .collection("articles")
+        .findOne(
+          { authorId: new Types.ObjectId(id) },
+          { projection: { _id: 1 } },
+        );
+      if (used)
+        throw new AppError(409, "RESOURCE_IN_USE", "Article author is in use");
+    }
     if (definition.key === "article_categories") {
       const used = await this.connection
         .collection("articles")
-        .findOne({ categoryId: id }, { projection: { _id: 1 } });
+        .findOne(
+          { categoryId: new Types.ObjectId(id) },
+          { projection: { _id: 1 } },
+        );
       if (used)
         throw new AppError(
           409,

@@ -1,5 +1,8 @@
 const IRAN_MOBILE = /^9\d{9}$/;
 
+/** HTML `pattern` for 09… / 9… / 98… / +98… / 0098… */
+export const IRANIAN_PHONE_INPUT_PATTERN = "(?:\\+98|0098|98|0)?9\\d{9}";
+
 export function normalizeIranianPhone(value: string): string {
   const trimmed = value.trim().replace(/[\s-]/g, "");
 

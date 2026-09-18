@@ -8,6 +8,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import Link from "@/components/app-link";
 import { safeReturnPath } from "@/lib/auth-return-path";
 import { normalizeNumberInput } from "@/lib/number-input";
+import { IRANIAN_PHONE_INPUT_PATTERN } from "@/lib/phone";
 import { useNow } from "@/lib/use-now";
 
 type Session = { accessToken: string; refreshToken: string };
@@ -149,6 +150,7 @@ export default function SocialAuthCallbackPage() {
               <HeroInput
                 dir="ltr"
                 type="tel"
+                inputMode="tel"
                 autoComplete="tel"
                 value={phone}
                 onChange={(event) =>
@@ -156,6 +158,8 @@ export default function SocialAuthCallbackPage() {
                 }
                 placeholder="09123456789"
                 required
+                pattern={IRANIAN_PHONE_INPUT_PATTERN}
+                title="مثال: 09383729627، 9383729627 یا 989383729627"
                 className="min-h-12 rounded-xl bg-surface px-3"
                 disabled={otpSent || busy}
               />

@@ -21,6 +21,7 @@ import {
   tehranLocalDate,
   tehranLocalValue,
 } from "@repo/ui/iran-date";
+import { PanelPriceField } from "@/components/form/PanelPriceField";
 
 const field =
   "mt-1 min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm";
@@ -241,26 +242,20 @@ function ClassAccount({
                   در این سامانه ندارند. رسیدهای موجود را پس از تطبیق، از بخش
                   پایین به قرارداد وصل کنید؛ آن‌ها را دوباره جمع نزنید.
                 </p>
-                <label>
-                  وصول‌شدهٔ قبل بدون رسید (ریال)
-                  <HeroInput
-                    name="openingPaidAmount"
-                    inputMode="numeric"
-                    defaultValue="0"
-                    required
-                    className={field}
-                  />
-                </label>
-                <label>
-                  بخشودگی قبلی (ریال)
-                  <HeroInput
-                    name="waivedAmount"
-                    inputMode="numeric"
-                    defaultValue="0"
-                    required
-                    className={field}
-                  />
-                </label>
+                <PanelPriceField
+                  label="وصول‌شدهٔ قبل بدون رسید (ریال)"
+                  name="openingPaidAmount"
+                  minValue={0}
+                  defaultValue={0}
+                  isRequired
+                />
+                <PanelPriceField
+                  label="بخشودگی قبلی (ریال)"
+                  name="waivedAmount"
+                  minValue={0}
+                  defaultValue={0}
+                  isRequired
+                />
                 <label className="sm:col-span-2">
                   دلیل و مستند تطبیق
                   <HeroInput
@@ -290,15 +285,12 @@ function ClassAccount({
               className="mt-3 grid gap-3 sm:grid-cols-2"
               onSubmit={submitReceipt}
             >
-              <label>
-                مبلغ رسید شهریه (ریال)
-                <HeroInput
-                  name="amount"
-                  required
-                  inputMode="numeric"
-                  className={field}
-                />
-              </label>
+              <PanelPriceField
+                label="مبلغ رسید شهریه (ریال)"
+                name="amount"
+                minValue={1}
+                isRequired
+              />
               <label>
                 تاریخ دریافت شهریه
                 <IranDateInput
@@ -562,15 +554,13 @@ function RefundReceipt({
           فقط وجهی را ثبت کنید که قبلاً به شاگرد برگردانده‌اید. این فرم انتقال
           بانکی انجام نمی‌دهد. ماندهٔ قابل برگشت: {money(remaining)}
         </p>
-        <label>
-          مبلغ وجه برگشتی (ریال)
-          <HeroInput
-            name="amount"
-            required
-            inputMode="numeric"
-            className={field}
-          />
-        </label>
+        <PanelPriceField
+          label="مبلغ وجه برگشتی (ریال)"
+          name="amount"
+          minValue={1}
+          maxValue={remaining}
+          isRequired
+        />
         <label>
           تاریخ برگشت وجه
           <IranDateInput

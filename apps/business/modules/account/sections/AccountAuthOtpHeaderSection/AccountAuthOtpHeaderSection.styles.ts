@@ -2,7 +2,7 @@ import { tv } from "tailwind-variants";
 
 export const accountAuthOtpHeaderSectionStyles = tv({
   slots: {
-    root: "flex h-19.5 w-full items-center self-stretch rounded-b-3xl bg-surface p-4",
-    back: "size-11 min-w-11 rounded-2xl bg-transparent text-foreground hover:bg-transparent active:bg-transparent data-[hover=true]:bg-transparent data-[pressed=true]:bg-transparent",
+    root: "mb-6 flex h-12 w-full items-center self-stretch",
+    back: "size-11 min-w-11 rounded-full border border-border bg-transparent text-foreground hover:bg-transparent active:bg-transparent data-[hover=true]:bg-transparent data-[pressed=true]:bg-transparent",
   },
 });

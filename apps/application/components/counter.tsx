@@ -4,6 +4,7 @@ import { Input as HeroInput } from "@heroui/react";
 // The editable native input preserves validation, form data, and input events.
 import { Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState, type ComponentPropsWithRef } from "react";
+import { formatRialAsTomanWords } from "@repo/ui/rial-toman";
 import { normalizeNumberInput, numberInputError } from "@/lib/number-input";
 import { cn } from "@/lib/cn";
 import styles from "./counter.module.css";
@@ -11,7 +12,10 @@ import styles from "./counter.module.css";
 export type CounterProps = Omit<
   ComponentPropsWithRef<"input">,
   "type" | "children"
->;
+> & {
+  /** Rial amount: thousand separators in the display and a toman-words hint. */
+  money?: boolean;
+};
 
 export function Counter({
   value,
@@ -27,6 +31,7 @@ export function Counter({
   onChange,
   onFocus,
   onBlur,
+  money = false,
   ...props
 }: CounterProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -44,7 +49,7 @@ export function Counter({
   const formatted = Number.isFinite(numericValue)
     ? numericValue.toLocaleString("fa-IR", {
         maximumFractionDigits: 10,
-        useGrouping: false,
+        useGrouping: money,
       })
     : "";
 
@@ -103,11 +108,11 @@ export function Counter({
     }
   }
 
-  return (
+  const control = (
     <span
       data-counter=""
       data-disabled={disabled || undefined}
-      className={cn(styles.root, className)}
+      className={cn(styles.root, !money && className)}
       style={style}
       dir="ltr"
     >
@@ -192,6 +197,19 @@ export function Counter({
           </button>
         );
       })}
+    </span>
+  );
+
+  if (!money) return control;
+
+  return (
+    <span className={cn("grid w-full gap-1", className)}>
+      {control}
+      <span className="px-1 text-xs text-muted" aria-live="polite">
+        {formatRialAsTomanWords(
+          Number.isFinite(numericValue) ? numericValue : 0,
+        )}
+      </span>
     </span>
   );
 }

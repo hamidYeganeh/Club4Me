@@ -7,11 +7,10 @@ export const accountAuthForgotPasswordFormStyles = tv({
     group: "w-full",
     field: "flex w-full flex-col gap-2",
     label: "text-sm font-bold text-foreground",
-    inputGroup:
-      "h-14 rounded-2xl border border-border bg-surface shadow-none",
+    inputGroup: "h-14 rounded-lg border border-border bg-surface shadow-none",
     prefix: "ps-3 text-muted",
     input: "min-w-0 flex-1 text-start text-base tracking-wide",
     actions: "w-full",
-    button: "h-14 rounded-full text-base font-bold",
+    button: "h-14 rounded-full text-base font-semibold",
   },
 });

@@ -55,6 +55,22 @@ export class CreateCoachDto {
         .max(20)
         .default([]),
       employmentType: optionalText(120),
+      commissionPercent: z.number().min(0).max(100).nullable().default(null),
+      weeklyAvailability: z
+        .array(
+          z
+            .object({
+              weekday: z.number().int().min(0).max(6),
+              startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+              endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+            })
+            .refine(
+              (slot) => slot.endTime > slot.startTime,
+              "End time must be after start time",
+            ),
+        )
+        .max(7)
+        .default([]),
       status: z.enum(["active", "inactive"]).default("active"),
       notes: optionalText(500),
     })
@@ -64,6 +80,12 @@ export class CreateCoachDto {
   phone: string;
   specialties: string[];
   employmentType: string;
+  commissionPercent: number | null;
+  weeklyAvailability: Array<{
+    weekday: number;
+    startTime: string;
+    endTime: string;
+  }>;
   status: "active" | "inactive";
   notes: string;
 }
@@ -75,6 +97,12 @@ export class UpdateCoachDto {
   phone?: string;
   specialties?: string[];
   employmentType?: string;
+  commissionPercent?: number | null;
+  weeklyAvailability?: Array<{
+    weekday: number;
+    startTime: string;
+    endTime: string;
+  }>;
   status?: "active" | "inactive";
   notes?: string;
 }

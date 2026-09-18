@@ -30,6 +30,9 @@ export const discoveryClubsRailSectionStyles = tv({
       editorial: {
         skeleton: "aspect-[3/4] w-[min(78vw,320px)] min-w-[min(78vw,320px)]",
       },
+      overlay: {
+        skeleton: "aspect-[3/4] w-[min(78vw,320px)] min-w-[min(78vw,320px)]",
+      },
     },
   },
   defaultVariants: {

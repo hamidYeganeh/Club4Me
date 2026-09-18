@@ -149,6 +149,7 @@ export function MockPaymentGateway({
               سهم کیف پول (ریال)
               <Counter
                 aria-label="سهم کیف پول (ریال)"
+                money
                 min={0}
                 className="mt-1 w-full rounded-xl border border-border bg-background p-2"
                 value={wallet}

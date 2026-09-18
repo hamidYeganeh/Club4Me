@@ -25,7 +25,8 @@ export const businessClubEndpoints = {
   list: "/business/clubs",
   detail: (clubId: string) => `/business/clubs/${clubId}` as const,
   submit: (clubId: string) => `/business/clubs/${clubId}/submit` as const,
-  activation: (clubId: string) => `/business/clubs/${clubId}/activation` as const,
+  activation: (clubId: string) =>
+    `/business/clubs/${clubId}/activation` as const,
   catalog: (category: string, resource: string) =>
     resourceApiPath(category, resource),
   media: "/media",
@@ -42,7 +43,15 @@ export const businessClubsClient = {
     http.patch<BusinessClub>(businessClubEndpoints.detail(clubId), payload),
   submit: (clubId: string) =>
     http.post<BusinessClub>(businessClubEndpoints.submit(clubId)),
-  activation: (clubId: string) => http.get<{ clubId: string; ready: boolean; completed: number; total: number; items: Array<{ id: string; label: string; complete: boolean }>; publicPreviewUrl: string }>(businessClubEndpoints.activation(clubId)),
+  activation: (clubId: string) =>
+    http.get<{
+      clubId: string;
+      ready: boolean;
+      completed: number;
+      total: number;
+      items: Array<{ id: string; label: string; complete: boolean }>;
+      publicPreviewUrl: string;
+    }>(businessClubEndpoints.activation(clubId)),
   catalog: (
     category: string,
     resource: string,
@@ -85,7 +94,11 @@ export function useBusinessClub(clubId: string, enabled = true) {
 }
 
 export function useBusinessClubActivation(clubId: string) {
-  return useQuery({ queryKey: [...businessClubQueries.detail(clubId), "activation"], queryFn: () => businessClubsClient.activation(clubId), enabled: Boolean(clubId) });
+  return useQuery({
+    queryKey: [...businessClubQueries.detail(clubId), "activation"],
+    queryFn: () => businessClubsClient.activation(clubId),
+    enabled: Boolean(clubId),
+  });
 }
 
 export function useCreateBusinessClub() {
@@ -193,5 +206,29 @@ export function useCreateBusinessTag() {
         queryKey: businessClubQueries.tags(),
       });
     },
+  });
+}
+
+export function useLinkBusinessBranches(clubId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (targetClubId: string) =>
+      http.post(`${businessClubEndpoints.detail(clubId)}/branch-links`, {
+        targetClubId,
+      }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: businessClubQueries.list() }),
+  });
+}
+
+export function useUnlinkBusinessBranch(clubId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (targetClubId: string) =>
+      http.delete(
+        `${businessClubEndpoints.detail(clubId)}/branch-links/${targetClubId}`,
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: businessClubQueries.list() }),
   });
 }

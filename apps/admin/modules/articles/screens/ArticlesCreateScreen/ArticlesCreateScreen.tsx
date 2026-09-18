@@ -40,6 +40,7 @@ export function ArticlesCreateScreen() {
     try {
       const article = await createArticle.mutateAsync({
         title: values.title,
+        authorId: values.authorId,
         authorName: values.authorName,
         categoryId: values.categoryId,
         slug: values.slug || undefined,

@@ -1,6 +1,11 @@
 export function normalizeNumberInput(value: string) {
-  return value.replace(/[۰-۹٠-٩]/g, (digit) => String(digit.charCodeAt(0) - (digit <= "٩" ? 0x660 : 0x6f0)))
-    .replace(/٫/g, ".").replace(/−/g, "-");
+  return value
+    .replace(/[۰-۹٠-٩]/g, (digit) =>
+      String(digit.charCodeAt(0) - (digit <= "٩" ? 0x660 : 0x6f0)),
+    )
+    .replace(/[٬,]/g, "")
+    .replace(/٫/g, ".")
+    .replace(/−/g, "-");
 }
 
 export function numberInputError(value: string, min?: number | string, max?: number | string, step: number | string = 1, base = 0) {

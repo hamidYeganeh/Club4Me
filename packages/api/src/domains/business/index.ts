@@ -60,3 +60,5 @@ export const useForgotPassword = portal.useForgotPassword;
 export const useConfirmForgotPassword = portal.useConfirmForgotPassword;
 export const useRefreshSession = portal.useRefreshSession;
 export const useLogout = portal.useLogout;
+export * from "./business-discounts";
+export * from "./business-crm";

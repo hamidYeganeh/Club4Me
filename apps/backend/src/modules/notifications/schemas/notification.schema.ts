@@ -22,6 +22,8 @@ const DeliverySchema = SchemaFactory.createForClass(NotificationDelivery);
 export class Notification {
   @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
   userId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, default: null, index: true })
+  crmCampaignId: Types.ObjectId | null;
   @Prop({ required: true, maxlength: 80 }) type: string;
   @Prop({ required: true, maxlength: 180 }) title: string;
   @Prop({ required: true, maxlength: 1000 }) body: string;
@@ -45,6 +47,13 @@ export class Notification {
 export type NotificationDocument = HydratedDocument<Notification>;
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
 NotificationSchema.index({ userId: 1, createdAt: -1 });
+NotificationSchema.index(
+  { userId: 1, crmCampaignId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { crmCampaignId: { $type: "objectId" } },
+  },
+);
 NotificationSchema.index({
   "pushDelivery.state": 1,
   "pushDelivery.nextAttemptAt": 1,

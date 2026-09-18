@@ -29,6 +29,7 @@ export function CatalogMultiSelect({
       .filter((id) => !options.some((item) => item.id === id))
       .map((id, index) => ({ id, name: `گزینه ثبت‌شده ${index + 1}` })),
   ];
+  const disabled = Boolean(isPending || isError);
   return (
     <div className="min-w-0 space-y-2">
       {mobile ? (
@@ -39,7 +40,7 @@ export function CatalogMultiSelect({
             multiple
             value={value}
             onChange={onChange}
-            disabled={isPending || isError}
+            disabled={disabled}
             options={resolved.map((item) => ({
               value: item.id,
               label: item.name,
@@ -48,7 +49,8 @@ export function CatalogMultiSelect({
         </div>
       ) : (
         <ComboBox
-          menuTrigger="input"
+          fullWidth
+          menuTrigger="focus"
           variant="secondary"
           className="w-full"
           selectionMode="multiple"
@@ -62,17 +64,19 @@ export function CatalogMultiSelect({
             )
               onChange(next);
           }}
-          isDisabled={isPending || isError}
+          isDisabled={disabled}
         >
           <Label>{label}</Label>
           <ComboBox.InputGroup>
             <Input
+              variant="secondary"
               placeholder={
                 isPending ? "در حال دریافت گزینه‌ها…" : "جست‌وجو و انتخاب…"
               }
             />
             <ComboBox.Trigger aria-label={`نمایش ${label}`} />
           </ComboBox.InputGroup>
+          <ComboBox.Value />
           <ComboBox.Popover>
             <ListBox
               selectionMode="multiple"

@@ -431,17 +431,10 @@
   [data-auth-intro] {
     margin-block: 0.75rem;
   }
-  [data-auth-intro] > section {
-    min-height: 0;
-  }
-  [data-auth-intro] > section > img,
-  [data-auth-intro] [data-hero-scrim] {
-    display: none;
-  }
-  [data-auth-intro] > section > div:not([data-hero-scrim]) {
+  [data-auth-card] {
     padding: 1rem;
   }
-  [data-auth-screen] > div > form {
+  [data-auth-screen] [data-auth-card] {
     margin-top: 0.75rem;
   }
 }

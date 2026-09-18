@@ -192,6 +192,9 @@ export class Club {
   @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
   ownerId: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: "Club", default: null, index: true })
+  branchGroupId: Types.ObjectId | null;
+
   @Prop({ required: true, trim: true, minlength: 2, maxlength: 120 })
   name: string;
 

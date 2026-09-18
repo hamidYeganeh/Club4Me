@@ -29,6 +29,7 @@ export class ArticleCategoriesRepository {
   async create(input: {
     name: string;
     slug?: string;
+    icon?: string;
   }): Promise<PublicArticleCategory> {
     const slug = input.slug?.trim() || slugify(input.name);
 
@@ -40,6 +41,7 @@ export class ArticleCategoriesRepository {
       const created = await this.categoryModel.create({
         name: input.name.trim(),
         slug,
+        icon: input.icon,
         code: slug.toUpperCase().replace(/-/g, "_"),
         normalizedName: normalizeName(input.name),
       });

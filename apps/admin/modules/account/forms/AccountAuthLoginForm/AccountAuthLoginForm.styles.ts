@@ -7,8 +7,7 @@ export const accountAuthLoginFormStyles = tv({
     group: "flex w-full flex-col gap-4",
     field: "flex w-full flex-col gap-2",
     label: "text-sm font-bold text-foreground",
-    inputGroup:
-      "h-12 rounded-2xl border border-border bg-surface shadow-none",
+    inputGroup: "h-12 rounded-lg border border-border bg-surface shadow-none",
     prefix: "ps-3 text-muted",
     suffix: "pe-1",
     input: "min-w-0 flex-1 text-start text-base",
@@ -16,6 +15,6 @@ export const accountAuthLoginFormStyles = tv({
     remember: "gap-2 text-sm leading-5 text-foreground",
     forgot: "px-0 py-0",
     actions: "mt-2 w-full",
-    button: "",
+    button: "h-14 rounded-full text-base font-semibold",
   },
 });

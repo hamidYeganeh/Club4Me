@@ -5,7 +5,6 @@ import { useState } from "react";
 import { Button, Skeleton } from "@heroui/react";
 import { useCatalogClass, useCatalogCoach } from "@api/discovery";
 import { Icon } from "@theme/icon";
-import { FALLBACK_IMAGE_SRC } from "@ui/fallback-image";
 import type { Swiper as SwiperType } from "swiper";
 import { Keyboard, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -39,7 +38,7 @@ export function DiscoveryEntityGalleryScreen({
       : classItem.data?.imageUrl
         ? [classItem.data.imageUrl]
         : [];
-  const slides = images.length ? images : [FALLBACK_IMAGE_SRC];
+  const slides = images.length ? images : [];
   const query = type === "coach" ? coach : classItem;
   const browseHref =
     type === "coach" ? "/discovery/coaches" : "/discovery/classes";

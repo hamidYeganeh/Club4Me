@@ -30,11 +30,11 @@ export function ClubResourceField({
   const options = resources.data?.pages.flatMap((page) => page.items) ?? [];
   return (
     <div className="space-y-2">
-      <label className="block text-sm">
+      <label className="grid gap-1.5 text-sm font-medium text-foreground">
         {label}
         <FormSelect
           aria-label="انتخاب گزینه"
-          className="mt-1 w-full rounded-xl border border-border bg-surface p-3 text-sm"
+          className="mt-0 w-full min-w-0 text-sm"
           value={value ?? ""}
           onChange={(event) =>
             onChange(

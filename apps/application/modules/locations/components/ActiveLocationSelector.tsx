@@ -89,10 +89,7 @@ export function ActiveLocationSelector({
           <Icon name="close-x" size={24} />
         </button>
 
-        <RadioGroup value={effectiveSelectedId ?? ""} onChange={setSelectedId}
-          aria-label="انتخاب لوکیشن"
-          className="flex flex-col gap-3 pt-4"
-        >
+        <div className="flex flex-col gap-3 pt-4">
           {locations.isLoading && !failure ? (
             <LocationCardsSkeleton count={2} />
           ) : failure ? (
@@ -111,37 +108,50 @@ export function ActiveLocationSelector({
               </Typography>
             </div>
           ) : (
-            items.map((location) => {
-              const isSelected = location.id === effectiveSelectedId;
-              return (
-                <Radio key={location.id} value={location.id} aria-label={`${location.title}، ${location.address}`}>
-                  <Radio.Content
-                  className={`flex min-h-28 items-center gap-4 rounded-[1.5rem] border p-4 text-start transition-[border-color,background-color,transform,box-shadow] ${
-                    isSelected
-                      ? "border-accent bg-accent/7"
-                      : "border-border bg-surface-secondary/55"
-                  }`}
-                >
-                  <span
-                    className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${isSelected ? "bg-accent/12 text-accent" : "bg-surface text-muted"}`}
+            <RadioGroup
+              value={effectiveSelectedId ?? ""}
+              onChange={setSelectedId}
+              aria-label="انتخاب لوکیشن"
+              className="flex flex-col gap-3"
+            >
+              {items.map((location) => {
+                const isSelected = location.id === effectiveSelectedId;
+                return (
+                  <Radio
+                    key={location.id}
+                    value={location.id}
+                    aria-label={`${location.title}، ${location.address}`}
                   >
-                    <Icon name="map-pin-1" size={24} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-bold">
-                      {location.title}
-                    </span>
-                    <span className="mt-1 line-clamp-2 text-sm leading-6 text-muted">
-                      {location.address}
-                    </span>
-                  </span>
-                  <Radio.Control><Radio.Indicator /></Radio.Control>
-                  </Radio.Content>
-                </Radio>
-              );
-            })
+                    <Radio.Content
+                      className={`flex min-h-28 items-center gap-4 rounded-[1.5rem] border p-4 text-start transition-[border-color,background-color,transform,box-shadow] ${
+                        isSelected
+                          ? "border-accent bg-accent/7"
+                          : "border-border bg-surface-secondary/55"
+                      }`}
+                    >
+                      <span
+                        className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${isSelected ? "bg-accent/12 text-accent" : "bg-surface text-muted"}`}
+                      >
+                        <Icon name="map-pin-1" size={24} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-bold">
+                          {location.title}
+                        </span>
+                        <span className="mt-1 line-clamp-2 text-sm leading-6 text-muted">
+                          {location.address}
+                        </span>
+                      </span>
+                      <Radio.Control>
+                        <Radio.Indicator />
+                      </Radio.Control>
+                    </Radio.Content>
+                  </Radio>
+                );
+              })}
+            </RadioGroup>
           )}
-        </RadioGroup>
+        </div>
 
         {items.length < 5 ? (
           <Link

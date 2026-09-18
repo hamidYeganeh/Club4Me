@@ -1,10 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Button } from "@heroui/react";
 import { Icon } from "@theme/icon";
 
-import { accountAuthOtpHeaderSectionStyles } from "./AccountAuthOtpHeaderSection.styles";
 import type { AccountAuthOtpHeaderSectionProps } from "./AccountAuthOtpHeaderSection.types";
 
 export function AccountAuthOtpHeaderSection({
@@ -12,20 +10,17 @@ export function AccountAuthOtpHeaderSection({
   href = "/welcome",
 }: AccountAuthOtpHeaderSectionProps) {
   const router = useRouter();
-  const styles = accountAuthOtpHeaderSectionStyles();
 
   return (
-    <header className={styles.root()}>
-      <Button
-        isIconOnly
-        variant="ghost"
-        size="lg"
+    <nav className="mb-6 flex w-full items-center" aria-label={backLabel}>
+      <button
+        type="button"
         aria-label={backLabel}
-        className={styles.back()}
-        onPress={() => router.push(href)}
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-surface-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        onClick={() => router.push(href)}
       >
         <Icon name="arrow-left" size={22} />
-      </Button>
-    </header>
+      </button>
+    </nav>
   );
 }

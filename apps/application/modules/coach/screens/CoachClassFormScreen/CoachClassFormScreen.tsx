@@ -435,6 +435,7 @@ export function CoachClassFormScreen({ classId = "" }: { classId?: string }) {
           <Field label="هزینه (ریال)">
             <Counter
               aria-label="هزینه (ریال)"
+              money
               min={0}
               value={price}
               onChange={(event) => setPrice(Number(event.target.value))}

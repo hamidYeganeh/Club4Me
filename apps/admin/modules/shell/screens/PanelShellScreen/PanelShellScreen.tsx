@@ -55,6 +55,11 @@ export async function PanelShellScreen({ children }: PanelShellScreenProps) {
       label: "گزارش‌ها",
     },
     {
+      href: "/crm",
+      icon: "chat",
+      label: "تأیید پیام‌ها",
+    },
+    {
       href: "/finance",
       icon: "wallet",
       label: "مالی و تسویه",

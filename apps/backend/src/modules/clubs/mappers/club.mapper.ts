@@ -15,6 +15,7 @@ export type PublicClub = {
   >;
   id: string;
   ownerId: string;
+  branchGroupId: string | null;
   name: string;
   shortDescription: string;
   slug: string;
@@ -129,6 +130,7 @@ export function toPublicClub(club: ClubDocument): PublicClub {
     ),
     id: String(club._id),
     ownerId: String(club.ownerId),
+    branchGroupId: club.branchGroupId ? String(club.branchGroupId) : null,
     name: club.name,
     shortDescription: club.shortDescription ?? "",
     slug: club.slug,

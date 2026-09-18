@@ -110,6 +110,7 @@ const rows: readonly Row[] = [
   ],
   ["classes", "age-group", "age_group_presets", "age_group_presets"],
   ["content", "article-category", "article_categories", "article_categories"],
+  ["content", "article-author", "article_authors", "article_authors"],
   ["content", "article-type", "article_types", "article_types"],
   ["content", "article-tag", "article_tags", "article_tags"],
   ["content", "faq-category", "faq_categories", "faq_categories"],

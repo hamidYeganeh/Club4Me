@@ -1,3 +1,9 @@
+import { CrmCampaignsService } from "./crm-campaigns.service";
+import {
+  BusinessCrmCampaignsController,
+  AdminCrmCampaignsController,
+  PublicClubNewsController,
+} from "./crm-campaigns.controller";
 import { MediaModule } from "../media/media.module";
 import { ClassBillingService } from "./class-billing.service";
 import { Module } from "@nestjs/common";
@@ -92,6 +98,9 @@ import {
   ],
   controllers: [
     BusinessOperationsController,
+    BusinessCrmCampaignsController,
+    AdminCrmCampaignsController,
+    PublicClubNewsController,
     BusinessClassesController,
     PublicBusinessClassesController,
     PublicBusinessCalendarController,
@@ -101,6 +110,7 @@ import {
   providers: [
     ClassBillingService,
     BusinessOperationsService,
+    CrmCampaignsService,
     BusinessClassesService,
     BusinessClassPortalService,
     ClassRemindersService,

@@ -125,6 +125,33 @@ export class BenefitsService {
     return amount;
   }
 
+  async listClubDiscounts(clubId: string) {
+    const items = await this.campaigns
+      .find({ clubIds: oid(clubId) })
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
+    return {
+      items: items.map((item) => ({
+        id: String(item._id),
+        code: item.code,
+        title: item.title,
+        kind: item.kind,
+        value: item.value,
+        maxDiscount: item.maxDiscount,
+        minOrderAmount: item.minOrderAmount,
+        budgetRemaining: item.budgetRemaining,
+        usageLimit: item.usageLimit,
+        usageCount: item.usageCount,
+        perUserLimit: item.perUserLimit,
+        firstPurchaseOnly: item.firstPurchaseOnly,
+        startsAt: item.startsAt.toISOString(),
+        endsAt: item.endsAt.toISOString(),
+        isActive: item.isActive,
+      })),
+    };
+  }
+
   async createDiscount(input: CreateDiscountDto) {
     if (new Date(input.startsAt) >= new Date(input.endsAt))
       throw new AppError(

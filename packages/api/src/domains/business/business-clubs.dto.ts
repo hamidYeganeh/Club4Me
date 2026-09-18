@@ -71,6 +71,7 @@ export type BusinessClub = {
   verifications?: ClubVerifications;
   id: string;
   ownerId: string;
+  branchGroupId: string | null;
   name: string;
   shortDescription: string;
   slug: string;

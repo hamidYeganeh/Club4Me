@@ -16,6 +16,10 @@ const coverImageUrl = z
 const UpdateArticleSchema = z.object({
   title: z.string().trim().min(1).max(200).optional(),
   slug: z.string().trim().min(1).max(200).optional(),
+  authorId: z
+    .string()
+    .regex(/^[a-f\d]{24}$/i)
+    .optional(),
   authorName: z.string().trim().min(1).max(120).optional(),
   categoryId: z.string().trim().min(1).optional(),
   excerpt: z.string().trim().max(500).optional(),
@@ -28,6 +32,7 @@ export class UpdateArticleDto {
   static schema = UpdateArticleSchema;
   title?: string;
   slug?: string;
+  authorId?: string;
   authorName?: string;
   categoryId?: string;
   excerpt?: string;

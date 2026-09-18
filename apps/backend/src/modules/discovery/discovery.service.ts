@@ -1256,6 +1256,10 @@ function publicArticle(item: Record<string, any>) {
     title: item.title,
     slug: item.slug,
     authorName: item.authorName,
+    author: {
+      id: item.authorId ? String(item.authorId) : null,
+      name: item.authorName,
+    },
     categoryId: String(item.categoryId),
     excerpt: item.excerpt ?? "",
     coverImageUrl: item.coverImageUrl ?? null,

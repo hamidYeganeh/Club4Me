@@ -355,6 +355,35 @@ export class NotificationsService {
     await afterCommit(() => this.outbox.runSafely(_id));
   }
 
+  async notifyCrmCampaign(input: {
+    campaignId: Types.ObjectId;
+    userIds: Types.ObjectId[];
+    title: string;
+    body: string;
+    clubId: string;
+  }) {
+    for (const userId of input.userIds) {
+      await this.notifications.updateOne(
+        { userId, crmCampaignId: input.campaignId },
+        {
+          $setOnInsert: {
+            userId,
+            crmCampaignId: input.campaignId,
+            type: "club_crm",
+            title: input.title,
+            body: input.body,
+            href: `/discovery/clubs/${input.clubId}`,
+            readAt: null,
+            pushDelivery: {},
+            smsDelivery: null,
+          },
+        },
+        { upsert: true },
+      );
+    }
+    await afterCommit(() => this.outbox.runSafely());
+  }
+
   private async notifyUser(input: {
     userId: string | Types.ObjectId;
     type: string;

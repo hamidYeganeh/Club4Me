@@ -16,6 +16,7 @@ const coverImageUrl = z
 const CreateArticleSchema = z.object({
   title: z.string().trim().min(1).max(200),
   slug: z.string().trim().min(1).max(200).optional(),
+  authorId: z.string().regex(/^[a-f\d]{24}$/i),
   authorName: z.string().trim().min(1).max(120),
   categoryId: z.string().trim().min(1),
   excerpt: z.string().trim().max(500).optional(),
@@ -28,6 +29,7 @@ export class CreateArticleDto {
   static schema = CreateArticleSchema;
   title: string;
   slug?: string;
+  authorId: string;
   authorName: string;
   categoryId: string;
   excerpt?: string;

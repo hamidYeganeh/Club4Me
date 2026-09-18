@@ -664,6 +664,7 @@ export function DiscoverySearchScreen({
                 حداقل بودجه (ریال)
                 <Counter
                   aria-label="حداقل بودجه (ریال)"
+                  money
                   min="0"
                   step="1"
                   value={minPrice}
@@ -675,6 +676,7 @@ export function DiscoverySearchScreen({
                 حداکثر بودجه (ریال)
                 <Counter
                   aria-label="حداکثر بودجه (ریال)"
+                  money
                   min="0"
                   step="1"
                   value={maxPrice}

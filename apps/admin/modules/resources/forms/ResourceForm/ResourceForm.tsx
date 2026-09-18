@@ -1,6 +1,7 @@
 "use client";
 
 import { FormOption, FormSelect } from "@repo/ui/form-select";
+import { IranDateInput } from "@repo/ui/iran-date-input";
 import {
   Button,
   Checkbox,
@@ -461,6 +462,35 @@ export function ResourceForm({
                         </div>
                       );
 
+                    if (field.kind === "date")
+                      return (
+                        <div
+                          className="space-y-1.5"
+                          onBlur={controlled.onBlur}
+                        >
+                          <Label className="text-sm font-semibold">
+                            {field.label}
+                            {field.required ? " *" : ""}
+                          </Label>
+                          <IranDateInput
+                            withTime
+                            value={String(controlled.value ?? "")}
+                            onValueChange={controlled.onChange}
+                            disabled={
+                              mutationPending ||
+                              (field.immutable && Boolean(record))
+                            }
+                            variant="secondary"
+                            className="min-w-0"
+                          />
+                          {fieldState.error?.message ? (
+                            <span className="block text-xs text-danger">
+                              {String(fieldState.error.message)}
+                            </span>
+                          ) : null}
+                        </div>
+                      );
+
                     return (
                       <TextField
                         name={controlled.name}
@@ -479,11 +509,9 @@ export function ResourceForm({
                           type={
                             field.kind === "number"
                               ? "number"
-                              : field.kind === "date"
-                                ? "datetime-local"
-                                : field.kind === "url"
-                                  ? "url"
-                                  : "text"
+                              : field.kind === "url"
+                                ? "url"
+                                : "text"
                           }
                           min={field.kind === "number" ? 0 : undefined}
                           dir={

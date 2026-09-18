@@ -21,7 +21,6 @@ import {
   useTransform,
 } from "motion/react";
 import { Icon } from "@theme/icon";
-import { FALLBACK_IMAGE_SRC } from "@ui/fallback-image";
 import { useLocale } from "next-intl";
 import { Autoplay, FreeMode, Thumbs } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -53,7 +52,8 @@ export function DiscoveryClubsDetailHeroSection({
   const styles = discoveryClubsDetailHeroSectionStyles();
   const router = useRouter();
   const [pullReady, setPullReady] = useState(false);
-  const slides = images.length > 0 ? images : [FALLBACK_IMAGE_SRC];
+  const slides = images;
+  const hasImages = images.length > 0;
   const rootRef = useRef<HTMLElement | null>(null);
   const navigationStartedRef = useRef(false);
   const gestureRef = useRef({
@@ -228,37 +228,49 @@ export function DiscoveryClubsDetailHeroSection({
         </motion.div>
 
         <motion.div style={{ y: pullY }} className={styles.pullContent()}>
-          <Swiper
-            dir={direction}
-            modules={[Autoplay, FreeMode, Thumbs]}
-            onSwiper={onMainSwiper}
-            thumbs={{
-              swiper:
-                thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null,
-            }}
-            autoplay={{
-              delay: 3500,
-              disableOnInteraction: false,
-            }}
-            rewind
-            watchOverflow
-            className={styles.mainSwiper()}
-          >
-            {slides.map((src, index) => (
-              <SwiperSlide key={`${src}-${index}`} className={styles.slide()}>
-                <FallbackImage
-                  src={src}
-                  alt={name}
-                  fill
-                  unoptimized
-                  priority={index === 0}
-                  sizes="100vw"
-                  className={styles.image()}
-                  data-zoom-enter-key={index === 0 ? clubId : undefined}
-                />
-              </SwiperSlide>
-            ))}
-          </Swiper>
+          {hasImages ? (
+            <Swiper
+              dir={direction}
+              modules={[Autoplay, FreeMode, Thumbs]}
+              onSwiper={onMainSwiper}
+              thumbs={{
+                swiper:
+                  thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null,
+              }}
+              autoplay={{
+                delay: 3500,
+                disableOnInteraction: false,
+              }}
+              rewind
+              watchOverflow
+              className={styles.mainSwiper()}
+            >
+              {slides.map((src, index) => (
+                <SwiperSlide key={`${src}-${index}`} className={styles.slide()}>
+                  <FallbackImage
+                    src={src}
+                    alt={name}
+                    fill
+                    unoptimized
+                    priority={index === 0}
+                    sizes="100vw"
+                    className={styles.image()}
+                    data-zoom-enter-key={index === 0 ? clubId : undefined}
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          ) : (
+            <div
+              className={`${styles.mainSwiper()} grid place-items-center bg-surface-secondary`}
+              aria-label="بدون تصویر گالری"
+            >
+              <div className="px-6 text-center">
+                <Icon name="image-1" size={36} className="mx-auto text-muted" />
+                <p className="mt-3 text-sm text-muted">هنوز عکسی ثبت نشده است</p>
+              </div>
+            </div>
+          )}
 
           <DiscoveryHeroScrim />
 

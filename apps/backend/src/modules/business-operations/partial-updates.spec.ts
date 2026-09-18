@@ -59,6 +59,8 @@ describe("business partial updates preserve omitted fields", () => {
     expect(CreateCoachDto.schema.parse(person)).toMatchObject({
       status: "active",
       specialties: [],
+      commissionPercent: null,
+      weeklyAvailability: [],
     });
     expect(
       CreateBranchDto.schema.parse({ name: "شعبه", address: "نشانی آزمایشی" }),
@@ -78,5 +80,34 @@ describe("business partial updates preserve omitted fields", () => {
     expect(
       CreateBusinessClassDto.schema.safeParse({ title: "ناقص" }).success,
     ).toBe(false);
+  });
+  it("accepts coach commission and weekly availability on create", () => {
+    expect(
+      CreateCoachDto.schema.parse({
+        firstName: "نام",
+        lastName: "آزمون",
+        phone: "09121111111",
+        employmentType: "COMMISSION",
+        commissionPercent: 40,
+        weeklyAvailability: [],
+      }),
+    ).toMatchObject({
+      commissionPercent: 40,
+      weeklyAvailability: [],
+    });
+    expect(
+      CreateCoachDto.schema.parse({
+        firstName: "نام",
+        lastName: "آزمون",
+        phone: "09121111111",
+        employmentType: "PART_TIME",
+        weeklyAvailability: [
+          { weekday: 0, startTime: "09:00", endTime: "17:00" },
+        ],
+      }),
+    ).toMatchObject({
+      commissionPercent: null,
+      weeklyAvailability: [{ weekday: 0, startTime: "09:00", endTime: "17:00" }],
+    });
   });
 });

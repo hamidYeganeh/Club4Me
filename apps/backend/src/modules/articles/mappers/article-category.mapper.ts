@@ -5,6 +5,7 @@ export type PublicArticleCategory = {
   id: string;
   name: string;
   slug: string;
+  icon?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -16,6 +17,7 @@ export function toPublicArticleCategory(
     id: String(category._id),
     name: category.name,
     slug: category.slug,
+    ...(category.icon ? { icon: category.icon } : {}),
     createdAt: toIso(category.createdAt),
     updatedAt: toIso(category.updatedAt),
   };

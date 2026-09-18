@@ -129,6 +129,7 @@ export type DiscoveryArticleItem = {
   title: string;
   slug: string;
   authorName: string;
+  author: { id: string | null; name: string };
   categoryId: string;
   excerpt: string;
   coverImageUrl: string | null;

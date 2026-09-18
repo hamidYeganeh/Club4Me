@@ -40,6 +40,22 @@ export function usePublicClub(clubId: string) {
   });
 }
 
+export function usePublicClubNews(clubId: string) {
+  return useQuery({
+    queryKey: ["public", "clubs", clubId, "news"],
+    queryFn: () =>
+      http.get<{
+        items: Array<{
+          id: string;
+          title: string;
+          body: string;
+          scheduledAt: string;
+        }>;
+      }>(`/public/clubs/${clubId}/news`),
+    enabled: /^[a-f\d]{24}$/i.test(clubId),
+  });
+}
+
 export function useClubReviews(clubId: string, query: ClubReviewFilters = {}) {
   return useQuery({
     queryKey: ["public", "clubs", clubId, "reviews", query],

@@ -5,26 +5,51 @@ import { Input as HeroInput } from "@heroui/react";
 import { useAccountPreference } from "@api/preferences";
 import { useSelectedClub } from "@/lib/use-selected-club";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Chip, toast } from "@heroui/react";
 import {
+  useBusinessSessions,
   useCheckInClubReservation,
+  useClubReservations,
   useReceptionDesk,
   type ReceptionResult,
 } from "@api/business";
+import Link from "next/link";
 import { asciiDigits } from "@repo/ui/iran-date";
 import { Icon, type IconName } from "@theme/icon";
+import { IRANIAN_PHONE_INPUT_PATTERN } from "@/lib/phone";
 
 const field =
   "h-11 w-full rounded-[1rem] border border-border bg-surface-secondary px-3 text-sm text-foreground outline-none transition-[border-color,box-shadow] placeholder:text-muted focus:border-focus focus:ring-3 focus:ring-focus/15";
 const card = "app-card shadow-none active:scale-100";
+const tehranTimeZone = "Asia/Tehran";
+
 const when = (value: string) =>
   new Date(value).toLocaleString("fa-IR", {
-    timeZone: "Asia/Tehran",
+    timeZone: tehranTimeZone,
     dateStyle: "medium",
     timeStyle: "short",
   });
+
+const whenTime = (value: string) =>
+  new Date(value).toLocaleString("fa-IR", {
+    timeZone: tehranTimeZone,
+    timeStyle: "short",
+  });
+
+function tehranCivilDateKey(instant: string | Date) {
+  const date = typeof instant === "string" ? new Date(instant) : instant;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tehranTimeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
 
 const labels: Record<string, string> = {
   active: "فعال",
@@ -252,6 +277,7 @@ export function ReceptionDesk({
 
   return (
     <section className="space-y-5" aria-label="جست‌وجو و پذیرش ورزشکار">
+      <TodayClubReservations clubId={clubId} />
       <div className="grid gap-5 xl:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)]">
         <Card className={`${card} overflow-hidden`}>
           <div className="bg-accent/8 p-5 sm:p-6">
@@ -265,6 +291,7 @@ export function ReceptionDesk({
             <label className="grid gap-2 text-sm font-medium">
               موبایل ورزشکار
               <HeroInput
+                variant="secondary"
                 required
                 value={draftPhone ?? phone}
                 onChange={(event) => setDraftPhone(event.target.value)}
@@ -272,7 +299,9 @@ export function ReceptionDesk({
                 inputMode="tel"
                 autoComplete="tel"
                 minLength={10}
-                maxLength={13}
+                maxLength={14}
+                pattern={IRANIAN_PHONE_INPUT_PATTERN}
+                title="مثال: 09383729627، 9383729627 یا 989383729627"
                 className={field}
                 placeholder="۰۹۱۲۱۲۳۴۵۶۷"
                 aria-describedby="reception-phone-help"
@@ -470,6 +499,139 @@ export function ReceptionDesk({
         </div>
       ) : null}
     </section>
+  );
+}
+
+function TodayClubReservations({ clubId }: { clubId: string }) {
+  const reservations = useClubReservations(clubId);
+  const sessions = useBusinessSessions(clubId);
+  const todayKey = tehranCivilDateKey(new Date());
+
+  type TodayRow = {
+    id: string;
+    title: string;
+    startsAt: string;
+    endsAt: string;
+    status: string;
+    paymentStatus: string;
+    participantCount: number;
+    checkedInParticipants: number;
+    kind: "reservation" | "session";
+    href: string;
+  };
+
+  const todayRows = useMemo(() => {
+    const reservationSessionIds = new Set<string>();
+    const rows: TodayRow[] = (reservations.data?.items ?? [])
+      .filter((item) => tehranCivilDateKey(item.sessionStartsAt) === todayKey)
+      .map((item) => {
+        reservationSessionIds.add(item.sessionId);
+        return {
+          id: item.id,
+          title: item.sessionTitle,
+          startsAt: item.sessionStartsAt,
+          endsAt: item.sessionEndsAt,
+          status: item.status,
+          paymentStatus: item.paymentStatus,
+          participantCount: item.participantCount,
+          checkedInParticipants: item.checkedInParticipants ?? 0,
+          kind: "reservation" as const,
+          href: `/clubs/${clubId}/reservations`,
+        };
+      });
+
+    for (const session of sessions.data?.items ?? []) {
+      if (tehranCivilDateKey(session.startsAt) !== todayKey) continue;
+      if (reservationSessionIds.has(session.id)) continue;
+      if (session.status === "cancelled") continue;
+      rows.push({
+        id: `session-${session.id}`,
+        title: session.title,
+        startsAt: session.startsAt,
+        endsAt: session.endsAt,
+        status: session.status,
+        paymentStatus: "not_required",
+        participantCount: session.capacity,
+        checkedInParticipants: 0,
+        kind: "session" as const,
+        href: `/clubs/${clubId}/reservations`,
+      });
+    }
+
+    return rows.sort(
+      (a, b) =>
+        new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+    );
+  }, [clubId, reservations.data?.items, sessions.data?.items, todayKey]);
+
+  const loading = reservations.isPending || sessions.isPending;
+
+  return (
+    <Card className={`${card} p-5 sm:p-6`}>
+      <SectionHeading
+        icon="calendar-check"
+        title="رزروهای امروز"
+        description="سانس‌ها و رزروهای باشگاه برای امروز (وقت تهران)"
+        action={
+          <Link
+            href={`/clubs/${clubId}/reservations`}
+            className="inline-flex h-8 shrink-0 items-center justify-center rounded-xl bg-surface-secondary px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary/80"
+          >
+            مدیریت رزرو
+          </Link>
+        }
+      />
+      {reservations.isError || sessions.isError ? (
+        <p role="alert" className="mt-4 text-sm text-danger">
+          دریافت رزروهای امروز انجام نشد.
+        </p>
+      ) : loading ? (
+        <Skeleton label="در حال دریافت رزروهای امروز" />
+      ) : todayRows.length ? (
+        <ul className="mt-5 space-y-2">
+          {todayRows.map((row) => (
+            <li key={row.id}>
+              <Link
+                href={row.href}
+                className="block rounded-[1.15rem] bg-surface-secondary/50 p-4 transition-colors hover:bg-surface-secondary/80"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="font-bold">{row.title}</h3>
+                    <p className="mt-1 text-xs text-muted">
+                      {whenTime(row.startsAt)}
+                      {row.endsAt ? ` – ${whenTime(row.endsAt)}` : null}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      {row.participantCount.toLocaleString("fa-IR")} نفر
+                      {row.kind === "reservation"
+                        ? ` · ورود ${row.checkedInParticipants.toLocaleString("fa-IR")}`
+                        : " · سانس بدون رزرو ثبت‌شده"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <StatusChip status={row.status} />
+                    {row.kind === "reservation" ? (
+                      <StatusChip status={row.paymentStatus} />
+                    ) : (
+                      <Chip size="sm" variant="soft">
+                        سانس
+                      </Chip>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <EmptyState
+          icon="calendar-slash-1"
+          title="برای امروز رزروی ثبت نشده"
+          description="رزروها و سانس‌های امروز اینجا نمایش داده می‌شوند."
+        />
+      )}
+    </Card>
   );
 }
 

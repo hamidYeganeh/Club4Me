@@ -3,7 +3,7 @@
 import { RelatedClubs } from "../../components/RelatedContent";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { tokenStore, trackDiscoveryClubViewed, usePublicClub } from "@api";
+import { tokenStore, trackDiscoveryClubViewed, usePublicClub, usePublicClubNews } from "@api";
 import { useCatalogClub } from "@api/discovery";
 import type { Swiper as SwiperType } from "swiper";
 import { useTranslations } from "next-intl";
@@ -62,6 +62,7 @@ export function DiscoveryClubsDetailScreen({
   const catalogClub = useCatalogClub(clubId);
   const persistedId = catalogClub.data?.id ?? "";
   const publicClub = usePublicClub(persistedId);
+  const news = usePublicClubNews(persistedId);
   const t = useTranslations("discovery.clubDetail");
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [mainSwiper, setMainSwiper] = useState<SwiperType | null>(null);
@@ -229,6 +230,22 @@ export function DiscoveryClubsDetailScreen({
       </div>
 
       <ClubSportsSection sportIds={data.sportIds} />
+      {!!news.data?.items.length && (
+        <section className="px-5 py-6" aria-label="خبرهای باشگاه">
+          <h2 className="mb-4 text-lg font-semibold">خبرهای باشگاه</h2>
+          <div className="grid gap-3">
+            {news.data.items.map((item) => (
+              <article key={item.id} className="rounded-2xl bg-surface-secondary p-4">
+                <h3 className="font-semibold">{item.title}</h3>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-7">{item.body}</p>
+                <time className="mt-3 block text-xs text-muted" dateTime={item.scheduledAt}>
+                  {new Date(item.scheduledAt).toLocaleDateString("fa-IR")}
+                </time>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
       <ClubProfileSection club={data} />
 
       <ClubClassesSection clubId={club.id} />
